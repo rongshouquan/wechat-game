@@ -141,10 +141,12 @@ class GameScene {
       this._stateTimer -= dt
       if (this._stateTimer <= 0) {
         if (this._state === 'gameover') {
-          this.main.showEnd(this._score)
+          this.main.showEnd(this._score, false)   // 游戏失败
         } else {
           const next = this._level + 1
-          next >= LEVELS.length ? this.main.showEnd(this._score) : this._loadLevel(next)
+          next >= LEVELS.length
+            ? this.main.showEnd(this._score, true)  // 全关通关
+            : this._loadLevel(next)
         }
       }
       return

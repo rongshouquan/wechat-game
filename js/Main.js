@@ -36,9 +36,13 @@ class Main {
     this._switchScene(new GameScene(this))
   }
 
-  showEnd(score) {
+  showEnd(score, won) {
     const EndScene = require('./scenes/EndScene')
-    this._switchScene(new EndScene(this, score))
+    this._switchScene(new EndScene(this, score, !!won))
+  }
+
+  showStart() {
+    this._showStart()
   }
 
   // ── 游戏主循环 ────────────────────────────────────────
