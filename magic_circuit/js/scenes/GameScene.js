@@ -237,7 +237,35 @@ GameScene.prototype.draw = function(ctx) {
     ctx.fillText('再点击另一个节点完成交换', w / 2, hintY);
   }
 
+  if (this.gameState === 'playing') this._drawResetBtn(ctx);
   if (this.gameState === 'won') this._drawWin(ctx);
+};
+
+GameScene.prototype._drawResetBtn = function(ctx) {
+  var w = this.w, h = this.h;
+  var bw = 68, bh = 36, r = 10;
+  var bx = w - bw - 14;
+  var by = h - bh - 22;
+
+  // Background pill
+  ctx.fillStyle = 'rgba(30,10,60,0.75)';
+  ctx.beginPath();
+  this._winCard(ctx, bx, by, bw, bh, r);
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = 'rgba(139,92,246,0.45)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  this._winCard(ctx, bx, by, bw, bh, r);
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle    = 'rgba(196,181,253,0.85)';
+  ctx.font         = '13px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('重置', bx + bw / 2, by + bh / 2);
 };
 
 GameScene.prototype._drawHeader = function(ctx) {
@@ -545,6 +573,15 @@ GameScene.prototype.onTouchEnd = function(e) {
 
   if (this.gameState === 'won') { this._nextLevel(); return; }
   if (this.animating) return;
+
+  // Reset button (bottom-right)
+  var bw = 68, bh = 36;
+  var bx = this.w - bw - 14;
+  var by = this.h - bh - 22;
+  if (tx >= bx && tx <= bx + bw && ty >= by && ty <= by + bh) {
+    this._initLevel(this.currentLevelIdx);
+    return;
+  }
 
   var r2 = this.NODE_R * 1.5;
   r2 *= r2;
