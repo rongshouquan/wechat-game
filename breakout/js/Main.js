@@ -3,8 +3,10 @@
 class Main {
   constructor(canvas) {
     const info = wx.getSystemInfoSync()
-    canvas.width  = info.windowWidth
-    canvas.height = info.windowHeight
+    // 使用 screenWidth/screenHeight 确保真机全屏覆盖
+    // windowWidth/windowHeight 在部分设备上会受安全区域影响
+    canvas.width  = info.screenWidth
+    canvas.height = info.screenHeight
 
     this.canvas = canvas
     this.ctx    = canvas.getContext('2d')
