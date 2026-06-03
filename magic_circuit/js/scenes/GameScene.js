@@ -8,6 +8,7 @@ function GameScene(w, h, onBack) {
   this.h = h;
   this.onBack = onBack;
   this.NODE_R = Math.round(Math.min(w, h) * 0.058);
+  this.statusBarH = wx.getSystemInfoSync().statusBarHeight || 20;
   this.currentLevelIdx = 0;
   this._initLevel(0);
 }
@@ -269,22 +270,25 @@ GameScene.prototype._drawResetBtn = function(ctx) {
 };
 
 GameScene.prototype._drawHeader = function(ctx) {
-  var w = this.w;
+  var w  = this.w;
+  var sb = this.statusBarH;
+  var barH = sb + 44; // total header height = status bar + content row
 
   // Header background
-  var hg = ctx.createLinearGradient(0, 0, 0, 56);
+  var hg = ctx.createLinearGradient(0, 0, 0, barH);
   hg.addColorStop(0, 'rgba(30,10,60,0.92)');
   hg.addColorStop(1, 'rgba(15,5,35,0.75)');
   ctx.fillStyle = hg;
-  ctx.fillRect(0, 0, w, 56);
+  ctx.fillRect(0, 0, w, barH);
 
   // Bottom border
   ctx.strokeStyle = 'rgba(139,92,246,0.35)';
   ctx.lineWidth   = 1;
   ctx.beginPath();
-  ctx.moveTo(0, 56); ctx.lineTo(w, 56);
+  ctx.moveTo(0, barH); ctx.lineTo(w, barH);
   ctx.stroke();
 
+  var cy = sb + 22; // vertical center of content row
   ctx.textBaseline = 'middle';
 
   // Left: crossing count badge
@@ -292,30 +296,29 @@ GameScene.prototype._drawHeader = function(ctx) {
   for (var i = 0; i < this.edgeCrossed.length; i++) {
     if (this.edgeCrossed[i]) crosses++;
   }
-  var pairs     = crosses >> 1;
+  var pairs      = crosses >> 1;
   var badgeColor = pairs === 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)';
   var textColor  = pairs === 0 ? '#34d399' : '#f87171';
-  // Badge pill
   ctx.fillStyle = badgeColor;
   ctx.beginPath();
-  this._headerPill(ctx, 12, 16, 70, 24, 12);
+  this._headerPill(ctx, 12, cy - 12, 70, 24, 12);
   ctx.fill();
-  ctx.fillStyle    = textColor;
-  ctx.font         = 'bold 13px sans-serif';
-  ctx.textAlign    = 'left';
-  ctx.fillText('交叉  ' + pairs, 22, 28);
+  ctx.fillStyle = textColor;
+  ctx.font      = 'bold 13px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('交叉  ' + pairs, 22, cy);
 
   // Center: level name
-  ctx.fillStyle    = '#e9d5ff';
-  ctx.font         = 'bold 17px sans-serif';
-  ctx.textAlign    = 'center';
-  ctx.fillText(this.levelData.name, w / 2, 28);
+  ctx.fillStyle = '#e9d5ff';
+  ctx.font      = 'bold 17px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(this.levelData.name, w / 2, cy);
 
-  // Right: moves (safe zone, away from capsule)
+  // Right: moves
   ctx.fillStyle = 'rgba(196,181,253,0.75)';
   ctx.font      = '13px sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('步 ' + this.moves, w - 108, 28);
+  ctx.fillText('步 ' + this.moves, w - 108, cy);
 };
 
 GameScene.prototype._headerPill = function(ctx, x, y, w, h, r) {
