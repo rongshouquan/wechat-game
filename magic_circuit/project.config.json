@@ -1,0 +1,9 @@
+{
+  "appid": "wx5809349b6eb8275a",
+  "projectname": "magic_circuit",
+  "compileType": "game",
+  "setting": {
+    "es6": true,
+    "minified": false
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "deviceOrientation": "portrait",
+  "networkTimeout": {
+    "request": 10000
+  }
+}
