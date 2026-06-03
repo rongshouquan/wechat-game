@@ -16,6 +16,11 @@ class Main {
     this._scene   = null
     this._lastTs  = 0
 
+    // 微信小游戏真机必须用 wx.onTouch* 而非 canvas.addEventListener
+    wx.onTouchStart((e) => { if (this._scene && this._scene.onTouchStart) this._scene.onTouchStart(e) })
+    wx.onTouchMove((e)  => { if (this._scene && this._scene.onTouchMove)  this._scene.onTouchMove(e)  })
+    wx.onTouchEnd((e)   => { if (this._scene && this._scene.onTouchEnd)   this._scene.onTouchEnd(e)   })
+
     this._showStart()
     requestAnimationFrame((ts) => this._loop(ts))
   }

@@ -21,15 +21,11 @@ class StartScene {
       h: 56,
     }
 
-    this._onTouch = this._handleTouch.bind(this)
-    main.canvas.addEventListener('touchstart', this._onTouch)
   }
 
-  destroy() {
-    this.main.canvas.removeEventListener('touchstart', this._onTouch)
-  }
+  destroy() {}
 
-  _handleTouch(e) {
+  onTouchStart(e) {
     const { clientX: tx, clientY: ty } = e.touches[0]
     const b = this._btn
     if (tx >= b.x && tx <= b.x + b.w && ty >= b.y && ty <= b.y + b.h) {

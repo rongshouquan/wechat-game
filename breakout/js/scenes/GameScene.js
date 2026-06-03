@@ -52,19 +52,9 @@ class GameScene {
     )
 
     this._loadLevel(0)
-
-    // 绑定触摸事件
-    this._onTouchStart = this._handleStart.bind(this)
-    this._onTouchMove  = this._handleMove.bind(this)
-    main.canvas.addEventListener('touchstart', this._onTouchStart)
-    main.canvas.addEventListener('touchmove',  this._onTouchMove)
   }
 
-  destroy() {
-    const c = this.main.canvas
-    c.removeEventListener('touchstart', this._onTouchStart)
-    c.removeEventListener('touchmove',  this._onTouchMove)
-  }
+  destroy() {}
 
   // ── 关卡加载 ──────────────────────────────────────────────
   _loadLevel(idx) {
@@ -109,7 +99,7 @@ class GameScene {
   }
 
   // ── 触摸控制 ──────────────────────────────────────────────
-  _handleStart(e) {
+  onTouchStart(e) {
     this._touchX = e.touches[0].clientX
     if (this._state !== 'ready') return
 
@@ -119,7 +109,7 @@ class GameScene {
     this._state = 'playing'
   }
 
-  _handleMove(e) {
+  onTouchMove(e) {
     const tx = e.touches[0].clientX
     const dx = tx - this._touchX
     this._touchX = tx

@@ -25,15 +25,11 @@ class EndScene {
     this._btnReplay = { x: btnX, y: sh * 0.65,       w: btnW, h: btnH }
     this._btnHome   = { x: btnX, y: sh * 0.65 + 70,  w: btnW, h: btnH }
 
-    this._onTouch = this._handleTouch.bind(this)
-    main.canvas.addEventListener('touchstart', this._onTouch)
   }
 
-  destroy() {
-    this.main.canvas.removeEventListener('touchstart', this._onTouch)
-  }
+  destroy() {}
 
-  _handleTouch(e) {
+  onTouchStart(e) {
     const { clientX: tx, clientY: ty } = e.touches[0]
     if (this._inBtn(tx, ty, this._btnReplay)) {
       this.main.showGame()
