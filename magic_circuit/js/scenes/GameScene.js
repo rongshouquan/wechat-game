@@ -457,10 +457,11 @@ GameScene.prototype._drawNode = function(ctx, idx) {
 };
 
 GameScene.prototype._drawWin = function(ctx) {
-  var w  = this.w, h = this.h;
-  var t  = Math.min(this.wonTimer / 40, 1);
-  var cx = w / 2, cy = h * 0.46;
+  var w      = this.w, h = this.h;
+  var t      = Math.min(this.wonTimer / 40, 1);
+  var cx     = w / 2, cy = h * 0.46;
   var isLast = (this.currentLevelIdx >= LevelData.levels.length - 1);
+  var reward = this.levelData.reward || 0;
 
   // Dim overlay
   ctx.fillStyle = 'rgba(4,4,15,' + (t * 0.72) + ')';
@@ -481,7 +482,8 @@ GameScene.prototype._drawWin = function(ctx) {
   // Starburst
   var burstLen = Math.min(this.wonTimer * 5, 100);
   if (burstLen > 2) {
-    ctx.strokeStyle = '#34d399';
+    var burstColor = isLast ? '#fbbf24' : '#34d399';
+    ctx.strokeStyle = burstColor;
     ctx.lineWidth   = 1.5;
     for (var i = 0; i < 8; i++) {
       var a = (i / 8) * Math.PI * 2;
@@ -494,18 +496,20 @@ GameScene.prototype._drawWin = function(ctx) {
     ctx.globalAlpha = 1;
   }
 
-  // Card background
-  var cardW = Math.min(w * 0.82, 300), cardH = 150;
-  var cardX = cx - cardW / 2, cardY = cy - 28;
-  ctx.globalAlpha = t * 0.85;
+  // Card
+  var cardW = Math.min(w * 0.84, 310);
+  var cardH = isLast ? 200 : 178;
+  var cardX = cx - cardW / 2, cardY = cy - 36;
+  ctx.globalAlpha = t * 0.9;
   var cardBg = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
-  cardBg.addColorStop(0, 'rgba(30,10,60,0.95)');
-  cardBg.addColorStop(1, 'rgba(10,4,24,0.95)');
+  cardBg.addColorStop(0, 'rgba(30,10,60,0.97)');
+  cardBg.addColorStop(1, 'rgba(10,4,28,0.97)');
   ctx.fillStyle = cardBg;
   ctx.beginPath();
   this._winCard(ctx, cardX, cardY, cardW, cardH, 18);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(139,92,246,0.5)';
+  var borderColor = isLast ? 'rgba(251,191,36,0.55)' : 'rgba(139,92,246,0.5)';
+  ctx.strokeStyle = borderColor;
   ctx.lineWidth   = 1.5;
   ctx.beginPath();
   this._winCard(ctx, cardX, cardY, cardW, cardH, 18);
@@ -516,10 +520,11 @@ GameScene.prototype._drawWin = function(ctx) {
   ctx.textBaseline = 'middle';
 
   // Title
-  var title = isLast ? '第一章完成！' : '魔网已理顺';
-  var offs  = [[-3, 0], [3, 0], [0, -3], [0, 3]];
-  ctx.font      = 'bold 32px sans-serif';
-  ctx.fillStyle = '#34d399';
+  var title     = isLast ? '第一章完成！' : '魔网已理顺';
+  var titleColor = isLast ? '#fbbf24' : '#34d399';
+  var offs = [[-3, 0], [3, 0], [0, -3], [0, 3]];
+  ctx.font      = 'bold 30px sans-serif';
+  ctx.fillStyle = titleColor;
   for (var j = 0; j < offs.length; j++) {
     ctx.globalAlpha = t * 0.28;
     ctx.fillText(title, cx + offs[j][0], cy + offs[j][1]);
@@ -528,26 +533,43 @@ GameScene.prototype._drawWin = function(ctx) {
   ctx.fillStyle   = '#ffffff';
   ctx.fillText(title, cx, cy);
 
+  // Level name
+  ctx.fillStyle = 'rgba(196,181,253,0.72)';
+  ctx.font      = '14px sans-serif';
+  ctx.fillText(this.levelData.name, cx, cy + 26);
+
   // Divider
-  ctx.globalAlpha = t * 0.4;
-  ctx.strokeStyle = 'rgba(139,92,246,0.6)';
+  ctx.globalAlpha = t * 0.35;
+  ctx.strokeStyle = 'rgba(139,92,246,0.7)';
   ctx.lineWidth   = 1;
   ctx.beginPath();
-  ctx.moveTo(cx - 60, cy + 26); ctx.lineTo(cx + 60, cy + 26);
+  ctx.moveTo(cx - 70, cy + 42); ctx.lineTo(cx + 70, cy + 42);
   ctx.stroke();
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = t;
+
+  // Reward row
+  ctx.font      = '15px sans-serif';
+  ctx.fillStyle = '#fbbf24';
+  ctx.fillText('✦  奥术结晶  +' + reward, cx, cy + 60);
 
   // Steps
-  ctx.globalAlpha  = t;
-  ctx.fillStyle    = 'rgba(220,209,255,0.9)';
-  ctx.font         = '16px sans-serif';
-  ctx.fillText('本关步数  ' + this.moves, cx, cy + 48);
+  ctx.fillStyle = 'rgba(220,209,255,0.85)';
+  ctx.font      = '14px sans-serif';
+  ctx.fillText('本关步数  ' + this.moves, cx, cy + 84);
+
+  // Chapter-complete subtitle
+  if (isLast) {
+    ctx.fillStyle = 'rgba(251,191,36,0.75)';
+    ctx.font      = '13px sans-serif';
+    ctx.fillText('你已掌握基础魔网修复术', cx, cy + 108);
+  }
 
   // Action hint
-  var hint = isLast ? '点击返回主界面' : '点击进入下一关 →';
-  ctx.fillStyle = 'rgba(167,139,250,0.75)';
+  var hintY = isLast ? cy + 136 : cy + 110;
+  var hint  = isLast ? '点击返回主界面' : '点击进入下一关 →';
+  ctx.fillStyle = 'rgba(167,139,250,0.7)';
   ctx.font      = '14px sans-serif';
-  ctx.fillText(hint, cx, cy + 80);
+  ctx.fillText(hint, cx, hintY);
 
   ctx.globalAlpha = 1;
 };
