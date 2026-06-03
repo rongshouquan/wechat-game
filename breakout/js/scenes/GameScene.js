@@ -10,9 +10,9 @@ const LEVELS    = require('../game/Levels')
 const HEADER_H   = 55    // HUD 区高度
 const BRICK_COLS = 8
 const BRICK_GAP  = 4     // 砖块水平/垂直间距
-const BRICK_H    = 18    // 砖块高度
+const BRICK_H    = 20    // 砖块高度（增大，更易击中）
 const BRICK_PAD  = 8     // 左右边距
-const BRICK_TOP  = HEADER_H + 12  // 砖块区起始 Y
+// BRICK_TOP 改为动态：屏幕高度 35% 处，缩短球飞空档
 
 const PADDLE_W   = 80
 const PADDLE_H   = 14
@@ -38,6 +38,9 @@ class GameScene {
     this._pierceTimer = 0   // 穿透道具剩余时间
 
     this._touchX = 0
+
+    // 砖块区起始 Y：屏幕 35% 处，比原顶部位置低约 150px，缩短球的空档行程
+    this._brickTop = Math.floor(sh * 0.35)
 
     // 砖块宽度：8 列均分可用宽度
     this._brickW = Math.floor(
@@ -76,7 +79,7 @@ class GameScene {
         if (code === 0) continue
 
         const bx = BRICK_PAD + c * (this._brickW + BRICK_GAP)
-        const by = BRICK_TOP + r * (BRICK_H + BRICK_GAP)
+        const by = this._brickTop + r * (BRICK_H + BRICK_GAP)
 
         let type, hp
         if      (code === 1) { type = 'normal'; hp = 1 }
