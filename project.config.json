@@ -1,0 +1,15 @@
+{
+  "projectname": "打砖块",
+  "description": "微信小游戏 - 打砖块",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": false,
+    "postcss": false,
+    "minified": false,
+    "newFeature": false
+  },
+  "compileType": "game",
+  "libVersion": "2.19.4"
+}
