@@ -224,11 +224,17 @@ GameScene.prototype.draw = function(ctx) {
   for (var j = 0; j < this.nodes.length; j++) this._drawNode(ctx, j);
 
   if (this.selected !== -1 && this.gameState === 'playing' && !this.animating) {
-    ctx.fillStyle    = 'rgba(220,209,255,0.78)';
+    // Hint pill
+    var hintY = h * 0.915;
+    ctx.fillStyle    = 'rgba(109,40,217,0.35)';
+    ctx.beginPath();
+    ctx.arc(w / 2, hintY, 100, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle    = 'rgba(220,209,255,0.88)';
     ctx.font         = '14px sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('再点击另一个节点完成交换', w / 2, h * 0.91);
+    ctx.fillText('再点击另一个节点完成交换', w / 2, hintY);
   }
 
   if (this.gameState === 'won') this._drawWin(ctx);
@@ -237,36 +243,64 @@ GameScene.prototype.draw = function(ctx) {
 GameScene.prototype._drawHeader = function(ctx) {
   var w = this.w;
 
-  ctx.fillStyle = 'rgba(109,40,217,0.14)';
-  ctx.fillRect(0, 0, w, 52);
-  ctx.strokeStyle = 'rgba(139,92,246,0.3)';
-  ctx.lineWidth = 1;
+  // Header background
+  var hg = ctx.createLinearGradient(0, 0, 0, 56);
+  hg.addColorStop(0, 'rgba(30,10,60,0.92)');
+  hg.addColorStop(1, 'rgba(15,5,35,0.75)');
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, w, 56);
+
+  // Bottom border
+  ctx.strokeStyle = 'rgba(139,92,246,0.35)';
+  ctx.lineWidth   = 1;
   ctx.beginPath();
-  ctx.moveTo(0, 52); ctx.lineTo(w, 52);
+  ctx.moveTo(0, 56); ctx.lineTo(w, 56);
   ctx.stroke();
 
-  // Level name — center
-  ctx.fillStyle    = '#c4b5fd';
-  ctx.font         = 'bold 16px sans-serif';
-  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(this.levelData.name + '  ·  魔网连线', w / 2, 26);
 
-  // Crossing count — left (away from WeChat capsule)
+  // Left: crossing count badge
   var crosses = 0;
   for (var i = 0; i < this.edgeCrossed.length; i++) {
     if (this.edgeCrossed[i]) crosses++;
   }
-  var pairs = crosses >> 1;
-  ctx.fillStyle = pairs === 0 ? '#34d399' : '#f87171';
-  ctx.font      = 'bold 13px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('交叉 ' + pairs, 16, 26);
+  var pairs     = crosses >> 1;
+  var badgeColor = pairs === 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)';
+  var textColor  = pairs === 0 ? '#34d399' : '#f87171';
+  // Badge pill
+  ctx.fillStyle = badgeColor;
+  ctx.beginPath();
+  this._headerPill(ctx, 12, 16, 70, 24, 12);
+  ctx.fill();
+  ctx.fillStyle    = textColor;
+  ctx.font         = 'bold 13px sans-serif';
+  ctx.textAlign    = 'left';
+  ctx.fillText('交叉  ' + pairs, 22, 28);
 
-  // Moves — right of center area but safe from capsule
-  ctx.fillStyle = 'rgba(196,181,253,0.7)';
+  // Center: level name
+  ctx.fillStyle    = '#e9d5ff';
+  ctx.font         = 'bold 17px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.fillText(this.levelData.name, w / 2, 28);
+
+  // Right: moves (safe zone, away from capsule)
+  ctx.fillStyle = 'rgba(196,181,253,0.75)';
+  ctx.font      = '13px sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('步数 ' + this.moves, w - 100, 26);
+  ctx.fillText('步 ' + this.moves, w - 108, 28);
+};
+
+GameScene.prototype._headerPill = function(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x,     y + h, x,     y + h - r, r);
+  ctx.lineTo(x,     y + r);
+  ctx.arcTo(x,     y,     x + r, y,         r);
+  ctx.closePath();
 };
 
 GameScene.prototype._drawEdge = function(ctx, idx) {
@@ -380,22 +414,25 @@ GameScene.prototype._drawNode = function(ctx, idx) {
   ctx.arc(nd.x, nd.y, r * 0.56, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Rune from level data
-  ctx.fillStyle    = '#ffffff';
-  ctx.font         = 'bold ' + Math.round(r * 0.82) + 'px sans-serif';
+  // Rune — larger, with faint shadow via offset
+  var fs = Math.round(r * 0.92);
+  ctx.fillStyle    = 'rgba(0,0,0,0.4)';
+  ctx.font         = 'bold ' + fs + 'px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
+  ctx.fillText(nd.rune, nd.x + 1, nd.y + 2);
+  ctx.fillStyle = '#ffffff';
   ctx.fillText(nd.rune, nd.x, nd.y + 1);
 };
 
 GameScene.prototype._drawWin = function(ctx) {
   var w  = this.w, h = this.h;
   var t  = Math.min(this.wonTimer / 40, 1);
-  var cx = w / 2, cy = h * 0.45;
+  var cx = w / 2, cy = h * 0.46;
   var isLast = (this.currentLevelIdx >= LevelData.levels.length - 1);
 
   // Dim overlay
-  ctx.fillStyle = 'rgba(4,4,15,' + (t * 0.65) + ')';
+  ctx.fillStyle = 'rgba(4,4,15,' + (t * 0.72) + ')';
   ctx.fillRect(0, 0, w, h);
 
   // Particles
@@ -411,48 +448,90 @@ GameScene.prototype._drawWin = function(ctx) {
   ctx.globalAlpha = 1;
 
   // Starburst
-  var burstLen = Math.min(this.wonTimer * 5, 96);
+  var burstLen = Math.min(this.wonTimer * 5, 100);
   if (burstLen > 2) {
     ctx.strokeStyle = '#34d399';
     ctx.lineWidth   = 1.5;
     for (var i = 0; i < 8; i++) {
       var a = (i / 8) * Math.PI * 2;
-      ctx.globalAlpha = t * 0.42;
+      ctx.globalAlpha = t * 0.38;
       ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * 20, cy + Math.sin(a) * 20);
+      ctx.moveTo(cx + Math.cos(a) * 22, cy + Math.sin(a) * 22);
       ctx.lineTo(cx + Math.cos(a) * burstLen, cy + Math.sin(a) * burstLen);
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
   }
 
+  // Card background
+  var cardW = Math.min(w * 0.82, 300), cardH = 150;
+  var cardX = cx - cardW / 2, cardY = cy - 28;
+  ctx.globalAlpha = t * 0.85;
+  var cardBg = ctx.createLinearGradient(0, cardY, 0, cardY + cardH);
+  cardBg.addColorStop(0, 'rgba(30,10,60,0.95)');
+  cardBg.addColorStop(1, 'rgba(10,4,24,0.95)');
+  ctx.fillStyle = cardBg;
+  ctx.beginPath();
+  this._winCard(ctx, cardX, cardY, cardW, cardH, 18);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(139,92,246,0.5)';
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  this._winCard(ctx, cardX, cardY, cardW, cardH, 18);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
 
-  // Title glow
+  // Title
   var title = isLast ? '前三关全部完成！' : '魔网已理顺';
-  var offs = [[-4, 0], [4, 0], [0, -4], [0, 4]];
-  ctx.font      = 'bold 34px sans-serif';
+  var offs  = [[-3, 0], [3, 0], [0, -3], [0, 3]];
+  ctx.font      = 'bold 32px sans-serif';
   ctx.fillStyle = '#34d399';
   for (var j = 0; j < offs.length; j++) {
-    ctx.globalAlpha = t * 0.3;
+    ctx.globalAlpha = t * 0.28;
     ctx.fillText(title, cx + offs[j][0], cy + offs[j][1]);
   }
   ctx.globalAlpha = t;
   ctx.fillStyle   = '#ffffff';
   ctx.fillText(title, cx, cy);
 
-  // Steps info
-  ctx.fillStyle = 'rgba(196,181,253,0.85)';
-  ctx.font      = '15px sans-serif';
-  ctx.fillText('步数：' + this.moves, cx, cy + 42);
+  // Divider
+  ctx.globalAlpha = t * 0.4;
+  ctx.strokeStyle = 'rgba(139,92,246,0.6)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 60, cy + 26); ctx.lineTo(cx + 60, cy + 26);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Steps
+  ctx.globalAlpha  = t;
+  ctx.fillStyle    = 'rgba(220,209,255,0.9)';
+  ctx.font         = '16px sans-serif';
+  ctx.fillText('本关步数  ' + this.moves, cx, cy + 48);
 
   // Action hint
-  var hint = isLast ? '点击返回主界面' : '点击进入下一关';
-  ctx.fillStyle = 'rgba(196,181,253,0.7)';
-  ctx.fillText(hint, cx, cy + 68);
+  var hint = isLast ? '点击返回主界面' : '点击进入下一关 →';
+  ctx.fillStyle = 'rgba(167,139,250,0.75)';
+  ctx.font      = '14px sans-serif';
+  ctx.fillText(hint, cx, cy + 80);
 
   ctx.globalAlpha = 1;
+};
+
+GameScene.prototype._winCard = function(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x,     y + h, x,     y + h - r, r);
+  ctx.lineTo(x,     y + r);
+  ctx.arcTo(x,     y,     x + r, y,         r);
+  ctx.closePath();
 };
 
 // ── Touch ─────────────────────────────────────────────────────────────────
