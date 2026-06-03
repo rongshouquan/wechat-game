@@ -485,7 +485,7 @@ GameScene.prototype._drawWin = function(ctx) {
   ctx.textBaseline = 'middle';
 
   // Title
-  var title = isLast ? '前三关全部完成！' : '魔网已理顺';
+  var title = isLast ? '第一章完成！' : '魔网已理顺';
   var offs  = [[-3, 0], [3, 0], [0, -3], [0, 3]];
   ctx.font      = 'bold 32px sans-serif';
   ctx.fillStyle = '#34d399';
