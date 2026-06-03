@@ -1,75 +1,59 @@
-var NODE_COLORS = [
-  { color: '#f97316', glow: 'rgba(251,146,60,0.5)'  },
-  { color: '#38bdf8', glow: 'rgba(125,211,252,0.5)' },
-  { color: '#facc15', glow: 'rgba(253,224,71,0.5)'  },
-  { color: '#a855f7', glow: 'rgba(192,132,252,0.5)' },
-  { color: '#9ca3af', glow: 'rgba(156,163,175,0.4)' },
-  { color: '#34d399', glow: 'rgba(52,211,153,0.5)'  },
-];
+var LevelData = require('../LevelData');
 
-var NODE_RUNES = ['火', '冰', '雷', '术', '影', '光'];
-
-// Level 1: nodes 2 & 3 scrambled → edge[0-2] × edge[1-3]
-// Solution: swap node 2 and node 3.
-var INIT_FPOS = [
-  { fx: 0.30, fy: 0.35 },
-  { fx: 0.70, fy: 0.35 },
-  { fx: 0.70, fy: 0.65 },
-  { fx: 0.30, fy: 0.65 },
-  { fx: 0.50, fy: 0.22 },
-  { fx: 0.50, fy: 0.80 },
-];
-
-var EDGES = [
-  [0, 2], [1, 3], [2, 3],
-  [4, 0], [4, 1],
-  [5, 2], [5, 3],
-];
-
-var ANIM_DUR = 13; // frames for swap animation
+var ANIM_DUR  = 13;
+var WIN_COLORS = ['#34d399', '#a78bfa', '#fbbf24', '#38bdf8'];
 
 function GameScene(w, h, onBack) {
   this.w = w;
   this.h = h;
   this.onBack = onBack;
   this.NODE_R = Math.round(Math.min(w, h) * 0.058);
-  this._initLevel();
+  this.currentLevelIdx = 0;
+  this._initLevel(0);
 }
 
-GameScene.prototype._initLevel = function() {
-  var self = this;
-  this.nodes = INIT_FPOS.map(function(p) {
-    return { x: p.fx * self.w, y: p.fy * self.h };
+GameScene.prototype._initLevel = function(levelIdx) {
+  var self  = this;
+  var level = LevelData.levels[levelIdx];
+  this.levelData = level;
+  this.edges     = level.edges;
+
+  this.nodes = level.nodes.map(function(nd) {
+    var r = parseInt(nd.color.slice(1, 3), 16);
+    var g = parseInt(nd.color.slice(3, 5), 16);
+    var b = parseInt(nd.color.slice(5, 7), 16);
+    return {
+      x:     nd.fx * self.w,
+      y:     nd.fy * self.h,
+      rune:  nd.rune,
+      color: nd.color,
+      glow:  'rgba(' + r + ',' + g + ',' + b + ',0.5)',
+    };
   });
+
   this.selected      = -1;
   this.gameState     = 'playing';
   this.wonTimer      = 0;
   this.time          = 0;
+  this.moves         = 0;
   this.swapTimer     = 0;
   this.swapNodes     = [-1, -1];
-  // Swap animation
   this.animating     = false;
   this.animTimer     = 0;
   this.animA         = -1;
   this.animB         = -1;
   this.ax0 = this.ay0 = this.bx0 = this.by0 = 0;
   this.ax1 = this.ay1 = this.bx1 = this.by1 = 0;
-  // Per-edge resolve flash timer
   this.resolvedFlash = [];
-  for (var i = 0; i < EDGES.length; i++) this.resolvedFlash.push(0);
-  // Win particles
+  for (var i = 0; i < this.edges.length; i++) this.resolvedFlash.push(0);
   this.winParticles  = [];
   this._computeCrossings();
 };
 
-// ── Sound interface (placeholder — wire up wx.createInnerAudioContext when assets ready) ──
+// ── Sound (placeholder) ───────────────────────────────────────────────────
 
 GameScene.prototype.playSound = function(type) {
   // type: 'select' | 'swap' | 'resolve' | 'win'
-  // No-op until audio assets are available; replace each branch with:
-  //   var audio = wx.createInnerAudioContext();
-  //   audio.src = 'sounds/' + type + '.mp3';
-  //   audio.play();
 };
 
 // ── Geometry (unchanged) ─────────────────────────────────────────────────
@@ -87,12 +71,12 @@ GameScene.prototype._segsIntersect = function(p1, p2, p3, p4) {
 };
 
 GameScene.prototype._computeCrossings = function() {
-  var n = EDGES.length;
+  var n = this.edges.length;
   this.edgeCrossed = [];
   for (var i = 0; i < n; i++) this.edgeCrossed.push(false);
   for (var i = 0; i < n; i++) {
     for (var j = i + 1; j < n; j++) {
-      var ea = EDGES[i], eb = EDGES[j];
+      var ea = this.edges[i], eb = this.edges[j];
       if (ea[0] === eb[0] || ea[0] === eb[1] ||
           ea[1] === eb[0] || ea[1] === eb[1]) continue;
       var p1 = this.nodes[ea[0]], p2 = this.nodes[ea[1]];
@@ -105,29 +89,27 @@ GameScene.prototype._computeCrossings = function() {
   }
 };
 
-// ── Swap (starts animation instead of instant teleport) ───────────────────
+// ── Swap ──────────────────────────────────────────────────────────────────
 
 GameScene.prototype._swap = function(a, b) {
   this.animating = true;
   this.animTimer = 0;
   this.animA     = a;
   this.animB     = b;
-  // Save from-positions
   this.ax0 = this.nodes[a].x; this.ay0 = this.nodes[a].y;
   this.bx0 = this.nodes[b].x; this.by0 = this.nodes[b].y;
-  // Target positions (cross-swap)
   this.ax1 = this.bx0; this.ay1 = this.by0;
   this.bx1 = this.ax0; this.by1 = this.ay0;
+  this.moves++;
   this.playSound('swap');
 };
 
 GameScene.prototype._finishSwap = function() {
-  var prev = this.edgeCrossed.slice(); // snapshot before recompute
+  var prev = this.edgeCrossed.slice();
   this._computeCrossings();
 
-  // Mark edges that just got resolved (red → blue)
   var anyResolved = false;
-  for (var i = 0; i < EDGES.length; i++) {
+  for (var i = 0; i < this.edges.length; i++) {
     if (prev[i] && !this.edgeCrossed[i]) {
       this.resolvedFlash[i] = 24;
       anyResolved = true;
@@ -135,11 +117,9 @@ GameScene.prototype._finishSwap = function() {
   }
   if (anyResolved) this.playSound('resolve');
 
-  // Swap flash on the two swapped nodes
   this.swapTimer = 22;
   this.swapNodes = [this.animA, this.animB];
 
-  // Win check
   var won = true;
   for (var k = 0; k < this.edgeCrossed.length; k++) {
     if (this.edgeCrossed[k]) { won = false; break; }
@@ -153,11 +133,9 @@ GameScene.prototype._finishSwap = function() {
 
 // ── Win particles ─────────────────────────────────────────────────────────
 
-var WIN_COLORS = ['#34d399', '#a78bfa', '#fbbf24', '#38bdf8'];
-
 GameScene.prototype._spawnWinParticles = function() {
   this.winParticles = [];
-  var cx = this.w / 2, cy = this.h * 0.48;
+  var cx = this.w / 2, cy = this.h * 0.45;
   for (var i = 0; i < 12; i++) {
     var a   = (i / 12) * Math.PI * 2 + (i % 3) * 0.3;
     var spd = 3.5 + (i % 4) * 0.8;
@@ -173,17 +151,28 @@ GameScene.prototype._spawnWinParticles = function() {
   }
 };
 
+// ── Level progression ────────────────────────────────────────────────────
+
+GameScene.prototype._nextLevel = function() {
+  var total = LevelData.levels.length;
+  if (this.currentLevelIdx < total - 1) {
+    this.currentLevelIdx++;
+    this._initLevel(this.currentLevelIdx);
+  } else {
+    this.onBack(); // all available levels done → back to start
+  }
+};
+
 // ── Loop ──────────────────────────────────────────────────────────────────
 
 GameScene.prototype.update = function() {
   this.time++;
 
-  // Swap animation
   if (this.animating) {
     this.animTimer++;
     var t = this.animTimer / ANIM_DUR;
     if (t > 1) t = 1;
-    var e = 1 - (1 - t) * (1 - t); // ease-out quadratic
+    var e = 1 - (1 - t) * (1 - t);
     var a = this.animA, b = this.animB;
     this.nodes[a].x = this.ax0 + (this.ax1 - this.ax0) * e;
     this.nodes[a].y = this.ay0 + (this.ay1 - this.ay0) * e;
@@ -199,20 +188,16 @@ GameScene.prototype.update = function() {
 
   if (this.swapTimer > 0) this.swapTimer--;
 
-  // Resolve flash timers
   for (var i = 0; i < this.resolvedFlash.length; i++) {
     if (this.resolvedFlash[i] > 0) this.resolvedFlash[i]--;
   }
 
-  // Win particles
   for (var p = 0; p < this.winParticles.length; p++) {
     var pt = this.winParticles[p];
-    pt.x  += pt.vx;
-    pt.y  += pt.vy;
-    pt.vy += 0.18; // gravity
+    pt.x += pt.vx; pt.y += pt.vy;
+    pt.vy += 0.18;
     pt.life--;
   }
-  // Trim dead particles (at most 12, negligible cost)
   var alive = [];
   for (var q = 0; q < this.winParticles.length; q++) {
     if (this.winParticles[q].life > 0) alive.push(this.winParticles[q]);
@@ -235,7 +220,7 @@ GameScene.prototype.draw = function(ctx) {
 
   this._drawHeader(ctx);
 
-  for (var i = 0; i < EDGES.length; i++) this._drawEdge(ctx, i);
+  for (var i = 0; i < this.edges.length; i++) this._drawEdge(ctx, i);
   for (var j = 0; j < this.nodes.length; j++) this._drawNode(ctx, j);
 
   if (this.selected !== -1 && this.gameState === 'playing' && !this.animating) {
@@ -255,17 +240,19 @@ GameScene.prototype._drawHeader = function(ctx) {
   ctx.fillStyle = 'rgba(109,40,217,0.14)';
   ctx.fillRect(0, 0, w, 52);
   ctx.strokeStyle = 'rgba(139,92,246,0.3)';
-  ctx.lineWidth   = 1;
+  ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, 52); ctx.lineTo(w, 52);
   ctx.stroke();
 
+  // Level name — center
   ctx.fillStyle    = '#c4b5fd';
-  ctx.font         = 'bold 17px sans-serif';
+  ctx.font         = 'bold 16px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('第 1 关  ·  魔网连线', w / 2, 26);
+  ctx.fillText(this.levelData.name + '  ·  魔网连线', w / 2, 26);
 
+  // Crossing count — left (away from WeChat capsule)
   var crosses = 0;
   for (var i = 0; i < this.edgeCrossed.length; i++) {
     if (this.edgeCrossed[i]) crosses++;
@@ -275,10 +262,15 @@ GameScene.prototype._drawHeader = function(ctx) {
   ctx.font      = 'bold 13px sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText('交叉 ' + pairs, 16, 26);
+
+  // Moves — right of center area but safe from capsule
+  ctx.fillStyle = 'rgba(196,181,253,0.7)';
+  ctx.textAlign = 'right';
+  ctx.fillText('步数 ' + this.moves, w - 100, 26);
 };
 
 GameScene.prototype._drawEdge = function(ctx, idx) {
-  var e   = EDGES[idx];
+  var e   = this.edges[idx];
   var p1  = this.nodes[e[0]], p2 = this.nodes[e[1]];
   var bad = this.edgeCrossed[idx];
   var wPulse = (this.gameState === 'won')
@@ -298,11 +290,9 @@ GameScene.prototype._drawEdge = function(ctx, idx) {
     ctx.stroke();
     ctx.globalAlpha = 1;
   } else {
-    // Resolve flash: extra bright layer when edge just turned blue
     var fv = this.resolvedFlash[idx];
     if (fv > 0) {
-      var fa = fv / 24;
-      ctx.strokeStyle = 'rgba(186,230,253,' + (fa * 0.65) + ')';
+      ctx.strokeStyle = 'rgba(186,230,253,' + (fv / 24 * 0.65) + ')';
       ctx.lineWidth   = 10;
       ctx.stroke();
     }
@@ -320,7 +310,6 @@ GameScene.prototype._drawEdge = function(ctx, idx) {
 
 GameScene.prototype._drawNode = function(ctx, idx) {
   var nd  = this.nodes[idx];
-  var col = NODE_COLORS[idx % NODE_COLORS.length];
   var r   = this.NODE_R;
   var sel = (this.selected === idx);
 
@@ -358,7 +347,7 @@ GameScene.prototype._drawNode = function(ctx, idx) {
 
   // Outer glow
   var og = ctx.createRadialGradient(nd.x, nd.y, r * 0.3, nd.x, nd.y, r * 2);
-  og.addColorStop(0, col.glow);
+  og.addColorStop(0, nd.glow);
   og.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = og;
   ctx.beginPath();
@@ -370,7 +359,7 @@ GameScene.prototype._drawNode = function(ctx, idx) {
     nd.x - r * 0.28, nd.y - r * 0.28, 0, nd.x, nd.y, r
   );
   body.addColorStop(0,   '#ffffff');
-  body.addColorStop(0.3, col.color);
+  body.addColorStop(0.3, nd.color);
   body.addColorStop(1,   'rgba(0,0,0,0.68)');
   ctx.fillStyle = body;
   ctx.beginPath();
@@ -378,7 +367,7 @@ GameScene.prototype._drawNode = function(ctx, idx) {
   ctx.fill();
 
   // Rim
-  ctx.strokeStyle = col.color;
+  ctx.strokeStyle = nd.color;
   ctx.lineWidth   = 2.2;
   ctx.beginPath();
   ctx.arc(nd.x, nd.y, r, 0, Math.PI * 2);
@@ -391,24 +380,25 @@ GameScene.prototype._drawNode = function(ctx, idx) {
   ctx.arc(nd.x, nd.y, r * 0.56, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Rune
+  // Rune from level data
   ctx.fillStyle    = '#ffffff';
   ctx.font         = 'bold ' + Math.round(r * 0.82) + 'px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(NODE_RUNES[idx % NODE_RUNES.length], nd.x, nd.y + 1);
+  ctx.fillText(nd.rune, nd.x, nd.y + 1);
 };
 
 GameScene.prototype._drawWin = function(ctx) {
-  var w = this.w, h = this.h;
+  var w  = this.w, h = this.h;
   var t  = Math.min(this.wonTimer / 40, 1);
-  var cx = w / 2, cy = h * 0.48;
+  var cx = w / 2, cy = h * 0.45;
+  var isLast = (this.currentLevelIdx >= LevelData.levels.length - 1);
 
   // Dim overlay
   ctx.fillStyle = 'rgba(4,4,15,' + (t * 0.65) + ')';
   ctx.fillRect(0, 0, w, h);
 
-  // Win particles
+  // Particles
   for (var p = 0; p < this.winParticles.length; p++) {
     var pt = this.winParticles[p];
     var pa = pt.life / pt.maxLife;
@@ -436,23 +426,31 @@ GameScene.prototype._drawWin = function(ctx) {
     ctx.globalAlpha = 1;
   }
 
-  // Text glow
-  ctx.font        = 'bold 36px sans-serif';
-  ctx.textAlign   = 'center';
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
+
+  // Title glow
+  var title = isLast ? '前三关全部完成！' : '魔网已理顺';
   var offs = [[-4, 0], [4, 0], [0, -4], [0, 4]];
+  ctx.font      = 'bold 34px sans-serif';
   ctx.fillStyle = '#34d399';
   for (var j = 0; j < offs.length; j++) {
     ctx.globalAlpha = t * 0.3;
-    ctx.fillText('魔网已理顺', cx + offs[j][0], cy + offs[j][1]);
+    ctx.fillText(title, cx + offs[j][0], cy + offs[j][1]);
   }
   ctx.globalAlpha = t;
   ctx.fillStyle   = '#ffffff';
-  ctx.fillText('魔网已理顺', cx, cy);
+  ctx.fillText(title, cx, cy);
 
+  // Steps info
   ctx.fillStyle = 'rgba(196,181,253,0.85)';
   ctx.font      = '15px sans-serif';
-  ctx.fillText('点击任意位置返回', cx, cy + 50);
+  ctx.fillText('步数：' + this.moves, cx, cy + 42);
+
+  // Action hint
+  var hint = isLast ? '点击返回主界面' : '点击进入下一关';
+  ctx.fillStyle = 'rgba(196,181,253,0.7)';
+  ctx.fillText(hint, cx, cy + 68);
 
   ctx.globalAlpha = 1;
 };
@@ -466,8 +464,8 @@ GameScene.prototype.onTouchEnd = function(e) {
   var touch = e.changedTouches[0];
   var tx = touch.clientX, ty = touch.clientY;
 
-  if (this.gameState === 'won') { this.onBack(); return; }
-  if (this.animating) return; // block input during swap animation
+  if (this.gameState === 'won') { this._nextLevel(); return; }
+  if (this.animating) return;
 
   var r2 = this.NODE_R * 1.5;
   r2 *= r2;
