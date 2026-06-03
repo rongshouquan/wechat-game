@@ -45,9 +45,10 @@ GameScene.prototype._initLevel = function(levelIdx) {
   this.animB         = -1;
   this.ax0 = this.ay0 = this.bx0 = this.by0 = 0;
   this.ax1 = this.ay1 = this.bx1 = this.by1 = 0;
-  this.resolvedFlash = [];
+  this.resolvedFlash  = [];
   for (var i = 0; i < this.edges.length; i++) this.resolvedFlash.push(0);
-  this.winParticles  = [];
+  this.winParticles   = [];
+  this.celebrateTimer = 0;
   this._computeCrossings();
 };
 
@@ -93,6 +94,26 @@ GameScene.prototype._computeCrossings = function() {
 // ── Swap ──────────────────────────────────────────────────────────────────
 
 GameScene.prototype._swap = function(a, b) {
+  // Speculatively check if this swap clears all crossings → slow anim
+  var crossesBefore = 0;
+  for (var c = 0; c < this.edgeCrossed.length; c++) {
+    if (this.edgeCrossed[c]) crossesBefore++;
+  }
+  // Temporarily swap, run crossing check, then restore
+  var tmpX = this.nodes[a].x, tmpY = this.nodes[a].y;
+  this.nodes[a].x = this.nodes[b].x; this.nodes[a].y = this.nodes[b].y;
+  this.nodes[b].x = tmpX;            this.nodes[b].y = tmpY;
+  this._computeCrossings();
+  var crossesAfter = 0;
+  for (var d = 0; d < this.edgeCrossed.length; d++) {
+    if (this.edgeCrossed[d]) crossesAfter++;
+  }
+  // Restore original positions (animation will move them)
+  this.nodes[b].x = this.nodes[a].x; this.nodes[b].y = this.nodes[a].y;
+  this.nodes[a].x = tmpX;            this.nodes[a].y = tmpY;
+  this._computeCrossings(); // restore crossing state
+  this.lastSwapSlow = (crossesBefore > 0 && crossesAfter === 0);
+
   this.animating = true;
   this.animTimer = 0;
   this.animA     = a;
@@ -126,7 +147,8 @@ GameScene.prototype._finishSwap = function() {
     if (this.edgeCrossed[k]) { won = false; break; }
   }
   if (won) {
-    this.gameState = 'won';
+    this.gameState      = 'celebrating';
+    this.celebrateTimer = 0;
     this._spawnWinParticles();
     this.playSound('win');
   }
@@ -171,7 +193,8 @@ GameScene.prototype.update = function() {
 
   if (this.animating) {
     this.animTimer++;
-    var t = this.animTimer / ANIM_DUR;
+    var dur = this.lastSwapSlow ? 22 : ANIM_DUR;
+    var t = this.animTimer / dur;
     if (t > 1) t = 1;
     var e = 1 - (1 - t) * (1 - t);
     var a = this.animA, b = this.animB;
@@ -179,11 +202,19 @@ GameScene.prototype.update = function() {
     this.nodes[a].y = this.ay0 + (this.ay1 - this.ay0) * e;
     this.nodes[b].x = this.bx0 + (this.bx1 - this.bx0) * e;
     this.nodes[b].y = this.by0 + (this.by1 - this.by0) * e;
-    if (this.animTimer >= ANIM_DUR) {
+    if (this.animTimer >= dur) {
       this.nodes[a].x = this.ax1; this.nodes[a].y = this.ay1;
       this.nodes[b].x = this.bx1; this.nodes[b].y = this.by1;
       this.animating  = false;
       this._finishSwap();
+    }
+  }
+
+  if (this.gameState === 'celebrating') {
+    this.celebrateTimer++;
+    if (this.celebrateTimer >= 52) {
+      this.gameState = 'won';
+      this.wonTimer  = 0;
     }
   }
 
@@ -239,7 +270,41 @@ GameScene.prototype.draw = function(ctx) {
   }
 
   if (this.gameState === 'playing') this._drawResetBtn(ctx);
+  if (this.gameState === 'celebrating') this._drawCelebration(ctx);
   if (this.gameState === 'won') this._drawWin(ctx);
+};
+
+GameScene.prototype._drawCelebration = function(ctx) {
+  var w = this.w, h = this.h;
+  var ct = this.celebrateTimer;
+  var cx = w / 2, cy = h * 0.50;
+
+  // Expanding ripple rings (2 staggered)
+  for (var ri = 0; ri < 2; ri++) {
+    var rt  = ct - ri * 14;
+    if (rt <= 0) continue;
+    var rr  = rt * 4.5;
+    var ra  = Math.max(0, 1 - rt / 44) * 0.5;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth   = 2;
+    ctx.globalAlpha = ra;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Win particles (same pool as _drawWin)
+  for (var p = 0; p < this.winParticles.length; p++) {
+    var pt = this.winParticles[p];
+    var pa = pt.life / pt.maxLife;
+    ctx.fillStyle   = pt.color;
+    ctx.globalAlpha = pa;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, pt.r * pa + 1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 };
 
 GameScene.prototype._drawResetBtn = function(ctx) {
@@ -361,6 +426,18 @@ GameScene.prototype._drawEdge = function(ctx, idx) {
       ctx.lineWidth   = 10;
       ctx.stroke();
     }
+    // Celebration: staggered edge reveal flash
+    if (this.gameState === 'celebrating') {
+      var stagger  = idx * (38 / Math.max(this.edges.length, 1));
+      var flashAge = this.celebrateTimer - stagger;
+      if (flashAge > 0 && flashAge < 22) {
+        var flashA = 1 - flashAge / 22;
+        ctx.strokeStyle = 'rgba(186,230,253,' + (flashA * 0.85) + ')';
+        ctx.lineWidth   = 11;
+        ctx.globalAlpha = 1;
+        ctx.stroke();
+      }
+    }
     ctx.strokeStyle = 'rgba(56,189,248,0.22)';
     ctx.lineWidth   = 6;
     ctx.globalAlpha = wPulse;
@@ -406,6 +483,20 @@ GameScene.prototype._drawNode = function(ctx, idx) {
     ctx.globalAlpha = pulse;
     ctx.beginPath();
     ctx.arc(nd.x, nd.y, r + 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Celebration node burst
+  if (this.gameState === 'celebrating' && this.celebrateTimer < 36) {
+    var burstT = this.celebrateTimer / 36;
+    var burstR = r * (1.8 + burstT * 1.6);
+    var burstA = (1 - burstT) * 0.55;
+    ctx.strokeStyle = '#7dd3fc';
+    ctx.lineWidth   = 2.5;
+    ctx.globalAlpha = burstA;
+    ctx.beginPath();
+    ctx.arc(nd.x, nd.y, burstR, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -597,6 +688,7 @@ GameScene.prototype.onTouchEnd = function(e) {
   var tx = touch.clientX, ty = touch.clientY;
 
   if (this.gameState === 'won') { this._nextLevel(); return; }
+  if (this.gameState === 'celebrating') return;
   if (this.animating) return;
 
   // Reset button (bottom-right)
