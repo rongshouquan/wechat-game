@@ -10,6 +10,5 @@
     "minified": false,
     "newFeature": false
   },
-  "compileType": "game",
-  "libVersion": "2.19.4"
+  "compileType": "game"
 }
