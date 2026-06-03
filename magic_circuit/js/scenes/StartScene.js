@@ -191,14 +191,19 @@ StartScene.prototype._drawNode = function(ctx, x, y, radius, type) {
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Rim
+  // Rim — thicker, fully opaque for visibility
   ctx.strokeStyle = type.color;
-  ctx.lineWidth = 1;
-  ctx.globalAlpha = 0.7;
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.globalAlpha = 1;
+
+  // Bright inner highlight ring
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x, y, radius * 0.72, 0, Math.PI * 2);
+  ctx.stroke();
 
   // Label
   ctx.fillStyle = '#ffffff';
@@ -213,23 +218,27 @@ StartScene.prototype._drawLogo = function(ctx) {
   var y = this.h * 0.12;
   var pulse = 0.5 + 0.5 * Math.sin(this.time * 0.04);
 
-  // Glow layer
-  ctx.globalAlpha = 0.45 + pulse * 0.2;
-  ctx.fillStyle = '#7c3aed';
+  // Glow layer (brighter violet, wider spread)
   ctx.font = 'bold 44px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // Manual blur via multiple offset draws (no shadowBlur for perf)
-  var offsets = [[-3,0],[3,0],[0,-3],[0,3]];
+  var offsets = [[-4,0],[4,0],[0,-4],[0,4],[-3,-3],[3,3],[-3,3],[3,-3]];
   for (var i = 0; i < offsets.length; i++) {
+    ctx.globalAlpha = (0.18 + pulse * 0.12);
+    ctx.fillStyle = '#c4b5fd';
     ctx.fillText('魔网大师', x + offsets[i][0], y + offsets[i][1]);
   }
   ctx.globalAlpha = 1;
 
-  // Main text
-  ctx.fillStyle = '#e9d5ff';
+  // Main text — pure white for max contrast
+  ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 44px sans-serif';
   ctx.fillText('魔网大师', x, y);
+
+  // Thin bright stroke outline
+  ctx.strokeStyle = 'rgba(196,181,253,0.7)';
+  ctx.lineWidth = 0.8;
+  ctx.strokeText('魔网大师', x, y);
 
   // Underline accent
   var uw = 120;
@@ -242,7 +251,7 @@ StartScene.prototype._drawLogo = function(ctx) {
 };
 
 StartScene.prototype._drawSubtitle = function(ctx) {
-  ctx.fillStyle = 'rgba(167,139,250,0.65)';
+  ctx.fillStyle = 'rgba(220,209,255,0.88)';
   ctx.font = '15px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
