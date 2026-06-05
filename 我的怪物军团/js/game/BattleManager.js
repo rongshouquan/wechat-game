@@ -10,9 +10,9 @@ function calcSlotPos(slot, team, w, h) {
   var row = Math.floor(slot / 3);
   var colX = [w * 0.17, w * 0.5, w * 0.83];
   if (team === 'player') {
-    return { x: colX[col], y: row === 0 ? h * 0.64 : h * 0.77 };
+    return { x: colX[col], y: row === 0 ? h * 0.565 : h * 0.685 };
   } else {
-    return { x: colX[col], y: row === 0 ? h * 0.32 : h * 0.195 };
+    return { x: colX[col], y: row === 0 ? h * 0.355 : h * 0.215 };
   }
 }
 

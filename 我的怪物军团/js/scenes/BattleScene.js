@@ -6,16 +6,15 @@ var AdManager     = require('../game/AdManager').AdManager;
 
 // ── 布局（相对屏幕比例）──
 var L = {
-  topBarH:       56,
-  bottomStart:   0.88,
-  cellW:         0.28,   // 格子宽 = w * cellW
-  cellH:         0.095,  // 格子高 = h * cellH
-  colX:          [0.17, 0.50, 0.83],
-  enemyRows:     [0.195, 0.32],   // [背排, 前排]
-  playerRows:    [0.64,  0.77],   // [前排, 背排]
-  enemyLabelY:   0.12,
-  zoneLabelY:    0.50,
-  playerLabelY:  0.575
+  topBarH:      56,
+  bottomStart:  0.88,
+  cellW:        0.28,
+  cellH:        0.088,
+  colX:         [0.17, 0.50, 0.83],
+  enemyRows:    [0.215, 0.355],  // [背排, 前排] — 向中间压缩
+  playerRows:   [0.565, 0.685], // [前排, 背排] — 向中间压缩
+  enemyLabelY:  0.12,
+  zoneLabelY:   0.46,
 };
 
 // ── 工具 ──
@@ -138,54 +137,73 @@ BattleScene.prototype._drawBackground = function() {
 
   // 敌方区域红色叠层
   ctx.fillStyle = 'rgba(70, 5, 5, 0.14)';
-  ctx.fillRect(0, L.topBarH, w, h * 0.44 - L.topBarH);
+  ctx.fillRect(0, L.topBarH, w, h * 0.40 - L.topBarH);
 
   // 我方区域蓝色叠层
   ctx.fillStyle = 'rgba(5, 15, 65, 0.14)';
-  ctx.fillRect(0, h * 0.56, w, h * L.bottomStart - h * 0.56);
+  ctx.fillRect(0, h * 0.51, w, h * L.bottomStart - h * 0.51);
 
   // 战斗区域边界线
   ctx.strokeStyle = 'rgba(100, 100, 140, 0.22)';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, h * 0.44); ctx.lineTo(w, h * 0.44); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, h * 0.56); ctx.lineTo(w, h * 0.56); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, h * 0.40); ctx.lineTo(w, h * 0.40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, h * 0.51); ctx.lineTo(w, h * 0.51); ctx.stroke();
 };
 
 // ── 格子 ──
 BattleScene.prototype._drawGrid = function() {
   var ctx = this.ctx, w = this.width, h = this.height;
   var cw = w * L.cellW, ch = h * L.cellH, cr = ch * 0.42;
-  var colX   = [w * L.colX[0],      w * L.colX[1],      w * L.colX[2]];
-  var eRows  = [h * L.enemyRows[0], h * L.enemyRows[1]];
-  var pRows  = [h * L.playerRows[0],h * L.playerRows[1]];
+  var colX  = [w * L.colX[0],       w * L.colX[1],       w * L.colX[2]];
+  var eRows = [h * L.enemyRows[0],  h * L.enemyRows[1]];
+  var pRows = [h * L.playerRows[0], h * L.playerRows[1]];
+
+  // 占用情况（有单位 = 占用，不管死活）
+  var eOcc = {}, pOcc = {};
+  for (var i = 0; i < this.bm.enemyUnits.length;  i++) eOcc[this.bm.enemyUnits[i].slot]  = true;
+  for (var j = 0; j < this.bm.playerUnits.length; j++) pOcc[this.bm.playerUnits[j].slot] = true;
 
   // 敌方格子
   for (var er = 0; er < 2; er++) {
     for (var ec = 0; ec < 3; ec++) {
+      var slotIdx = er * 3 + ec;
       var ex = colX[ec] - cw / 2, ey = eRows[er] - ch / 2;
-      roundRect(ctx, ex, ey, cw, ch, cr);
-      ctx.fillStyle = 'rgba(50, 8, 8, 0.82)';
-      ctx.fill();
-      ctx.strokeStyle = '#5a1818';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      // 骷髅水印（手绘）
-      this._drawSkullWatermark(ctx, colX[ec], eRows[er], ch);
+      if (eOcc[slotIdx]) {
+        roundRect(ctx, ex, ey, cw, ch, cr);
+        ctx.fillStyle = 'rgba(50, 8, 8, 0.82)';
+        ctx.fill();
+        ctx.strokeStyle = '#5a1818';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        this._drawSkullWatermark(ctx, colX[ec], eRows[er], ch);
+      } else {
+        roundRect(ctx, ex, ey, cw, ch, cr);
+        ctx.strokeStyle = 'rgba(100, 30, 30, 0.10)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
   }
 
   // 我方格子
   for (var pr = 0; pr < 2; pr++) {
     for (var pc = 0; pc < 3; pc++) {
+      var pSlot = pr * 3 + pc;
       var px = colX[pc] - cw / 2, py = pRows[pr] - ch / 2;
-      roundRect(ctx, px, py, cw, ch, cr);
-      ctx.fillStyle = 'rgba(8, 16, 52, 0.82)';
-      ctx.fill();
-      ctx.strokeStyle = '#182858';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      // 盾牌水印（手绘）
-      this._drawShieldWatermark(ctx, colX[pc], pRows[pr], ch);
+      if (pOcc[pSlot]) {
+        roundRect(ctx, px, py, cw, ch, cr);
+        ctx.fillStyle = 'rgba(8, 16, 52, 0.82)';
+        ctx.fill();
+        ctx.strokeStyle = '#182858';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        this._drawShieldWatermark(ctx, colX[pc], pRows[pr], ch);
+      } else {
+        roundRect(ctx, px, py, cw, ch, cr);
+        ctx.strokeStyle = 'rgba(30, 60, 120, 0.10)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
   }
 };
@@ -238,25 +256,15 @@ BattleScene.prototype._drawZoneLabels = function() {
   ctx.font = 'bold 13px sans-serif';
   ctx.fillText('- 敌方区域 -', w / 2, ey);
 
-  // 战斗区域
+  // 中间分隔线（细线 + 小字）
   var my = h * L.zoneLabelY;
-  ctx.strokeStyle = 'rgba(100, 100, 150, 0.45)';
+  ctx.strokeStyle = 'rgba(120, 120, 160, 0.30)';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(w * 0.06, my); ctx.lineTo(w * 0.36, my); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(w * 0.64, my); ctx.lineTo(w * 0.94, my); ctx.stroke();
-  ctx.fillStyle = 'rgba(160, 160, 190, 0.8)';
-  ctx.font = '12px sans-serif';
-  ctx.fillText('战斗区域', w / 2, my + 4);
-
-  // 我方区域
-  var py = h * L.playerLabelY;
-  ctx.strokeStyle = 'rgba(30, 80, 180, 0.45)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(w * 0.06, py - 3); ctx.lineTo(w * 0.28, py - 3); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(w * 0.72, py - 3); ctx.lineTo(w * 0.94, py - 3); ctx.stroke();
-  ctx.fillStyle = 'rgba(60, 130, 230, 0.9)';
-  ctx.font = 'bold 13px sans-serif';
-  ctx.fillText('- 我方区域 -', w / 2, py);
+  ctx.beginPath(); ctx.moveTo(w * 0.06, my); ctx.lineTo(w * 0.38, my); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(w * 0.62, my); ctx.lineTo(w * 0.94, my); ctx.stroke();
+  ctx.fillStyle = 'rgba(140, 140, 170, 0.55)';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('— 战斗区域 —', w / 2, my + 4);
 };
 
 // ── 单位 ──
@@ -398,64 +406,68 @@ BattleScene.prototype._drawBottomBar = function() {
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, barY); ctx.lineTo(w, barY); ctx.stroke();
 
-  // 技能按钮（左）
-  var skillX = 44, skillY = midY;
-  ctx.fillStyle = '#5a2000';
-  ctx.beginPath(); ctx.arc(skillX, skillY, 28, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#b05010';
-  ctx.lineWidth = 2; ctx.stroke();
-  // 闪电图标（简单折线）
-  ctx.strokeStyle = '#ff9500';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(skillX + 5,  skillY - 12);
-  ctx.lineTo(skillX - 4,  skillY - 1);
-  ctx.lineTo(skillX + 4,  skillY - 1);
-  ctx.lineTo(skillX - 5,  skillY + 12);
-  ctx.stroke();
-  this._skillBtn = { x: skillX - 28, y: skillY - 28, w: 56, h: 56 };
+  // ── 各单位独立怒气条 ──
+  var units = this.bm.playerUnits;
+  if (units.length === 0) { ctx.textBaseline = 'alphabetic'; return; }
 
-  // 怒气条
-  var firstPlayer = null;
-  for (var pi = 0; pi < this.bm.playerUnits.length; pi++) {
-    if (!this.bm.playerUnits[pi].dead) { firstPlayer = this.bm.playerUnits[pi]; break; }
-  }
-  var rage = firstPlayer ? firstPlayer.rage : 0;
-  var rBarX = 82, rBarW = w - 136, rBarH = 14;
-  var rBarY = midY - rBarH / 2;
+  var pad = 8;
+  var areaX = pad, areaW = w - pad * 2;
+  var unitW = areaW / units.length;
+  var dotR  = 5;
+  var rbH   = barH * 0.24;   // 怒气条高度
+  var dotY  = barY + barH * 0.30;
+  var rbY   = barY + barH * 0.58;
+  var labelY = rbY + rbH + 9;
 
-  roundRect(ctx, rBarX, rBarY, rBarW, rBarH, rBarH / 2);
-  ctx.fillStyle = '#111';
-  ctx.fill();
-  if (rage > 0) {
-    roundRect(ctx, rBarX, rBarY, rBarW * (rage / 100), rBarH, rBarH / 2);
-    ctx.fillStyle = '#e67e22';
-    ctx.fill();
-  }
-  // 怒气节点（25/50/75/100）
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.lineWidth = 1;
-  for (var tick = 1; tick < 4; tick++) {
-    var tx = rBarX + rBarW * tick * 0.25;
-    ctx.beginPath(); ctx.moveTo(tx, rBarY); ctx.lineTo(tx, rBarY + rBarH); ctx.stroke();
-  }
-  ctx.fillStyle = 'rgba(200,200,200,0.7)';
-  ctx.font = '10px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(Math.round(rage) + ' / 100', rBarX + rBarW / 2, rBarY - 3);
+  for (var i = 0; i < units.length; i++) {
+    var u    = units[i];
+    var ux   = areaX + i * unitW;
+    var ucx  = ux + unitW / 2;  // 该单位列中心
+    var full = !u.dead && u.rage >= 100;
 
-  // 自动按钮（右）
-  var autoX = w - 44, autoY = midY;
-  ctx.fillStyle = this._auto ? '#0d3b1a' : '#1e2c44';
-  ctx.beginPath(); ctx.arc(autoX, autoY, 28, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = this._auto ? '#2ecc71' : '#334';
-  ctx.lineWidth = 2; ctx.stroke();
-  ctx.fillStyle = this._auto ? '#2ecc71' : '#aaa';
-  ctx.font = 'bold 11px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('自动', autoX, autoY);
-  this._autoBtn = { x: autoX - 28, y: autoY - 28, w: 56, h: 56 };
+    // 颜色圆点
+    ctx.fillStyle  = u.dead ? '#333' : u.color;
+    ctx.globalAlpha = u.dead ? 0.3 : 1;
+    ctx.beginPath(); ctx.arc(ucx - 14, dotY, dotR, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // 种族首字
+    ctx.fillStyle  = u.dead ? '#444' : '#bbb';
+    ctx.font       = '10px sans-serif';
+    ctx.textAlign  = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(u.name.charAt(0), ucx - 7, dotY);
+
+    // 怒气条底
+    var rbX = ux + 4, rbW = unitW - 8;
+    roundRect(ctx, rbX, rbY, rbW, rbH, rbH / 2);
+    ctx.fillStyle = '#0e0e0e'; ctx.fill();
+
+    // 怒气填充
+    if (!u.dead && u.rage > 0) {
+      roundRect(ctx, rbX, rbY, rbW * (u.rage / 100), rbH, rbH / 2);
+      ctx.fillStyle = full ? '#ff8800' : '#7a3a00';
+      ctx.fill();
+    }
+
+    // 满怒气高亮边框 + "技能！"
+    if (full) {
+      roundRect(ctx, rbX - 1, rbY - 1, rbW + 2, rbH + 2, rbH / 2 + 1);
+      ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle  = '#ffaa00';
+      ctx.font       = 'bold 8px sans-serif';
+      ctx.textAlign  = 'center';
+      ctx.fillText('技能！', ucx, dotY - 7);
+    }
+
+    // 百分比数字
+    if (!u.dead) {
+      ctx.fillStyle  = full ? '#ffaa00' : '#666';
+      ctx.font       = '8px sans-serif';
+      ctx.textAlign  = 'center';
+      ctx.fillText(Math.round(u.rage) + '%', ucx, labelY);
+    }
+  }
 
   ctx.textBaseline = 'alphabetic';
 };

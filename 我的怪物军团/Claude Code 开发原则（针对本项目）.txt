@@ -27,3 +27,19 @@ Claude Code 开发原则（针对本项目）
 6.Token 与思考控制
 每个阶段执行过程中，避免生成超长代码和冗余信息
 不允许“长时间 thinking”或“almost done thinking”导致阻塞
+7.请提前建立最终资源目录。
+
+即使资源还没做好。
+
+也先建立：
+
+assets/
+characters/
+backgrounds/
+items/
+effects/
+ui/
+
+后续所有资源严格按照目录加载。
+
+禁止后期重新调整目录结构。
