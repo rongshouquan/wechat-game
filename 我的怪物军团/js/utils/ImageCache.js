@@ -25,11 +25,12 @@ var ImageCache = {
 
   // 同步获取（已加载则返回，否则触发后台加载并返回 null）
   get: function(src) {
-    if (_cache[src]) return _cache[src];
-    // 后台加载
+    if (src in _cache) return _cache[src]; // null=加载中，img=已加载
+    // 首次请求，后台加载
+    _cache[src] = null; // 占位，防止每帧重复创建
     var img = wx.createImage();
-    _cache[src] = null; // 占位防重复加载
     img.onload = function() { _cache[src] = img; };
+    img.onerror = function() { delete _cache[src]; }; // 失败时清除占位，允许重试
     img.src = src;
     return null;
   }

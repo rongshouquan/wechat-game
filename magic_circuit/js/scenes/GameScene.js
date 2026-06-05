@@ -618,7 +618,7 @@ GameScene.prototype._drawWin = function(ctx) {
   ctx.fillStyle = titleColor;
   for (var j = 0; j < offs.length; j++) {
     ctx.globalAlpha = t * 0.28;
-    ctx.fillText(title, cx + offs[j][0], cy + offs[j][1]);
+    ctx.fillText(title, cx + offs[j][0], cx + offs[j][1]);
   }
   ctx.globalAlpha = t;
   ctx.fillStyle   = '#ffffff';
