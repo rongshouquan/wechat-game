@@ -1,7 +1,8 @@
-var MenuScene = function(ctx, width, height) {
+var MenuScene = function(ctx, width, height, offlineMsg) {
   this.ctx = ctx;
   this.width = width;
   this.height = height;
+  this.offlineMsg = offlineMsg || '';
   this.buttons = [];
   this._initButtons();
 };
@@ -33,6 +34,13 @@ MenuScene.prototype.draw = function() {
   ctx.fillStyle = '#aaa';
   ctx.font = '18px sans-serif';
   ctx.fillText('放置养成 · 自动战斗', w / 2, h * 0.38);
+
+  // 离线收益提示
+  if (this.offlineMsg) {
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '15px sans-serif';
+    ctx.fillText(this.offlineMsg, w / 2, h * 0.44);
+  }
 
   // 按钮
   for (var i = 0; i < this.buttons.length; i++) {

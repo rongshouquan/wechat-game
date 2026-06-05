@@ -20,6 +20,11 @@ var Main = function() {
 
   PlayerData.load();
   this.currentLevel = PlayerData.get().currentLevel;
+  this._offlineMsg = PlayerData.offlineEarnings > 0
+    ? '离线收益：+' + PlayerData.offlineEarnings + ' 研究点' : '';
+
+  // 退出时保存时间戳
+  wx.onHide(function() { PlayerData.save(); });
 
   this._initTouch();
   this._switchScene('menu');
@@ -69,7 +74,8 @@ Main.prototype._switchScene = function(name, data) {
   var ctx = this.ctx, w = this.width, h = this.height;
   var self = this;
   if (name === 'menu') {
-    this.currentScene = new MenuScene(ctx, w, h);
+    this.currentScene = new MenuScene(ctx, w, h, this._offlineMsg);
+    this._offlineMsg = ''; // 只显示一次
   } else if (name === 'items') {
     var self2 = this;
     this.currentScene = new ItemScene(ctx, w, h, function() { self2._switchScene('menu'); });
