@@ -40,23 +40,27 @@ MenuScene.prototype.draw = function() {
   ctx.fillText('我的怪物军团', w / 2, h * 0.3);
 
   ctx.fillStyle = '#aaa';
-  ctx.font = '18px sans-serif';
-  ctx.fillText('放置养成 · 自动战斗', w / 2, h * 0.38);
+  ctx.font = '16px sans-serif';
+  ctx.fillText('放置养成 · 自动战斗', w / 2, h * 0.34);
+
+  // 进度信息
+  var d = PlayerData.get();
+  ctx.fillStyle = '#7fb3d3';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('第 ' + (d.currentLevel||1) + ' 关  |  研究点 ' + (d.researchPoints||0), w/2, h*0.40);
 
   // 离线收益提示
   if (this.offlineMsg) {
     ctx.fillStyle = '#f1c40f';
-    ctx.font = '15px sans-serif';
-    ctx.fillText(this.offlineMsg, w / 2, h * 0.44);
+    ctx.font = '14px sans-serif';
+    ctx.fillText(this.offlineMsg, w / 2, h * 0.45);
   }
 
   // 按钮
   for (var i = 0; i < this.buttons.length; i++) {
     var btn = this.buttons[i];
     ctx.fillStyle = btn.color || '#e74c3c';
-    ctx.beginPath();
-    ctx.roundRect(btn.x, btn.y, btn.w, btn.h, 10);
-    ctx.fill();
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';

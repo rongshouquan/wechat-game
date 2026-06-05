@@ -24,7 +24,7 @@ var SKILLS = {
   werewolf: function(unit, ctx) {
     var enemies = ctx.getEnemies(unit);
     var backRow = enemies.filter(function(e) { return !e.dead && e.slot >= 3; });
-    var target = backRow.length > 0 ? backRow[0] : enemies.find(function(e) { return !e.dead; });
+    var aliveEnemy = null; for (var fi=0;fi<enemies.length;fi++){if(!enemies[fi].dead){aliveEnemy=enemies[fi];break;}} var target = backRow.length > 0 ? backRow[0] : aliveEnemy;
     if (!target) return;
 
     ctx.addFloat(unit.x, unit.y - unit.size, '突袭！', '#8e44ad');
@@ -99,7 +99,7 @@ var SKILLS = {
   // 骷髅法师：暗影射线 - 锁定最近敌人持续输出5秒
   skeletonMage: function(unit, ctx) {
     var enemies = ctx.getEnemies(unit);
-    var target = enemies.find(function(e) { return !e.dead; });
+    var target = null; for (var fi2=0;fi2<enemies.length;fi2++){if(!enemies[fi2].dead){target=enemies[fi2];break;}}
     if (!target) return;
     ctx.addFloat(unit.x, unit.y - unit.size, '暗影射线！', '#2c3e50');
     var elapsed = 0, tick2 = 0;

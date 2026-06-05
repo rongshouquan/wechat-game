@@ -51,7 +51,8 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
       color: race.color,
       size: cfg.sizeOverride || race.size,
       maxHp: Math.round(race.baseHp * (cfg.hpMult || 1)),
-      atk: Math.round(race.baseAtk * (cfg.atkMult || 1)),
+      atk: Math.round((race.baseAtk || 0) * (cfg.atkMult || 1)),
+      baseHeal: race.baseHeal || 0,
       atkInterval: race.baseAtkSpeed,
       skillEnhancements: cfg.skillEnhancements || {}
     });
@@ -135,6 +136,24 @@ BattleManager.prototype.update = function(dt) {
   alivePlayers.forEach(function(u) {
     var berserking = u._berserk;
     if (berserking) u.rage = Math.min(99, u.rage);
+
+    // 小精灵普攻：治疗血量最低友方（不参与普通攻击逻辑）
+    if (u.raceId === 'fairy') {
+      u.update(dt, alivePlayers, function(attacker) {
+        var targets = alivePlayers.filter(function(a) { return !a.dead; });
+        var healTargetCount = attacker._healTargets || 1;
+        targets.sort(function(a, b) { return (a.hp/a.maxHp) - (b.hp/b.maxHp); });
+        var healAmt = Math.round((attacker._baseHeal || 30) * (attacker._healBoostMult || 1));
+        for (var hi = 0; hi < Math.min(healTargetCount, targets.length); hi++) {
+          var ht = targets[hi];
+          ht.hp = Math.min(ht.maxHp, ht.hp + healAmt);
+          self._addFloat(ht.x, ht.y, '+' + healAmt, '#2ecc71');
+        }
+        attacker.onAttackHit();
+      });
+      return;
+    }
+
     u.update(dt, aliveEnemies, function(attacker, target) {
       var atkVal = Math.round(attacker.atk * (1 + (attacker._atkBoost || 0)));
       var dmgReduction = (target._skillDmgReduction || 0) + (target._itemDmgReduction || 0);
@@ -149,7 +168,6 @@ BattleManager.prototype.update = function(dt) {
         var actual = target.takeDamage(dmg);
         attacker.onAttackHit();
         self._addFloat(target.x, target.y, '-' + actual, '#ff6b6b');
-        // 反伤
         if (target._reflectDmg && !target.dead) {
           var ref = Math.round(dmg * target._reflectDmg);
           attacker.takeDamage(ref);

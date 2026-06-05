@@ -9,7 +9,8 @@ var Unit = function(cfg) {
 
   this.maxHp = cfg.maxHp;
   this.hp = cfg.maxHp;
-  this.atk = cfg.atk;
+  this.atk = cfg.atk || 0;
+  this._baseHeal = cfg.baseHeal || 0;
   this.atkInterval = cfg.atkInterval || 1.2;
   this.atkTimer = Math.random() * this.atkInterval;
 

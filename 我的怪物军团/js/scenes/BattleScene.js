@@ -13,6 +13,10 @@ var BattleScene = function(ctx, width, height, levelId, onEnd) {
   this.bm = new BattleManager(width, height);
 
   var playerSlots = this._buildPlayerSlots();
+  // 阵容为空时给默认单位防崩溃
+  if (playerSlots.length === 0) {
+    playerSlots = [{ raceId: 'goblin', slot: 1, hpMult: 1, atkMult: 1, sizeOverride: 28, skillEnhancements: {} }];
+  }
   var levelCfg = LEVELS[(levelId || 1) - 1] || LEVELS[0];
   this.bm.setup(playerSlots, levelCfg.enemies);
   this.levelName = levelCfg.name;
