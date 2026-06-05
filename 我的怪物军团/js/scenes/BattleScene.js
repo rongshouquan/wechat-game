@@ -165,46 +165,24 @@ BattleScene.prototype._drawGrid = function() {
   for (var i = 0; i < this.bm.enemyUnits.length;  i++) eOcc[this.bm.enemyUnits[i].slot]  = true;
   for (var j = 0; j < this.bm.playerUnits.length; j++) pOcc[this.bm.playerUnits[j].slot] = true;
 
-  // 敌方格子
+  // 敌方格子：有单位不画，空位极淡轮廓
   for (var er = 0; er < 2; er++) {
     for (var ec = 0; ec < 3; ec++) {
-      var slotIdx = er * 3 + ec;
-      var ex = colX[ec] - cw / 2, ey = eRows[er] - ch / 2;
-      if (eOcc[slotIdx]) {
-        roundRect(ctx, ex, ey, cw, ch, cr);
-        ctx.fillStyle = 'rgba(50, 8, 8, 0.82)';
-        ctx.fill();
-        ctx.strokeStyle = '#5a1818';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        this._drawSkullWatermark(ctx, colX[ec], eRows[er], ch);
-      } else {
-        roundRect(ctx, ex, ey, cw, ch, cr);
-        ctx.strokeStyle = 'rgba(100, 30, 30, 0.10)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+      if (!eOcc[er * 3 + ec]) {
+        roundRect(ctx, colX[ec] - cw/2, eRows[er] - ch/2, cw, ch, cr);
+        ctx.strokeStyle = 'rgba(200, 100, 100, 0.08)';
+        ctx.lineWidth = 1; ctx.stroke();
       }
     }
   }
 
-  // 我方格子
+  // 我方格子：有单位不画，空位极淡轮廓
   for (var pr = 0; pr < 2; pr++) {
     for (var pc = 0; pc < 3; pc++) {
-      var pSlot = pr * 3 + pc;
-      var px = colX[pc] - cw / 2, py = pRows[pr] - ch / 2;
-      if (pOcc[pSlot]) {
-        roundRect(ctx, px, py, cw, ch, cr);
-        ctx.fillStyle = 'rgba(8, 16, 52, 0.82)';
-        ctx.fill();
-        ctx.strokeStyle = '#182858';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        this._drawShieldWatermark(ctx, colX[pc], pRows[pr], ch);
-      } else {
-        roundRect(ctx, px, py, cw, ch, cr);
-        ctx.strokeStyle = 'rgba(30, 60, 120, 0.10)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+      if (!pOcc[pr * 3 + pc]) {
+        roundRect(ctx, colX[pc] - cw/2, pRows[pr] - ch/2, cw, ch, cr);
+        ctx.strokeStyle = 'rgba(100, 150, 255, 0.08)';
+        ctx.lineWidth = 1; ctx.stroke();
       }
     }
   }
@@ -269,9 +247,9 @@ BattleScene.prototype._drawZoneLabels = function() {
   ctx.fillText('— 战斗区域 —', w / 2, my + 4);
 };
 
-// ── 单位 ──
+// ── 单位（按 y 排序：小 y 先画，大 y 后画 = 近处在前）──
 BattleScene.prototype._drawUnits = function() {
-  var units = this.bm.getAllUnits();
+  var units = this.bm.getAllUnits().slice().sort(function(a, b) { return a.y - b.y; });
   for (var i = 0; i < units.length; i++) {
     if (!units[i].dead) this._drawUnit(units[i]);
   }
@@ -279,61 +257,54 @@ BattleScene.prototype._drawUnits = function() {
 
 BattleScene.prototype._drawUnit = function(u) {
   var ctx = this.ctx;
-  var r = u.size / 2;
+  var imgH = this.height * 0.14;
+  var imgW = imgH * 0.78;
+  var imgTop = u.y - imgH * 0.88;   // 立绘顶部（88% 在 u.y 上方）
 
-  // 眩晕外圈
-  if (u.stunTimer > 0) {
-    ctx.strokeStyle = '#f1c40f';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(u.x, u.y, r + 3, 0, Math.PI * 2); ctx.stroke();
+  // 立绘 or 降级圆球
+  var portrait = u.image ? ImageCache.get(u.image) : null;
+  if (portrait) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(portrait, u.x - imgW / 2, imgTop, imgW, imgH);
+    ctx.globalCompositeOperation = 'source-over';
+  } else {
+    var r = u.size / 2;
+    ctx.fillStyle = u.color;
+    ctx.beginPath(); ctx.arc(u.x, u.y, r, 0, Math.PI * 2); ctx.fill();
   }
+
+  // HP 条（角色头顶上方 4px）
+  var barW = imgW * 0.85, barH = 5;
+  var barX  = u.x - barW / 2;
+  var barY  = imgTop - barH - 4;
+  // 底色（暗）
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+  // 血量色
+  var pct = u.hp / u.maxHp;
+  ctx.fillStyle = pct > 0.5 ? '#e74c3c' : pct > 0.25 ? '#e67e22' : '#c0392b';
+  ctx.fillRect(barX, barY, barW * pct, barH);
 
   // 护盾光圈
   if (u.shield > 0) {
     ctx.strokeStyle = '#1abc9c';
     ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(u.x, u.y, r + 3, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(u.x, u.y, imgW * 0.5, 0, Math.PI * 2); ctx.stroke();
   }
 
-  // 单位本体：立绘 or 降级圆球
-  var portrait = u.image ? ImageCache.get(u.image) : null;
-  if (portrait) {
-    var imgH = this.height * 0.10;
-    var imgW = imgH * 0.75;
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(portrait, u.x - imgW / 2, u.y - imgH * 0.78, imgW, imgH);
-    ctx.globalCompositeOperation = 'source-over';
-  } else {
-    ctx.fillStyle = u.color;
-    ctx.beginPath(); ctx.arc(u.x, u.y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '9px sans-serif';
+  // 眩晕标记
+  if (u.stunTimer > 0) {
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(u.name, u.x, u.y + 4);
+    ctx.fillText('★', u.x, barY - 4);
   }
 
-  // 血条
-  var barW = u.size + 8, barH = 4;
-  var barX = u.x - barW / 2;
-  var hpY = u.y + r + 3;
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(barX, hpY, barW, barH);
-  var pct = u.hp / u.maxHp;
-  ctx.fillStyle = pct > 0.5 ? '#2ecc71' : pct > 0.25 ? '#f39c12' : '#e74c3c';
-  ctx.fillRect(barX, hpY, barW * pct, barH);
-
-  // 怒气条
-  var rageY = hpY + barH + 1;
-  ctx.fillStyle = '#111';
-  ctx.fillRect(barX, rageY, barW, 3);
-  ctx.fillStyle = '#e67e22';
-  ctx.fillRect(barX, rageY, barW * (u.rage / 100), 3);
-
-  // 状态点
-  var dotX = barX;
-  if (u.burnTimer  > 0) { ctx.fillStyle = '#e74c3c'; ctx.fillRect(dotX, rageY + 4, 4, 4); dotX += 5; }
-  if (u.bleedTimer > 0) { ctx.fillStyle = '#922b21'; ctx.fillRect(dotX, rageY + 4, 4, 4); dotX += 5; }
-  if (u.slowTimer  > 0) { ctx.fillStyle = '#3498db'; ctx.fillRect(dotX, rageY + 4, 4, 4); }
+  // 状态点（燃烧/流血/减速）— 放在 HP 条右下角
+  var dotX = barX + barW + 3, dotY = barY;
+  if (u.burnTimer  > 0) { ctx.fillStyle = '#e74c3c'; ctx.fillRect(dotX, dotY,     4, 4); dotY += 5; }
+  if (u.bleedTimer > 0) { ctx.fillStyle = '#922b21'; ctx.fillRect(dotX, dotY,     4, 4); dotY += 5; }
+  if (u.slowTimer  > 0) { ctx.fillStyle = '#3498db'; ctx.fillRect(dotX, dotY,     4, 4); }
 };
 
 // ── 飘字 ──
