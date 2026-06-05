@@ -34,8 +34,8 @@ var Unit = function(cfg) {
 Unit.prototype.update = function(dt, enemies, onAttack) {
   if (this.dead) return;
 
-  // 自然怒气恢复 1%/秒
-  this._addRage(dt * 1);
+  // 自然怒气恢复 1%/秒（狂化期间不增长）
+  if (!this._berserk) this._addRage(dt * 1);
 
   // 流血持续掉血
   if (this.bleedTimer > 0) {
@@ -103,9 +103,8 @@ Unit.prototype._addRage = function(amount) {
   this.rage = Math.min(100, this.rage + amount);
 };
 
-// 攻击后增加怒气（由BattleManager调用）
 Unit.prototype.onAttackHit = function() {
-  this._addRage(10);
+  if (!this._berserk) this._addRage(10);
 };
 
 // 施加状态

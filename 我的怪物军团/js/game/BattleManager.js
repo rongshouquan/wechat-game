@@ -1,5 +1,6 @@
 var Unit = require('./Unit').Unit;
 var RACES = require('../data/races').RACES;
+var SKILLS = require('./SkillManager').SKILLS;
 
 function calcSlotPos(slot, team, w, h) {
   var col = slot % 3;
@@ -23,6 +24,8 @@ var BattleManager = function(w, h) {
   this.elapsed = 0;
   this._uidCounter = 0;
   this.floatTexts = [];
+  this._ticks = []; // 技能持续tick列表
+  this._bleedSample = 0;
 };
 
 BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
@@ -31,6 +34,8 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
   this.elapsed = 0;
   this.state = 'fighting';
   this.floatTexts = [];
+  this._ticks = [];
+  this._bleedSample = 0;
   var self = this;
 
   playerSlots.forEach(function(cfg) {
@@ -46,7 +51,7 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
       atkInterval: race.baseAtkSpeed
     });
     u.x = pos.x; u.y = pos.y;
-    u.onSkill = function(unit) { self._onSkill(unit); };
+    u.onSkill = function(unit) { self._fireSkill(unit); };
     self.playerUnits.push(u);
   });
 
@@ -67,15 +72,30 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
         atkInterval: race.baseAtkSpeed
       });
       u.x = pos.x; u.y = pos.y;
-      u.onSkill = function(unit) { self._onSkill(unit); };
+      u.onSkill = function(unit) { self._fireSkill(unit); };
       self.enemyUnits.push(u);
     }
   });
 };
 
-// 技能占位（阶段3实现具体技能）
-BattleManager.prototype._onSkill = function(unit) {
-  this._addFloat(unit.x, unit.y - unit.size, '技能！', '#f1c40f');
+BattleManager.prototype._fireSkill = function(unit) {
+  var skillFn = SKILLS[unit.raceId];
+  if (!skillFn) {
+    this._addFloat(unit.x, unit.y - unit.size, '技能！', '#f1c40f');
+    return;
+  }
+  var self = this;
+  skillFn(unit, {
+    bm: self,
+    addFloat: function(x, y, t, c) { self._addFloat(x, y, t, c); },
+    getEnemies: function(u) { return u.team === 'player' ? self.enemyUnits : self.playerUnits; },
+    getAllies:  function(u) { return u.team === 'player' ? self.playerUnits : self.enemyUnits; }
+  });
+};
+
+// 注册持续tick（返回true继续，false停止）
+BattleManager.prototype.registerTick = function(fn) {
+  this._ticks.push(fn);
 };
 
 BattleManager.prototype.update = function(dt) {
@@ -91,30 +111,55 @@ BattleManager.prototype.update = function(dt) {
   if (aliveEnemies.length === 0) { this.state = 'win'; return; }
   if (alivePlayers.length === 0) { this.state = 'lose'; return; }
 
+  // 持续技能tick
+  this._ticks = this._ticks.filter(function(fn) { return fn(dt); });
+
   alivePlayers.forEach(function(u) {
+    // 狂化时怒气不增长：在update前锁定
+    var berserking = u._berserk;
+    if (berserking) u.rage = Math.min(99, u.rage); // 不让自然恢复满
     u.update(dt, aliveEnemies, function(attacker, target) {
-      var actual = target.takeDamage(attacker.atk);
-      attacker.onAttackHit();
-      self._addFloat(target.x, target.y, '-' + actual, '#ff6b6b');
+      var atkVal = Math.round(attacker.atk * (1 + (attacker._atkBoost || 0)));
+      var dmgReduction = target._skillDmgReduction || 0;
+      var dmg = Math.round(atkVal * (1 - dmgReduction));
+      // 护盾先吸收
+      if (target.shield > 0) {
+        var abs = Math.min(target.shield, dmg);
+        target.shield -= abs; dmg -= abs;
+        if (abs > 0) self._addFloat(target.x, target.y, '护盾-' + abs, '#1abc9c');
+      }
+      if (dmg > 0) {
+        var actual = target.takeDamage(dmg);
+        attacker.onAttackHit();
+        self._addFloat(target.x, target.y, '-' + actual, '#ff6b6b');
+      }
     });
   });
 
   aliveEnemies.forEach(function(u) {
     u.update(dt, alivePlayers, function(attacker, target) {
-      var actual = target.takeDamage(attacker.atk);
-      attacker.onAttackHit();
-      self._addFloat(target.x, target.y, '-' + actual, '#ffa07a');
+      var atkVal = Math.round(attacker.atk * (1 + (attacker._atkBoost || 0)));
+      var dmgReduction = target._skillDmgReduction || 0;
+      var dmg = Math.round(atkVal * (1 - dmgReduction));
+      if (target.shield > 0) {
+        var abs = Math.min(target.shield, dmg);
+        target.shield -= abs; dmg -= abs;
+        if (abs > 0) self._addFloat(target.x, target.y, '护盾-' + abs, '#1abc9c');
+      }
+      if (dmg > 0) {
+        var actual = target.takeDamage(dmg);
+        attacker.onAttackHit();
+        self._addFloat(target.x, target.y, '-' + actual, '#ffa07a');
+      }
     });
   });
 
-  // 流血飘字（每秒采样，避免每帧飘字）
-  this._bleedTick = (this._bleedTick || 0) + dt;
-  if (this._bleedTick >= 1) {
-    this._bleedTick -= 1;
+  // 流血飘字采样
+  this._bleedSample += dt;
+  if (this._bleedSample >= 1) {
+    this._bleedSample -= 1;
     this.playerUnits.concat(this.enemyUnits).forEach(function(u) {
-      if (!u.dead && u.bleedTimer > 0) {
-        self._addFloat(u.x, u.y, '流血', '#c0392b');
-      }
+      if (!u.dead && u.bleedTimer > 0) self._addFloat(u.x, u.y, '流血', '#c0392b');
     });
   }
 
@@ -126,7 +171,7 @@ BattleManager.prototype.update = function(dt) {
 };
 
 BattleManager.prototype._addFloat = function(x, y, text, color) {
-  if (this.floatTexts.length > 40) return;
+  if (this.floatTexts.length > 50) return;
   this.floatTexts.push({ x: x + (Math.random() - 0.5) * 20, y: y - 10, text: text, color: color, alpha: 1 });
 };
 
