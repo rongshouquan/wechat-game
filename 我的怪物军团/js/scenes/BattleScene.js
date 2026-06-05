@@ -132,9 +132,6 @@ BattleScene.prototype._drawBackground = function() {
   var bg = ImageCache.get('assets/backgrounds/battle_field.png');
   if (bg) {
     ctx.drawImage(bg, 0, 0, w, h);
-    // 轻微暗化，让 UI 更易读
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    ctx.fillRect(0, 0, w, h);
   } else {
     // 降级：深色渐变
     var grad = ctx.createLinearGradient(0, 0, 0, h);
@@ -264,9 +261,7 @@ BattleScene.prototype._drawUnit = function(u) {
   // 立绘 or 降级圆球
   var portrait = u.image ? ImageCache.get(u.image) : null;
   if (portrait) {
-    ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(portrait, u.x - imgW / 2, imgTop, imgW, imgH);
-    ctx.globalCompositeOperation = 'source-over';
   } else {
     var r = u.size / 2;
     ctx.fillStyle = u.color;
