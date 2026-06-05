@@ -11,8 +11,14 @@ var ResultScene = function(ctx, width, height, result, levelId, rewards) {
   this._initButtons();
 
   // 胜利时发放奖励
-  if (result === 'win' && rewards.researchPoints) {
-    PlayerData.addResearchPoints(rewards.researchPoints);
+  if (result === 'win') {
+    var d = PlayerData.get();
+    if (rewards.researchPoints) d.researchPoints = (d.researchPoints||0) + rewards.researchPoints;
+    if (rewards.monsterExp)     d.monsterExp     = (d.monsterExp||0)     + rewards.monsterExp;
+    // 宝物碎片运行时随机 5~10
+    var shards = rewards.itemShards || (Math.floor(Math.random()*6) + 5);
+    d.itemShards = (d.itemShards||0) + shards;
+    this._actualShards = shards;
     PlayerData.save();
   }
 };
@@ -51,13 +57,23 @@ ResultScene.prototype.draw = function() {
   ctx.fillText('第' + this.levelId + '关', w/2, h*0.42);
 
   // 奖励展示（胜利时）
-  if (isWin && this.rewards.researchPoints) {
-    ctx.fillStyle = '#f1c40f';
-    ctx.font = '16px sans-serif';
-    ctx.fillText('研究点 +' + this.rewards.researchPoints, w/2, h*0.5);
+  if (isWin) {
+    var d2 = PlayerData.get();
+    var lineY = h*0.48;
+    ctx.font = '15px sans-serif';
+    if (this.rewards.researchPoints) {
+      ctx.fillStyle = '#5dade2';
+      ctx.fillText('研究点  +' + this.rewards.researchPoints, w/2, lineY); lineY += 22;
+    }
+    if (this.rewards.monsterExp) {
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillText('怪物经验 +' + this.rewards.monsterExp, w/2, lineY); lineY += 22;
+    }
+    ctx.fillStyle = '#e67e22';
+    ctx.fillText('宝物碎片 +' + (this._actualShards||0), w/2, lineY); lineY += 26;
     ctx.fillStyle = '#888';
-    ctx.font = '14px sans-serif';
-    ctx.fillText('当前研究点：' + PlayerData.get().researchPoints, w/2, h*0.56);
+    ctx.font = '12px sans-serif';
+    ctx.fillText('经验:' + d2.monsterExp + '  碎片:' + d2.itemShards, w/2, lineY);
   }
 
   // 按钮

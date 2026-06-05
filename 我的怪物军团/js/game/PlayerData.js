@@ -18,6 +18,8 @@ var DEFAULT_DATA = {
   bonds: {},
   towerFloor: 1,
   honorPoints: 0,
+  monsterExp: 0,
+  itemShards: 0,
   lastSaveTime: 0,
   shop: null,
   adCounts: null,
@@ -39,6 +41,8 @@ function mergeDefaults(data) {
   if (!data.bonds)        data.bonds = {};
   if (typeof data.towerFloor !== 'number')      data.towerFloor = 1;
   if (typeof data.honorPoints !== 'number')     data.honorPoints = 0;
+  if (typeof data.monsterExp !== 'number')      data.monsterExp = 0;
+  if (typeof data.itemShards !== 'number')      data.itemShards = 0;
   if (typeof data.lastSaveTime !== 'number')    data.lastSaveTime = 0;
   if (!data.tutorial)     data.tutorial = { triggered: {}, totalMs: 0 };
   if (!data.tutorial.triggered) data.tutorial.triggered = {};

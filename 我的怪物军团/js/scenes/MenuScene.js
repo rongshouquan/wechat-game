@@ -15,7 +15,7 @@ MenuScene.prototype._initButtons = function() {
   this.buttons = [];
 
   // 左侧：种族/阵容
-  this.buttons.push({ label: '种族\n阵容', x: 16, y: h*0.32, w: w*0.20, h: h*0.22, action: 'openLineup', color: '#16a085', multi: true });
+  this.buttons.push({ label: '种族\n管理', x: 16, y: h*0.32, w: w*0.20, h: h*0.22, action: 'openRaces', color: '#16a085', multi: true });
 
   // 右侧：宝物
   this.buttons.push({ label: '宝物\n装备', x: w - 16 - w*0.20, y: h*0.32, w: w*0.20, h: h*0.22, action: 'openItems', color: '#8e44ad', multi: true });

@@ -46,7 +46,8 @@ for (var i = 1; i <= 60; i++) {
     enemies: enemies,
     rewards: {
       researchPoints: 10,
-      exp: level * 5
+      monsterExp: Math.round(level * 3 + 5),                          // 递增怪物经验
+      itemShards: Math.floor(Math.random() * 6) + 5                   // 5~10宝物碎片(运行时随机)
     },
     isSpecial: (level % 10 === 0)
   });
