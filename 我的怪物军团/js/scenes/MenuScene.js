@@ -10,10 +10,11 @@ var MenuScene = function(ctx, width, height, offlineMsg) {
 MenuScene.prototype._initButtons = function() {
   var w = this.width, h = this.height;
   this.buttons = [
-    { label: '开始战斗', x: w/2-100, y: h*0.47, w: 200, h: 50, action: 'startBattle',  color: '#e74c3c' },
-    { label: '宝物装备', x: w/2-100, y: h*0.56, w: 200, h: 46, action: 'openItems',    color: '#8e44ad' },
-    { label: '研究所',   x: w/2-100, y: h*0.64, w: 200, h: 46, action: 'openResearch', color: '#2980b9' },
-    { label: '商店',     x: w/2-100, y: h*0.72, w: 200, h: 46, action: 'openShop',     color: '#e67e22' }
+    { label: '开始战斗', x: w/2-100, y: h*0.43, w: 200, h: 48, action: 'startBattle',  color: '#e74c3c' },
+    { label: '阵容编排', x: w/2-100, y: h*0.51, w: 200, h: 44, action: 'openLineup',   color: '#16a085' },
+    { label: '宝物装备', x: w/2-100, y: h*0.59, w: 200, h: 44, action: 'openItems',    color: '#8e44ad' },
+    { label: '研究所',   x: w/2-100, y: h*0.67, w: 200, h: 44, action: 'openResearch', color: '#2980b9' },
+    { label: '商店',     x: w/2-100, y: h*0.75, w: 200, h: 44, action: 'openShop',     color: '#e67e22' }
   ];
 };
 
