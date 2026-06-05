@@ -8,12 +8,11 @@ var BondManager = require('./BondManager');
 function calcSlotPos(slot, team, w, h) {
   var col = slot % 3;
   var row = Math.floor(slot / 3);
-  var cellW = w / 4, cellH = h / 8;
-  var baseX = w / 2 - cellW + col * cellW;
+  var colX = [w * 0.17, w * 0.5, w * 0.83];
   if (team === 'player') {
-    return { x: baseX, y: h * 0.72 - row * cellH };
+    return { x: colX[col], y: row === 0 ? h * 0.64 : h * 0.77 };
   } else {
-    return { x: baseX, y: h * 0.28 + row * cellH };
+    return { x: colX[col], y: row === 0 ? h * 0.32 : h * 0.195 };
   }
 }
 
