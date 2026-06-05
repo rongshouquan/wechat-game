@@ -30,9 +30,9 @@ var Main = function() {
 
   // 预加载种族立绘
   ImageCache.preload([
-    '种族图片/race_goblin.png', '种族图片/race_werewolf.png', '种族图片/race_minotaur.png',
-    '种族图片/race_orc.png', '种族图片/race_skeleton_mage.png', '种族图片/race_fairy.png',
-    '种族图片/race_paladin.png', '种族图片/race_reaper.png'
+    'race_images/race_goblin.png', 'race_images/race_werewolf.png', 'race_images/race_minotaur.png',
+    'race_images/race_orc.png', 'race_images/race_skeleton_mage.png', 'race_images/race_fairy.png',
+    'race_images/race_paladin.png', 'race_images/race_reaper.png'
   ]);
   this._offlineMsg = PlayerData.offlineEarnings > 0
     ? '离线收益：+' + PlayerData.offlineEarnings + ' 研究点' : '';
