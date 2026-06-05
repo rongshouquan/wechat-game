@@ -48,6 +48,7 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
       id: self._uidCounter++,
       raceId: cfg.raceId, name: race.name, team: 'player', slot: cfg.slot,
       color: race.color,
+      image: race.image || null,
       size: cfg.sizeOverride || race.size,
       maxHp: Math.round(race.baseHp * (cfg.hpMult || 1)),
       atk: Math.round((race.baseAtk || 0) * (cfg.atkMult || 1)),
@@ -75,7 +76,7 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
       var u = new Unit({
         id: self._uidCounter++,
         raceId: cfg.raceId, name: race.name, team: 'enemy', slot: slot,
-        color: race.color, size: race.size,
+        color: race.color, image: race.image || null, size: race.size,
         maxHp: Math.round(race.baseHp * lvScale * (cfg.hpMult || 1)),
         atk: Math.round(race.baseAtk * lvScale * (cfg.atkMult || 1)),
         atkInterval: race.baseAtkSpeed

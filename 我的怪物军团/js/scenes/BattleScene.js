@@ -3,6 +3,7 @@ var LEVELS        = require('../data/levels').LEVELS;
 var PlayerData    = require('../game/PlayerData').PlayerData;
 var getRaceStats  = require('../game/RaceLevel').getRaceStats;
 var AdManager     = require('../game/AdManager').AdManager;
+var ImageCache    = require('../utils/ImageCache').ImageCache;
 
 // ── 布局（相对屏幕比例）──
 var L = {
@@ -126,25 +127,26 @@ BattleScene.prototype.draw = function() {
 // ── 背景 ──
 BattleScene.prototype._drawBackground = function() {
   var ctx = this.ctx, w = this.width, h = this.height;
-  var grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0,    '#0d1520');
-  grad.addColorStop(0.45, '#111f35');
-  grad.addColorStop(0.50, '#1a1a38');
-  grad.addColorStop(0.55, '#111f35');
-  grad.addColorStop(1,    '#0a1020');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
 
-  // 敌方区域红色叠层
-  ctx.fillStyle = 'rgba(70, 5, 5, 0.14)';
-  ctx.fillRect(0, L.topBarH, w, h * 0.40 - L.topBarH);
+  // 战斗场地背景图
+  var bg = ImageCache.get('assets/backgrounds/battle_field.png');
+  if (bg) {
+    ctx.drawImage(bg, 0, 0, w, h);
+    // 轻微暗化，让 UI 更易读
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fillRect(0, 0, w, h);
+  } else {
+    // 降级：深色渐变
+    var grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0,   '#0d1520');
+    grad.addColorStop(0.5, '#1a1a38');
+    grad.addColorStop(1,   '#0a1020');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
 
-  // 我方区域蓝色叠层
-  ctx.fillStyle = 'rgba(5, 15, 65, 0.14)';
-  ctx.fillRect(0, h * 0.51, w, h * L.bottomStart - h * 0.51);
-
-  // 战斗区域边界线
-  ctx.strokeStyle = 'rgba(100, 100, 140, 0.22)';
+  // 战斗区域边界线（辅助）
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, h * 0.40); ctx.lineTo(w, h * 0.40); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, h * 0.51); ctx.lineTo(w, h * 0.51); ctx.stroke();
@@ -290,18 +292,25 @@ BattleScene.prototype._drawUnit = function(u) {
   if (u.shield > 0) {
     ctx.strokeStyle = '#1abc9c';
     ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(u.x, u.y, r + 2, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(u.x, u.y, r + 3, 0, Math.PI * 2); ctx.stroke();
   }
 
-  // 单位本体
-  ctx.fillStyle = u.color;
-  ctx.beginPath(); ctx.arc(u.x, u.y, r, 0, Math.PI * 2); ctx.fill();
-
-  // 名称
-  ctx.fillStyle = '#fff';
-  ctx.font = '9px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(u.name, u.x, u.y + 4);
+  // 单位本体：立绘 or 降级圆球
+  var portrait = u.image ? ImageCache.get(u.image) : null;
+  if (portrait) {
+    var imgH = this.height * 0.10;
+    var imgW = imgH * 0.75;
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(portrait, u.x - imgW / 2, u.y - imgH * 0.78, imgW, imgH);
+    ctx.globalCompositeOperation = 'source-over';
+  } else {
+    ctx.fillStyle = u.color;
+    ctx.beginPath(); ctx.arc(u.x, u.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(u.name, u.x, u.y + 4);
+  }
 
   // 血条
   var barW = u.size + 8, barH = 4;

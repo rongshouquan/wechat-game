@@ -32,7 +32,8 @@ var Main = function() {
   ImageCache.preload([
     'assets/characters/race_goblin.png', 'assets/characters/race_werewolf.png', 'assets/characters/race_minotaur.png',
     'assets/characters/race_orc.png', 'assets/characters/race_skeleton_mage.png', 'assets/characters/race_fairy.png',
-    'assets/characters/race_paladin.png', 'assets/characters/race_reaper.png'
+    'assets/characters/race_paladin.png', 'assets/characters/race_reaper.png',
+    'assets/backgrounds/battle_field.png'
   ]);
   this._offlineMsg = PlayerData.offlineEarnings > 0
     ? '离线收益：+' + PlayerData.offlineEarnings + ' 研究点' : '';

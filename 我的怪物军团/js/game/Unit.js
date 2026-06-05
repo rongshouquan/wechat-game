@@ -5,7 +5,8 @@ var Unit = function(cfg) {
   this.team = cfg.team;
   this.slot = cfg.slot;
   this.color = cfg.color || '#888';
-  this.size = cfg.size || 28;
+  this.image = cfg.image || null;
+  this.size  = cfg.size  || 28;
 
   this.maxHp = cfg.maxHp;
   this.hp = cfg.maxHp;
@@ -37,7 +38,7 @@ Unit.prototype.update = function(dt, enemies, onAttack) {
   if (this.dead) return;
 
   // 自然怒气恢复 1%/秒（狂化期间不增长，魔力戒指加速）
-  if (!this._berserk) this._addRage(dt * 1 * (this._rageSpeedMult || 1));
+  if (!this._berserk) this._addRage(dt * (4/3) * (this._rageSpeedMult || 1));
 
   // 流血持续掉血
   if (this.bleedTimer > 0) {
@@ -90,7 +91,7 @@ Unit.prototype.takeDamage = function(dmg) {
   if (this.dead) return 0;
   var actual = this.burnTimer > 0 ? Math.round(dmg * 1.1) : dmg;
   this._takePureDamage(actual);
-  this._addRage(3); // 被攻击+3%
+  this._addRage(4); // 被攻击+4%（原3×4/3）
   return actual;
 };
 
@@ -106,7 +107,7 @@ Unit.prototype._addRage = function(amount) {
 };
 
 Unit.prototype.onAttackHit = function() {
-  if (!this._berserk) this._addRage(10 * (this._rageSpeedMult || 1));
+  if (!this._berserk) this._addRage(10 * (4/3) * (this._rageSpeedMult || 1));
 };
 
 // 施加状态
