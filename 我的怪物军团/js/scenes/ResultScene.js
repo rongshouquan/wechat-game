@@ -1,4 +1,5 @@
 var PlayerData = require('../game/PlayerData').PlayerData;
+var AdManager = require('../game/AdManager').AdManager;
 
 var ResultScene = function(ctx, width, height, result, levelId, rewards) {
   this.ctx = ctx;
@@ -20,11 +21,13 @@ ResultScene.prototype._initButtons = function() {
   var w = this.width, h = this.height;
   this.buttons = [];
   if (this.result === 'win') {
-    this.buttons.push({ label: '下一关', x: w/2-90, y: h*0.65, w: 180, h: 50, action: 'nextLevel', color: '#27ae60' });
+    var remain = AdManager.remainCount('doubleReward');
+    this.buttons.push({ label: remain>0?'看广告×2奖励':'翻倍次数已用完', x: w/2-90, y: h*0.58, w: 180, h: 44, action: remain>0?'doubleReward':'noop', color: remain>0?'#e67e22':'#555' });
+    this.buttons.push({ label: '下一关', x: w/2-90, y: h*0.66, w: 180, h: 46, action: 'nextLevel', color: '#27ae60' });
   } else {
-    this.buttons.push({ label: '再来一次', x: w/2-90, y: h*0.65, w: 180, h: 50, action: 'retry', color: '#c0392b' });
+    this.buttons.push({ label: '再来一次', x: w/2-90, y: h*0.65, w: 180, h: 46, action: 'retry', color: '#c0392b' });
   }
-  this.buttons.push({ label: '返回主菜单', x: w/2-90, y: h*0.75, w: 180, h: 50, action: 'backToMenu', color: '#2c3e50' });
+  this.buttons.push({ label: '返回主菜单', x: w/2-90, y: h*0.74, w: 180, h: 46, action: 'backToMenu', color: '#2c3e50' });
 };
 
 ResultScene.prototype.update = function(dt) {};
@@ -72,7 +75,21 @@ ResultScene.prototype.draw = function() {
 ResultScene.prototype.onTouchStart = function(x, y) {
   for (var i = 0; i < this.buttons.length; i++) {
     var btn = this.buttons[i];
-    if (x >= btn.x && x <= btn.x+btn.w && y >= btn.y && y <= btn.y+btn.h) return btn.action;
+    if (x >= btn.x && x <= btn.x+btn.w && y >= btn.y && y <= btn.y+btn.h) {
+      if (btn.action === 'doubleReward') {
+        var self = this;
+        AdManager.show('doubleReward', function() {
+          if (self.rewards && self.rewards.researchPoints) {
+            PlayerData.addResearchPoints(self.rewards.researchPoints); // 再加一倍
+          }
+          // 重新初始化按钮（翻倍次数已消耗）
+          self._initButtons();
+        }, function() {});
+        return null;
+      }
+      if (btn.action === 'noop') return null;
+      return btn.action;
+    }
   }
   return null;
 };

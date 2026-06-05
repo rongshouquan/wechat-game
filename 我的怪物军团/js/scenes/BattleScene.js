@@ -2,6 +2,7 @@ var BattleManager = require('../game/BattleManager').BattleManager;
 var LEVELS = require('../data/levels').LEVELS;
 var PlayerData = require('../game/PlayerData').PlayerData;
 var getRaceStats = require('../game/RaceLevel').getRaceStats;
+var AdManager = require('../game/AdManager').AdManager;
 
 var BattleScene = function(ctx, width, height, levelId, onEnd) {
   this.ctx = ctx;
@@ -194,27 +195,26 @@ BattleScene.prototype._drawRevivePanel = function() {
   ctx.fillStyle = '#f1c40f';
   ctx.font = 'bold 26px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('特殊关卡！是否复活？', w/2, h*0.4);
+  ctx.fillText('特殊关卡！是否复活？', w/2, h*0.38);
   ctx.fillStyle = '#aaa';
   ctx.font = '14px sans-serif';
-  ctx.fillText('（每关限1次）', w/2, h*0.47);
+  var remain = AdManager.remainCount('revive');
+  ctx.fillText('观看广告复活（今日剩余' + remain + '次）', w/2, h*0.46);
 
-  // 复活按钮
-  var bx = w/2 - 80, by = h*0.53;
-  ctx.fillStyle = '#27ae60';
+  var bx = w/2-80, by = h*0.52;
+  ctx.fillStyle = remain > 0 ? '#27ae60' : '#555';
   ctx.fillRect(bx, by, 160, 50);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillText('立即复活', w/2, by + 33);
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText(remain > 0 ? '看广告复活' : '次数已用完', w/2, by+33);
 
-  // 放弃按钮
-  var bx2 = w/2 - 80, by2 = h*0.63;
+  var bx2 = w/2-80, by2 = h*0.63;
   ctx.fillStyle = '#7f8c8d';
   ctx.fillRect(bx2, by2, 160, 50);
   ctx.fillStyle = '#fff';
-  ctx.fillText('放弃本关', w/2, by2 + 33);
+  ctx.fillText('放弃本关', w/2, by2+33);
 
-  this._reviveBtn = { x: bx, y: by, w: 160, h: 50 };
+  this._reviveBtn = { x: bx, y: by, w: 160, h: 50, canAd: remain > 0 };
   this._giveupBtn = { x: bx2, y: by2, w: 160, h: 50 };
 };
 
@@ -231,13 +231,14 @@ BattleScene.prototype._drawResult = function(text, color) {
 BattleScene.prototype.onTouchStart = function(x, y) {
   if (this._showRevive) {
     var rb = this._reviveBtn, gb = this._giveupBtn;
-    if (rb && x >= rb.x && x <= rb.x+rb.w && y >= rb.y && y <= rb.y+rb.h) {
-      this._doRevive();
+    if (rb && rb.canAd && x >= rb.x && x <= rb.x+rb.w && y >= rb.y && y <= rb.y+rb.h) {
+      var self3 = this;
+      AdManager.show('revive', function() { self3._doRevive(); }, function() {});
     } else if (gb && x >= gb.x && x <= gb.x+gb.w && y >= gb.y && y <= gb.y+gb.h) {
       this._showRevive = false;
       this._resultShown = true;
-      var self = this;
-      setTimeout(function() { self.onEnd('lose', {}); }, 800);
+      var self4 = this;
+      setTimeout(function() { self4.onEnd('lose', {}); }, 800);
     }
   }
   return null;
