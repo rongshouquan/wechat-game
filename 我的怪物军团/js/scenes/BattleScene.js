@@ -15,7 +15,11 @@ var BattleScene = function(ctx, width, height, levelId, onEnd) {
   var levelCfg = LEVELS[(levelId || 1) - 1] || LEVELS[0];
   this.bm.setup(playerSlots, levelCfg.enemies);
   this.levelName = levelCfg.name;
+  this.rewards = levelCfg.rewards || { researchPoints: 10 };
+  this.isSpecial = levelCfg.isSpecial || false;
+  this._canRevive = this.isSpecial; // 特殊关可复活一次
   this._resultShown = false;
+  this._showRevive = false;
 };
 
 BattleScene.prototype._buildPlayerSlots = function() {
@@ -46,14 +50,34 @@ BattleScene.prototype._buildPlayerSlots = function() {
 };
 
 BattleScene.prototype.update = function(dt) {
-  if (this._resultShown) return;
+  if (this._resultShown || this._showRevive) return;
   this.bm.update(dt);
-  if (this.bm.state === 'win' || this.bm.state === 'lose') {
+  if (this.bm.state === 'win') {
     this._resultShown = true;
     var self = this;
-    // 延迟1.5秒跳转结果页
-    setTimeout(function() { self.onEnd(self.bm.state); }, 1500);
+    setTimeout(function() { self.onEnd('win', self.rewards); }, 1500);
+  } else if (this.bm.state === 'lose') {
+    if (this._canRevive) {
+      // 特殊关：显示复活提示
+      this._showRevive = true;
+      this._canRevive = false;
+    } else {
+      this._resultShown = true;
+      var self2 = this;
+      setTimeout(function() { self2.onEnd('lose', {}); }, 1500);
+    }
   }
+};
+
+BattleScene.prototype._doRevive = function() {
+  // 复活：所有我方单位恢复50%血量，重启战斗
+  this.bm.playerUnits.forEach(function(u) {
+    u.dead = false;
+    u.hp = Math.round(u.maxHp * 0.5);
+    u.rage = 0;
+  });
+  this.bm.state = 'fighting';
+  this._showRevive = false;
 };
 
 BattleScene.prototype.draw = function() {
@@ -105,9 +129,11 @@ BattleScene.prototype.draw = function() {
   // 结果提示
   if (this.bm.state === 'win') {
     this._drawResult('胜利！', '#2ecc71');
-  } else if (this.bm.state === 'lose') {
+  } else if (this.bm.state === 'lose' && !this._showRevive) {
     this._drawResult('失败...', '#e74c3c');
   }
+
+  if (this._showRevive) this._drawRevivePanel();
 };
 
 BattleScene.prototype._drawUnit = function(u) {
@@ -161,6 +187,37 @@ BattleScene.prototype._drawUnit = function(u) {
   if (u.slowTimer > 0)  { ctx.fillStyle = '#3498db'; ctx.fillRect(dotX, rageY + 5, 5, 5); }
 };
 
+BattleScene.prototype._drawRevivePanel = function() {
+  var ctx = this.ctx, w = this.width, h = this.height;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#f1c40f';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('特殊关卡！是否复活？', w/2, h*0.4);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('（每关限1次）', w/2, h*0.47);
+
+  // 复活按钮
+  var bx = w/2 - 80, by = h*0.53;
+  ctx.fillStyle = '#27ae60';
+  ctx.fillRect(bx, by, 160, 50);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('立即复活', w/2, by + 33);
+
+  // 放弃按钮
+  var bx2 = w/2 - 80, by2 = h*0.63;
+  ctx.fillStyle = '#7f8c8d';
+  ctx.fillRect(bx2, by2, 160, 50);
+  ctx.fillStyle = '#fff';
+  ctx.fillText('放弃本关', w/2, by2 + 33);
+
+  this._reviveBtn = { x: bx, y: by, w: 160, h: 50 };
+  this._giveupBtn = { x: bx2, y: by2, w: 160, h: 50 };
+};
+
 BattleScene.prototype._drawResult = function(text, color) {
   var ctx = this.ctx, w = this.width, h = this.height;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -171,7 +228,20 @@ BattleScene.prototype._drawResult = function(text, color) {
   ctx.fillText(text, w / 2, h / 2 + 10);
 };
 
-BattleScene.prototype.onTouchStart = function(x, y) { return null; };
+BattleScene.prototype.onTouchStart = function(x, y) {
+  if (this._showRevive) {
+    var rb = this._reviveBtn, gb = this._giveupBtn;
+    if (rb && x >= rb.x && x <= rb.x+rb.w && y >= rb.y && y <= rb.y+rb.h) {
+      this._doRevive();
+    } else if (gb && x >= gb.x && x <= gb.x+gb.w && y >= gb.y && y <= gb.y+gb.h) {
+      this._showRevive = false;
+      this._resultShown = true;
+      var self = this;
+      setTimeout(function() { self.onEnd('lose', {}); }, 800);
+    }
+  }
+  return null;
+};
 BattleScene.prototype.onTouchMove = function(x, y) {};
 BattleScene.prototype.onTouchEnd = function(x, y) {};
 

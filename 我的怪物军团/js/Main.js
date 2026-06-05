@@ -65,8 +65,8 @@ Main.prototype._switchScene = function(name, data) {
   if (name === 'menu') {
     this.currentScene = new MenuScene(ctx, w, h);
   } else if (name === 'battle') {
-    this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result) {
-      self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel);
+    this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result, rewards) {
+      self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel, rewards);
     });
   }
 };
