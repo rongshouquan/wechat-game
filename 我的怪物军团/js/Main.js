@@ -14,7 +14,7 @@ var Main = function() {
 
   this.currentScene = null;
   this.lastTime = 0;
-  this._running = false;
+  this.currentLevel = 1;
 
   this._initTouch();
   this._switchScene('menu');
@@ -47,28 +47,32 @@ Main.prototype._handleAction = function(action) {
     this._switchScene('battle');
   } else if (action === 'backToMenu') {
     this._switchScene('menu');
+  } else if (action === 'nextLevel') {
+    this.currentLevel++;
+    this._switchScene('battle');
+  } else if (action === 'retry') {
+    this._switchScene('battle');
   }
 };
 
-Main.prototype._switchScene = function(name) {
+Main.prototype._switchScene = function(name, data) {
   var ctx = this.ctx, w = this.width, h = this.height;
+  var self = this;
   if (name === 'menu') {
     this.currentScene = new MenuScene(ctx, w, h);
   } else if (name === 'battle') {
-    this.currentScene = new BattleScene(ctx, w, h);
-  } else if (name === 'result') {
-    this.currentScene = new ResultScene(ctx, w, h, 'win');
+    this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result) {
+      self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel);
+    });
   }
 };
 
 Main.prototype._startLoop = function() {
   var self = this;
-  this._running = true;
   var loop = function(timestamp) {
-    if (!self._running) return;
     var dt = self.lastTime ? (timestamp - self.lastTime) / 1000 : 0;
     self.lastTime = timestamp;
-    if (dt > 0.1) dt = 0.1; // 防止大步长
+    if (dt > 0.1) dt = 0.1;
     if (self.currentScene) {
       self.currentScene.update(dt);
       self.currentScene.draw();
