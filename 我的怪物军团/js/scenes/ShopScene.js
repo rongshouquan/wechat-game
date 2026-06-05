@@ -227,8 +227,8 @@ ShopScene.prototype.onTouchStart = function(x, y) {
 ShopScene.prototype._claimItem = function(itemId, idx) {
   var d = PlayerData.get();
   if (!d.items) d.items = {};
-  d.items[itemId] = (d.items[itemId] || 0) + 1;
-  // 移除已领取的商品
+  if (!Array.isArray(d.items[itemId])) d.items[itemId] = [0,0,0];
+  d.items[itemId][0]++; // 商店领取固定1星
   if (d.shop && d.shop.shopItems) d.shop.shopItems.splice(idx, 1);
   PlayerData.save();
 };
@@ -241,7 +241,9 @@ ShopScene.prototype._doFreePull = function() {
   d.shop.pityCount = result.isPity || result.data.rarity === 'legendary' ? 0 : pity + 1;
   d.shop.dailyClaimed = true;
   if (!d.items) d.items = {};
-  d.items[result.id] = (d.items[result.id] || 0) + 1;
+  if (!Array.isArray(d.items[result.id])) d.items[result.id] = [0,0,0];
+  var pullStars = (result.data.rarity === 'legendary') ? 2 : 1; // 传奇起步2星
+  d.items[result.id][pullStars-1]++;
   PlayerData.save();
   this._pullResult = result;
 };

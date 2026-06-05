@@ -278,7 +278,9 @@ RaceScene.prototype._getOwnedItems = function(d) {
   var list = [], owned = d.items||{};
   ['exclusive','legendary','normal'].forEach(function(cat) {
     Object.keys(ITEMS[cat]).forEach(function(id) {
-      if (owned[id] && owned[id]>0) list.push({ id: id, data: ITEMS[cat][id] });
+      var arr = owned[id];
+      var total = Array.isArray(arr) ? arr[0]+arr[1]+arr[2] : (arr||0);
+      if (total > 0) list.push({ id: id, data: ITEMS[cat][id] });
     });
   });
   return list;

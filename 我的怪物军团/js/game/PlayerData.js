@@ -28,7 +28,41 @@ var DEFAULT_DATA = {
   shopUnlocked: false
 };
 
-// 将旧存档中缺失的字段补全为默认值（不覆盖已有数据）
+// items 新格式：{ itemId: [1星数量, 2星数量, 3星数量] }
+// equips 新格式：{ raceId: { id: itemId, stars: N } }
+
+// 将旧格式 items { itemId: count } 迁移到新格式
+function migrateItems(items) {
+  var newItems = {};
+  var keys = Object.keys(items || {});
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var v = items[k];
+    if (Array.isArray(v)) {
+      newItems[k] = v; // 已是新格式
+    } else if (typeof v === 'number' && v > 0) {
+      newItems[k] = [v, 0, 0]; // 旧格式全视为1星
+    }
+  }
+  return newItems;
+}
+
+// 迁移旧 equips { raceId: itemId } 到新格式
+function migrateEquips(equips) {
+  var newEquips = {};
+  var keys = Object.keys(equips || {});
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var v = equips[k];
+    if (v && typeof v === 'object' && v.id) {
+      newEquips[k] = v; // 已是新格式
+    } else if (typeof v === 'string') {
+      newEquips[k] = { id: v, stars: 1 }; // 旧格式默认1星
+    }
+  }
+  return newEquips;
+}
+
 function mergeDefaults(data) {
   var def = DEFAULT_DATA;
   if (typeof data.currentLevel !== 'number')    data.currentLevel = def.currentLevel;
@@ -36,8 +70,8 @@ function mergeDefaults(data) {
   if (!data.unlockedRaces) data.unlockedRaces = def.unlockedRaces.slice();
   if (!data.lineup)       data.lineup = def.lineup.slice();
   if (typeof data.researchPoints !== 'number')  data.researchPoints = 0;
-  if (!data.items)        data.items = {};
-  if (!data.equips)       data.equips = {};
+  data.items  = migrateItems(data.items);
+  data.equips = migrateEquips(data.equips);
   if (!data.bonds)        data.bonds = {};
   if (typeof data.towerFloor !== 'number')      data.towerFloor = 1;
   if (typeof data.honorPoints !== 'number')     data.honorPoints = 0;
@@ -47,12 +81,36 @@ function mergeDefaults(data) {
   if (!data.tutorial)     data.tutorial = { triggered: {}, totalMs: 0 };
   if (!data.tutorial.triggered) data.tutorial.triggered = {};
   if (typeof data.tutorial.totalMs !== 'number') data.tutorial.totalMs = 0;
-  // 补全 raceLevels 中可能缺失的种族
   var races = Object.keys(def.raceLevels);
   for (var i = 0; i < races.length; i++) {
     if (typeof data.raceLevels[races[i]] !== 'number') data.raceLevels[races[i]] = 1;
   }
   return data;
+}
+
+// 工具：给玩家添加一件宝物（指定星级，默认1星）
+function addItem(data, itemId, stars) {
+  stars = stars || 1;
+  if (!data.items) data.items = {};
+  if (!data.items[itemId]) data.items[itemId] = [0, 0, 0];
+  data.items[itemId][stars - 1]++;
+}
+
+// 工具：获取某宝物的总数量
+function itemTotal(data, itemId) {
+  var arr = (data.items || {})[itemId];
+  if (!arr) return 0;
+  return arr[0] + arr[1] + arr[2];
+}
+
+// 工具：获取某宝物最高星级（0表示没有）
+function itemMaxStars(data, itemId) {
+  var arr = (data.items || {})[itemId];
+  if (!arr) return 0;
+  if (arr[2] > 0) return 3;
+  if (arr[1] > 0) return 2;
+  if (arr[0] > 0) return 1;
+  return 0;
 }
 
 var PlayerData = {
@@ -123,6 +181,14 @@ var PlayerData = {
     d.researchPoints = (d.researchPoints || 0) + pts;
     this.save();
   },
+
+  addItem: function(itemId, stars) {
+    addItem(this.get(), itemId, stars || 1);
+    this.save();
+  },
+
+  itemTotal: function(itemId) { return itemTotal(this.get(), itemId); },
+  itemMaxStars: function(itemId) { return itemMaxStars(this.get(), itemId); },
 
   // 重置存档（调试用）
   reset: function() {

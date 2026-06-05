@@ -9,7 +9,7 @@ var MILESTONES = [
   },
   {
     id: 'first_item', minutes: 5,
-    apply: function(d) { if (!d.items) d.items = {}; d.items['mana_ring'] = (d.items['mana_ring']||0) + 1; },
+    apply: function(d) { if (!d.items) d.items = {}; if (!Array.isArray(d.items['mana_ring'])) d.items['mana_ring']=[0,0,0]; d.items['mana_ring'][0]++; },
     msg: '获得宝物：魔力戒指！'
   },
   {
@@ -50,7 +50,7 @@ var MILESTONES = [
     apply: function(d) {
       d.shopUnlocked = true;
       if (!d.items) d.items = {};
-      d.items['fire_wand'] = (d.items['fire_wand']||0) + 1;
+      if (!Array.isArray(d.items['fire_wand'])) d.items['fire_wand']=[0,0,0]; d.items['fire_wand'][0]++;
     },
     msg: '商店开放！获赠哥布林专属宝物：火焰魔杖！'
   }
