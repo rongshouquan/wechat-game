@@ -9,8 +9,9 @@ var MenuScene = function(ctx, width, height) {
 MenuScene.prototype._initButtons = function() {
   var w = this.width, h = this.height;
   this.buttons = [
-    { label: '开始战斗', x: w/2-100, y: h*0.52, w: 200, h: 55, action: 'startBattle', color: '#e74c3c' },
-    { label: '宝物装备', x: w/2-100, y: h*0.63, w: 200, h: 50, action: 'openItems',   color: '#8e44ad' }
+    { label: '开始战斗', x: w/2-100, y: h*0.50, w: 200, h: 52, action: 'startBattle',   color: '#e74c3c' },
+    { label: '宝物装备', x: w/2-100, y: h*0.60, w: 200, h: 48, action: 'openItems',     color: '#8e44ad' },
+    { label: '研究所',   x: w/2-100, y: h*0.69, w: 200, h: 48, action: 'openResearch',  color: '#2980b9' }
   ];
 };
 

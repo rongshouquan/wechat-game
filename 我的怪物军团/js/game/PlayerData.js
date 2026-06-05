@@ -18,10 +18,10 @@ var DEFAULT_DATA = {
   lineup: [
     { raceId: 'goblin', slot: 1 }
   ],
-  researchPoints: 0,
-  items: { iron_sword: 1, copper_shield: 1, mage_hat: 1 }, // 初始赠送3件普通宝物
+  researchPoints: 200, // 初始给200研究点方便测试
+  items: { iron_sword: 1, copper_shield: 1, mage_hat: 1 },
   equips: {},
-  bonds: {}
+  bonds: { assassination_squad: 1 } // 初始赠送暗杀小队LV1（对应新手引导第20分钟）
 };
 
 var PlayerData = {

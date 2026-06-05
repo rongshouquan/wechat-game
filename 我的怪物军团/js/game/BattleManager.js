@@ -3,6 +3,7 @@ var RACES = require('../data/races').RACES;
 var SKILLS = require('./SkillManager').SKILLS;
 var ItemEffects = require('./ItemEffects').applyToUnit;
 var PlayerData = require('./PlayerData').PlayerData;
+var BondManager = require('./BondManager');
 
 function calcSlotPos(slot, team, w, h) {
   var col = slot % 3;
@@ -84,6 +85,12 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
       self.enemyUnits.push(u);
     }
   });
+
+  // 激活羁绊
+  var raceIds = this.playerUnits.map(function(u) { return u.raceId; });
+  var activeBonds = BondManager.getActiveBonds(raceIds);
+  BondManager.applyBonds(activeBonds, this.playerUnits);
+  this.activeBonds = activeBonds;
 };
 
 BattleManager.prototype._fireSkill = function(unit) {
@@ -119,17 +126,20 @@ BattleManager.prototype.update = function(dt) {
   if (aliveEnemies.length === 0) { this.state = 'win'; return; }
   if (alivePlayers.length === 0) { this.state = 'lose'; return; }
 
+  // 集火目标：血量最低的存活敌人
+  this._focusTarget = aliveEnemies.length > 0 ? aliveEnemies.reduce(function(a, b) { return a.hp < b.hp ? a : b; }) : null;
+
   // 持续技能tick
   this._ticks = this._ticks.filter(function(fn) { return fn(dt); });
 
   alivePlayers.forEach(function(u) {
-    // 狂化时怒气不增长：在update前锁定
     var berserking = u._berserk;
-    if (berserking) u.rage = Math.min(99, u.rage); // 不让自然恢复满
+    if (berserking) u.rage = Math.min(99, u.rage);
     u.update(dt, aliveEnemies, function(attacker, target) {
       var atkVal = Math.round(attacker.atk * (1 + (attacker._atkBoost || 0)));
       var dmgReduction = (target._skillDmgReduction || 0) + (target._itemDmgReduction || 0);
-      var dmg = Math.round(atkVal * Math.max(0, 1 - dmgReduction));
+      var focusBoost = (attacker._focusFire && target === self._focusTarget) ? (attacker._focusDmgBoost || 0) : 0;
+      var dmg = Math.round(atkVal * Math.max(0, 1 - dmgReduction) * (1 + focusBoost));
       if (target.shield > 0) {
         var abs = Math.min(target.shield, dmg);
         target.shield -= abs; dmg -= abs;
