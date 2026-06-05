@@ -89,10 +89,12 @@ RaceScene.prototype._drawList = function(d) {
     ctx.fillStyle = race.color;
     ctx.fillRect(x, y, 5, bh);
 
-    // 种族立绘
+    // 种族立绘（multiply去白底）
     var img = race.image ? ImageCache.get(race.image) : null;
     if (img) {
+      ctx.globalCompositeOperation = 'multiply';
       ctx.drawImage(img, x+8, y+7, 44, 60);
+      ctx.globalCompositeOperation = 'source-over';
     } else {
       ctx.fillStyle = race.color;
       ctx.beginPath();
@@ -155,7 +157,9 @@ RaceScene.prototype._drawDetail = function(d) {
   // 种族立绘（详情页大图）
   var detailImg = race.image ? ImageCache.get(race.image) : null;
   if (detailImg) {
+    ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(detailImg, w/2-45, 58, 90, 120);
+    ctx.globalCompositeOperation = 'source-over';
   } else {
     ctx.fillStyle = race.color;
     ctx.beginPath();
