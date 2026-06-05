@@ -3,6 +3,7 @@ var BattleScene = require('./scenes/BattleScene').BattleScene;
 var ResultScene = require('./scenes/ResultScene').ResultScene;
 var ItemScene = require('./scenes/ItemScene').ItemScene;
 var ResearchScene = require('./scenes/ResearchScene').ResearchScene;
+var ShopScene = require('./scenes/ShopScene').ShopScene;
 var PlayerData = require('./game/PlayerData').PlayerData;
 
 var Main = function() {
@@ -59,6 +60,8 @@ Main.prototype._handleAction = function(action) {
     this._switchScene('items');
   } else if (action === 'openResearch') {
     this._switchScene('research');
+  } else if (action === 'openShop') {
+    this._switchScene('shop');
   } else if (action === 'backToMenu') {
     this._switchScene('menu');
   } else if (action === 'nextLevel') {
@@ -82,6 +85,9 @@ Main.prototype._switchScene = function(name, data) {
   } else if (name === 'research') {
     var self3 = this;
     this.currentScene = new ResearchScene(ctx, w, h, function() { self3._switchScene('menu'); });
+  } else if (name === 'shop') {
+    var self4 = this;
+    this.currentScene = new ShopScene(ctx, w, h, function() { self4._switchScene('menu'); });
   } else if (name === 'battle') {
     this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result, rewards) {
       self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel, rewards);
