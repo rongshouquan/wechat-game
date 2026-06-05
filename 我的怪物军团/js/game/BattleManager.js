@@ -45,10 +45,12 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
     var u = new Unit({
       id: self._uidCounter++,
       raceId: cfg.raceId, name: race.name, team: 'player', slot: cfg.slot,
-      color: race.color, size: race.size,
+      color: race.color,
+      size: cfg.sizeOverride || race.size,
       maxHp: Math.round(race.baseHp * (cfg.hpMult || 1)),
       atk: Math.round(race.baseAtk * (cfg.atkMult || 1)),
-      atkInterval: race.baseAtkSpeed
+      atkInterval: race.baseAtkSpeed,
+      skillEnhancements: cfg.skillEnhancements || {}
     });
     u.x = pos.x; u.y = pos.y;
     u.onSkill = function(unit) { self._fireSkill(unit); };

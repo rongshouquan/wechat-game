@@ -5,13 +5,17 @@ var SKILLS = {
 
   // 哥布林：陨石轰击 - AOE攻击敌方后排
   goblin: function(unit, ctx) {
+    var enh = unit.skillEnhancements || {};
     var enemies = ctx.getEnemies(unit);
     var backRow = enemies.filter(function(e) { return !e.dead && e.slot >= 3; });
     var targets = backRow.length > 0 ? backRow : enemies.filter(function(e) { return !e.dead; });
-    var dmg = Math.round(unit.atk * 2.5);
+    var dmgMult = 2.5 * (1 + (enh.skillDmgBoost || 0));
+    var dmg = Math.round(unit.atk * dmgMult);
     targets.forEach(function(t) {
       var actual = t.takeDamage(dmg);
       ctx.addFloat(t.x, t.y, '-' + actual, '#e74c3c');
+      // LV10解锁：技能附加燃烧
+      if (enh.skill === 'burn') t.applyBurn(5);
     });
     ctx.addFloat(unit.x, unit.y - unit.size, '陨石！', '#e67e22');
   },
@@ -28,7 +32,8 @@ var SKILLS = {
 
     var elapsed = 0, interval = 0.4;
     var timer = 0;
-    var dmgPerHit = Math.round(unit.atk * 1.5);
+    var enh = unit.skillEnhancements || {};
+    var dmgPerHit = Math.round(unit.atk * 1.5 * (1 + (enh.skillDmgBoost || 0)));
 
     unit._skillActive = true;
     var tick = function(dt) {

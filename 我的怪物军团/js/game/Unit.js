@@ -24,11 +24,12 @@ var Unit = function(cfg) {
   this.slowTimer = 0;     // 减速
   this.slowRate = 0;      // 减速幅度 0~1
 
+  this.skillEnhancements = cfg.skillEnhancements || {};
   this.dead = false;
   this.x = 0;
   this.y = 0;
 
-  this.onSkill = null; // 技能回调，由BattleManager注入
+  this.onSkill = null;
 };
 
 Unit.prototype.update = function(dt, enemies, onAttack) {

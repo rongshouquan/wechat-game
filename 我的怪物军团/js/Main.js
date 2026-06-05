@@ -1,6 +1,7 @@
 var MenuScene = require('./scenes/MenuScene').MenuScene;
 var BattleScene = require('./scenes/BattleScene').BattleScene;
 var ResultScene = require('./scenes/ResultScene').ResultScene;
+var PlayerData = require('./game/PlayerData').PlayerData;
 
 var Main = function() {
   var sysInfo = wx.getSystemInfoSync();
@@ -14,7 +15,9 @@ var Main = function() {
 
   this.currentScene = null;
   this.lastTime = 0;
-  this.currentLevel = 1;
+
+  PlayerData.load();
+  this.currentLevel = PlayerData.get().currentLevel;
 
   this._initTouch();
   this._switchScene('menu');
@@ -48,7 +51,8 @@ Main.prototype._handleAction = function(action) {
   } else if (action === 'backToMenu') {
     this._switchScene('menu');
   } else if (action === 'nextLevel') {
-    this.currentLevel++;
+    PlayerData.advanceLevel();
+    this.currentLevel = PlayerData.get().currentLevel;
     this._switchScene('battle');
   } else if (action === 'retry') {
     this._switchScene('battle');

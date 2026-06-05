@@ -1,5 +1,7 @@
 var BattleManager = require('../game/BattleManager').BattleManager;
 var LEVELS = require('../data/levels').LEVELS;
+var PlayerData = require('../game/PlayerData').PlayerData;
+var getRaceStats = require('../game/RaceLevel').getRaceStats;
 
 var BattleScene = function(ctx, width, height, levelId, onEnd) {
   this.ctx = ctx;
@@ -9,18 +11,38 @@ var BattleScene = function(ctx, width, height, levelId, onEnd) {
 
   this.bm = new BattleManager(width, height);
 
-  // 默认玩家阵容：哥布林前排0、狼人前排2、牛头怪前排1、骷髅法师后排3
-  var playerSlots = [
-    { raceId: 'goblin',      slot: 0 },
-    { raceId: 'minotaur',    slot: 1 },
-    { raceId: 'werewolf',    slot: 2 },
-    { raceId: 'skeletonMage',slot: 3 }
-  ];
-
+  var playerSlots = this._buildPlayerSlots();
   var levelCfg = LEVELS[(levelId || 1) - 1] || LEVELS[0];
   this.bm.setup(playerSlots, levelCfg.enemies);
   this.levelName = levelCfg.name;
   this._resultShown = false;
+};
+
+BattleScene.prototype._buildPlayerSlots = function() {
+  var d = PlayerData.get();
+  var lineup = d.lineup;
+  var slots = [];
+  for (var i = 0; i < lineup.length; i++) {
+    var entry = lineup[i];
+    var level = d.raceLevels[entry.raceId] || 1;
+    var stats = getRaceStats(entry.raceId, level);
+    if (!stats) continue;
+    var size = Math.round(28 * stats.sizeScale);
+    // 多单位：同一种族占多个格子
+    for (var u = 0; u < stats.unitCount; u++) {
+      var slot = entry.slot + u; // 简单顺序偏移，最大不超过5
+      if (slot > 5) break;
+      slots.push({
+        raceId: entry.raceId,
+        slot: slot,
+        hpMult: stats.hpMult,
+        atkMult: stats.atkMult,
+        sizeOverride: size,
+        skillEnhancements: stats.skillEnhancements
+      });
+    }
+  }
+  return slots;
 };
 
 BattleScene.prototype.update = function(dt) {
