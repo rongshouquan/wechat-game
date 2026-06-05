@@ -19,9 +19,9 @@ var DEFAULT_DATA = {
     { raceId: 'goblin', slot: 1 }
   ],
   researchPoints: 0,
-  items: {},       // { itemId: count }
-  equips: {},      // { raceId: itemId }
-  bonds: {}        // { bondId: level }
+  items: { iron_sword: 1, copper_shield: 1, mage_hat: 1 }, // 初始赠送3件普通宝物
+  equips: {},
+  bonds: {}
 };
 
 var PlayerData = {

@@ -35,8 +35,8 @@ var Unit = function(cfg) {
 Unit.prototype.update = function(dt, enemies, onAttack) {
   if (this.dead) return;
 
-  // 自然怒气恢复 1%/秒（狂化期间不增长）
-  if (!this._berserk) this._addRage(dt * 1);
+  // 自然怒气恢复 1%/秒（狂化期间不增长，魔力戒指加速）
+  if (!this._berserk) this._addRage(dt * 1 * (this._rageSpeedMult || 1));
 
   // 流血持续掉血
   if (this.bleedTimer > 0) {
@@ -105,7 +105,7 @@ Unit.prototype._addRage = function(amount) {
 };
 
 Unit.prototype.onAttackHit = function() {
-  if (!this._berserk) this._addRage(10);
+  if (!this._berserk) this._addRage(10 * (this._rageSpeedMult || 1));
 };
 
 // 施加状态

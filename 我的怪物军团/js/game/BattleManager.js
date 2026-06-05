@@ -1,6 +1,8 @@
 var Unit = require('./Unit').Unit;
 var RACES = require('../data/races').RACES;
 var SKILLS = require('./SkillManager').SKILLS;
+var ItemEffects = require('./ItemEffects').applyToUnit;
+var PlayerData = require('./PlayerData').PlayerData;
 
 function calcSlotPos(slot, team, w, h) {
   var col = slot % 3;
@@ -54,6 +56,10 @@ BattleManager.prototype.setup = function(playerSlots, enemyCfgs) {
     });
     u.x = pos.x; u.y = pos.y;
     u.onSkill = function(unit) { self._fireSkill(unit); };
+    // 应用装备宝物
+    var equips = PlayerData.get().equips || {};
+    var itemId = equips[cfg.raceId];
+    if (itemId) ItemEffects(u, itemId);
     self.playerUnits.push(u);
   });
 
@@ -122,9 +128,8 @@ BattleManager.prototype.update = function(dt) {
     if (berserking) u.rage = Math.min(99, u.rage); // 不让自然恢复满
     u.update(dt, aliveEnemies, function(attacker, target) {
       var atkVal = Math.round(attacker.atk * (1 + (attacker._atkBoost || 0)));
-      var dmgReduction = target._skillDmgReduction || 0;
-      var dmg = Math.round(atkVal * (1 - dmgReduction));
-      // 护盾先吸收
+      var dmgReduction = (target._skillDmgReduction || 0) + (target._itemDmgReduction || 0);
+      var dmg = Math.round(atkVal * Math.max(0, 1 - dmgReduction));
       if (target.shield > 0) {
         var abs = Math.min(target.shield, dmg);
         target.shield -= abs; dmg -= abs;
@@ -134,6 +139,12 @@ BattleManager.prototype.update = function(dt) {
         var actual = target.takeDamage(dmg);
         attacker.onAttackHit();
         self._addFloat(target.x, target.y, '-' + actual, '#ff6b6b');
+        // 反伤
+        if (target._reflectDmg && !target.dead) {
+          var ref = Math.round(dmg * target._reflectDmg);
+          attacker.takeDamage(ref);
+          self._addFloat(attacker.x, attacker.y, '反-' + ref, '#e67e22');
+        }
       }
     });
   });
@@ -141,8 +152,8 @@ BattleManager.prototype.update = function(dt) {
   aliveEnemies.forEach(function(u) {
     u.update(dt, alivePlayers, function(attacker, target) {
       var atkVal = Math.round(attacker.atk * (1 + (attacker._atkBoost || 0)));
-      var dmgReduction = target._skillDmgReduction || 0;
-      var dmg = Math.round(atkVal * (1 - dmgReduction));
+      var dmgReduction = (target._skillDmgReduction || 0) + (target._itemDmgReduction || 0);
+      var dmg = Math.round(atkVal * Math.max(0, 1 - dmgReduction));
       if (target.shield > 0) {
         var abs = Math.min(target.shield, dmg);
         target.shield -= abs; dmg -= abs;
@@ -152,6 +163,11 @@ BattleManager.prototype.update = function(dt) {
         var actual = target.takeDamage(dmg);
         attacker.onAttackHit();
         self._addFloat(target.x, target.y, '-' + actual, '#ffa07a');
+        if (target._reflectDmg && !target.dead) {
+          var ref2 = Math.round(dmg * target._reflectDmg);
+          attacker.takeDamage(ref2);
+          self._addFloat(attacker.x, attacker.y, '反-' + ref2, '#e67e22');
+        }
       }
     });
   });

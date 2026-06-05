@@ -1,6 +1,7 @@
 var MenuScene = require('./scenes/MenuScene').MenuScene;
 var BattleScene = require('./scenes/BattleScene').BattleScene;
 var ResultScene = require('./scenes/ResultScene').ResultScene;
+var ItemScene = require('./scenes/ItemScene').ItemScene;
 var PlayerData = require('./game/PlayerData').PlayerData;
 
 var Main = function() {
@@ -48,6 +49,8 @@ Main.prototype._handleAction = function(action) {
   if (!action) return;
   if (action === 'startBattle') {
     this._switchScene('battle');
+  } else if (action === 'openItems') {
+    this._switchScene('items');
   } else if (action === 'backToMenu') {
     this._switchScene('menu');
   } else if (action === 'nextLevel') {
@@ -64,6 +67,9 @@ Main.prototype._switchScene = function(name, data) {
   var self = this;
   if (name === 'menu') {
     this.currentScene = new MenuScene(ctx, w, h);
+  } else if (name === 'items') {
+    var self2 = this;
+    this.currentScene = new ItemScene(ctx, w, h, function() { self2._switchScene('menu'); });
   } else if (name === 'battle') {
     this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result, rewards) {
       self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel, rewards);
