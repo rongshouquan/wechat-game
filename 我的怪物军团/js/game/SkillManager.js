@@ -138,8 +138,8 @@ var SKILLS = {
     });
   },
 
-  // 史莱姆：给全体友方增加护盾（最大血量10%）
-  slime: function(unit, ctx) {
+  // 圣骑士：给全体友方增加护盾（最大血量10%）
+  paladin: function(unit, ctx) {
     var allies = ctx.getAllies(unit);
     allies.forEach(function(a) {
       if (a.dead) return;

@@ -2,6 +2,7 @@ var PlayerData = require('../game/PlayerData').PlayerData;
 var RACES = require('../data/races').RACES;
 var ITEMS = require('../data/items').ITEMS;
 var getRaceStats = require('../game/RaceLevel').getRaceStats;
+var ImageCache = require('../utils/ImageCache').ImageCache;
 
 // 升级消耗经验：升到N+1级需要 N*15 经验
 function upgradeCost(level) { return level * 15; }
@@ -88,15 +89,20 @@ RaceScene.prototype._drawList = function(d) {
     ctx.fillStyle = race.color;
     ctx.fillRect(x, y, 5, bh);
 
-    // 种族色圆
-    ctx.fillStyle = race.color;
-    ctx.beginPath();
-    ctx.arc(x+28, y+37, 20, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(race.name, x+28, y+40);
+    // 种族立绘
+    var img = race.image ? ImageCache.get(race.image) : null;
+    if (img) {
+      ctx.drawImage(img, x+8, y+7, 44, 60);
+    } else {
+      ctx.fillStyle = race.color;
+      ctx.beginPath();
+      ctx.arc(x+28, y+37, 20, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(race.name, x+28, y+40);
+    }
 
     // 名称+等级
     ctx.fillStyle = '#fff';
@@ -146,49 +152,54 @@ RaceScene.prototype._drawDetail = function(d) {
   ctx.fillStyle = '#1a2535';
   ctx.fillRect(0, 48, w, h-48);
 
-  // 种族标题
-  ctx.fillStyle = race.color;
-  ctx.beginPath();
-  ctx.arc(w/2, 100, 30, 0, Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(race.name, w/2, 104);
+  // 种族立绘（详情页大图）
+  var detailImg = race.image ? ImageCache.get(race.image) : null;
+  if (detailImg) {
+    ctx.drawImage(detailImg, w/2-45, 58, 90, 120);
+  } else {
+    ctx.fillStyle = race.color;
+    ctx.beginPath();
+    ctx.arc(w/2, 100, 30, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(race.name, w/2, 104);
+  }
 
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 20px sans-serif';
-  ctx.fillText(race.name + '  LV ' + level, w/2, 152);
+  ctx.fillText(race.name + '  LV ' + level, w/2, 192);
   ctx.fillStyle = '#aaa';
   ctx.font = '13px sans-serif';
-  ctx.fillText(race.role, w/2, 170);
+  ctx.fillText(race.role, w/2, 210);
 
   // 属性
   ctx.fillStyle = '#ccc';
   ctx.font = '13px sans-serif';
-  ctx.fillText('HP ' + Math.round(race.baseHp * stats.hpMult) + '   ATK ' + Math.round((race.baseAtk||0) * stats.atkMult), w/2, 192);
+  ctx.fillText('HP ' + Math.round(race.baseHp * stats.hpMult) + '   ATK ' + Math.round((race.baseAtk||0) * stats.atkMult), w/2, 230);
 
   // 已装备宝物
   var equip = (d.equips||{})[raceId];
   ctx.fillStyle = equip ? '#f39c12' : '#666';
   ctx.font = '13px sans-serif';
-  ctx.fillText('装备：' + (equip ? this._getItemName(equip) : '未装备'), w/2, 212);
+  ctx.fillText('装备：' + (equip ? this._getItemName(equip) : '未装备'), w/2, 252);
 
   // 换装备按钮
   ctx.fillStyle = '#8e44ad';
-  ctx.fillRect(w/2-60, 222, 120, 34);
+  ctx.fillRect(w/2-60, 262, 120, 34);
   ctx.fillStyle = '#fff';
   ctx.font = '14px sans-serif';
-  ctx.fillText('更换宝物', w/2, 244);
-  this._equipBtn = { x: w/2-60, y: 222, w: 120, h: 34 };
+  ctx.fillText('更换宝物', w/2, 284);
+  this._equipBtn = { x: w/2-60, y: 262, w: 120, h: 34 };
 
   // 升级成长节点
   ctx.fillStyle = '#e0b84b';
   ctx.font = 'bold 14px sans-serif';
-  ctx.fillText('── 成长预览 ──', w/2, 278);
+  ctx.fillText('── 成长预览 ──', w/2, 318);
 
   var milestones = [5, 10, 15, 20];
-  var lineY = 296;
+  var lineY = 336;
   for (var mi = 0; mi < milestones.length; mi++) {
     var ml = milestones[mi];
     var desc = getGrowthDesc(race, ml);

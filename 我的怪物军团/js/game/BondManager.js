@@ -50,7 +50,7 @@ function applyBonds(activeBonds, playerUnits) {
     else if (id === 'guardian_heart') {
       playerUnits.forEach(function(u) {
         if (u.raceId === 'fairy' && fx.healBoost)   u._healBoostMult = (u._healBoostMult || 1) * (1 + fx.healBoost);
-        if (u.raceId === 'slime' && fx.shieldBoost)  u._bondShieldBoost = fx.shieldBoost;
+        if (u.raceId === 'paladin' && fx.shieldBoost)  u._bondShieldBoost = fx.shieldBoost;
       });
     }
     else if (id === 'flame_formation') {

@@ -3,6 +3,7 @@ var RACES = {
   goblin: {
     id: 'goblin',
     name: '哥布林',
+    image: '种族图片/哥布林立绘1.png',
     role: '群伤/燃烧',
     baseHp: 300,
     baseAtk: 40,
@@ -21,6 +22,7 @@ var RACES = {
   werewolf: {
     id: 'werewolf',
     name: '狼人',
+    image: '种族图片/狼人1.png',
     role: '切后排',
     baseHp: 400,
     baseAtk: 55,
@@ -38,6 +40,7 @@ var RACES = {
   minotaur: {
     id: 'minotaur',
     name: '牛头怪',
+    image: '种族图片/牛头怪1.png',
     role: '坦克/控制',
     baseHp: 800,
     baseAtk: 35,
@@ -55,6 +58,7 @@ var RACES = {
   orc: {
     id: 'orc',
     name: '兽人',
+    image: '种族图片/兽人1.png',
     role: '狂战士',
     baseHp: 600,
     baseAtk: 60,
@@ -72,6 +76,7 @@ var RACES = {
   skeletonMage: {
     id: 'skeletonMage',
     name: '骷髅法师',
+    image: '种族图片/骷髅法师1.png',
     role: '高爆发单体',
     baseHp: 280,
     baseAtk: 70,
@@ -89,6 +94,7 @@ var RACES = {
   fairy: {
     id: 'fairy',
     name: '小精灵',
+    image: '种族图片/小精灵1.png',
     role: '辅助/治疗',
     baseHp: 250,
     baseAtk: 0,  // 普攻是治疗
@@ -104,9 +110,10 @@ var RACES = {
       20: { sizeScale: 1.6, skillHealBoost: 0.5 }
     }
   },
-  slime: {
-    id: 'slime',
-    name: '史莱姆',
+  paladin: {
+    id: 'paladin',
+    name: '圣骑士',
+    image: '种族图片/圣骑士1.png',
     role: '辅助/保护',
     baseHp: 350,
     baseAtk: 20,
@@ -124,6 +131,7 @@ var RACES = {
   reaper: {
     id: 'reaper',
     name: '死神',
+    image: '种族图片/死神1.png',
     role: '高爆发/收割',
     baseHp: 320,
     baseAtk: 65,

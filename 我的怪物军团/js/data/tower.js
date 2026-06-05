@@ -1,4 +1,4 @@
-var RACES_ORDER = ['goblin','werewolf','minotaur','orc','skeletonMage','fairy','slime','reaper'];
+var RACES_ORDER = ['goblin','werewolf','minotaur','orc','skeletonMage','fairy','paladin','reaper'];
 
 // 动态生成塔层配置（难度高于推图）
 function getTowerFloor(floor) {

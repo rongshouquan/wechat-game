@@ -8,7 +8,7 @@ var DEFAULT_DATA = {
   currentLevel: 1,
   raceLevels: {
     goblin: 1, werewolf: 1, minotaur: 1, orc: 1,
-    skeletonMage: 1, fairy: 1, slime: 1, reaper: 1
+    skeletonMage: 1, fairy: 1, paladin: 1, reaper: 1
   },
   unlockedRaces: ['goblin'],
   lineup: [{ raceId: 'goblin', slot: 1 }],

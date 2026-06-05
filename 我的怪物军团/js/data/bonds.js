@@ -33,7 +33,7 @@ var BONDS = [
   {
     id: 'guardian_heart',
     name: '守护之心',
-    races: ['fairy', 'slime'],
+    races: ['fairy', 'paladin'],
     levels: {
       1: { desc: '护盾持续+10%，治疗+5%', shieldBoost: 0.1, healBoost: 0.05 },
       2: { desc: '护盾持续+20%，治疗+10%', shieldBoost: 0.2, healBoost: 0.1 },

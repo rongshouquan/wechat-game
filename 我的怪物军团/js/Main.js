@@ -10,6 +10,7 @@ var RaceScene = require('./scenes/RaceScene').RaceScene;
 var PreBattleScene = require('./scenes/PreBattleScene').PreBattleScene;
 var TutorialManager = require('./game/TutorialManager').TutorialManager;
 var PlayerData = require('./game/PlayerData').PlayerData;
+var ImageCache = require('./utils/ImageCache').ImageCache;
 
 var Main = function() {
   var sysInfo = wx.getSystemInfoSync();
@@ -26,6 +27,13 @@ var Main = function() {
 
   PlayerData.load();
   this.currentLevel = PlayerData.get().currentLevel;
+
+  // 预加载种族立绘
+  ImageCache.preload([
+    '种族图片/哥布林立绘1.png', '种族图片/狼人1.png', '种族图片/牛头怪1.png',
+    '种族图片/兽人1.png', '种族图片/骷髅法师1.png', '种族图片/小精灵1.png',
+    '种族图片/圣骑士1.png', '种族图片/死神1.png'
+  ]);
   this._offlineMsg = PlayerData.offlineEarnings > 0
     ? '离线收益：+' + PlayerData.offlineEarnings + ' 研究点' : '';
 

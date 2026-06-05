@@ -32,8 +32,8 @@ var ITEMS = {
       desc: '普攻治疗2个最低血量友方，所有治疗及增益效果+100%',
       effects: { healTargets: 2, healAndBuffBoost: 1.0 }
     },
-    slime_core: {
-      id: 'slime_core', name: '史莱姆核心', rarity: 'exclusive', forRace: 'slime',
+    paladin_shield: {
+      id: 'paladin_shield', name: '圣光盾徽', rarity: 'exclusive', forRace: 'paladin',
       desc: '护盾破裂眩晕敌人1秒，护盾期间怒气+30%',
       effects: { shieldBreakStun: 1, shieldRageBoost: 0.3 }
     },
