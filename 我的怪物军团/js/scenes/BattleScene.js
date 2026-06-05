@@ -93,6 +93,15 @@ BattleScene.prototype._drawUnit = function(u) {
   var ctx = this.ctx;
   var r = u.size / 2;
 
+  // 眩晕外圈
+  if (u.stunTimer > 0) {
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(u.x, u.y, r + 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   // 单位圆形色块
   ctx.fillStyle = u.color;
   ctx.beginPath();
@@ -105,16 +114,29 @@ BattleScene.prototype._drawUnit = function(u) {
   ctx.textAlign = 'center';
   ctx.fillText(u.name, u.x, u.y + 4);
 
-  // 血条背景
   var barW = u.size + 10, barH = 5;
-  var barX = u.x - barW / 2, barY = u.y + r + 4;
-  ctx.fillStyle = '#333';
-  ctx.fillRect(barX, barY, barW, barH);
+  var barX = u.x - barW / 2;
 
   // 血条
+  var hpY = u.y + r + 4;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(barX, hpY, barW, barH);
   var pct = u.hp / u.maxHp;
   ctx.fillStyle = pct > 0.5 ? '#2ecc71' : pct > 0.25 ? '#f39c12' : '#e74c3c';
-  ctx.fillRect(barX, barY, barW * pct, barH);
+  ctx.fillRect(barX, hpY, barW * pct, barH);
+
+  // 怒气条
+  var rageY = hpY + barH + 2;
+  ctx.fillStyle = '#222';
+  ctx.fillRect(barX, rageY, barW, 3);
+  ctx.fillStyle = '#e67e22';
+  ctx.fillRect(barX, rageY, barW * (u.rage / 100), 3);
+
+  // 状态点（燃烧=红，流血=深红，减速=蓝）
+  var dotX = barX;
+  if (u.burnTimer > 0)  { ctx.fillStyle = '#e74c3c'; ctx.fillRect(dotX, rageY + 5, 5, 5); dotX += 7; }
+  if (u.bleedTimer > 0) { ctx.fillStyle = '#922b21'; ctx.fillRect(dotX, rageY + 5, 5, 5); dotX += 7; }
+  if (u.slowTimer > 0)  { ctx.fillStyle = '#3498db'; ctx.fillRect(dotX, rageY + 5, 5, 5); }
 };
 
 BattleScene.prototype._drawResult = function(text, color) {
