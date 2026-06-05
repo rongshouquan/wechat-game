@@ -1,3 +1,5 @@
+var PlayerData = require('../game/PlayerData').PlayerData;
+
 var MenuScene = function(ctx, width, height, offlineMsg) {
   this.ctx = ctx;
   this.width = width;
@@ -10,12 +12,16 @@ var MenuScene = function(ctx, width, height, offlineMsg) {
 MenuScene.prototype._initButtons = function() {
   var w = this.width, h = this.height;
   this.buttons = [
-    { label: '开始战斗', x: w/2-100, y: h*0.43, w: 200, h: 48, action: 'startBattle',  color: '#e74c3c' },
-    { label: '阵容编排', x: w/2-100, y: h*0.51, w: 200, h: 44, action: 'openLineup',   color: '#16a085' },
-    { label: '宝物装备', x: w/2-100, y: h*0.59, w: 200, h: 44, action: 'openItems',    color: '#8e44ad' },
-    { label: '研究所',   x: w/2-100, y: h*0.67, w: 200, h: 44, action: 'openResearch', color: '#2980b9' },
-    { label: '商店',     x: w/2-100, y: h*0.75, w: 200, h: 44, action: 'openShop',     color: '#e67e22' }
+    { label: '开始战斗', x: w/2-100, y: h*0.40, w: 200, h: 46, action: 'startBattle',  color: '#e74c3c' },
+    { label: '阵容编排', x: w/2-100, y: h*0.48, w: 200, h: 42, action: 'openLineup',   color: '#16a085' },
+    { label: '宝物装备', x: w/2-100, y: h*0.55, w: 200, h: 42, action: 'openItems',    color: '#8e44ad' },
+    { label: '研究所',   x: w/2-100, y: h*0.62, w: 200, h: 42, action: 'openResearch', color: '#2980b9' },
+    { label: '商店',     x: w/2-100, y: h*0.69, w: 200, h: 42, action: 'openShop',     color: '#e67e22' }
   ];
+  // 第30关后显示爬塔
+  if ((PlayerData.get().currentLevel || 1) > 30) {
+    this.buttons.push({ label: '爬　塔', x: w/2-100, y: h*0.76, w: 200, h: 42, action: 'openTower', color: '#c0392b' });
+  }
 };
 
 MenuScene.prototype.update = function(dt) {};
