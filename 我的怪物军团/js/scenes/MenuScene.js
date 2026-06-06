@@ -1,4 +1,5 @@
-var PlayerData = require('../game/PlayerData').PlayerData;
+var PlayerData   = require('../game/PlayerData').PlayerData;
+var TutorialFlow = require('../game/TutorialFlow').TutorialFlow;
 
 var TAB_H = 64; // 底部导航栏高度
 
@@ -11,6 +12,23 @@ var MenuScene = function(ctx, width, height, offlineMsg) {
   this._unlockAnim = false;
   this._unlockTimer = 0;
   this._unlockStep  = 0; // 0=军团出现, 1=宝库出现, 2=完成
+
+  // 教程：首次回城堡（step=4）触发解锁
+  this._tutorOverlay = false;   // 解锁说明弹窗
+  this._tutorOverlayStep = 0;   // 0=军团说明, 1=宝库说明, 2=指引军团按钮
+  this._tutorArrowBlink = 0;
+  if (TutorialFlow.isActive() && TutorialFlow.getStep() === 4) {
+    // 给予军团/宝库解锁
+    var d0 = PlayerData.get();
+    d0.legionUnlocked = true;
+    d0.treasuryUnlocked = true;
+    PlayerData.save();
+    this.startUnlockAnim();
+    TutorialFlow.setStep(5);
+  }
+  if (TutorialFlow.isActive() && TutorialFlow.getStep() === 5) {
+    this._tutorOverlay = true;
+  }
 };
 
 // 底部三个标签配置
@@ -43,8 +61,13 @@ MenuScene.prototype.update = function(dt) {
     this._unlockTimer += dt;
     if (this._unlockStep === 0 && this._unlockTimer > 0.4) this._unlockStep = 1;
     if (this._unlockStep === 1 && this._unlockTimer > 0.8) this._unlockStep = 2;
-    if (this._unlockTimer > 1.2) this._unlockAnim = false;
+    if (this._unlockTimer > 1.2) {
+      this._unlockAnim = false;
+      // 解锁动画结束后展示说明弹窗
+      if (TutorialFlow.isActive()) this._tutorOverlay = true;
+    }
   }
+  this._tutorArrowBlink += dt;
 };
 
 MenuScene.prototype.draw = function() {
@@ -116,6 +139,9 @@ MenuScene.prototype.draw = function() {
 
   // ── 底部导航栏 ──
   this._drawBottomNav(navY);
+
+  // ── 教程叠加层 ──
+  if (this._tutorOverlay && !this._unlockAnim) this._drawTutorOverlay(navY);
 };
 
 MenuScene.prototype._drawBottomNav = function(navY) {
@@ -185,15 +211,53 @@ MenuScene.prototype._drawBottomNav = function(navY) {
   }
 };
 
+MenuScene.prototype._drawTutorOverlay = function(navY) {
+  var ctx = this.ctx, w = this.width, h = this.height;
+  var texts = [
+    { speaker: '怪物领主', text: '军团解锁！在这里你可以升级种族，给他们装备宝物，让你的军团越来越强。' },
+    { speaker: '怪物领主', text: '宝库解锁！这里存放着你获得的所有宝物，可以升级和分解它们。' },
+    null // step 2 = 指引箭头，无对话
+  ];
+
+  var step = this._tutorOverlayStep;
+  if (step < 2) {
+    var t = texts[step];
+    if (t) TutorialFlow.drawDialog(ctx, w, h, t.speaker, t.text);
+  } else {
+    // step 2：指引点军团按钮
+    var tabW = w / 3;
+    var legionCx = tabW / 2; // 军团在左边第一个
+    var blink = Math.sin(this._tutorArrowBlink * 4) > 0;
+    if (blink) {
+      TutorialFlow.drawArrow(ctx, legionCx, navY - 14);
+      ctx.fillStyle = '#ffe066';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('点击军团', legionCx, navY - 26);
+    }
+  }
+};
+
 MenuScene.prototype.onTouchStart = function(x, y) {
   var w = this.width, h = this.height;
   var navY = h - TAB_H;
+
+  // 教程叠加弹窗期间：点任意处推进
+  if (this._tutorOverlay && this._tutorOverlayStep < 2) {
+    this._tutorOverlayStep++;
+    return null;
+  }
   // 点击底部导航
   if (y >= navY) {
-    var tabW = w / 3;
-    var idx = Math.floor(x / tabW);
+    var tabW2 = w / 3;
+    var idx = Math.floor(x / tabW2);
     var tabStates = this._getTabs();
     if (idx >= 0 && idx <= 2 && tabStates[idx].unlocked) {
+      // 教程step2：玩家点军团，完成城堡引导
+      if (this._tutorOverlay && this._tutorOverlayStep >= 2 && idx === 0) {
+        this._tutorOverlay = false;
+        TutorialFlow.setStep(6);
+      }
       return MenuScene.TABS[idx].action;
     }
   }

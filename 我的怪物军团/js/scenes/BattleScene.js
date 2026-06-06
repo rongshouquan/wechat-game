@@ -1,10 +1,11 @@
-var BattleManager = require('../game/BattleManager').BattleManager;
-var LEVELS        = require('../data/levels').LEVELS;
-var RACES         = require('../data/races').RACES;
-var PlayerData    = require('../game/PlayerData').PlayerData;
-var getRaceStats  = require('../game/RaceLevel').getRaceStats;
-var AdManager     = require('../game/AdManager').AdManager;
-var ImageCache    = require('../utils/ImageCache').ImageCache;
+var BattleManager  = require('../game/BattleManager').BattleManager;
+var LEVELS         = require('../data/levels').LEVELS;
+var RACES          = require('../data/races').RACES;
+var PlayerData     = require('../game/PlayerData').PlayerData;
+var getRaceStats   = require('../game/RaceLevel').getRaceStats;
+var AdManager      = require('../game/AdManager').AdManager;
+var ImageCache     = require('../utils/ImageCache').ImageCache;
+var TutorialFlow   = require('../game/TutorialFlow').TutorialFlow;
 
 // ── 布局常量 ──
 var L = {
@@ -57,12 +58,18 @@ var BattleScene = function(ctx, width, height, levelId, onEnd) {
   // 拖拽状态
   this._drag = null; // { raceId, x, y, fromSlot: -1 or slot index }
 
-  // 教程钩子（TutorialManager 外部注入）
-  this.tutorAllowedSlot = -1;  // -1 = 不限制
-  this.tutorHighlightSlot = -1;
-  this.tutorShowDragHint = false;
+  // 教程状态（内部管理）
+  // tutorState: '' | 'dialog' | 'place' | 'ready'
+  this._tutorActive = TutorialFlow.isActive() && this._levelId === 1;
+  this._tutorState  = this._tutorActive ? 'dialog' : '';
+  this._tutorDialogText = '上吧，小的们，为了怪物王国！';
+
+  // 教程限制钩子（供 draw 使用）
+  this.tutorAllowedSlot   = this._tutorActive ? 5 : -1;
+  this.tutorHighlightSlot = this._tutorActive ? 5 : -1;
+  this.tutorShowDragHint  = false;
   this.tutorDragHintTimer = 0;
-  this.tutorLockStart = false;  // 是否锁定"开始战斗"按钮
+  this.tutorLockStart     = this._tutorActive ? true : false;
 
   // 战斗阶段状态
   this.bm = new BattleManager(width, height);
@@ -153,6 +160,7 @@ BattleScene.prototype._startBattle = function() {
   }
   this.bm.setup(playerSlots, this._levelCfg.enemies);
   this._phase = 'battle';
+  if (this._tutorActive) TutorialFlow.setStep(3);
 };
 
 // ════════════════════════════════════════
@@ -161,6 +169,21 @@ BattleScene.prototype._startBattle = function() {
 BattleScene.prototype.update = function(dt) {
   if (this._phase === 'preBattle') {
     if (this.tutorShowDragHint) this.tutorDragHintTimer += dt;
+    // dialog 阶段不做任何事
+    if (this._tutorState === 'dialog') return;
+    // place 阶段：检查是否已放置在 slot 5
+    if (this._tutorState === 'place') {
+      var hasSlot5 = false;
+      for (var i = 0; i < this._pbLineup.length; i++) {
+        if (this._pbLineup[i].slot === 5) { hasSlot5 = true; break; }
+      }
+      if (hasSlot5) {
+        this._tutorState = 'ready';
+        this.tutorShowDragHint = false;
+        this.tutorLockStart = false;
+        TutorialFlow.setStep(2);
+      }
+    }
     return;
   }
   // battle
@@ -198,6 +221,10 @@ BattleScene.prototype.draw = function() {
     this._drawPreBattleStartBtn();
     if (this._drag) this._drawDragGhost();
     if (this.tutorShowDragHint) this._drawDragHint();
+    // 教程对话框（最顶层）
+    if (this._tutorState === 'dialog') this._drawTutorDialog();
+    // ready 阶段：指引点开始
+    if (this._tutorState === 'ready') this._drawStartHint();
   } else {
     this._drawUnits();
     this._drawFloats();
@@ -471,6 +498,28 @@ BattleScene.prototype._drawDragHint = function() {
   ctx.globalAlpha = 1;
 };
 
+// 教程对话框
+BattleScene.prototype._drawTutorDialog = function() {
+  var ctx = this.ctx, w = this.width, h = this.height;
+  // 半透明遮罩（让玩家聚焦对话框）
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(0, 0, w, h);
+  TutorialFlow.drawDialog(ctx, w, h, '怪物领主', this._tutorDialogText);
+};
+
+// ready 状态：指引点开始战斗
+BattleScene.prototype._drawStartHint = function() {
+  var ctx = this.ctx, w = this.width, h = this.height;
+  // 开始按钮上方的提示箭头
+  var btn = this._startBtn;
+  if (!btn) return;
+  TutorialFlow.drawArrow(ctx, w/2, btn.y - 18);
+  ctx.fillStyle = '#ffe066';
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('点击开始战斗！', w/2, btn.y - 28);
+};
+
 // ════ 战斗阶段绘制 ════
 
 BattleScene.prototype._drawUnits = function() {
@@ -634,6 +683,13 @@ BattleScene.prototype.onTouchStart = function(x, y) {
   function hit(b) { return b && x >= b.x && x <= b.x+b.w && y >= b.y && y <= b.y+b.h; }
 
   if (this._phase === 'preBattle') {
+    // 教程对话框期间：点任意处关闭对话，进入 place 阶段
+    if (this._tutorState === 'dialog') {
+      this._tutorState = 'place';
+      this.tutorShowDragHint = true;
+      TutorialFlow.setStep(1);
+      return null;
+    }
     // 返回按钮
     if (hit(this._backBtn)) return 'backToMenu';
     // 开始战斗按钮

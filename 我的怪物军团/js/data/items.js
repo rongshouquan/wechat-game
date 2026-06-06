@@ -65,7 +65,9 @@ var ITEMS = {
     flame_necklace: { id: 'flame_necklace', name: '火焰项链', rarity: 'normal', effects: { skillBurn: true } },
     ice_glove:      { id: 'ice_glove',      name: '冰晶护手', rarity: 'normal', effects: { skillSlow: 3 } },
     light_cape:     { id: 'light_cape',     name: '光明披风', rarity: 'normal', effects: { heal: 0.05 } },
-    copper_glove:   { id: 'copper_glove',   name: '铜手套',   rarity: 'normal', effects: { damageReduction: 0.03 } }
+    copper_glove:   { id: 'copper_glove',   name: '铜手套',   rarity: 'normal', effects: { damageReduction: 0.03 } },
+    war_fang:       { id: 'war_fang',       name: '战争獠牙', rarity: 'normal', effects: { normalAtk: 0.10 },
+                      desc: '普通攻击伤害+10%' }
   }
 };
 

@@ -145,6 +145,14 @@ var RACES = {
       15: { unitCount: 2 },
       20: { sizeScale: 1.6, skillDmgBoost: 0.5 }
     }
+  },
+  // 新手第一关专用敌人（不可作为玩家种族）
+  skeleton_soldier: {
+    id: 'skeleton_soldier', name: '骷髅小兵',
+    image: null, role: '普通敌兵',
+    baseHp: 115, baseAtk: 120, baseAtkSpeed: 1.0,
+    maxUnitsAtMaxLevel: 1, color: '#9b59b6', size: 22,
+    levelGrowth: {}
   }
 };
 

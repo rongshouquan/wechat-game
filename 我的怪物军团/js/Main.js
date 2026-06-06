@@ -96,6 +96,11 @@ Main.prototype._handleAction = function(action) {
   } else if (action === 'openTower') {
     this._switchScene('tower');
   } else if (action === 'backToMenu') {
+    // 教程第一关胜利后回城堡：记录步骤，让 MenuScene 触发解锁动画
+    var TF = require('./game/TutorialFlow').TutorialFlow;
+    if (TF.isActive() && TF.getStep() === 4) {
+      // step 已在 ResultScene 设为 4，MenuScene 构造时会检测并处理
+    }
     this._switchScene('menu');
   } else if (action === 'nextLevel') {
     PlayerData.advanceLevel();

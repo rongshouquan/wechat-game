@@ -28,7 +28,9 @@ var DEFAULT_DATA = {
   shopUnlocked: false,
   legionUnlocked: false,
   treasuryUnlocked: false,
-  isNewPlayer: true
+  isNewPlayer: true,
+  tutorialStep: 0,
+  gold: 0
 };
 
 // items 新格式：{ itemId: [1星数量, 2星数量, 3星数量] }
