@@ -25,7 +25,10 @@ var DEFAULT_DATA = {
   adCounts: null,
   tutorial: { triggered: {}, totalMs: 0 },
   researchUnlocked: false,
-  shopUnlocked: false
+  shopUnlocked: false,
+  legionUnlocked: false,
+  treasuryUnlocked: false,
+  isNewPlayer: true
 };
 
 // items 新格式：{ itemId: [1星数量, 2星数量, 3星数量] }

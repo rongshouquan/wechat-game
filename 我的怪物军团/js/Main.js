@@ -72,7 +72,11 @@ Main.prototype._initTouch = function() {
 Main.prototype._handleAction = function(action) {
   if (!action) return;
   if (action === 'startBattle') {
-    this._switchScene('preBattle');
+    this._switchScene('battle');
+  } else if (action === 'openLegion') {
+    this._switchScene('races');
+  } else if (action === 'openTreasury') {
+    this._switchScene('items');
   } else if (action === 'openRaces') {
     this._switchScene('races');
   } else if (action === 'openItems') {
@@ -81,8 +85,6 @@ Main.prototype._handleAction = function(action) {
     this._switchScene('research');
   } else if (action === 'openShop') {
     this._switchScene('shop');
-  } else if (action === 'openRaces') {
-    this._switchScene('races');
   } else if (action === 'openLineup') {
     this._switchScene('lineup');
   } else if (action === 'openTower') {
@@ -92,9 +94,9 @@ Main.prototype._handleAction = function(action) {
   } else if (action === 'nextLevel') {
     PlayerData.advanceLevel();
     this.currentLevel = PlayerData.get().currentLevel;
-    this._switchScene('preBattle');
+    this._switchScene('battle');
   } else if (action === 'retry') {
-    this._switchScene('preBattle');
+    this._switchScene('battle');
   }
 };
 
@@ -119,12 +121,6 @@ Main.prototype._switchScene = function(name, data) {
   } else if (name === 'tower') {
     var self6 = this;
     this.currentScene = new TowerScene(ctx, w, h, function() { self6._switchScene('menu'); });
-  } else if (name === 'preBattle') {
-    var self7 = this;
-    this.currentScene = new PreBattleScene(ctx, w, h, this.currentLevel,
-      function() { self7._switchScene('battle'); },
-      function() { self7._switchScene('menu'); }
-    );
   } else if (name === 'battle') {
     this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result, rewards) {
       self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel, rewards);

@@ -1,154 +1,201 @@
 var PlayerData = require('../game/PlayerData').PlayerData;
 
+var TAB_H = 64; // 底部导航栏高度
+
 var MenuScene = function(ctx, width, height, offlineMsg) {
   this.ctx = ctx;
   this.width = width;
   this.height = height;
   this.offlineMsg = offlineMsg || '';
-  this.buttons = [];
-  this._initButtons();
+  // 解锁动画状态（首次进入城堡时播放）
+  this._unlockAnim = false;
+  this._unlockTimer = 0;
+  this._unlockStep  = 0; // 0=军团出现, 1=宝库出现, 2=完成
 };
 
-MenuScene.prototype._initButtons = function() {
-  var w = this.width, h = this.height;
+// 底部三个标签配置
+MenuScene.TABS = [
+  { label: '军团', action: 'openLegion',   color: '#16a085', icon: '⚔' },
+  { label: '征战', action: 'startBattle',  color: '#c0392b', icon: '▶' },
+  { label: '宝库', action: 'openTreasury', color: '#8e44ad', icon: '◆' },
+];
+
+MenuScene.prototype.startUnlockAnim = function() {
+  this._unlockAnim  = true;
+  this._unlockTimer = 0;
+  this._unlockStep  = 0;
+};
+
+MenuScene.prototype._getTabs = function() {
   var d = PlayerData.get();
-  this.buttons = [];
+  var tabs = [];
+  // 军团：解锁后显示（isNewPlayer=false 或 legionUnlocked）
+  tabs.push({ idx: 0, unlocked: !d.isNewPlayer || d.legionUnlocked });
+  // 征战：始终可见
+  tabs.push({ idx: 1, unlocked: true });
+  // 宝库：解锁后显示
+  tabs.push({ idx: 2, unlocked: !d.isNewPlayer || d.treasuryUnlocked });
+  return tabs;
+};
 
-  // 左侧：种族/阵容
-  this.buttons.push({ label: '种族\n管理', x: 16, y: h*0.32, w: w*0.20, h: h*0.22, action: 'openRaces', color: '#16a085', multi: true });
-
-  // 右侧：宝物
-  this.buttons.push({ label: '宝物\n装备', x: w - 16 - w*0.20, y: h*0.32, w: w*0.20, h: h*0.22, action: 'openItems', color: '#8e44ad', multi: true });
-
-  // 底部中央：推图（最大）
-  this.buttons.push({ label: '推  图', x: w/2-80, y: h*0.75, w: 160, h: 58, action: 'startBattle', color: '#c0392b', large: true });
-
-  // 底部左：研究所
-  this.buttons.push({ label: '研究所', x: 16, y: h*0.75, w: w*0.26, h: 52, action: 'openResearch', color: '#2471a3' });
-
-  // 底部右：商店
-  this.buttons.push({ label: '商  店', x: w - 16 - w*0.26, y: h*0.75, w: w*0.26, h: 52, action: 'openShop', color: '#d68910' });
-
-  // 爬塔（右下角，30关后显示）
-  if ((d.currentLevel || 1) > 30) {
-    this.buttons.push({ label: '塔', x: w - 58, y: h*0.86, w: 50, h: 50, action: 'openTower', color: '#7d3c98', corner: true });
+MenuScene.prototype.update = function(dt) {
+  if (this._unlockAnim) {
+    this._unlockTimer += dt;
+    if (this._unlockStep === 0 && this._unlockTimer > 0.4) this._unlockStep = 1;
+    if (this._unlockStep === 1 && this._unlockTimer > 0.8) this._unlockStep = 2;
+    if (this._unlockTimer > 1.2) this._unlockAnim = false;
   }
 };
-
-MenuScene.prototype.update = function(dt) {};
 
 MenuScene.prototype.draw = function() {
   var ctx = this.ctx, w = this.width, h = this.height;
   var d = PlayerData.get();
+  var navY = h - TAB_H;
 
   // 背景
   ctx.fillStyle = '#111827';
   ctx.fillRect(0, 0, w, h);
 
   // ── 顶部资源栏 ──
+  var topH = 48;
   ctx.fillStyle = '#1f2937';
-  ctx.fillRect(0, 0, w, h*0.10);
+  ctx.fillRect(0, 0, w, topH);
   ctx.fillStyle = '#f1c40f';
-  ctx.font = '13px sans-serif';
+  ctx.font = 'bold 14px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('第 ' + (d.currentLevel||1) + ' 关', 16, h*0.065);
-  ctx.fillStyle = '#5dade2';
-  ctx.textAlign = 'center';
-  ctx.fillText('研究点 ' + (d.researchPoints||0), w/2, h*0.065);
-  ctx.fillStyle = '#f39c12';
+  ctx.fillText('第 ' + (d.currentLevel||1) + ' 关', 16, 30);
+  ctx.fillStyle = '#aaa';
   ctx.textAlign = 'right';
-  ctx.fillText('荣誉 ' + (d.honorPoints||0), w - 16, h*0.065);
+  ctx.font = '13px sans-serif';
+  ctx.fillText('怪物王国', w - 16, 30);
 
-  // ── 中央王座区域 ──
-  var throneY = h * 0.12, throneH = h * 0.58;
+  // ── 中央城堡区域 ──
+  var castleY = topH + 10;
+  var castleH = navY - castleY - 10;
 
-  // 装饰背景光晕（纯色块，避免shadowBlur）
+  // 背景装饰
   ctx.fillStyle = '#1a2035';
-  ctx.fillRect(w*0.18, throneY, w*0.64, throneH);
+  ctx.fillRect(w*0.10, castleY, w*0.80, castleH);
 
   // 标题
   ctx.fillStyle = '#e0b84b';
-  ctx.font = 'bold 28px sans-serif';
+  ctx.font = 'bold 26px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('我的怪物军团', w/2, throneY + h*0.07);
+  ctx.fillText('我的怪物军团', w/2, castleY + 44);
 
-  // 王座装饰（色块模拟）
-  var cx = w/2, cy = throneY + throneH*0.45;
-  // 底座
+  // 副标题/关卡状态
+  ctx.fillStyle = '#888';
+  ctx.font = '13px sans-serif';
+  ctx.fillText('当前进度：第 ' + (d.currentLevel||1) + ' 关', w/2, castleY + 68);
+
+  // 王座（色块模拟）
+  var cx = w/2, cy = castleY + castleH * 0.52;
   ctx.fillStyle = '#4a3728';
-  ctx.fillRect(cx-55, cy+20, 110, 30);
-  ctx.fillRect(cx-40, cy+10, 80, 20);
-  // 椅背
+  ctx.fillRect(cx-55, cy+22, 110, 28);
+  ctx.fillRect(cx-40, cy+12, 80, 18);
   ctx.fillStyle = '#5d4037';
-  ctx.fillRect(cx-30, cy-60, 60, 80);
-  // 椅顶装饰
+  ctx.fillRect(cx-28, cy-58, 56, 78);
   ctx.fillStyle = '#e0b84b';
-  ctx.fillRect(cx-30, cy-68, 60, 10);
-  ctx.beginPath();
-  ctx.arc(cx, cy-74, 10, 0, Math.PI*2);
-  ctx.fill();
-  // 宝石
+  ctx.fillRect(cx-28, cy-66, 56, 10);
+  ctx.beginPath(); ctx.arc(cx, cy-72, 9, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#e74c3c';
-  ctx.beginPath();
-  ctx.arc(cx, cy-68, 5, 0, Math.PI*2);
-  ctx.fill();
-  // 扶手
+  ctx.beginPath(); ctx.arc(cx, cy-66, 4, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#6d4c41';
-  ctx.fillRect(cx-50, cy-20, 18, 40);
-  ctx.fillRect(cx+32, cy-20, 18, 40);
+  ctx.fillRect(cx-48, cy-18, 18, 38);
+  ctx.fillRect(cx+30, cy-18, 18, 38);
 
   // 离线收益提示
   if (this.offlineMsg) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(w/2-120, throneY+throneH-40, 240, 32);
-    ctx.fillStyle = '#f1c40f';
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(w/2-130, castleY+castleH-44, 260, 32);
+    ctx.fillStyle = '#2ecc71';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(this.offlineMsg, w/2, throneY+throneH-18);
+    ctx.fillText(this.offlineMsg, w/2, castleY+castleH-22);
   }
 
-  // ── 绘制所有按钮 ──
-  for (var i = 0; i < this.buttons.length; i++) {
-    this._drawBtn(this.buttons[i]);
-  }
+  // ── 底部导航栏 ──
+  this._drawBottomNav(navY);
 };
 
-MenuScene.prototype._drawBtn = function(btn) {
-  var ctx = this.ctx;
+MenuScene.prototype._drawBottomNav = function(navY) {
+  var ctx = this.ctx, w = this.width;
+  var tabs = MenuScene.TABS;
+  var tabW = w / 3;
+  var tabStates = this._getTabs();
 
-  ctx.fillStyle = btn.color || '#444';
-  ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-
-  // 高亮边框
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  // 导航背景
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, navY, w, TAB_H);
+  ctx.strokeStyle = '#333';
   ctx.lineWidth = 1;
-  ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+  ctx.beginPath(); ctx.moveTo(0, navY); ctx.lineTo(w, navY); ctx.stroke();
 
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
+  for (var i = 0; i < 3; i++) {
+    var tab = tabs[i];
+    var state = tabStates[i];
+    var tx = i * tabW;
+    var cx = tx + tabW / 2;
+    var cy = navY + TAB_H / 2;
 
-  if (btn.multi) {
-    // 两行文字
-    var lines = btn.label.split('\n');
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(lines[0], btn.x + btn.w/2, btn.y + btn.h/2 - 6);
-    ctx.fillText(lines[1], btn.x + btn.w/2, btn.y + btn.h/2 + 14);
-  } else if (btn.large) {
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + btn.h/2 + 8);
-  } else if (btn.corner) {
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('爬塔', btn.x + btn.w/2, btn.y + btn.h/2 + 5);
-  } else {
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(btn.label, btn.x + btn.w/2, btn.y + btn.h/2 + 6);
+    // 解锁动画：军团(i=0)和宝库(i=2)用淡入
+    var alpha = 1;
+    if (this._unlockAnim) {
+      if (i === 0 && this._unlockStep < 1) alpha = this._unlockTimer / 0.4;
+      if (i === 2 && this._unlockStep < 2) alpha = (this._unlockTimer - 0.4) / 0.4;
+      if (alpha < 0) alpha = 0;
+      if (alpha > 1) alpha = 1;
+    }
+
+    if (!state.unlocked) {
+      // 锁定状态：灰色
+      ctx.fillStyle = 'rgba(80,80,80,' + alpha + ')';
+      ctx.fillRect(tx, navY, tabW, TAB_H);
+      ctx.fillStyle = 'rgba(100,100,100,' + alpha + ')';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔒', cx, cy - 4);
+      ctx.fillText(tab.label, cx, cy + 14);
+      continue;
+    }
+
+    // 征战按钮特殊高亮
+    if (i === 1) {
+      ctx.fillStyle = 'rgba(192,57,43,' + alpha + ')';
+      ctx.fillRect(tx, navY, tabW, TAB_H);
+    }
+
+    // 图标
+    ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tab.icon, cx, cy - 2);
+
+    // 文字
+    ctx.fillStyle = i === 1 ? 'rgba(255,255,255,' + alpha + ')' : 'rgba(200,200,200,' + alpha + ')';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText(tab.label, cx, cy + 18);
+
+    // 分隔线
+    if (i < 2) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(tx + tabW, navY + 8); ctx.lineTo(tx + tabW, navY + TAB_H - 8); ctx.stroke();
+    }
   }
 };
 
 MenuScene.prototype.onTouchStart = function(x, y) {
-  for (var i = 0; i < this.buttons.length; i++) {
-    var btn = this.buttons[i];
-    if (x >= btn.x && x <= btn.x+btn.w && y >= btn.y && y <= btn.y+btn.h) return btn.action;
+  var w = this.width, h = this.height;
+  var navY = h - TAB_H;
+  // 点击底部导航
+  if (y >= navY) {
+    var tabW = w / 3;
+    var idx = Math.floor(x / tabW);
+    var tabStates = this._getTabs();
+    if (idx >= 0 && idx <= 2 && tabStates[idx].unlocked) {
+      return MenuScene.TABS[idx].action;
+    }
   }
   return null;
 };
