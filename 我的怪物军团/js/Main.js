@@ -7,7 +7,7 @@ var ShopScene = require('./scenes/ShopScene').ShopScene;
 var LineupScene = require('./scenes/LineupScene').LineupScene;
 var TowerScene = require('./scenes/TowerScene').TowerScene;
 var RaceScene = require('./scenes/RaceScene').RaceScene;
-var PreBattleScene = require('./scenes/PreBattleScene').PreBattleScene;
+var IntroScene = require('./scenes/IntroScene').IntroScene;
 var TutorialManager = require('./game/TutorialManager').TutorialManager;
 var PlayerData = require('./game/PlayerData').PlayerData;
 var ImageCache = require('./utils/ImageCache').ImageCache;
@@ -45,7 +45,13 @@ var Main = function() {
   wx.onHide(function() { PlayerData.save(); });
 
   this._initTouch();
-  this._switchScene('menu');
+  // 首次启动 → 背景简介，老玩家 → 主界面
+  var d = PlayerData.get();
+  if (d.isNewPlayer) {
+    this._switchScene('intro');
+  } else {
+    this._switchScene('menu');
+  }
   this._startLoop();
 };
 
@@ -121,6 +127,13 @@ Main.prototype._switchScene = function(name, data) {
   } else if (name === 'tower') {
     var self6 = this;
     this.currentScene = new TowerScene(ctx, w, h, function() { self6._switchScene('menu'); });
+  } else if (name === 'intro') {
+    var self0 = this;
+    this.currentScene = new IntroScene(ctx, w, h, function() {
+      // 简介结束 → 直接进第一关备战
+      self0.currentLevel = 1;
+      self0._switchScene('battle');
+    });
   } else if (name === 'battle') {
     this.currentScene = new BattleScene(ctx, w, h, this.currentLevel, function(result, rewards) {
       self.currentScene = new ResultScene(ctx, w, h, result, self.currentLevel, rewards);
