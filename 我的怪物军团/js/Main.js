@@ -16,16 +16,21 @@ var Main = function() {
   var sysInfo = wx.getSystemInfoSync();
   this.width = sysInfo.screenWidth;
   this.height = sysInfo.screenHeight;
+  var dpr = sysInfo.pixelRatio || 1;
 
   this.canvas = wx.createCanvas();
-  this.canvas.width = this.width;
-  this.canvas.height = this.height;
+  // 画布按物理像素分配，避免高清屏下被拉伸导致模糊/锯齿
+  this.canvas.width = this.width * dpr;
+  this.canvas.height = this.height * dpr;
   this.ctx = this.canvas.getContext('2d');
+  // 缩放上下文，使后续所有绘制坐标仍按"逻辑像素"书写，无需改动各场景代码
+  this.ctx.scale(dpr, dpr);
 
   this.currentScene = null;
   this.lastTime = 0;
 
   PlayerData.load();
+  PlayerData.reset(); // 🔧 DEV: 强制重置存档，测试完后删除此行
   this.currentLevel = PlayerData.get().currentLevel;
 
   // 预加载种族立绘

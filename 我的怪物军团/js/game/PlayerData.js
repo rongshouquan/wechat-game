@@ -122,6 +122,14 @@ var PlayerData = {
   _data: null,
   offlineEarnings: 0,
 
+  reset: function() {
+    Storage.remove('playerData');
+    this._data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    this._data.lastSaveTime = Date.now();
+    this.offlineEarnings = 0;
+    this.save();
+  },
+
   load: function() {
     var saved = Storage.load('playerData', null);
     if (saved) {
