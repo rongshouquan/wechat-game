@@ -1,5 +1,6 @@
 var PlayerData   = require('../game/PlayerData').PlayerData;
 var TutorialFlow = require('../game/TutorialFlow').TutorialFlow;
+var SafeArea     = require('../utils/SafeArea').SafeArea;
 
 var TAB_H = 64; // 底部导航栏高度
 
@@ -8,6 +9,7 @@ var MenuScene = function(ctx, width, height, offlineMsg) {
   this.width = width;
   this.height = height;
   this.offlineMsg = offlineMsg || '';
+  this._safeTop = SafeArea.getTopInset();
   // 解锁动画状态（首次进入城堡时播放）
   this._unlockAnim = false;
   this._unlockTimer = 0;
@@ -79,18 +81,19 @@ MenuScene.prototype.draw = function() {
   ctx.fillStyle = '#111827';
   ctx.fillRect(0, 0, w, h);
 
-  // ── 顶部资源栏 ──
-  var topH = 48;
+  // ── 顶部资源栏（避开刘海屏/胶囊按钮安全区） ──
+  var top = this._safeTop;
+  var topH = 48 + top;
   ctx.fillStyle = '#1f2937';
   ctx.fillRect(0, 0, w, topH);
   ctx.fillStyle = '#f1c40f';
   ctx.font = 'bold 14px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('第 ' + (d.currentLevel||1) + ' 关', 16, 30);
+  ctx.fillText('第 ' + (d.currentLevel||1) + ' 关', 16, top + 30);
   ctx.fillStyle = '#aaa';
   ctx.textAlign = 'right';
   ctx.font = '13px sans-serif';
-  ctx.fillText('怪物王国', w - 16, 30);
+  ctx.fillText('怪物王国', w - 16, top + 30);
 
   // ── 中央城堡区域 ──
   var castleY = topH + 10;

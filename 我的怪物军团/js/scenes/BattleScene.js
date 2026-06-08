@@ -6,6 +6,7 @@ var getRaceStats   = require('../game/RaceLevel').getRaceStats;
 var AdManager      = require('../game/AdManager').AdManager;
 var ImageCache     = require('../utils/ImageCache').ImageCache;
 var TutorialFlow   = require('../game/TutorialFlow').TutorialFlow;
+var SafeArea       = require('../utils/SafeArea').SafeArea;
 
 // ── 布局常量 ──
 var L = {
@@ -39,6 +40,7 @@ var BattleScene = function(ctx, width, height, levelId, onEnd) {
   this.width  = width;
   this.height = height;
   this.onEnd  = onEnd || function() {};
+  this._safeTop = SafeArea.getTopInset(); // 顶部安全区偏移，避开刘海屏/胶囊按钮
 
   // 阶段：'preBattle' | 'battle'
   this._phase = 'preBattle';
@@ -390,20 +392,22 @@ BattleScene.prototype._drawPreBattlePlaced = function() {
 // 备战顶栏
 BattleScene.prototype._drawPreBattleTopBar = function() {
   var ctx = this.ctx, w = this.width;
+  var top = this._safeTop;
+  var barH = L.topBarH + top;
   ctx.fillStyle = 'rgba(0,0,0,0.72)';
-  ctx.fillRect(0, 0, w, L.topBarH);
+  ctx.fillRect(0, 0, w, barH);
   ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, L.topBarH); ctx.lineTo(w, L.topBarH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, barH); ctx.lineTo(w, barH); ctx.stroke();
   ctx.fillStyle = '#e0b84b'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText(this.levelName, 14, 26);
+  ctx.fillText(this.levelName, 14, top + 26);
   ctx.fillStyle = '#888'; ctx.font = '12px sans-serif';
-  ctx.fillText('选择种族拖到我方阵地', 14, 46);
+  ctx.fillText('选择种族拖到我方阵地', 14, top + 46);
   // 返回按钮
   ctx.fillStyle = '#333';
-  roundRect(ctx, w-70, 12, 56, 32, 8); ctx.fill();
+  roundRect(ctx, w-70, top + 12, 56, 32, 8); ctx.fill();
   ctx.fillStyle = '#aaa'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('返回', w-42, 32);
-  this._backBtn = { x: w-70, y: 12, w: 56, h: 32 };
+  ctx.fillText('返回', w-42, top + 32);
+  this._backBtn = { x: w-70, y: top + 12, w: 56, h: 32 };
 };
 
 // 备战底部种族栏
@@ -573,15 +577,17 @@ BattleScene.prototype._drawFloats = function() {
 
 BattleScene.prototype._drawTopBar = function() {
   var ctx = this.ctx, w = this.width;
-  ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, w, L.topBarH);
+  var top = this._safeTop;
+  var barH = L.topBarH + top;
+  ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, w, barH);
   ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, L.topBarH); ctx.lineTo(w, L.topBarH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, barH); ctx.lineTo(w, barH); ctx.stroke();
   ctx.fillStyle = '#e0b84b'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText(this.levelName, 14, 26);
+  ctx.fillText(this.levelName, 14, top + 26);
   var remain = Math.max(0, Math.ceil(this.bm.timeLimit - this.bm.elapsed));
   ctx.fillStyle = remain < 30 ? '#e74c3c' : '#8899aa';
-  ctx.font = '12px sans-serif'; ctx.fillText('剩余: ' + remain + 's', 14, 46);
-  var spX = w-104, spY = 28;
+  ctx.font = '12px sans-serif'; ctx.fillText('剩余: ' + remain + 's', 14, top + 46);
+  var spX = w-104, spY = top + 28;
   ctx.fillStyle = this._speed === 2 ? '#c48a00' : '#1e2c44';
   ctx.beginPath(); ctx.arc(spX, spY, 22, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = this._speed === 2 ? '#f1c40f' : '#334'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -589,7 +595,7 @@ BattleScene.prototype._drawTopBar = function() {
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(this._speed === 2 ? 'x2' : 'x1', spX, spY);
   this._speedBtn = { x: spX-22, y: spY-22, w: 44, h: 44 };
-  var paX = w-50, paY = 28;
+  var paX = w-50, paY = top + 28;
   ctx.fillStyle = this._paused ? '#6b0000' : '#1e2c44';
   ctx.beginPath(); ctx.arc(paX, paY, 22, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#334'; ctx.lineWidth = 1.5; ctx.stroke();
