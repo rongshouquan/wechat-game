@@ -59,4 +59,4 @@ const noCore = runBattle([deployAlly("f", 0, 1, { ship: "freedom", driver: "apai
 const withCore = runBattle([deployAlly("f", 0, 1, { ship: "freedom", driver: "apai", level: L, core: "overload" }), deployAlly("s", 2, 1, { ship: "swarm", driver: "laojiu", level: L }), ...tough()]);
 const show = (r: typeof noCore): string => (r.winner === "ally" ? `胜 ✅ ${r.timeSec}s` : "败 ❌");
 console.log(`  无核:        ${show(noCore)}`);
-console.log(`  装过载核心:  ${show(withCore)}   ← 新手核简单粗暴（伤害×2）`);
+console.log(`  装过载核心:  ${show(withCore)}   ← 原子炮：开局一炮、半场范围秒一片`);

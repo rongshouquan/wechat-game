@@ -3,7 +3,9 @@ import type { UnitSpec } from "./engine.ts";
 
 // 战力显示（B1 §1 思路的简化代理：基于战斗属性 + 修正；过载核心因 dmgMult×2 → 战力≈翻倍，战斗伤害严格×2）
 export function powerOf(s: UnitSpec): number {
-  const p = s.atk * (s.dmgMult ?? 1) * 12 + s.maxHp * 0.3 + (s.onShieldBreakTeamShield ? 150 : 0);
+  let p = s.atk * (s.dmgMult ?? 1) * 12 + s.maxHp * 0.3;
+  if (s.primary?.aoeMult) p += s.atk * s.primary.aoeMult * 4; // 原子炮(过载核心)大范围爆发计入战力
+  if (s.onShieldBreakTeamShield) p += 150;
   return Math.round(p);
 }
 export function teamPower(specs: UnitSpec[]): number {

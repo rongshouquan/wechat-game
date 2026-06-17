@@ -4,10 +4,10 @@ import assert from "node:assert/strict";
 import { powerOf, shipLevelCost, nodeReward } from "./progression.ts";
 import { deployAlly } from "./content.ts";
 
-test("过载核心 ≈ 战力翻倍", () => {
+test("过载核心(原子炮) → 战力明显提升", () => {
   const base = powerOf(deployAlly("a", 0, 1, { ship: "freedom", driver: "apai" }));
   const core = powerOf(deployAlly("a", 0, 1, { ship: "freedom", driver: "apai", core: "overload" }));
-  assert.ok(core >= base * 1.6, `过载核心应≈翻倍：${core} vs ${base}`);
+  assert.ok(core >= base * 1.6, `过载核心应明显更强：${core} vs ${base}`);
 });
 
 test("星舰升级 → 战力上涨", () => {

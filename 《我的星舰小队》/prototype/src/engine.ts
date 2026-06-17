@@ -31,6 +31,9 @@ export interface TalentSpec {
 }
 
 // 喂进引擎的单位规格（我方=由 ship+driver+plugins+core 聚合；敌人=直接给）
+// 普攻形态（默认单体；过载核心→原子炮：大范围、慢）
+export interface PrimarySpec { interval: number; aoeMult?: number; aoeColRadius?: number; }
+
 export interface UnitSpec {
   id: string;
   name: string;
@@ -55,6 +58,7 @@ export interface UnitSpec {
   shieldPen?: number; // 破盾：对护盾伤害额外倍率
   dmgReduction?: number; // 自身减伤 0..1
   reach?: number; // 预留，首发不启用
+  primary?: PrimarySpec; // 普攻形态（默认单体；过载核心→原子炮 大范围、10s、开局即放）
 }
 
 interface Unit extends UnitSpec {
@@ -221,7 +225,7 @@ function makeUnit(spec: UnitSpec): Unit {
     hp: spec.maxHp,
     shieldCur: spec.shield ?? 0,
     alive: true,
-    atkCd: spec.atkInterval,
+    atkCd: spec.primary?.aoeMult ? 0 : spec.atkInterval, // 原子炮开局即放第一炮
     skillCd: 0, // CD/条件技默认开局即检定第一次（根文件 §4.2「默认开局即放第一次」）
     overheatStacks: 0,
     critAcc: 0,
@@ -260,20 +264,26 @@ export function runBattle(specs: UnitSpec[]): BattleResult {
         }
       }
 
-      // 普攻
+      // 普攻（默认单体；过载核心 → 原子炮：以目标列为中心 ±colRadius 列、全部行）
       u.atkCd -= DT;
       if (u.atkCd <= 0) {
         const tgt = pickTarget(u, units);
         if (tgt === null) { u.atkCd = 0; }
         else {
-          // 过热（仅普攻）
           let mult = 1;
           if (u.talent?.kind === "overheat") {
             u.overheatStacks = Math.min(5, u.overheatStacks + 1);
             mult = 1 + (u.overheatStacks * u.talent.value) / 100;
           }
-          dealDamage(u, tgt, mult, false, units, log, t);
-          u.atkCd += u.atkInterval;
+          if (u.primary?.aoeMult) {
+            const r = u.primary.aoeColRadius ?? 2;
+            const hit = opponents(u, units).filter((f) => Math.abs(f.col - tgt.col) <= r);
+            log.push(`[${t.toFixed(1)}s] ☀ ${u.name} 原子炮！命中 ${hit.length} 个`);
+            for (const f of hit) dealDamage(u, f, u.primary.aoeMult * mult, false, units, log, t);
+          } else {
+            dealDamage(u, tgt, mult, false, units, log, t);
+          }
+          u.atkCd += u.primary?.interval ?? u.atkInterval;
         }
       }
     }

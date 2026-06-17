@@ -1,5 +1,5 @@
 // 最小集内容（数值取自 第二块/轻量B2-v0.1）：星舰(含技能) / 驾驶员(能力+天赋) / 插件 / 星核 / 敌人 + 装配器。
-import type { UnitSpec, SkillSpec, TalentSpec, Targeting } from "./engine.ts";
+import type { UnitSpec, SkillSpec, TalentSpec, Targeting, PrimarySpec } from "./engine.ts";
 
 interface ShipDef { name: string; maxHp: number; atk: number; atkInterval: number; def: number; skill: SkillSpec; }
 export const SHIPS: Record<string, ShipDef> = {
@@ -48,8 +48,9 @@ export function deployAlly(id: string, row: number, col: number, lo: Loadout): U
   let skill: SkillSpec = ship.skill;
   let shield = 0;
   let onBreak: number | undefined;
+  let primary: PrimarySpec | undefined;
   if (lo.core === "overload") {
-    m.dmgMult *= 2; // 新手核：简单粗暴，伤害翻倍
+    primary = { interval: 10, aoeMult: 3.5, aoeColRadius: 2 }; // 新手核·原子炮：普攻变大范围巨炮、10s 一发、开局即放
   } else if (lo.core === "smallSun") {
     skill = { name: "小太阳", trigger: "cooldown", cd: 8, action: { kind: "aoe", mult: 4, maxTargets: 5 } }; // 质变：技能→大范围
   } else if (lo.core === "superShield") {
@@ -61,7 +62,7 @@ export function deployAlly(id: string, row: number, col: number, lo: Loadout): U
     id: `A_${id}`, name: ship.name + (drv ? `·${drv.name}` : ""), side: "ally", row, col,
     maxHp, atk, atkInterval: ship.atkInterval, def: ship.def,
     targeting: drv?.targeting ?? "frontmost", skill, talent: drv?.talent,
-    shield, onShieldBreakTeamShield: onBreak,
+    shield, onShieldBreakTeamShield: onBreak, primary,
     dmgMult: m.dmgMult, skillDmgMult: m.skillDmgMult, critChance: m.critChance, critMult: m.critMult,
     cdMult: m.cdMult, shieldPen: m.shieldPen, dmgReduction: m.dmgReduction,
   };
