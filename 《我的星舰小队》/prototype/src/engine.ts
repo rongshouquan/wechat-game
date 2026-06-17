@@ -1,5 +1,5 @@
 // 战斗引擎核心（纯 TS，与渲染/Cocos 解耦，可在 Node 单独跑、确定性、未来可服务器复算）。
-// C1a-1 范围：属性 + 普攻 + 固定阵位射程目标选择 + 防御减伤 + 胜负判定 + tick 循环。
+// C1a-1 范围：属性 + 普攻 + 固定阵位目标选择（首发无限射程，默认打最前排）+ 防御减伤 + 胜负 + tick。
 // 技能/效果积木/驾驶员能力天赋/星核质变 在 C1a-2 接入（本文件预留扩展点）。
 
 export type Side = "ally" | "enemy";
@@ -15,7 +15,7 @@ export interface UnitConfig {
   atk: number;
   atkInterval: number; // 攻击间隔（秒）= 1 / 攻速
   def: number;
-  reach: number; // 能攻击到对方的最大排号：0=只够前排 / 1=到中排 / 2=到后排
+  reach?: number; // 【首发不启用·预留】可攻击到对方的最大排号；省略 = 无限射程（首发默认）
 }
 
 export interface Unit extends UnitConfig {
@@ -55,7 +55,7 @@ function pickTarget(attacker: Unit, units: Unit[]): Unit | null {
   let best: Unit | null = null;
   for (const u of units) {
     if (!u.alive || u.side === attacker.side) continue;
-    if (u.row > attacker.reach) continue; // 够不着更靠后的排
+    if (attacker.reach !== undefined && u.row > attacker.reach) continue; // 首发无限射程；reach 预留未来
     if (best === null) { best = u; continue; }
     if (u.row !== best.row) { if (u.row < best.row) best = u; continue; }
     if (u.col !== best.col) { if (u.col < best.col) best = u; continue; }

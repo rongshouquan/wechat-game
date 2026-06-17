@@ -27,9 +27,12 @@ const nodeA: UnitConfig[] = [
 ];
 printResult("场景A · Node1（我方应胜）", runBattle(nodeA));
 
-// 场景 B —— 验证“射程/站位”：壁垒(reach=0，只够前排) vs 1 星盗炮台(后排 row2)。壁垒够不着 → 打不赢。
+// 场景 B —— 验证“受击/目标优先级”（首发无限射程）：敌方 前排星盗艇 + 后排炮台。
+// 我方默认打最前排 → 先清前排艇，后排炮台被晚打、活得久一直输出。这就是“后排威胁”的新基础：
+// 想早点点掉后排，需突袭手改目标优先级 / 导弹 AoE（C1a-2 接入）。
 const nodeB: UnitConfig[] = [
-  ally("bulwark", "bulwark", 0, 1),
-  enemy("turret", "t1", 2, 3, 1),
+  ally("freedom", "freedom", 0, 1),
+  enemy("raider", "r1", 0, 2, 1),
+  enemy("turret", "t1", 2, 4, 1),
 ];
-printResult("场景B · 短射程够不着后排（应非我方胜，证明站位/射程生效）", runBattle(nodeB), false);
+printResult("场景B · 默认前排优先（后排炮台被晚打、活得久）", runBattle(nodeB));

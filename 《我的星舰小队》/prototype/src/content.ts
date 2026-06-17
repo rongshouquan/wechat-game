@@ -5,15 +5,15 @@ type BaseStats = Omit<UnitConfig, "id" | "side" | "row" | "col">;
 
 // 我方星舰 @ Lv1 / 阶级 C
 export const SHIPS: Record<string, BaseStats> = {
-  freedom: { name: "自由号", maxHp: 800, atk: 60, atkInterval: 1.0, def: 20, reach: 1 }, // 火炮·自由型
-  swarm: { name: "蜂群", maxHp: 600, atk: 45, atkInterval: 1.25, def: 10, reach: 2 }, // 导弹·流派（远程到后排）
-  bulwark: { name: "壁垒", maxHp: 1500, atk: 30, atkInterval: 1.43, def: 40, reach: 0 }, // 壁垒·流派（近程）
+  freedom: { name: "自由号", maxHp: 800, atk: 60, atkInterval: 1.0, def: 20 }, // 火炮·自由型
+  swarm: { name: "蜂群", maxHp: 600, atk: 45, atkInterval: 1.25, def: 10 }, // 导弹·流派（AoE 留 C1a-2）
+  bulwark: { name: "壁垒", maxHp: 1500, atk: 30, atkInterval: 1.43, def: 40 }, // 壁垒·流派（坦克）
 };
 
 // 敌人基础值（节点放大见 scaleEnemy）
 export const ENEMIES: Record<string, BaseStats> = {
-  raider: { name: "星盗艇", maxHp: 150, atk: 25, atkInterval: 0.9, def: 5, reach: 0 }, // 前排小怪
-  turret: { name: "星盗炮台", maxHp: 90, atk: 35, atkInterval: 1.5, def: 0, reach: 2 }, // 后排远程
+  raider: { name: "星盗艇", maxHp: 150, atk: 25, atkInterval: 0.9, def: 5 }, // 前排小怪
+  turret: { name: "星盗炮台", maxHp: 90, atk: 35, atkInterval: 1.5, def: 0 }, // 后排远程（靠被晚打存活输出）
 };
 
 export function ally(shipKey: string, idSuffix: string, row: number, col: number): UnitConfig {
