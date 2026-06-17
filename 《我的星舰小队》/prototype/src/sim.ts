@@ -1,38 +1,41 @@
-// C1a-1 命令行模拟器：摆一场固定阵位战斗，跑出来打印战斗日志 + 结果 + 单位输出统计。
-// 运行：npm run sim  （或 node src/sim.ts）
+// C1a-2 模拟器：验证 #2（换搭配有感）/ #3（星核质变碾压）/ 破盾插件。运行：npm run sim
 import { runBattle } from "./engine.ts";
-import type { UnitConfig, BattleResult } from "./engine.ts";
-import { ally, enemy } from "./content.ts";
+import type { UnitSpec, BattleResult } from "./engine.ts";
+import { deployAlly, makeEnemy } from "./content.ts";
 
-function printResult(title: string, res: BattleResult, showLog = true): void {
-  console.log(`\n===== ${title} =====`);
-  if (showLog) for (const line of res.log) console.log(line);
-  const verdict =
-    res.winner === "ally" ? "我方胜利 ✅" : res.winner === "enemy" ? "战斗失败 ❌" : "超时判负 ⏰";
-  console.log(`结果：${verdict}，用时 ${res.timeSec}s`);
-  console.log("单位输出统计：");
-  for (const u of res.units) {
-    const tag = u.side === "ally" ? "我" : "敌";
-    const state = u.alive ? `存活(HP ${u.hpLeft})` : "已击毁";
-    console.log(`  [${tag}] ${u.name}  伤害 ${u.damageDealt}  ${state}`);
+function summary(title: string, res: BattleResult): void {
+  const v = res.winner === "ally" ? "我方胜 ✅" : res.winner === "enemy" ? "失败 ❌" : "超时 ⏰";
+  console.log(`\n  【${title}】${v}  用时 ${res.timeSec}s`);
+  for (const u of res.units.filter((x) => x.side === "ally")) {
+    const st = u.alive ? `存活 HP${u.hpLeft}${u.shieldLeft ? "+盾" + u.shieldLeft : ""}` : "阵亡";
+    console.log(`      我·${u.name}: 伤害 ${u.damageDealt}, ${st}`);
   }
 }
 
-// 场景 A —— Node 1：我方 自由号(前) + 蜂群(后) vs 2 星盗艇(前排)。应当我方获胜。
-const nodeA: UnitConfig[] = [
-  ally("freedom", "freedom", 0, 1),
-  ally("swarm", "swarm", 2, 1),
-  enemy("raider", "r1", 0, 2, 1),
-  enemy("raider", "r2", 0, 3, 1),
-];
-printResult("场景A · Node1（我方应胜）", runBattle(nodeA));
+// ===== #2 换驾驶员有感：同一艘自由号，打同一波（前排 2 星盗艇 + 后排 1 炮台）=====
+const nodeMix = (): UnitSpec[] => [makeEnemy("raider", "r1", 0, 2), makeEnemy("raider", "r2", 0, 3), makeEnemy("turret", "t1", 2, 4)];
+console.log("======== #2 换驾驶员有感（同一艘自由号 vs 同一波敌人）========");
+summary("阿派（集火残血 + 过热叠伤）", runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "apai" }), ...nodeMix()]));
+summary("琪琪（打后排 + 斩首）", runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "qiqi" }), ...nodeMix()]));
+summary("老九（打前排 + 维护奶）", runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "laojiu" }), ...nodeMix()]));
 
-// 场景 B —— 验证“受击/目标优先级”（首发无限射程）：敌方 前排星盗艇 + 后排炮台。
-// 我方默认打最前排 → 先清前排艇，后排炮台被晚打、活得久一直输出。这就是“后排威胁”的新基础：
-// 想早点点掉后排，需突袭手改目标优先级 / 导弹 AoE（C1a-2 接入）。
-const nodeB: UnitConfig[] = [
-  ally("freedom", "freedom", 0, 1),
-  enemy("raider", "r1", 0, 2, 1),
-  enemy("turret", "t1", 2, 4, 1),
-];
-printResult("场景B · 默认前排优先（后排炮台被晚打、活得久）", runBattle(nodeB));
+// ===== #3 星核质变碾压：自由号+蜂群 打 6 星盗艇（node5 放大）=====
+const swarmNode = (): UnitSpec[] => {
+  const e: UnitSpec[] = [];
+  for (let i = 0; i < 6; i++) e.push(makeEnemy("raider", "r" + i, i < 3 ? 0 : 1, (i % 3) + 2, 5));
+  return e;
+};
+console.log("\n======== #3 星核质变碾压（自由号 + 蜂群 打 6 小怪）========");
+summary("无核", runBattle([deployAlly("a", 0, 1, { ship: "freedom", driver: "apai" }), deployAlly("b", 2, 1, { ship: "swarm", driver: "laojiu" }), ...swarmNode()]));
+summary("自由号装【小太阳】(技能变大范围)", runBattle([deployAlly("a", 0, 1, { ship: "freedom", driver: "apai", core: "smallSun" }), deployAlly("b", 2, 1, { ship: "swarm", driver: "laojiu" }), ...swarmNode()]));
+
+// ===== 破盾插件：破盾影响的是“破盾时刻”（破盾前血几乎打不动），直接看这个最清楚 =====
+function shieldBreakTime(res: BattleResult): string {
+  const m = res.log.find((l) => l.includes("打碎") && l.includes("护盾"))?.match(/\[([\d.]+)s\]/);
+  return m ? m[1] + "s" : "未破盾";
+}
+console.log("\n======== 破盾插件（自由号 打 护盾巡卫，盾520·血250）========");
+const gNo = runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "apai" }), makeEnemy("guard", "g1", 1, 3)]);
+const gP = runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "apai", plugins: ["pierce"] }), makeEnemy("guard", "g1", 1, 3)]);
+console.log(`  无破甲弹头：${shieldBreakTime(gNo)} 破盾，全清 ${gNo.timeSec}s`);
+console.log(`  装破甲弹头：${shieldBreakTime(gP)} 破盾，全清 ${gP.timeSec}s  ← 破盾时刻明显提前（破盾插件作用点）`);

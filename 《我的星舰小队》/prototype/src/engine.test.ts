@@ -1,37 +1,40 @@
-// C1a-1 战斗引擎自动测试。运行：npm test （或 node --test src/*.test.ts）
+// C1a-2 战斗引擎自动测试。运行：npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { runBattle } from "./engine.ts";
-import type { UnitConfig } from "./engine.ts";
+import type { UnitSpec, BattleResult } from "./engine.ts";
+import { deployAlly, makeEnemy } from "./content.ts";
 
-test("我方足够强 → 清场获胜", () => {
-  const cfgs: UnitConfig[] = [
-    { id: "A_1", name: "强舰", side: "ally", row: 0, col: 1, maxHp: 800, atk: 300, atkInterval: 1.0, def: 20 },
-    { id: "E_1", name: "小怪", side: "enemy", row: 0, col: 1, maxHp: 150, atk: 10, atkInterval: 1.0, def: 0 },
-  ];
-  assert.equal(runBattle(cfgs).winner, "ally");
+const swarm6 = (): UnitSpec[] => {
+  const e: UnitSpec[] = [];
+  for (let i = 0; i < 6; i++) e.push(makeEnemy("raider", "r" + i, i < 3 ? 0 : 1, (i % 3) + 2, 5));
+  return e;
+};
+const killIdx = (r: BattleResult, name: string): number => r.log.findIndex((l) => l.includes(name) && l.includes("被击毁"));
+
+test("小太阳核 → 技能变 AoE，清群明显更快", () => {
+  const tNo = runBattle([deployAlly("a", 0, 1, { ship: "freedom", driver: "apai" }), deployAlly("b", 2, 1, { ship: "swarm", driver: "laojiu" }), ...swarm6()]).timeSec;
+  const tCore = runBattle([deployAlly("a", 0, 1, { ship: "freedom", driver: "apai", core: "smallSun" }), deployAlly("b", 2, 1, { ship: "swarm", driver: "laojiu" }), ...swarm6()]).timeSec;
+  assert.ok(tCore < tNo, `带核应更快：核 ${tCore}s 应 < 无核 ${tNo}s`);
 });
 
-test("默认前排优先 → 前排敌人先被击毁（无限射程下“后排”的克制基础）", () => {
-  const cfgs: UnitConfig[] = [
-    { id: "A_1", name: "舰", side: "ally", row: 0, col: 1, maxHp: 2000, atk: 100, atkInterval: 1.0, def: 20 },
-    { id: "E_front", name: "前怪", side: "enemy", row: 0, col: 1, maxHp: 150, atk: 10, atkInterval: 1.0, def: 0 },
-    { id: "E_back", name: "后怪", side: "enemy", row: 2, col: 1, maxHp: 150, atk: 10, atkInterval: 1.0, def: 0 },
-  ];
-  const r = runBattle(cfgs);
-  const iFront = r.log.findIndex((l) => l.includes("前怪") && l.includes("被击毁"));
-  const iBack = r.log.findIndex((l) => l.includes("后怪") && l.includes("被击毁"));
-  assert.ok(iFront !== -1 && iBack !== -1 && iFront < iBack, "前排应先于后排被击毁");
+test("破甲弹头 → 破护盾巡卫更快", () => {
+  const tNo = runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "apai" }), makeEnemy("guard", "g", 1, 3)]).timeSec;
+  const tP = runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "apai", plugins: ["pierce"] }), makeEnemy("guard", "g", 1, 3)]).timeSec;
+  assert.ok(tP < tNo, `破甲应更快：${tP}s 应 < ${tNo}s`);
 });
 
-test("确定性：同输入两次结果一致", () => {
-  const make = (): UnitConfig[] => [
-    { id: "A_1", name: "舰", side: "ally", row: 0, col: 1, maxHp: 500, atk: 50, atkInterval: 1.0, def: 10 },
-    { id: "E_1", name: "怪", side: "enemy", row: 0, col: 1, maxHp: 300, atk: 30, atkInterval: 1.1, def: 5 },
-  ];
-  const r1 = runBattle(make());
-  const r2 = runBattle(make());
-  assert.equal(r1.winner, r2.winner);
+test("换驾驶员目标 → 击毁顺序不同（前排优先 vs 打后排）", () => {
+  const node = (): UnitSpec[] => [makeEnemy("raider", "r1", 0, 2), makeEnemy("turret", "t1", 2, 4)];
+  const front = runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "laojiu" }), ...node()]);
+  const back = runBattle([deployAlly("s", 0, 1, { ship: "freedom", driver: "qiqi" }), ...node()]);
+  assert.ok(killIdx(front, "星盗艇") < killIdx(front, "星盗炮台"), "前排优先：前排艇应先被击毁");
+  assert.ok(killIdx(back, "星盗炮台") < killIdx(back, "星盗艇"), "打后排：炮台应先被击毁");
+});
+
+test("确定性：同输入两次一致", () => {
+  const mk = (): UnitSpec[] => [deployAlly("a", 0, 1, { ship: "freedom", driver: "apai", plugins: ["amp", "scope"] }), ...swarm6()];
+  const r1 = runBattle(mk()), r2 = runBattle(mk());
   assert.equal(r1.timeSec, r2.timeSec);
   assert.equal(r1.log.length, r2.log.length);
 });
