@@ -32,28 +32,34 @@ export const PLUGINS: Record<string, PluginDef> = {
   pierce: { name: "破甲弹头", slot: "tactic", apply: (m) => { m.shieldPen += 0.30; } },
 };
 
-export type CoreKey = "smallSun" | "superShield";
-export interface Loadout { ship: string; driver?: string; plugins?: string[]; core?: CoreKey; }
+export type CoreKey = "overload" | "smallSun" | "superShield";
+export interface Loadout { ship: string; driver?: string; plugins?: string[]; core?: CoreKey; level?: number; }
 
-// 装配一艘上阵星舰：聚合 星舰 + 驾驶员(能力/天赋) + 插件(修正) + 星核(质变)。
+// 装配一艘上阵星舰：聚合 星舰(含等级成长) + 驾驶员(能力/天赋) + 插件(修正) + 星核(质变)。
 export function deployAlly(id: string, row: number, col: number, lo: Loadout): UnitSpec {
   const ship = SHIPS[lo.ship];
+  const lf = 1 + 0.08 * ((lo.level ?? 1) - 1); // 星舰升级成长（每级 +8%）
+  const maxHp = Math.round(ship.maxHp * lf);
+  const atk = Math.round(ship.atk * lf);
+
   const m: Mods = { dmgMult: 1, skillDmgMult: 1, critChance: 0, critMult: 1.5, cdMult: 1, shieldPen: 0, dmgReduction: 0 };
   for (const p of lo.plugins ?? []) PLUGINS[p].apply(m);
 
   let skill: SkillSpec = ship.skill;
   let shield = 0;
   let onBreak: number | undefined;
-  if (lo.core === "smallSun") {
+  if (lo.core === "overload") {
+    m.dmgMult *= 2; // 新手核：简单粗暴，伤害翻倍
+  } else if (lo.core === "smallSun") {
     skill = { name: "小太阳", trigger: "cooldown", cd: 8, action: { kind: "aoe", mult: 4, maxTargets: 5 } }; // 质变：技能→大范围
   } else if (lo.core === "superShield") {
-    shield = ship.atk * 5;
+    shield = atk * 5;
     onBreak = 2; // 破盾 → 全队护盾 = atk×2
   }
   const drv = lo.driver ? DRIVERS[lo.driver] : undefined;
   return {
     id: `A_${id}`, name: ship.name + (drv ? `·${drv.name}` : ""), side: "ally", row, col,
-    maxHp: ship.maxHp, atk: ship.atk, atkInterval: ship.atkInterval, def: ship.def,
+    maxHp, atk, atkInterval: ship.atkInterval, def: ship.def,
     targeting: drv?.targeting ?? "frontmost", skill, talent: drv?.talent,
     shield, onShieldBreakTeamShield: onBreak,
     dmgMult: m.dmgMult, skillDmgMult: m.skillDmgMult, critChance: m.critChance, critMult: m.critMult,
@@ -66,6 +72,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   raider: { name: "星盗艇", maxHp: 150, atk: 25, atkInterval: 0.9, def: 5 },
   turret: { name: "星盗炮台", maxHp: 90, atk: 35, atkInterval: 1.5, def: 0 },
   guard: { name: "护盾巡卫", maxHp: 250, atk: 30, atkInterval: 1.2, def: 10, shield: 520 }, // 盾厚血薄：破盾前血几乎打不动
+  boss: { name: "失控无人舰", maxHp: 1800, atk: 45, atkInterval: 1.4, def: 15, shield: 250 }, // 小 Boss（v0.1 调平后；召唤/点名后续补）
 };
 export function makeEnemy(key: string, id: string, row: number, col: number, node = 1): UnitSpec {
   const e = ENEMIES[key];
