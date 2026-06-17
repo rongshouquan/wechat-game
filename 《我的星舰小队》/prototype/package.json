@@ -1,0 +1,10 @@
+{
+  "name": "starship-prototype",
+  "private": true,
+  "type": "module",
+  "description": "《我的星舰小队》C1 原型 - 纯 TS 逻辑核心（战斗引擎/配置/养成），与 Cocos 表现层解耦，可在 Node 单独跑。",
+  "scripts": {
+    "sim": "node src/sim.ts",
+    "test": "node --test src/*.test.ts"
+  }
+}
