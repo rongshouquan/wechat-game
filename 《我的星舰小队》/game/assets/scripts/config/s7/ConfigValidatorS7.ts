@@ -1271,6 +1271,8 @@ function validateBattle(
         errors.push({ table: 'battle_unit_stat_param', id, message: `${f} "${String(v)}" 必须为 none 或有效 battle_effect_param.rowId` });
       }
     }
+    const ucd = num(row.ultimateCdSec);
+    if (ucd === null || ucd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'ultimateCdSec 必须 >= 0（无大招写 0；块2 大招触发冷却）' });
   }
 
   // ---- battle_effect_param ----

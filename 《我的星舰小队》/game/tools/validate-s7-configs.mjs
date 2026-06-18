@@ -952,6 +952,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     for (const f of ['normalEffectRef', 'ultimateEffectRef', 'coreEffectRef']) {
       const v = row[f]; if (v !== 'none' && !effectIdSet.has(v)) fail('battle_unit_stat_param', id, `${f} "${v}" 必须为 none 或有效 battle_effect_param.rowId`);
     }
+    const ucd = num(row.ultimateCdSec); if (ucd === null || ucd < 0) fail('battle_unit_stat_param', id, 'ultimateCdSec 必须 >= 0（无大招写 0；块2 大招触发冷却）');
   }
 
   for (const row of effectRows) {

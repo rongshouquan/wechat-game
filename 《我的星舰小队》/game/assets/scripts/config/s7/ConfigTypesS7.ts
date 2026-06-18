@@ -660,6 +660,8 @@ export interface S7BattleUnitStatParam {
   /** 指向 battle_effect_param.rowId；无对应效果写 none。 */
   normalEffectRef: string;
   ultimateEffectRef: string;
+  /** 大招触发冷却秒数（块2 用，与普攻间隔 attackIntervalSec 同类）。无大招(ultimateEffectRef=none)写 0。占位值，精确值第二块定。 */
+  ultimateCdSec: number;
   coreEffectRef: string;
   note: string;
 }
