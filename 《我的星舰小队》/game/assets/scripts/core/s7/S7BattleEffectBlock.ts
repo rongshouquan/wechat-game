@@ -35,8 +35,8 @@ export type S7ActionSlot = 'normal' | 'ultimate' | 'core';
 export interface S7ModifierBlock {
   kind: 'modifier';
   stat: S7StatKey;
-  /** flat=直接加减；pct=百分比（0.15 = +15%，-0.1 = -10%，可叠加）。 */
-  op: 'flat' | 'pct';
+  /** flat=直接加减；pct=百分比（0.15=+15%，可叠加）；set=覆盖为绝对值（质变用，如过载核心把普攻间隔设为 10s）。 */
+  op: 'flat' | 'pct' | 'set';
   value: number;
   /** 来源标识（pluginId/pilotId/coreId），仅调试/溯源用，不影响计算。 */
   source?: string;

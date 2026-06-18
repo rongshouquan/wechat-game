@@ -41,7 +41,7 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
 
   it('lands exactly the 5 new battle tables with first-round fixture rows', () => {
     expect(readTable('battle_unit_stat_param')).toHaveLength(17);
-    expect(readTable('battle_effect_param')).toHaveLength(18);
+    expect(readTable('battle_effect_param')).toHaveLength(19); // 块3 新增 eff_atomic_cannon(过载核心原子炮)
     expect(readTable('battle_encounter_param')).toHaveLength(3);
     expect(readTable('battle_spawn_param')).toHaveLength(6);
     expect(readTable('battle_boss_phase_param')).toHaveLength(6);

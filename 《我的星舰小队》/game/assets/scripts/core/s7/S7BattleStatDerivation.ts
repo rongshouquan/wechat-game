@@ -73,8 +73,9 @@ function round6(x: number): number {
  * - trigger：收集进 triggers（块2 消费）。
  */
 export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBlock[] = []): S7DerivedUnit {
-  const acc: Record<S7StatKey, { flat: number; pct: number }> = {} as Record<S7StatKey, { flat: number; pct: number }>;
-  for (const k of STAT_KEYS) acc[k] = { flat: 0, pct: 0 };
+  const acc: Record<S7StatKey, { flat: number; pct: number; set: number | null }> =
+    {} as Record<S7StatKey, { flat: number; pct: number; set: number | null }>;
+  for (const k of STAT_KEYS) acc[k] = { flat: 0, pct: 0, set: null };
 
   const affixes: Record<S7AffixKey, number> = {} as Record<S7AffixKey, number>;
   for (const a of AFFIX_KEYS) affixes[a] = 0;
@@ -91,7 +92,8 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
         const slot = acc[b.stat];
         if (!slot) throw new Error(`未知的修正属性: ${String(b.stat)}`);
         if (b.op === 'flat') slot.flat += b.value;
-        else slot.pct += b.value;
+        else if (b.op === 'pct') slot.pct += b.value;
+        else slot.set = b.value; // 'set'：覆盖基线为绝对值（后者覆盖前者；flat/pct 仍在其上叠加）
         break;
       }
       case 'affix':
@@ -116,7 +118,7 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
     }
   }
 
-  const calc = (k: S7StatKey): number => (base[k] + acc[k].flat) * (1 + acc[k].pct);
+  const calc = (k: S7StatKey): number => ((acc[k].set ?? base[k]) + acc[k].flat) * (1 + acc[k].pct);
 
   return {
     maxHp: Math.max(1, Math.round(calc('maxHp'))),

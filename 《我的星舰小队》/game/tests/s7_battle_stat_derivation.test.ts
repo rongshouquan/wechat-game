@@ -79,6 +79,19 @@ describe('deriveUnit - 修正类（modifier）', () => {
     expect(d.attack).toBe(0);
     expect(d.maxHp).toBe(1);
   });
+
+  it('set 覆盖基线为绝对值（过载核心把普攻间隔设为 10s）', () => {
+    const blocks: S7EffectBlock[] = [{ kind: 'modifier', stat: 'attackIntervalSec', op: 'set', value: 10 }];
+    expect(deriveUnit(BASE, blocks).attackIntervalSec).toBe(10); // 无视基线 1.2，直接为 10
+  });
+
+  it('set 当作新基线，仍可被 flat/pct 叠加', () => {
+    const blocks: S7EffectBlock[] = [
+      { kind: 'modifier', stat: 'attackIntervalSec', op: 'set', value: 10 },
+      { kind: 'modifier', stat: 'attackIntervalSec', op: 'pct', value: -0.2 },
+    ];
+    expect(deriveUnit(BASE, blocks).attackIntervalSec).toBe(round6(10 * 0.8)); // 8
+  });
 });
 
 describe('deriveUnit - 定向词条（affix）', () => {
