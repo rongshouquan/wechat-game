@@ -1,10 +1,10 @@
 [
-  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_1_10","targetType":"ship","bandId":"ship_lv_1_10","maxLevel":10,"starOre":220,"hullAlloy":140,"battleLog":0,"shipBlueprint":0,"pilotToken":0,"sourceTagPolicy":"persist","note":"早期可回退"},
-  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_11_20","targetType":"ship","bandId":"ship_lv_11_20","maxLevel":20,"starOre":720,"hullAlloy":420,"battleLog":0,"shipBlueprint":2,"pilotToken":0,"sourceTagPolicy":"persist","note":"D7 主力舰可达"},
-  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_21_30","targetType":"ship","bandId":"ship_lv_21_30","maxLevel":30,"starOre":1800,"hullAlloy":1100,"battleLog":0,"shipBlueprint":5,"pilotToken":0,"sourceTagPolicy":"persist","note":"D14-D21 主力舰"},
-  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_31_40","targetType":"ship","bandId":"ship_lv_31_40","maxLevel":40,"starOre":3800,"hullAlloy":2200,"battleLog":0,"shipBlueprint":10,"pilotToken":0,"sourceTagPolicy":"persist","note":"D28 主力舰，不要求 12 舰全满"},
-  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_1_10","targetType":"pilot","bandId":"pilot_lv_1_10","maxLevel":10,"starOre":0,"hullAlloy":0,"battleLog":120,"shipBlueprint":0,"pilotToken":0,"sourceTagPolicy":"persist","note":"早期可回退"},
-  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_11_20","targetType":"pilot","bandId":"pilot_lv_11_20","maxLevel":20,"starOre":0,"hullAlloy":0,"battleLog":360,"shipBlueprint":0,"pilotToken":1,"sourceTagPolicy":"persist","note":"D7 主力驾驶员可达"},
-  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_21_30","targetType":"pilot","bandId":"pilot_lv_21_30","maxLevel":30,"starOre":0,"hullAlloy":0,"battleLog":950,"shipBlueprint":0,"pilotToken":3,"sourceTagPolicy":"persist","note":"D14-D21 主力驾驶员"},
-  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_31_40","targetType":"pilot","bandId":"pilot_lv_31_40","maxLevel":40,"starOre":0,"hullAlloy":0,"battleLog":2000,"shipBlueprint":0,"pilotToken":7,"sourceTagPolicy":"persist","note":"D28 追求，不作为全员要求"}
+  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_1_10","targetType":"ship","bandId":"ship_lv_1_10","maxLevel":10,"starOre":220,"hullAlloy":140,"shipBlueprint":0,"pilotToken":0,"sourceTagPolicy":"persist","note":"早期可回退"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_11_20","targetType":"ship","bandId":"ship_lv_11_20","maxLevel":20,"starOre":720,"hullAlloy":420,"shipBlueprint":2,"pilotToken":0,"sourceTagPolicy":"persist","note":"D7 主力舰可达"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_21_30","targetType":"ship","bandId":"ship_lv_21_30","maxLevel":30,"starOre":1800,"hullAlloy":1100,"shipBlueprint":5,"pilotToken":0,"sourceTagPolicy":"persist","note":"D14-D21 主力舰"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ship_lv_31_40","targetType":"ship","bandId":"ship_lv_31_40","maxLevel":40,"starOre":3800,"hullAlloy":2200,"shipBlueprint":10,"pilotToken":0,"sourceTagPolicy":"persist","note":"D28 主力舰，不要求 12 舰全满"},
+  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_1_10","targetType":"pilot","bandId":"pilot_lv_1_10","maxLevel":10,"starOre":0,"hullAlloy":0,"shipBlueprint":0,"pilotToken":0,"sourceTagPolicy":"persist","note":"早期可回退"},
+  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_11_20","targetType":"pilot","bandId":"pilot_lv_11_20","maxLevel":20,"starOre":0,"hullAlloy":0,"shipBlueprint":0,"pilotToken":1,"sourceTagPolicy":"persist","note":"D7 主力驾驶员可达"},
+  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_21_30","targetType":"pilot","bandId":"pilot_lv_21_30","maxLevel":30,"starOre":0,"hullAlloy":0,"shipBlueprint":0,"pilotToken":3,"sourceTagPolicy":"persist","note":"D14-D21 主力驾驶员"},
+  {"schemaVersion":"s7-0.1.0","rowId":"pilot_lv_31_40","targetType":"pilot","bandId":"pilot_lv_31_40","maxLevel":40,"starOre":0,"hullAlloy":0,"shipBlueprint":0,"pilotToken":7,"sourceTagPolicy":"persist","note":"D28 追求，不作为全员要求"}
 ]

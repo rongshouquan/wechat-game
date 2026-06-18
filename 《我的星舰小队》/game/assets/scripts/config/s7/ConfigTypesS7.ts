@@ -117,13 +117,11 @@ export interface S7FreeResourceAnchorParam {
   rowId: string;
   anchorDay: string;
   band: 'floor' | 'expected';
+  // 6a-2：删废弃币 battleLog/pluginMat/coreMat 列（新增币/信标拆档待第二块连数值一起加）。
   starOre: number;
   hullAlloy: number;
-  battleLog: number;
   shipBlueprint: number;
   pilotToken: number;
-  pluginMat: number;
-  coreMat: number;
   coreFrag: number;
   fullCore: number;
   supplyTicket: number;
@@ -139,9 +137,9 @@ export interface S7UpgradeCostParam {
   targetType: 'ship' | 'pilot';
   bandId: string;
   maxLevel: number;
+  // 6a-2：删废弃币 battleLog 列（升级不再扣 battleLog）。
   starOre: number;
   hullAlloy: number;
-  battleLog: number;
   shipBlueprint: number;
   pilotToken: number;
   sourceTagPolicy: string;

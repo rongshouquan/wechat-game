@@ -15,8 +15,9 @@
 - **块5 驾驶员运行时 已完成（已提交，未 push）**：新增 `core/s7/S7PilotEffects.ts`(pilotId → 行为AI(覆盖 targetingTag)+驾驶天赋占位积木，不加原始属性)；lineup 加 `pilotId` + 适配器透传(快照已带 pilotId) + 装配器 `buildPlayerUnits` 解析+归属校验(unknown_pilot)并与星核/插件积木合并。代表驾驶员**晴岚 pil03=后排点杀**(backline_first)，余下驾驶员内容留第二块。`npm test` **64 套件 / 724 测试全绿** + s7 校验器绿，零回归。
 - **🔄 块6 基地养成 + 货币对齐（进行中；货币映射已整体拍板见 §待拍板①/路线图§4；迁移=直接重置，已 push 远程备份）**：
   - ✅ **块6a-1 砍星核 5 阶强化（已提交，未 push）**：对齐 v1.0 §5.4「不做重复星核深层养成（留 P1）」。`enhance_cost_param` 清空（[]）、`growth_band_param` 删 core 段（12→8 行=4ship+4pilot）、输入契约去 `coreEnhance`+`bad_enhance_value`、双校验器去 core 强化/成长断言（改为"enhance 应为空"+"成长无 core"正向断言，control_point 校验留 P1）。`npm test` **64 套件 / 721 测试全绿** + 双校验器绿，零回归。
-  - **下一步 → 块6a-2 货币键重构**：S7_RESOURCE_KEYS 删 battleLog/pluginMat/coreMat、加 starGem/pilotShardUniversal、beacon→beaconCommon/Rare/Epic；同步所有引用表(reward/anchor/upgrade/recycle/shop)+双校验器 RESOURCE_VOCAB+存档规范化+测试。
-  - 其后 6b 建筑运行时 / 6c 独立结构(专属碎片·居民工人·宝箱) / 6d(=旧4d) 插件合成回收背包(插件实例表)。
+  - ✅ **块6a-2 货币键重构·删废弃币（已提交，未 push）**：删 battleLog/pluginMat/coreMat —— `S7_RESOURCE_KEYS` 12→9、双校验器 `RESOURCE_VOCAB`、`S7FreeResourceAnchorParam`/`S7UpgradeCostParam` 显式列、anchor/upgrade JSON 列、reward_param 35 条引用、s7_save 测试如实重定基(键集 toEqual 9 + 迁移断言废弃币丢弃)。`npm test` **64套件/721测试全绿** + 双校验器绿，零回归。**注**：① 升级成本不再扣 battleLog（§七.2 影响）；② 旧档加载自动丢弃废弃币（迁移=直接重置已定）。
+  - **新增 starGem/pilotShardUniversal + 信标拆 3 档：推迟到第二块/对应内容块**（会逼 anchor 毕业预算填数值=Ron 的数值域；且新币暂无产出/消耗内容，现加=空挂）。
+  - **下一步 → 块6b 建筑运行时**（`BuildingService` + 存档 buildings 字段 + 升级即时无等待 + 离线产出并入基地×星域，吸收采矿站）。其后 6c 独立结构(专属碎片·居民工人·宝箱) / 6d(=旧4d) 插件合成回收背包(插件实例表)。
 - 其后：块7 3天·7天活动(去每日任务)。
 - **改造全貌**：`C1改造路线图-现状对齐v1.0-v0.1.md`（8 块顺序 + 货币映射§4 待拍板）。**设计唯一真源**：`系统玩法设计-v1.0.md`（改动看 §17 变更记录）；决策日志：`设计决策记录-v0.1.md`。
 - **接手提示**：① 工程在 `game/`，`npm test` 跑 vitest（已锁 `pool:'forks'`）；逻辑纯 TS 可 Node 测，**不走 Codex 流程**。② 战斗引擎现为"配置驱动 + 四类积木(修正/触发/行为/动作) + 三类触发 + 星核质变"形态——驾驶员/插件只要产出效果积木即可接入（参考块3 `core/s7/S7CoreEffects.ts` + 装配器 `buildPlayerUnits` 接线）。

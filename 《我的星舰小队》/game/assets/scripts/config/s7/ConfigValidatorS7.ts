@@ -25,9 +25,10 @@ const S7_STAGE_TYPES = ['normal', 'elite', 'boss'];
 const S7_SHIP_TYPES = ['free', 'stream'];
 const S7_PLUGIN_SLOTS = ['weapon', 'skill', 'tactical'];
 
+// 6a-2：删废弃币 battleLog/pluginMat/coreMat（新增 starGem/pilotShardUniversal、信标拆 3 档留第二块连 anchor 数值一起加）。
 const RESOURCE_VOCAB = [
-  'starOre', 'hullAlloy', 'battleLog', 'shipBlueprint', 'pilotToken', 'pluginMat',
-  'coreMat', 'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
+  'starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken',
+  'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
 ];
 const REWARD_SOURCE_TYPES = [
   'mainline', 'boss', 'action3', 'expansion7', 'salvage', 'range', 'supply', 'beacon', 'star_cargo',

@@ -13,7 +13,7 @@ const PROBLEM_TAGS = ['swarm', 'shield', 'backline', 'burst', 'berserk', 'summon
 const STAGE_TYPES = ['normal', 'elite', 'boss'];
 const SHIP_TYPES = ['free', 'stream'];
 const PLUGIN_SLOTS = ['weapon', 'skill', 'tactical'];
-const RESOURCE_VOCAB = ['starOre', 'hullAlloy', 'battleLog', 'shipBlueprint', 'pilotToken', 'pluginMat', 'coreMat', 'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo'];
+const RESOURCE_VOCAB = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken', 'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo']; // 6a-2 删 battleLog/pluginMat/coreMat
 const REWARD_SOURCE_TYPES = ['mainline', 'boss', 'action3', 'expansion7', 'salvage', 'range', 'supply', 'beacon', 'star_cargo'];
 const ANCHOR_DAYS = ['d7', 'd14', 'd21', 'd28'];
 

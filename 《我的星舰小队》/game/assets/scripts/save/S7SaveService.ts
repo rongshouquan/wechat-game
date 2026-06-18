@@ -1,9 +1,9 @@
 /**
- * S7 首发正式版本地存档与 12 资源状态骨架（CC-07B，纯 TS，不依赖 cc）。
+ * S7 首发正式版本地存档与 资源状态骨架（CC-07B，纯 TS，不依赖 cc）。
  *
  * 依 CC-07-PRE D-RT-3 决策：首发正式版采用【独立存档域 / 新 storage key】，
  * 不走流程版 saveVersion v8 老档迁移，不读取或迁移流程版旧存档 key。
- * 本文件只做存档/状态基础层：12 资源默认状态、S7 玩家状态骨架、读 / 写 / 恢复，
+ * 本文件只做存档/状态基础层：资源默认状态、S7 玩家状态骨架、读 / 写 / 恢复，
  * 复用 SaveStorageAdapter 接口模式（真机注入 Wx/Browser 适配器，测试用 MemoryStorageAdapter）。
  *
  * 边界：不接 AppContext / 启动场景 / Cocos UI / 战斗 / 主线 / 奖励 / 养成 / 建筑 / 商人 / 回收 / 广告；
@@ -19,8 +19,8 @@ import {
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
- * v1（CC-07B）：12 资源骨架。
- * v2（CC-07C）：playerState 增加 mainlineProgress；v1 旧 S7 档加载时保留 12 资源、补默认主线进度。
+ * v1（CC-07B）：资源骨架。
+ * v2（CC-07C）：playerState 增加 mainlineProgress；v1 旧 S7 档加载时保留 资源、补默认主线进度。
  */
 export const S7_CURRENT_SAVE_VERSION = 2;
 
@@ -31,21 +31,23 @@ export const S7_CURRENT_SAVE_VERSION = 2;
 export const S7_SAVE_STORAGE_KEY = 'starship_squad_s7_save_v1';
 
 /**
- * S7 首发 12 资源键（顺序与 03-04 v0.2 §2.2 free_resource_anchor_param 字段一致）。
- * 作为 12 资源状态的唯一键集真源。
+ * S7 首发 资源键（顺序与 03-04 v0.2 §2.2 free_resource_anchor_param 字段一致）。
+ * 作为 资源状态的唯一键集真源。
  */
+// 货币键（6a-2 重构）：删 battleLog/pluginMat/coreMat（升级额外消耗/插件强化料/星核强化料，均已废弃）。
+// 新增 starGem(星空宝石)/pilotShardUniversal(通用驾驶员碎片) + 信标拆 3 档，待第二块连 anchor 毕业预算数值一起加。
 export const S7_RESOURCE_KEYS = [
-  'starOre', 'hullAlloy', 'battleLog', 'shipBlueprint', 'pilotToken', 'pluginMat',
-  'coreMat', 'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
+  'starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken',
+  'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
 ] as const;
 
 export type S7ResourceKey = (typeof S7_RESOURCE_KEYS)[number];
 
-/** 12 资源状态：键集恒为 S7_RESOURCE_KEYS，值为非负数量。 */
+/** 资源状态：键集恒为 S7_RESOURCE_KEYS，值为非负数量。 */
 export type S7ResourceState = Record<S7ResourceKey, number>;
 
 /**
- * S7 玩家状态骨架：12 资源 + 主线进度（CC-07C）。
+ * S7 玩家状态骨架：资源 + 主线进度（CC-07C）。
  * 养成 / 建筑等结构后续任务再扩；mainlineProgress 形状由 core/s7/S7MainlineProgress 拥有，本层组合。
  */
 export interface S7PlayerState {
@@ -60,7 +62,7 @@ export interface S7SaveData {
   lastOnlineTime: number;
 }
 
-/** 默认 12 资源状态：包含且只包含 12 个资源键，默认值均为 0。 */
+/** 默认 资源状态：包含且只包含 S7_RESOURCE_KEYS 全部键，默认值均为 0。 */
 export function createDefaultS7ResourceState(): S7ResourceState {
   const state = {} as S7ResourceState;
   for (const key of S7_RESOURCE_KEYS) {
@@ -85,7 +87,7 @@ export function createDefaultS7SaveData(now: number): S7SaveData {
 }
 
 /**
- * 规范化 12 资源：保证结果键集恰为 S7_RESOURCE_KEYS——
+ * 规范化 资源：保证结果键集恰为 S7_RESOURCE_KEYS——
  * 缺失键补 0，非有限数值（NaN / Infinity / 负数 / 非数）一律落 0，未知键丢弃。
  * 防止脏存档把多余键或非法值带入运行时。
  */
@@ -103,7 +105,7 @@ function normalizeS7ResourceState(raw: unknown): S7ResourceState {
   return out;
 }
 
-/** 规范化玩家状态骨架：规范 12 资源 + 主线进度；非对象一律退化为默认状态（v1 旧档无 mainlineProgress 即补默认）。 */
+/** 规范化玩家状态骨架：规范 资源 + 主线进度；非对象一律退化为默认状态（v1 旧档无 mainlineProgress 即补默认）。 */
 function normalizeS7PlayerState(raw: unknown): S7PlayerState {
   const src = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   return {
@@ -141,7 +143,7 @@ function isPlausibleS7SaveData(value: unknown): value is S7SaveData {
  * - 无 S7 存档 -> 初始化默认（isNew=true）
  * - 解析失败 / 结构非法（损坏）-> 回退默认（corrupted=true），不让玩家卡死
  * - 版本与当前不一致 -> 骨架级规范并重置版本号（migrated=true；当前 S7 仅 v1，暂无跨版本迁移步骤）
- * - 否则正常恢复（仍规范化 12 资源，清洗脏键 / 缺键）
+ * - 否则正常恢复（仍规范化 资源，清洗脏键 / 缺键）
  */
 export function loadS7Save(adapter: SaveStorageAdapter, now: number): S7LoadResult {
   const log: string[] = [];
@@ -190,7 +192,7 @@ export function loadS7Save(adapter: SaveStorageAdapter, now: number): S7LoadResu
 
 /**
  * S7 持久化入口：把当前 S7 关键状态序列化落盘到 S7_SAVE_STORAGE_KEY，并刷新 lastOnlineTime。
- * 落盘前规范化 12 资源，保证存储结构恒为合法 12 键集。
+ * 落盘前规范化 资源，保证存储结构恒为合法 S7_RESOURCE_KEYS 键集。
  */
 export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now: number): S7SaveData {
   const next: S7SaveData = {
@@ -210,7 +212,7 @@ export interface S7RestoredState {
   lastOnlineTime: number;
 }
 
-/** 从 S7 存档数据取出可直接交给后续 S7 模块使用的关键状态集合（规范化后的 12 资源 + 时间戳）。 */
+/** 从 S7 存档数据取出可直接交给后续 S7 模块使用的关键状态集合（规范化后的 资源 + 时间戳）。 */
 export function restoreS7KeyState(data: S7SaveData): S7RestoredState {
   return {
     playerState: normalizeS7PlayerState(data.playerState),

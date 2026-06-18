@@ -25,18 +25,18 @@ import {
 
 const NOW = 1_700_000_000_000;
 
-describe('s7 save - 12 resource skeleton', () => {
-  it('default resource state contains exactly the 12 keys, all 0', () => {
+describe('s7 save - resource skeleton', () => {
+  it('default resource state contains exactly the canonical keys, all 0', () => {
     const res = createDefaultS7ResourceState();
     expect(Object.keys(res).sort()).toEqual([...S7_RESOURCE_KEYS].sort());
-    expect(Object.keys(res)).toHaveLength(12);
+    expect(Object.keys(res)).toHaveLength(S7_RESOURCE_KEYS.length);
     for (const k of S7_RESOURCE_KEYS) expect(res[k]).toBe(0);
   });
 
-  it('enumerates the exact 12 canonical resource keys', () => {
+  it('enumerates the exact canonical resource keys（6a-2：删 battleLog/pluginMat/coreMat）', () => {
     expect([...S7_RESOURCE_KEYS]).toEqual([
-      'starOre', 'hullAlloy', 'battleLog', 'shipBlueprint', 'pilotToken', 'pluginMat',
-      'coreMat', 'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
+      'starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken',
+      'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
     ]);
   });
 
@@ -45,7 +45,7 @@ describe('s7 save - 12 resource skeleton', () => {
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     expect(data.saveVersion).toBe(2);
     expect(data.lastOnlineTime).toBe(NOW);
-    expect(Object.keys(data.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
     expect(data.playerState.mainlineProgress.currentNodeId).toBe('n001');
     expect(data.playerState.mainlineProgress.clearedNodeIds).toEqual([]);
@@ -65,7 +65,7 @@ describe('s7 save - independent storage domain', () => {
     expect(r.corrupted).toBe(false);
     expect(r.migrated).toBe(false);
     expect(r.data.saveVersion).toBe(2);
-    expect(Object.keys(r.data.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
   it('round-trips resource values through persist + load', () => {
@@ -83,12 +83,12 @@ describe('s7 save - independent storage domain', () => {
     expect(r.data.playerState.resources.fullCore).toBe(3);
     expect(r.data.playerState.resources.starCargo).toBe(1);
     expect(r.data.lastOnlineTime).toBe(NOW + 1000);
-    expect(Object.keys(r.data.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
   it('restoreS7KeyState returns normalized 12-resource state + timestamp', () => {
     const restored = restoreS7KeyState(createDefaultS7SaveData(NOW));
-    expect(Object.keys(restored.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(restored.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(restored.lastOnlineTime).toBe(NOW);
   });
 });
@@ -101,7 +101,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.corrupted).toBe(true);
     expect(r.isNew).toBe(false);
     expect(r.data.saveVersion).toBe(2);
-    expect(Object.keys(r.data.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
   it('falls back to default on structurally invalid save', () => {
@@ -120,7 +120,7 @@ describe('s7 save - corruption / structure fallback', () => {
         saveVersion: 1,
         lastOnlineTime: NOW,
         playerState: {
-          resources: { starOre: 100, hullAlloy: -5, battleLog: 'oops', bogusKey: 999 },
+          resources: { starOre: 100, hullAlloy: -5, pilotToken: 'oops', bogusKey: 999 },
         },
       }),
     );
@@ -130,7 +130,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(Object.keys(res).sort()).toEqual([...S7_RESOURCE_KEYS].sort());
     expect(res.starOre).toBe(100);
     expect(res.hullAlloy).toBe(0); // 负数 -> 0
-    expect(res.battleLog).toBe(0); // 非数 -> 0
+    expect(res.pilotToken).toBe(0); // 非数 -> 0
     expect(res.bogusKey).toBeUndefined(); // 未知键丢弃
     expect(res.coreFrag).toBe(0); // 缺失键补 0
   });
@@ -146,12 +146,12 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.corrupted).toBe(false);
     expect(r.data.saveVersion).toBe(2);
     expect(r.data.playerState.resources.starOre).toBe(7);
-    expect(Object.keys(r.data.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
-  it('migrates a v1 S7 save to v2: keeps 12 resources, fills default mainlineProgress', () => {
+  it('迁移 v1 旧档到 v2：保留有效资源、丢弃已废弃币(battleLog/pluginMat/coreMat)、补默认主线进度', () => {
     const adapter = new MemoryStorageAdapter();
-    // v1 形状：仅 resources，无 mainlineProgress。
+    // v1 旧档形状：仅 resources（含现已废弃的 battleLog/pluginMat/coreMat），无 mainlineProgress。
     const v1Resources: Record<string, number> = {
       starOre: 5200, hullAlloy: 2000, battleLog: 1800, shipBlueprint: 10, pilotToken: 6, pluginMat: 500,
       coreMat: 150, coreFrag: 20, fullCore: 1, supplyTicket: 8, beacon: 5, starCargo: 1,
@@ -164,8 +164,11 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
     expect(r.data.saveVersion).toBe(2);
-    // 12 资源逐一保留
+    // 现有效资源逐一保留
     for (const k of S7_RESOURCE_KEYS) expect(r.data.playerState.resources[k]).toBe(v1Resources[k]);
+    // 已废弃币被规范化丢弃（不再在键集内）
+    const res = r.data.playerState.resources as Record<string, unknown>;
+    for (const dead of ['battleLog', 'pluginMat', 'coreMat']) expect(res[dead]).toBeUndefined();
     // 补默认主线进度
     expect(r.data.playerState.mainlineProgress.currentNodeId).toBe('n001');
     expect(r.data.playerState.mainlineProgress.clearedNodeIds).toEqual([]);
@@ -208,7 +211,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
     // S7 加载同样独立、互不污染。
     const s7Loaded = loadS7Save(adapter, NOW);
     expect(s7Loaded.data.playerState.resources.starOre).toBe(42);
-    expect(Object.keys(s7Loaded.data.playerState.resources)).toHaveLength(12);
+    expect(Object.keys(s7Loaded.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
   it('S7 load on a store holding only a 流程版 save returns isNew (does not read 流程版 key)', () => {
