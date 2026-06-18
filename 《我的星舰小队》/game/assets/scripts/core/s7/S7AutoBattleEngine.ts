@@ -44,6 +44,8 @@ import {
   S7_ENEMY_COLS as ENEMY_COLS,
   S7_MAX_PLAYER_UNITS as MAX_PLAYER_UNITS,
 } from './S7BattleGrid';
+// 效果装配层：玩家单位四层积木 → 最终战斗属性（块1）。
+import { deriveUnit, S7DeriveBaseStat, S7DerivedUnit } from './S7BattleStatDerivation';
 
 // ===== 首版行为常量（RT-04 首版口径，非最终平衡；报告中已列明）=====
 const TICK_SEC = 0.2;
@@ -246,7 +248,10 @@ class BattleRun {
       }
       const row = Number(slot[1]);
       const col = Number(slot[3]);
-      this.spawnUnit(stat, 'player', row, col, slot);
+      // 块1：带了四层效果积木才走装配层；不带则按星舰基线原样出场（零行为变化）。
+      const blocks = input.effectBlocks ?? [];
+      const derived = blocks.length > 0 ? deriveUnit(baseStatOf(stat), blocks) : null;
+      this.spawnUnit(stat, 'player', row, col, slot, derived);
     }
   }
 
@@ -756,7 +761,8 @@ class BattleRun {
 
   // ===== 单位 / 占格 =====
 
-  private spawnUnit(stat: S7BattleUnitStatParam, side: S7AutoBattleSide, row: number, col: number, slotRef: string): RtUnit {
+  private spawnUnit(stat: S7BattleUnitStatParam, side: S7AutoBattleSide, row: number, col: number, slotRef: string, derived: S7DerivedUnit | null = null): RtUnit {
+    const cv = derived ?? stat; // 战斗数值：有装配结果用装配后的，否则用基线 stat（无装配时零行为变化）。
     const unitId = side === 'player' ? `player_${slotRef}` : `enemy_${pad4(this.enemySeq++)}`;
     const unit: RtUnit = {
       unitId,
@@ -765,25 +771,25 @@ class BattleRun {
       slotRef,
       row,
       col,
-      sizeRows: stat.sizeRows,
-      sizeCols: stat.sizeCols,
-      maxHp: stat.maxHp,
-      hp: stat.maxHp,
-      attack: stat.attack,
-      armor: stat.armor,
-      attackIntervalSec: stat.attackIntervalSec,
-      attackRangeCells: stat.attackRangeCells,
-      passiveEnergyPerSec: stat.passiveEnergyPerSec,
+      sizeRows: cv.sizeRows,
+      sizeCols: cv.sizeCols,
+      maxHp: cv.maxHp,
+      hp: cv.maxHp,
+      attack: cv.attack,
+      armor: cv.armor,
+      attackIntervalSec: cv.attackIntervalSec,
+      attackRangeCells: cv.attackRangeCells,
+      passiveEnergyPerSec: cv.passiveEnergyPerSec,
       energy: 0,
       nextAttackAt: 0,
       alive: true,
       downLogged: false,
       isBoss: stat.targetType === 'boss',
       bossNodeId: stat.targetType === 'boss' ? stat.unitRef : null,
-      normalEffectRef: stat.normalEffectRef,
-      ultimateEffectRef: stat.ultimateEffectRef,
-      coreEffectRef: stat.coreEffectRef,
-      targetingTag: stat.targetingTag,
+      normalEffectRef: cv.normalEffectRef,
+      ultimateEffectRef: cv.ultimateEffectRef,
+      coreEffectRef: cv.coreEffectRef,
+      targetingTag: cv.targetingTag,
       coreTriggered: false,
       shield: 0,
       states: new Map(),
@@ -912,6 +918,24 @@ const ENEMY_SLOT_PATTERN = new RegExp(`^r[0-${ENEMY_ROWS - 1}]c[0-${ENEMY_COLS -
 function parseEnemySlot(slot: string): { row: number; col: number } | null {
   if (typeof slot !== 'string' || !ENEMY_SLOT_PATTERN.test(slot)) return null;
   return { row: Number(slot[1]), col: Number(slot[3]) };
+}
+
+/** 取一艘星舰的基线战斗属性，作为效果装配层的输入。 */
+function baseStatOf(stat: S7BattleUnitStatParam): S7DeriveBaseStat {
+  return {
+    maxHp: stat.maxHp,
+    attack: stat.attack,
+    armor: stat.armor,
+    attackIntervalSec: stat.attackIntervalSec,
+    attackRangeCells: stat.attackRangeCells,
+    passiveEnergyPerSec: stat.passiveEnergyPerSec,
+    sizeRows: stat.sizeRows,
+    sizeCols: stat.sizeCols,
+    targetingTag: stat.targetingTag,
+    normalEffectRef: stat.normalEffectRef,
+    ultimateEffectRef: stat.ultimateEffectRef,
+    coreEffectRef: stat.coreEffectRef,
+  };
 }
 
 /** 单位占格是否覆盖目标列。 */

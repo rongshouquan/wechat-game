@@ -6,6 +6,8 @@
 //   SkillConfig / BattleLaunchService / BattlePlaybackService / cc。
 // - 不把 pressure_param 自动换算成 hp / attack / armor。
 
+import { S7EffectBlock } from './S7BattleEffectBlock';
+
 /** 战斗阵营。 */
 export type S7AutoBattleSide = 'player' | 'enemy';
 
@@ -15,6 +17,11 @@ export interface S7AutoBattlePlayerUnitInput {
   unitStatRef: string;
   /** 玩家 3x3 锚点格：p0c0..p2c2。 */
   slotRef: string;
+  /**
+   * 该单位四层（星舰/驾驶员/插件/星核）合成出的效果积木（v1.0 §4.6）。
+   * 由上游装配/解析层填充（块3/4/5 据配置生成）；缺省/空数组时按星舰基线、不做任何叠加。
+   */
+  effectBlocks?: readonly S7EffectBlock[];
 }
 
 /** 一场自动战斗的运行请求。 */
