@@ -16,24 +16,38 @@ import {
   S7BattleEncounterParam,
   S7BattleUnitStatParam,
   S7ShipConfig,
+  S7PluginConfig,
 } from '../../config/s7/ConfigTypesS7';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BattleEntry, S7BattleContext } from './S7BattleEntry';
 import { S7AutoBattleRunRequest, S7AutoBattlePlayerUnitInput } from './S7AutoBattleTypes';
+import { S7EffectBlock } from './S7BattleEffectBlock';
 import { coreBlocks } from './S7CoreEffects';
+import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES } from './S7PluginEffects';
 
 const MAX_LINEUP = 5;
+/** 每艘星舰固定 3 槽（武器/技能(CD)/战术），不能堆同类、同名不重复（v1.0 §5.3）。 */
+const MAX_PLUGINS_PER_SHIP = 3;
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 const REQUIRED_PLAYER_SLOT_POLICY = 'five_ship_3x3_default';
 const REQUIRED_SEED_POLICY = 'node_id_plus_run_seed';
+
+/** 出战插件实例（块4a）：词条(pluginId) + 品质。槽位由 plugin_config 决定，不在此重复。 */
+export interface S7BattleLineupPluginInput {
+  pluginId: string;
+  quality: S7PluginQuality;
+}
 
 /** 玩家出战单位输入：稳定 shipId + 玩家 3x3 锚点格（p0c0..p2c2）。不绑定 battle_unit_stat_param.rowId。 */
 export interface S7BattleLineupUnitInput {
   shipId: string;
   slotRef: string;
-  /** 装备的星核（块3）：组装时解析成效果积木喂装配层；缺省 = 无核。后续驾驶员/插件同理扩展。 */
+  /** 装备的星核（块3）：组装时解析成效果积木喂装配层；缺省 = 无核。 */
   coreId?: string;
+  /** 装备的插件（块4a，≤3，槽位不能重复）：组装时按品质解析成效果积木喂装配层；缺省 = 无插件。
+   *  注：品质来自「拥有插件实例」模型；该模型的存档化(背包/合成/回收)留块6，此处由调用方直接给。 */
+  plugins?: S7BattleLineupPluginInput[];
 }
 
 /** 组装请求：只读节点进度 + 运行种子 + 玩家阵容（稳定 shipId）。 */
@@ -76,7 +90,12 @@ export type S7BattleEncounterAssemblerErrorCode =
   | 'duplicate_player_slot'
   | 'unknown_ship'
   | 'missing_ship_battle_unit'
-  | 'ambiguous_ship_battle_unit';
+  | 'ambiguous_ship_battle_unit'
+  | 'too_many_plugins'
+  | 'unknown_plugin'
+  | 'duplicate_plugin'
+  | 'duplicate_plugin_slot'
+  | 'bad_plugin_quality';
 
 export class S7BattleEncounterAssemblerError extends Error {
   constructor(
@@ -200,6 +219,7 @@ export class S7BattleEncounterAssembler {
 
     const ships = this.runtime.getAll<S7ShipConfig>('ship_config');
     const units = this.runtime.getAll<S7BattleUnitStatParam>('battle_unit_stat_param');
+    const pluginConfigs = this.runtime.getAll<S7PluginConfig>('plugin_config');
     const seenSlots = new Set<string>();
     const playerUnits: S7AutoBattlePlayerUnitInput[] = [];
 
@@ -227,8 +247,12 @@ export class S7BattleEncounterAssembler {
         throw new S7BattleEncounterAssemblerError('ambiguous_ship_battle_unit', `星舰 ${shipId} 在 battle_unit_stat_param 命中多行战斗属性`);
       }
 
-      // 块3：装备的星核解析成效果积木喂装配层（驾驶员/插件后续同理）。无核或无质变 → 不带 effectBlocks。
-      const blocks = item.coreId ? coreBlocks(item.coreId) : [];
+      // 块3 星核 + 块4a 插件：装备件各自解析成效果积木，合并喂装配层。
+      // 顺序：先星核质变、后插件数值微调（deriveUnit 对修正/词条的合并与顺序无关，此序仅表语义）。
+      const blocks: S7EffectBlock[] = [
+        ...(item.coreId ? coreBlocks(item.coreId) : []),
+        ...this.resolvePluginBlocks(item.plugins, pluginConfigs),
+      ];
       playerUnits.push(
         blocks.length > 0
           ? { unitStatRef: matched[0].rowId, slotRef, effectBlocks: blocks }
@@ -237,5 +261,56 @@ export class S7BattleEncounterAssembler {
     }
 
     return playerUnits;
+  }
+
+  /**
+   * 把一艘船装备的插件（≤3，槽位不重复、同名不重复）解析成效果积木。
+   * 槽位类型取自 plugin_config，按品质缩放（S7PluginEffects.pluginBlocks）。无插件 → 空数组。
+   */
+  private resolvePluginBlocks(
+    plugins: S7BattleLineupPluginInput[] | undefined,
+    pluginConfigs: S7PluginConfig[],
+  ): S7EffectBlock[] {
+    if (plugins === undefined) return [];
+    if (!Array.isArray(plugins) || plugins.length === 0) return [];
+    if (plugins.length > MAX_PLUGINS_PER_SHIP) {
+      throw new S7BattleEncounterAssemblerError(
+        'too_many_plugins',
+        `单舰最多装 ${MAX_PLUGINS_PER_SHIP} 个插件，实际 ${plugins.length}`,
+      );
+    }
+
+    const seenPluginIds = new Set<string>();
+    const seenSlotTags = new Set<string>();
+    const out: S7EffectBlock[] = [];
+
+    for (const p of plugins) {
+      const pluginId = p?.pluginId;
+      const config = pluginConfigs.find((c) => c.pluginId === pluginId);
+      if (typeof pluginId !== 'string' || !config) {
+        throw new S7BattleEncounterAssemblerError('unknown_plugin', `未知插件 "${String(pluginId)}"（不存在于 plugin_config）`);
+      }
+      if (seenPluginIds.has(pluginId)) {
+        throw new S7BattleEncounterAssemblerError('duplicate_plugin', `插件 "${pluginId}" 在同一艘船重复装备（同名不重复）`);
+      }
+      seenPluginIds.add(pluginId);
+      if (seenSlotTags.has(config.slotTag)) {
+        throw new S7BattleEncounterAssemblerError(
+          'duplicate_plugin_slot',
+          `插件槽位 "${config.slotTag}" 重复（同舰每类槽位仅一件）`,
+        );
+      }
+      seenSlotTags.add(config.slotTag);
+      if (!S7_PLUGIN_QUALITIES.includes(p.quality)) {
+        throw new S7BattleEncounterAssemblerError(
+          'bad_plugin_quality',
+          `插件 "${pluginId}" 品质非法 "${String(p.quality)}"（仅 fine/superior/legendary）`,
+        );
+      }
+
+      out.push(...pluginBlocks(pluginId, config.slotTag, p.quality));
+    }
+
+    return out;
   }
 }
