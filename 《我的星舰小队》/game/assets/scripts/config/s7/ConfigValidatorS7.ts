@@ -9,6 +9,8 @@ import {
   S7ConfigTableName,
   S7_ID_FIELD,
 } from './ConfigTypesS7';
+// 战场网格尺寸单一真源（敌方 5×7）；锚点格上界由此派生，改尺寸只改 S7BattleGrid.ts。
+import { S7_ENEMY_ROWS, S7_ENEMY_COLS } from '../../core/s7/S7BattleGrid';
 
 export interface S7ValidationError {
   table: string;
@@ -68,8 +70,9 @@ const S7_BATTLE_EFFECT_TYPES = [
 const S7_BATTLE_STATE_TAGS = ['none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk'];
 const S7_BOSS_PHASE_TAGS = ['start', 'mid', 'final'];
 const S7_BOSS_PHASE_TRIGGER_TYPES = ['battle_start', 'hp_pct_below', 'time_elapsed_sec'];
-// 敌方战场 3 行 x 7 列锚点格 r0c0..r2c6。
-const BATTLE_GRID_SLOT_PATTERN = /^r[0-2]c[0-6]$/;
+// 敌方战场锚点格 r0c0..r{rows-1}c{cols-1}（当前 5 行 x 7 列；尺寸真源见 core/s7/S7BattleGrid.ts）。
+// 正则按个位行列数构造（≤10）。
+const BATTLE_GRID_SLOT_PATTERN = new RegExp(`^r[0-${S7_ENEMY_ROWS - 1}]c[0-${S7_ENEMY_COLS - 1}]$`);
 
 // Tier B 关系 / schema 表：与参数表平行，但 idField 各异（非 rowId），引用只指向已落 Tier A 实体。
 const TIER_B_REL_TABLES: S7ConfigTableName[] = [
@@ -1355,7 +1358,8 @@ function validateBattle(
     const sd = num(row.spawnDelaySec);
     if (sd === null || sd < 0) errors.push({ table: 'battle_spawn_param', id, message: 'spawnDelaySec 必须 >= 0' });
     const mc = num(row.maxConcurrentOnField);
-    if (mc === null || !Number.isInteger(mc) || mc < 1 || mc > 21) errors.push({ table: 'battle_spawn_param', id, message: 'maxConcurrentOnField 必须为 1-21 的整数' });
+    const gridCells = S7_ENEMY_ROWS * S7_ENEMY_COLS;
+    if (mc === null || !Number.isInteger(mc) || mc < 1 || mc > gridCells) errors.push({ table: 'battle_spawn_param', id, message: `maxConcurrentOnField 必须为 1-${gridCells} 的整数` });
     const slots = row.slotRefs;
     if (!Array.isArray(slots)) {
       errors.push({ table: 'battle_spawn_param', id, message: 'slotRefs 必须是数组' });
@@ -1368,7 +1372,7 @@ function validateBattle(
       const sc = unit ? num(unit.sizeCols) : null;
       for (const slot of slots) {
         if (typeof slot !== 'string' || !BATTLE_GRID_SLOT_PATTERN.test(slot)) {
-          errors.push({ table: 'battle_spawn_param', id, message: `slotRefs 含非法格子 "${String(slot)}"（仅 r0c0..r2c6）` });
+          errors.push({ table: 'battle_spawn_param', id, message: `slotRefs 含非法格子 "${String(slot)}"（仅 r0c0..r${S7_ENEMY_ROWS - 1}c${S7_ENEMY_COLS - 1}）` });
           continue;
         }
         if (anchorsSeen.has(slot)) errors.push({ table: 'battle_spawn_param', id, message: `slotRefs 含重复格子 "${slot}"` });
@@ -1380,7 +1384,7 @@ function validateBattle(
             for (let dc = 0; dc < sc; dc += 1) {
               const rr = baseR + dr;
               const cc = baseC + dc;
-              if (rr > 2 || cc > 6) {
+              if (rr > S7_ENEMY_ROWS - 1 || cc > S7_ENEMY_COLS - 1) {
                 errors.push({ table: 'battle_spawn_param', id, message: `单位 ${String(unitRef)} 以 ${slot} 为锚点的 ${sr}x${sc} 占格越界（r${rr}c${cc}）` });
                 continue;
               }

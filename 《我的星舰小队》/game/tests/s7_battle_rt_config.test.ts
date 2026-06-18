@@ -100,7 +100,7 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects an out-of-range grid slot', () => {
     const b = clone(loadBundle());
-    (rowOf(b, 'battle_spawn_param', 'spawn_n001_w1').slotRefs as string[])[0] = 'r3c0';
+    (rowOf(b, 'battle_spawn_param', 'spawn_n001_w1').slotRefs as string[])[0] = 'r5c0';
     expect(hasErr(b, 'battle_spawn_param')).toBe(true);
   });
 

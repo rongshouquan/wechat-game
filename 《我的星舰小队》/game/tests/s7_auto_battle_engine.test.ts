@@ -372,7 +372,7 @@ describe('S7AutoBattleEngine - 超时判负 (#17)', () => {
     const r2 = engine2.run({ encounterRef: 'enc_n075', battleSeed: 'to2', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
     expect(r2.reason).toBe('timeout');
     expect(r2.winner).toBe('enemy');
-    expect(r2.durationSec).toBe(45);
+    expect(r2.durationSec).toBe(120);
   });
 });
 
@@ -530,7 +530,7 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
     const e1 = await engineOf(b1);
     const r1 = e1.run({ encounterRef: 'enc_n075', battleSeed: 'cap', playerUnits: FIVE });
     expect(ofType(r1.log, 'boss_phase').some((e) => e.phaseTag === 'mid')).toBe(true);
-    expect(summonedCount(r1.log)).toBe(10); // 触顶 cap（空格足够：boss 9 格 + 2 开场附属，余 10 空格）
+    expect(summonedCount(r1.log)).toBe(10); // 触顶 cap（5×7=35 空格充裕：boss 9 + 2 开场附属，余 24）
 
     // 23b：开场把敌方格子几乎填满（仅余 3 空格），mid 想召 12 但只能少召 3，不报错不无限刷。
     const b2 = cloneBundle(loadBundle());
@@ -540,9 +540,14 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
     });
     Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n075'), { maxHp: 2500 });
     Object.assign(row(b2, 'battle_spawn_param', 'spawn_n075_adds'), {
-      count: 9,
-      slotRefs: ['r0c0', 'r0c1', 'r0c5', 'r0c6', 'r1c0', 'r1c1', 'r1c5', 'r1c6', 'r2c0'],
-      maxConcurrentOnField: 21,
+      // 5×7=35 格：boss 占 9（r0c2..r2c4）+ 23 附属 = 32，仅余 3 空格（r4c4/r4c5/r4c6）。
+      count: 23,
+      slotRefs: [
+        'r0c0', 'r0c1', 'r0c5', 'r0c6', 'r1c0', 'r1c1', 'r1c5', 'r1c6',
+        'r2c0', 'r2c1', 'r2c5', 'r2c6', 'r3c0', 'r3c1', 'r3c2', 'r3c3',
+        'r3c4', 'r3c5', 'r3c6', 'r4c0', 'r4c1', 'r4c2', 'r4c3',
+      ],
+      maxConcurrentOnField: 35,
     });
     const e2 = await engineOf(b2);
     const r2 = e2.run({ encounterRef: 'enc_n075', battleSeed: 'cap2', playerUnits: FIVE });

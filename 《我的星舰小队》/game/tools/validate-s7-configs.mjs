@@ -904,7 +904,9 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
   const BATTLE_STATE_TAGS = ['none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk'];
   const BOSS_PHASE_TAGS = ['start', 'mid', 'final'];
   const BOSS_PHASE_TRIGGER_TYPES = ['battle_start', 'hp_pct_below', 'time_elapsed_sec'];
-  const GRID_SLOT = /^r[0-2]c[0-6]$/;
+  // 镜像 assets/scripts/core/s7/S7BattleGrid.ts（敌方 5×7）：改尺寸两处都要改。
+  const ENEMY_ROWS = 5, ENEMY_COLS = 7;
+  const GRID_SLOT = new RegExp(`^r[0-${ENEMY_ROWS - 1}]c[0-${ENEMY_COLS - 1}]$`);
   const deriveStage = (t) => (t === 'boss' ? 'boss' : t === 'elite' ? 'elite' : 'normal');
   const arrRefs = (name, id, field, value, validIds, nonEmpty) => {
     if (!Array.isArray(value)) { fail(name, id, `${field} 必须是数组`); return; }
@@ -1002,20 +1004,20 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     if (!unit) fail('battle_spawn_param', id, `unitStatRef "${row.unitStatRef}" 不存在`);
     else if (enc && Array.isArray(enc.enemyUnitStatRefs) && !enc.enemyUnitStatRefs.includes(row.unitStatRef)) fail('battle_spawn_param', id, `unitStatRef "${row.unitStatRef}" 不在 encounter ${row.encounterRef} 的 enemyUnitStatRefs 内`);
     const sd = num(row.spawnDelaySec); if (sd === null || sd < 0) fail('battle_spawn_param', id, 'spawnDelaySec 必须 >= 0');
-    const mc = num(row.maxConcurrentOnField); if (mc === null || !Number.isInteger(mc) || mc < 1 || mc > 21) fail('battle_spawn_param', id, 'maxConcurrentOnField 必须为 1-21 的整数');
+    const mc = num(row.maxConcurrentOnField); const gridCells = ENEMY_ROWS * ENEMY_COLS; if (mc === null || !Number.isInteger(mc) || mc < 1 || mc > gridCells) fail('battle_spawn_param', id, `maxConcurrentOnField 必须为 1-${gridCells} 的整数`);
     if (!Array.isArray(row.slotRefs)) fail('battle_spawn_param', id, 'slotRefs 必须是数组');
     else {
       const cnt = num(row.count); if (cnt === null || cnt !== row.slotRefs.length) fail('battle_spawn_param', id, `count (${row.count}) 必须等于 slotRefs.length (${row.slotRefs.length})`);
       const anchorsSeen = new Set(); const footprint = new Set();
       const sr = unit ? num(unit.sizeRows) : null; const sc = unit ? num(unit.sizeCols) : null;
       for (const slot of row.slotRefs) {
-        if (typeof slot !== 'string' || !GRID_SLOT.test(slot)) { fail('battle_spawn_param', id, `slotRefs 含非法格子 "${slot}"（仅 r0c0..r2c6）`); continue; }
+        if (typeof slot !== 'string' || !GRID_SLOT.test(slot)) { fail('battle_spawn_param', id, `slotRefs 含非法格子 "${slot}"（仅 r0c0..r${ENEMY_ROWS - 1}c${ENEMY_COLS - 1}）`); continue; }
         if (anchorsSeen.has(slot)) fail('battle_spawn_param', id, `slotRefs 含重复格子 "${slot}"`); anchorsSeen.add(slot);
         if (sr !== null && sc !== null) {
           const baseR = Number(slot[1]); const baseC = Number(slot[3]);
           for (let dr = 0; dr < sr; dr += 1) for (let dc = 0; dc < sc; dc += 1) {
             const rr = baseR + dr; const cc = baseC + dc;
-            if (rr > 2 || cc > 6) { fail('battle_spawn_param', id, `单位 ${row.unitStatRef} 以 ${slot} 为锚点的 ${sr}x${sc} 占格越界（r${rr}c${cc}）`); continue; }
+            if (rr > ENEMY_ROWS - 1 || cc > ENEMY_COLS - 1) { fail('battle_spawn_param', id, `单位 ${row.unitStatRef} 以 ${slot} 为锚点的 ${sr}x${sc} 占格越界（r${rr}c${cc}）`); continue; }
             const key = `r${rr}c${cc}`;
             if (footprint.has(key)) fail('battle_spawn_param', id, `占格重叠于 ${key}`); footprint.add(key);
           }

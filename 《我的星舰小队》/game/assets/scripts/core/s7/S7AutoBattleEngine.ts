@@ -36,15 +36,18 @@ import {
   S7AutoBattleReason,
   S7AutoBattleError,
 } from './S7AutoBattleTypes';
+// 战场网格尺寸统一从单一真源导入（v1.0：敌方 5×7、我方 3×3、上阵 5）。
+import {
+  S7_PLAYER_ROWS as PLAYER_ROWS,
+  S7_PLAYER_COLS as PLAYER_COLS,
+  S7_ENEMY_ROWS as ENEMY_ROWS,
+  S7_ENEMY_COLS as ENEMY_COLS,
+  S7_MAX_PLAYER_UNITS as MAX_PLAYER_UNITS,
+} from './S7BattleGrid';
 
 // ===== 首版行为常量（RT-04 首版口径，非最终平衡；报告中已列明）=====
 const TICK_SEC = 0.2;
-const MAX_PLAYER_UNITS = 5;
 const ENERGY_FULL = 100;
-const PLAYER_ROWS = 3;
-const PLAYER_COLS = 3;
-const ENEMY_ROWS = 3;
-const ENEMY_COLS = 7;
 /** 普攻命中：攻击方获得能量。 */
 const ENERGY_ON_ATTACK = 12;
 /** 普攻命中：受击方少量获得能量（低于攻击收益）。 */
@@ -293,7 +296,7 @@ class BattleRun {
       if (this.countAliveEnemies() >= plan.maxConcurrentOnField) break; // 同屏上限
       const parsed = parseEnemySlot(slot);
       if (!parsed) {
-        throw new S7AutoBattleError('bad_spawn_slot', `非法出怪格 "${slot}"（仅 r0c0..r2c6）`);
+        throw new S7AutoBattleError('bad_spawn_slot', `非法出怪格 "${slot}"（仅 r0c0..r${ENEMY_ROWS - 1}c${ENEMY_COLS - 1}）`);
       }
       if (!this.canPlace('enemy', parsed.row, parsed.col, stat.sizeRows, stat.sizeCols)) continue; // 占用/越界则跳过该格
       created.push(this.spawnUnit(stat, 'enemy', parsed.row, parsed.col, slot));
@@ -904,8 +907,10 @@ function roundTime(t: number): number {
   return Math.round(t * 1e6) / 1e6;
 }
 
+// 敌方出怪格正则按网格尺寸构造（单一真源 S7BattleGrid；当前 5×7，个位行列数）。
+const ENEMY_SLOT_PATTERN = new RegExp(`^r[0-${ENEMY_ROWS - 1}]c[0-${ENEMY_COLS - 1}]$`);
 function parseEnemySlot(slot: string): { row: number; col: number } | null {
-  if (typeof slot !== 'string' || !/^r[0-2]c[0-6]$/.test(slot)) return null;
+  if (typeof slot !== 'string' || !ENEMY_SLOT_PATTERN.test(slot)) return null;
   return { row: Number(slot[1]), col: Number(slot[3]) };
 }
 

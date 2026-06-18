@@ -17,5 +17,8 @@ export default defineConfig({
   },
   test: {
     include: ['tests/**/*.test.ts'],
+    // Windows 上 worker_threads 池偶发 SIGABRT(退出码134/255) worker 崩溃；
+    // 改用 forks(子进程)池，纯逻辑测试稳定可复现，速度无明显差异。
+    pool: 'forks',
   },
 });
