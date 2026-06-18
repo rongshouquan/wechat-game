@@ -342,19 +342,19 @@ export interface S7CorePluginFitConfig {
 
 // ===== Tier B 建筑配置表（来源 BUILDING-02 落表说明）=====
 // 只写段位 / 标签 / 引用关系 / 影响判断；不写逐级数值、倍率、概率、运行时公式。
-// 建筑 ID 采用 bld_ 前缀的 snake_case；奇迹建筑 bld_rsv_* 是合法建筑行，按 reservedFlag / releaseTag 区分，
+// 建筑 ID 采用 bld_ 前缀的 snake_case；条件预留建筑 bld_rsv_* 是合法建筑行，按 reservedFlag / releaseTag 区分，
 // 不沿用关系表对 "rsv" 标识的硬禁。
 
-/** 建筑组。 */
+/** 建筑组（对齐 v1.0 §7 八栋：船坞 / 驾驶员训练舱 / 居住舱 / 星港补给站 / 打捞港 / 商人小站 / 研究塔 / 星核展厅）。 */
 export type S7BuildingGroupTag =
-  | 'core_entry' | 'core_growth' | 'base_comfort' | 'resource_comfort'
-  | 'merchant_comfort' | 'minor_growth' | 'base_expansion' | 'miracle';
+  | 'core_growth' | 'pilot_growth' | 'base_comfort' | 'supply_comfort'
+  | 'resource_comfort' | 'merchant_comfort' | 'minor_growth' | 'showcase';
 /** 默认 / 条件后置。 */
 export type S7BuildingReleaseTag = 'default_release' | 'conditional_post';
 /** no-ad 核心路径角色。 */
 export type S7BuildingNoAdRole = 'entry_only' | 'optional_support' | 'non_core' | 'none';
 
-/** 建筑实体表（7 默认 + 2 条件/后置奇迹 = 9 行）。 */
+/** 建筑实体表（7 默认 + 1 条件/后置 = 8 行，对齐 v1.0 §7）。 */
 export interface S7BuildingConfig {
   schemaVersion: string;
   buildingId: string;

@@ -74,7 +74,7 @@ describe('s7 tier a config', () => {
     }
     for (const id of allIds) {
       expect(id).toMatch(/^[a-z0-9_]+$/);
-      // 建筑奇迹行用 bld_rsv_* 作为合法建筑 ID（由 reservedFlag/releaseTag 区分），不受关系实体 rsv 硬禁约束。
+      // 建筑条件预留行用 bld_rsv_* 作为合法建筑 ID（由 reservedFlag/releaseTag 区分），不受关系实体 rsv 硬禁约束。
       if (!id.startsWith('bld_')) expect(id).not.toMatch(/rsv/);
     }
   });
@@ -213,15 +213,15 @@ describe('s7 tier b relation / schema configs', () => {
 describe('s7 tier b building configs', () => {
   type Bld = { buildingKey: string; releaseTag: string; maxLevel: number; initialLevel: number; functionUnlockLevel: number; mainlineRequiredLevelCap: number; reservedFlag: boolean };
 
-  it('has 9 buildings: 7 default + 2 conditional/post miracle', () => {
+  it('has 8 buildings: 7 default + 1 conditional/post (v1.0 §7)', () => {
     const rows = readSample<Bld[]>('building_config');
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(8);
     const def = rows.filter((r) => r.releaseTag === 'default_release');
     const cond = rows.filter((r) => r.releaseTag === 'conditional_post');
     expect(def.map((r) => r.buildingKey).sort()).toEqual(
-      ['command_tower', 'dock', 'habitat', 'salvage_port', 'merchant_station', 'research_tower', 'starport'].sort(),
+      ['dock', 'pilot_training_bay', 'habitat', 'supply_station', 'salvage_port', 'merchant_station', 'research_tower'].sort(),
     );
-    expect(cond.map((r) => r.buildingKey).sort()).toEqual(['core_gallery', 'observatory']);
+    expect(cond.map((r) => r.buildingKey).sort()).toEqual(['core_gallery']);
     for (const r of cond) expect(r.reservedFlag).toBe(true);
   });
 
@@ -235,7 +235,7 @@ describe('s7 tier b building configs', () => {
     }
   });
 
-  it('keeps no-ad anchor checks off building level >1 and off merchant/miracle as core-required', () => {
+  it('keeps no-ad anchor checks off building level >1 and only the dock entry as core-required', () => {
     const checks = readSample<Array<{ requiredLevelCap: number; impactJudgement: string }>>('building_anchor_impact_check');
     for (const c of checks) {
       expect(c.requiredLevelCap).toBeLessThanOrEqual(1);
@@ -243,7 +243,7 @@ describe('s7 tier b building configs', () => {
     }
     const unlocks = readSample<Array<{ buildingId: string; corePathRequiredFlag: boolean }>>('building_unlock_config');
     for (const u of unlocks.filter((x) => x.corePathRequiredFlag)) {
-      expect(['bld_command_tower', 'bld_dock']).toContain(u.buildingId);
+      expect(u.buildingId).toBe('bld_dock');
     }
   });
 
@@ -340,7 +340,7 @@ describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
     for (const bu of buildingUnlocks) expect(registeredBuildingRefs.has(bu.unlockId)).toBe(true);
   });
 
-  it('excludes miracle building unlocks (observatory/core_gallery) from default unlock checkpoints', () => {
+  it('excludes reserved building unlocks (core_gallery) from default unlock checkpoints', () => {
     const rows = readSample<Array<{ unlockRef: string; buildingUnlockRef: string }>>('unlock_checkpoint_config');
     for (const r of rows) {
       expect(r.unlockRef).not.toMatch(/(rsv|observatory|core_gallery)/);

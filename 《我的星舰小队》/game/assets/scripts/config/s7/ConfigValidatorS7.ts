@@ -88,11 +88,11 @@ const TIER_B_BLD_TABLES: S7ConfigTableName[] = [
   'building_level_effect_param', 'building_anchor_impact_check',
 ];
 
-const BUILDING_GROUPS = ['core_entry', 'core_growth', 'base_comfort', 'resource_comfort', 'merchant_comfort', 'minor_growth', 'base_expansion', 'miracle'];
+const BUILDING_GROUPS = ['core_growth', 'pilot_growth', 'base_comfort', 'supply_comfort', 'resource_comfort', 'merchant_comfort', 'minor_growth', 'showcase'];
 const BUILDING_NO_AD_ROLES = ['entry_only', 'optional_support', 'non_core', 'none'];
 const BUILDING_RELEASE_TAGS = ['default_release', 'conditional_post'];
-const BUILDING_DEFAULT_KEYS = ['command_tower', 'dock', 'habitat', 'salvage_port', 'merchant_station', 'research_tower', 'starport'];
-const BUILDING_MIRACLE_KEYS = ['observatory', 'core_gallery'];
+const BUILDING_DEFAULT_KEYS = ['dock', 'pilot_training_bay', 'habitat', 'supply_station', 'salvage_port', 'merchant_station', 'research_tower'];
+const BUILDING_RESERVED_KEYS = ['core_gallery'];
 const BUILDING_ANCHOR_DAYS = ['D7', 'D14', 'D21', 'D28'];
 const FORBIDDEN_FALLBACK_NODES = ['n033', 'n047', 'n053', 'n063', 'n070'];
 
@@ -427,7 +427,7 @@ function validateTierBBld(
   const defaultKeys: string[] = [];
   const conditionalKeys: string[] = [];
   const keySeen = new Set<string>();
-  if (bldRows.length !== 9) errors.push({ table: 'building_config', id: '-', message: `建筑总数必须为 9（7 默认 + 2 条件/后置），实际 ${bldRows.length}` });
+  if (bldRows.length !== 8) errors.push({ table: 'building_config', id: '-', message: `建筑总数必须为 8（7 默认 + 1 条件/后置），实际 ${bldRows.length}` });
   for (const row of bldRows) {
     const id = String(row.buildingId);
     buildingIds.add(id);
@@ -451,14 +451,14 @@ function validateTierBBld(
     } else if (row.releaseTag === 'conditional_post') {
       conditionalKeys.push(key);
       if (row.reservedFlag !== true) errors.push({ table: 'building_config', id, message: 'conditional_post 建筑 reservedFlag 必须为 true' });
-      if (row.buildingGroupTag !== 'miracle') errors.push({ table: 'building_config', id, message: 'conditional_post 建筑必须属于 miracle 组' });
+      if (row.buildingGroupTag !== 'showcase') errors.push({ table: 'building_config', id, message: 'conditional_post 建筑必须属于 showcase 组' });
     }
   }
   if (defaultKeys.length !== 7) errors.push({ table: 'building_config', id: '-', message: `默认建筑必须为 7 个，实际 ${defaultKeys.length}` });
   for (const k of BUILDING_DEFAULT_KEYS) if (!defaultKeys.includes(k)) errors.push({ table: 'building_config', id: k, message: `默认建筑缺少 "${k}"` });
   for (const k of defaultKeys) if (!BUILDING_DEFAULT_KEYS.includes(k)) errors.push({ table: 'building_config', id: k, message: `"${k}" 不在 7 个默认建筑白名单内` });
-  if (conditionalKeys.length !== 2) errors.push({ table: 'building_config', id: '-', message: `条件/后置奇迹必须为 2 个，实际 ${conditionalKeys.length}` });
-  for (const k of BUILDING_MIRACLE_KEYS) if (!conditionalKeys.includes(k)) errors.push({ table: 'building_config', id: k, message: `条件/后置奇迹缺少 "${k}"` });
+  if (conditionalKeys.length !== 1) errors.push({ table: 'building_config', id: '-', message: `条件/后置建筑必须为 1 个，实际 ${conditionalKeys.length}` });
+  for (const k of BUILDING_RESERVED_KEYS) if (!conditionalKeys.includes(k)) errors.push({ table: 'building_config', id: k, message: `条件/后置预留建筑缺少 "${k}"` });
 
   const usedGroups = new Set<string>(bldRows.map((r) => String(r.buildingGroupTag)));
 
@@ -476,7 +476,7 @@ function validateTierBBld(
     if (row.forbiddenFallback70Flag !== true) errors.push({ table: 'building_unlock_config', id, message: 'forbiddenFallback70Flag 必须为 true' });
     if (row.forbiddenCommercialSourceFlag !== true) errors.push({ table: 'building_unlock_config', id, message: 'forbiddenCommercialSourceFlag 必须为 true' });
     if (row.corePathRequiredFlag === true && noAdRoleById.get(bid) !== 'entry_only') {
-      errors.push({ table: 'building_unlock_config', id, message: 'corePathRequiredFlag 仅 entry_only 入口建筑可为 true（商人/打捞/研究/星港/奇迹不得为核心必需）' });
+      errors.push({ table: 'building_unlock_config', id, message: 'corePathRequiredFlag 仅 entry_only 入口建筑可为 true（驾驶员训练舱/补给站/打捞/商人/研究/展厅不得为核心必需）' });
     }
     const cc = String(row.cc05aLinkTag);
     if (cc05aSeen.has(cc)) errors.push({ table: 'building_unlock_config', id, message: 'cc05aLinkTag 重复' });
@@ -865,7 +865,7 @@ function validateTierC(
   for (const id of S7_TUTORIAL_STEP_IDS) if (!seenTut.has(id)) errors.push({ table: 'tutorial_trigger_config', id, message: `缺少教程触发 ${id}` });
 
   // unlock_checkpoint_config：主线 unlockRef 全登记 + 建筑解锁桥接全登记，核心解锁不挂 70 回退节点
-  // 条件预留 / 奇迹建筑（observatory / core_gallery）解锁不纳入默认桥接登记范围（见下方红线扫描）。
+  // 条件预留建筑（core_gallery，bld_rsv_*）解锁不纳入默认桥接登记范围（见下方红线扫描）。
   const buildingUnlockIds = new Set<string>(
     rowsByTable.building_unlock_config
       .filter((r) => !RESERVED_TOKEN_PATTERN.test(String(r.unlockId)) && !RESERVED_TOKEN_PATTERN.test(String(r.cc05aLinkTag)))
@@ -923,7 +923,7 @@ function validateTierC(
   if (!n039p) errors.push({ table: 'protection_reset_config', id: 'n039', message: '缺少 N039 行' });
   else if (n039p.irreversibleWarningFlag !== true) errors.push({ table: 'protection_reset_config', id: 'n039', message: 'N039 irreversibleWarningFlag 必须为 true（正式养成期提醒）' });
 
-  // 红线：T11/T12、PIL/CORE/PLG-RSV、奇迹建筑（observatory/core_gallery）不得进入 Tier C 默认结构
+  // 红线：T11/T12、PIL/CORE/PLG-RSV、条件预留建筑（core_gallery，含历史 observatory token 防回归）不得进入 Tier C 默认结构
   for (const table of TIER_C_TABLES) {
     const idField = S7_ID_FIELD[table];
     for (const row of rowsByTable[table]) {
@@ -1067,7 +1067,7 @@ function validateTierD(
     if (mline.unlockRef !== 'none') errors.push({ table: 'mainline_node_config', id, message: `70 回退可删节点 ${id} 的 unlockRef 必须为 none（防空引用）` });
   }
 
-  // 红线：T11/T12、PIL/CORE/PLG-RSV、奇迹建筑（observatory/core_gallery）不得进入桥接表
+  // 红线：T11/T12、PIL/CORE/PLG-RSV、条件预留建筑（core_gallery，含历史 observatory token 防回归）不得进入桥接表
   for (const table of TIER_D_TABLES) {
     const idField = S7_ID_FIELD[table];
     for (const row of rowsByTable[table]) {

@@ -45,11 +45,11 @@ const TIER_B_BLD = {
   building_level_effect_param: 'effectParamId',
   building_anchor_impact_check: 'checkId',
 };
-const BUILDING_GROUPS = ['core_entry', 'core_growth', 'base_comfort', 'resource_comfort', 'merchant_comfort', 'minor_growth', 'base_expansion', 'miracle'];
+const BUILDING_GROUPS = ['core_growth', 'pilot_growth', 'base_comfort', 'supply_comfort', 'resource_comfort', 'merchant_comfort', 'minor_growth', 'showcase'];
 const BUILDING_NO_AD_ROLES = ['entry_only', 'optional_support', 'non_core', 'none'];
 const BUILDING_RELEASE_TAGS = ['default_release', 'conditional_post'];
-const BUILDING_DEFAULT_KEYS = ['command_tower', 'dock', 'habitat', 'salvage_port', 'merchant_station', 'research_tower', 'starport'];
-const BUILDING_MIRACLE_KEYS = ['observatory', 'core_gallery'];
+const BUILDING_DEFAULT_KEYS = ['dock', 'pilot_training_bay', 'habitat', 'supply_station', 'salvage_port', 'merchant_station', 'research_tower'];
+const BUILDING_RESERVED_KEYS = ['core_gallery'];
 const BUILDING_ANCHOR_DAYS = ['D7', 'D14', 'D21', 'D28'];
 const FORBIDDEN_FALLBACK_NODES = ['n033', 'n047', 'n053', 'n063', 'n070'];
 
@@ -369,7 +369,7 @@ for (const row of tables.core_plugin_fit_config) {
   const systemRefsById = new Map();
   const noAdRoleById = new Map();
   const defaultKeys = []; const conditionalKeys = []; const keySeen = new Set();
-  if (bldRows.length !== 9) fail('building_config', '-', `建筑总数必须为 9，实际 ${bldRows.length}`);
+  if (bldRows.length !== 8) fail('building_config', '-', `建筑总数必须为 8，实际 ${bldRows.length}`);
   for (const row of bldRows) {
     const id = row.buildingId; buildingIds.add(id);
     const key = row.buildingKey;
@@ -390,14 +390,14 @@ for (const row of tables.core_plugin_fit_config) {
     } else if (row.releaseTag === 'conditional_post') {
       conditionalKeys.push(key);
       if (row.reservedFlag !== true) fail('building_config', id, 'conditional_post 建筑 reservedFlag 必须 true');
-      if (row.buildingGroupTag !== 'miracle') fail('building_config', id, 'conditional_post 建筑必须属于 miracle 组');
+      if (row.buildingGroupTag !== 'showcase') fail('building_config', id, 'conditional_post 建筑必须属于 showcase 组');
     }
   }
   if (defaultKeys.length !== 7) fail('building_config', '-', `默认建筑必须为 7 个，实际 ${defaultKeys.length}`);
   for (const k of BUILDING_DEFAULT_KEYS) if (!defaultKeys.includes(k)) fail('building_config', k, `默认建筑缺少 "${k}"`);
   for (const k of defaultKeys) if (!BUILDING_DEFAULT_KEYS.includes(k)) fail('building_config', k, `"${k}" 不在默认建筑白名单内`);
-  if (conditionalKeys.length !== 2) fail('building_config', '-', `条件/后置奇迹必须为 2 个，实际 ${conditionalKeys.length}`);
-  for (const k of BUILDING_MIRACLE_KEYS) if (!conditionalKeys.includes(k)) fail('building_config', k, `条件/后置奇迹缺少 "${k}"`);
+  if (conditionalKeys.length !== 1) fail('building_config', '-', `条件/后置建筑必须为 1 个，实际 ${conditionalKeys.length}`);
+  for (const k of BUILDING_RESERVED_KEYS) if (!conditionalKeys.includes(k)) fail('building_config', k, `条件/后置预留建筑缺少 "${k}"`);
 
   const usedGroups = new Set(bldRows.map((r) => r.buildingGroupTag));
 
@@ -671,7 +671,7 @@ for (const [name, idField] of Object.entries(TIER_D)) {
   for (const id of S7_TUTORIAL_STEP_IDS) if (!seenTut.has(id)) fail('tutorial_trigger_config', id, `缺少教程触发 ${id}`);
 
   // unlock_checkpoint_config：主线 unlockRef 全登记 + 建筑解锁桥接全登记，核心解锁不挂 70 回退节点
-  // 条件预留 / 奇迹建筑（observatory / core_gallery）解锁不纳入默认桥接登记范围。
+  // 条件预留建筑（core_gallery，bld_rsv_*）解锁不纳入默认桥接登记范围。
   const buildingUnlockIds = new Set(
     tables.building_unlock_config
       .filter((r) => !RESERVED_TOKEN_PATTERN.test(String(r.unlockId)) && !RESERVED_TOKEN_PATTERN.test(String(r.cc05aLinkTag)))
@@ -723,7 +723,7 @@ for (const [name, idField] of Object.entries(TIER_D)) {
   if (!n039p) fail('protection_reset_config', 'n039', '缺少 N039 行');
   else if (n039p.irreversibleWarningFlag !== true) fail('protection_reset_config', 'n039', 'N039 irreversibleWarningFlag 必须为 true（正式养成期提醒）');
 
-  // 红线：T11/T12、PIL/CORE/PLG-RSV、奇迹建筑（observatory/core_gallery）不得进入 Tier C 默认结构
+  // 红线：T11/T12、PIL/CORE/PLG-RSV、条件预留建筑（core_gallery，含历史 observatory token 防回归）不得进入 Tier C 默认结构
   for (const [name, idField] of Object.entries(TIER_C)) {
     for (const row of tables[name]) {
       const rowId = row[idField] ?? '-';
@@ -848,7 +848,7 @@ for (const [name, idField] of Object.entries(TIER_D)) {
     if (mline.unlockRef !== 'none') fail('mainline_node_config', id, `70 回退可删节点 ${id} 的 unlockRef 必须为 none（防空引用）`);
   }
 
-  // 红线：T11/T12、PIL/CORE/PLG-RSV、奇迹建筑（observatory/core_gallery）不得进入桥接表
+  // 红线：T11/T12、PIL/CORE/PLG-RSV、条件预留建筑（core_gallery，含历史 observatory token 防回归）不得进入桥接表
   for (const [name, idField] of Object.entries(TIER_D)) {
     for (const row of tables[name]) {
       const rowId = row[idField] ?? '-';

@@ -27,11 +27,11 @@
   {"schemaVersion":"s7-0.1.0","unlockRef":"unlock_final_region_review","nodeId":"n068","systemTag":"region_gate","requiredForMainlineTag":true,"noAdRequiredTag":true,"buildingUnlockRef":"none"},
   {"schemaVersion":"s7-0.1.0","unlockRef":"unlock_final_boss_ready","nodeId":"n073","systemTag":"final_check","requiredForMainlineTag":false,"noAdRequiredTag":true,"buildingUnlockRef":"none"},
   {"schemaVersion":"s7-0.1.0","unlockRef":"unlock_mainline_clear","nodeId":"n075","systemTag":"final_check","requiredForMainlineTag":true,"noAdRequiredTag":true,"buildingUnlockRef":"none"},
-  {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_command_tower_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":true,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_command_tower_day1"},
   {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_dock_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":true,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_dock_day1"},
+  {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_pilot_training_bay_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_pilot_training_bay_day1_2"},
   {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_habitat_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_habitat_day1"},
+  {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_supply_station_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_supply_station_day1"},
   {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_salvage_port_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_salvage_port_day2_3"},
   {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_merchant_station_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_merchant_station_need"},
-  {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_research_tower_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_research_tower_day4_7"},
-  {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_starport_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_starport_day4_7"}
+  {"schemaVersion":"s7-0.1.0","unlockRef":"cc05a_bld_research_tower_unlock","nodeId":"none","systemTag":"building","requiredForMainlineTag":false,"noAdRequiredTag":false,"buildingUnlockRef":"unlock_bld_research_tower_day4_7"}
 ]
