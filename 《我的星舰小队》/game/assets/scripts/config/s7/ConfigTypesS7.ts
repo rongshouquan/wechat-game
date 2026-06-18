@@ -13,7 +13,7 @@ export type S7StageType = 'normal' | 'elite' | 'boss';
 export type S7ShipType = 'free' | 'stream';
 
 /** 插件槽位：武器 / 能源 / 战术。 */
-export type S7PluginSlot = 'weapon' | 'energy' | 'tactical';
+export type S7PluginSlot = 'weapon' | 'skill' | 'tactical';
 
 /** 战斗模板配置（默认仅 T01-T10；T11/T12 为条件预留，不进入本表）。 */
 export interface S7BattleTemplateConfig {

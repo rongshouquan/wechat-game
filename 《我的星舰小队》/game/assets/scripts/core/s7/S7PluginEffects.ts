@@ -24,12 +24,12 @@ const QUALITY_SCALE: Record<S7PluginQuality, number> = { fine: 1, superior: 1.6,
  * 槽位通用「主效果」占位（数值占位，每条词条细分留第二块）。
  * 全部用引擎已消费的「修正类」积木，装上即在战斗里生效，便于验证接线 + 品质缩放：
  *   - weapon（武器槽）  → 加伤 %（attack +pct，正向增益）
- *   - energy（技能/CD槽）→ 缩短攻击间隔 %（attackIntervalSec -pct = 缩 CD / 提速，故取负）
+ *   - skill（技能/CD槽）→ 缩短攻击间隔 %（attackIntervalSec -pct = 缩 CD / 提速，故取负）
  *   - tactical（战术槽）→ 加护甲 %（armor +pct，减伤方向）
  */
 const SLOT_PRIMARY: Record<S7PluginSlot, { stat: S7StatKey; base: number; sign: 1 | -1 }> = {
   weapon: { stat: 'attack', base: 0.1, sign: 1 },
-  energy: { stat: 'attackIntervalSec', base: 0.1, sign: -1 },
+  skill: { stat: 'attackIntervalSec', base: 0.1, sign: -1 },
   tactical: { stat: 'armor', base: 0.1, sign: 1 },
 };
 
@@ -39,7 +39,7 @@ const SLOT_PRIMARY: Record<S7PluginSlot, { stat: S7StatKey; base: number; sign: 
  */
 const SLOT_LEGENDARY_EXTRA: Record<S7PluginSlot, { affix: S7AffixKey; base: number }> = {
   weapon: { affix: 'critRate', base: 0.05 },
-  energy: { affix: 'skillHaste', base: 0.05 },
+  skill: { affix: 'skillHaste', base: 0.05 },
   tactical: { affix: 'controlResist', base: 0.05 },
 };
 

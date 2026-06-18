@@ -23,7 +23,7 @@ const ID_PATTERN = /^[a-z0-9_]+$/;
 export const S7_PROBLEM_TAGS = ['swarm', 'shield', 'backline', 'burst', 'berserk', 'summon'];
 const S7_STAGE_TYPES = ['normal', 'elite', 'boss'];
 const S7_SHIP_TYPES = ['free', 'stream'];
-const S7_PLUGIN_SLOTS = ['weapon', 'energy', 'tactical'];
+const S7_PLUGIN_SLOTS = ['weapon', 'skill', 'tactical'];
 
 const RESOURCE_VOCAB = [
   'starOre', 'hullAlloy', 'battleLog', 'shipBlueprint', 'pilotToken', 'pluginMat',
