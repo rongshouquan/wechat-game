@@ -20,7 +20,8 @@
   - ⚠️ **块6b 建筑运行时 暂缓（待第二块）**：摸下来发现建筑配置表是**纯标签占位无数值**(成本/效果/离线产率全 tag)、建筑集没对齐 v1.0 修订版(缺驾驶员训练舱等)、采矿站是旧流程版(挂 PlayerState、产旧能量)。硬做要么编养成数值(Ron 域)要么只剩空壳→暂缓，等第二块建筑数值+建筑集对齐再做。
   - 🔄 **改先做 块6d 插件合成/回收/背包（规则 v1.0 §5.3 已定、回收率 recycle_param 已有，主要是工程）**：
     - ✅ **块6d-1 插件实例库存+背包（已提交，未 push）**：新增 `core/s7/S7PluginInventory.ts`(实例 `{instanceId,pluginId,quality}` + 序号计数 + createDefault/normalize + add/remove/find)；S7 存档 `S7PlayerState` 加 `pluginInventory` 字段、版本 **v2→v3**(加性迁移、旧档补默认空库存、无需重置)。`npm test` **65套件/728测试全绿** + s7 校验器绿，零回归。
-    - **下一步 → 块6d-2 合成**（3 同槽同品质→1 高一阶、槽内随机词条）：需先定**玩家动作随机+防重**架构（Claude 提案：存档存 actionSeq 派生确定性 RNG + 动作 id 幂等；动存档结构，先跟 Ron 点）。其后 6d-3 回收(换星贝，率走 recycle_param 区间)。
+    - ✅ **块6d-2 合成（已提交，未 push）**：新增 `core/s7/S7PluginCraftService.ts`——`synthesizePlugins(inv, 3个instanceId, pluginConfigs)`：3 同槽同品质→1 高一阶、槽内随机词条；**Ron 拍板·本地确定性种子**：随机用 `inv.nextActionSeq`(库存加该字段)派生确定性 RNG(复用 S7AutoBattleRng)、递增隐藏防"挑输入凑词条"；消费 3 输入=天然幂等(重放 instance_not_found 不双花)。新增 `tests/s7_plugin_craft.test.ts` 9 用例(精良→优秀/优秀→传奇/词条在槽池/确定性/幂等防重/5 类错误且不改库存)。`npm test` **66套件/736测试全绿** + s7 校验器绿，零回归。
+    - **下一步 → 块6d-3 回收**：插件 → 星贝(starCargo)，率走 `recycle_param` 区间（区间内取值同样用确定性种子）。回收后从库存移除。
 - 其后：块6b(建筑,待第二块数值) / 块7 3天·7天活动(去每日任务)。
 - **改造全貌**：`C1改造路线图-现状对齐v1.0-v0.1.md`（8 块顺序 + 货币映射§4 待拍板）。**设计唯一真源**：`系统玩法设计-v1.0.md`（改动看 §17 变更记录）；决策日志：`设计决策记录-v0.1.md`。
 - **接手提示**：① 工程在 `game/`，`npm test` 跑 vitest（已锁 `pool:'forks'`）；逻辑纯 TS 可 Node 测，**不走 Codex 流程**。② 战斗引擎现为"配置驱动 + 四类积木(修正/触发/行为/动作) + 三类触发 + 星核质变"形态——驾驶员/插件只要产出效果积木即可接入（参考块3 `core/s7/S7CoreEffects.ts` + 装配器 `buildPlayerUnits` 接线）。

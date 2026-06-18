@@ -13,17 +13,20 @@ export interface S7OwnedPlugin {
   quality: S7PluginQuality;
 }
 
-/** 插件库存子状态：实例列表 + 下一个实例 id 的递增计数（保证 instanceId 唯一、可复现）。 */
+/** 插件库存子状态：实例列表 + 实例 id 递增计数 + 动作序号（合成/回收用作确定性 RNG 种子源）。 */
 export interface S7PluginInventoryState {
   plugins: S7OwnedPlugin[];
   nextInstanceSeq: number;
+  /** 玩家动作序号（6d-2 起）：每次带随机的动作(合成/回收)消费它派生确定性种子并 +1。
+   *  递增计数=隐藏、玩家不可预测控制 → 防"挑输入凑好词条"的存档刷。 */
+  nextActionSeq: number;
 }
 
 const INSTANCE_PREFIX = 'pi';
 
 /** 默认空库存。 */
 export function createDefaultS7PluginInventory(): S7PluginInventoryState {
-  return { plugins: [], nextInstanceSeq: 1 };
+  return { plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 };
 }
 
 function isNonEmptyString(v: unknown): v is string {
@@ -62,6 +65,8 @@ export function normalizeS7PluginInventory(raw: unknown): S7PluginInventoryState
   const rawSeq = src.nextInstanceSeq;
   const seqVal = typeof rawSeq === 'number' && Number.isInteger(rawSeq) && rawSeq > 0 ? rawSeq : 1;
   out.nextInstanceSeq = Math.max(seqVal, maxSeq + 1, 1);
+  const rawAct = src.nextActionSeq;
+  out.nextActionSeq = typeof rawAct === 'number' && Number.isInteger(rawAct) && rawAct >= 0 ? rawAct : 0;
   return out;
 }
 

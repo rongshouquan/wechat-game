@@ -44,7 +44,7 @@ describe('s7 save - resource skeleton', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     expect(data.saveVersion).toBe(3);
-    expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1 }); // 6d-1：默认空库存
+    expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
