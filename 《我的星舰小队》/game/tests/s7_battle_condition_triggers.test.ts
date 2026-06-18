@@ -16,7 +16,7 @@ import { S7EffectBlock } from '../assets/scripts/core/s7/S7BattleEffectBlock';
 const S7_DIR = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7');
 type Bundle = Record<S7ConfigTableName, unknown[]>;
 type Row = Record<string, unknown>;
-const TRIG = 'eff_ult_shield_bubble'; // 触发后释放的可观察自盾技能
+const TRIG = 'eff_state_shield'; // 触发后释放的可观察"纯自盾"技能（self_team、0 伤害，不会误伤/清场干扰测试）
 
 function loadBundle(): Bundle {
   const b = {} as Bundle;
@@ -43,7 +43,7 @@ function trigCasts(log: S7AutoBattleLogEntry[], actorId: string): S7AutoBattleLo
 describe('块2b on_kill 触发', () => {
   // 枪手秒杀近处小怪触发 on_kill；另置一只高血盾怪让战斗在击杀后继续（否则同 tick 清场提前结束、来不及触发）。
   function setup(b: Bundle): void {
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { ultimateEffectRef: 'none', ultimateCdSec: 0, attack: 500, attackRangeCells: 7 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none', attack: 500, attackRangeCells: 7 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100, attack: 1 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 1000000, attack: 1, ultimateEffectRef: 'none', ultimateCdSec: 0 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1', 'spawn_n001_w2'] });
@@ -67,6 +67,18 @@ describe('块2b on_kill 触发', () => {
     const r: S7AutoBattleResult = (await engineOf(b)).run({ encounterRef: 'enc_n001', battleSeed: 'k', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
     expect(trigCasts(r.log, 'player_p0c2').length).toBe(0);
   });
+
+  it('多次击杀可重复触发 on_kill（证明可重复、非一次性 latch）', async () => {
+    const b = clone(loadBundle());
+    // 枪手逐个秒杀 5 只小怪（每秒一发普攻杀一只）；on_kill 应随每次击杀重复触发。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none', attack: 500, attackRangeCells: 7, attackIntervalSec: 1 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100, attack: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm'], spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_swarm', count: 5, slotRefs: ['r0c0', 'r0c1', 'r0c2', 'r0c3', 'r0c4'], spawnDelaySec: 0, maxConcurrentOnField: 5 });
+    const blocks: S7EffectBlock[] = [{ kind: 'trigger', on: 'on_kill', effectRef: TRIG }];
+    const r: S7AutoBattleResult = (await engineOf(b)).run({ encounterRef: 'enc_n001', battleSeed: 'kk', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2', effectBlocks: blocks }] });
+    expect(trigCasts(r.log, 'player_p0c2').length).toBeGreaterThanOrEqual(2); // 多次击杀→多次触发（每秒一杀，逐次触发）
+  });
 });
 
 describe('块2b on_hit 触发', () => {
@@ -82,6 +94,16 @@ describe('块2b on_hit 触发', () => {
     const casts = trigCasts(r.log, 'player_p0c0');
     expect(casts.length).toBeGreaterThanOrEqual(1);
     expect(casts[0].timeSec).toBeGreaterThan(0);
+  });
+
+  it('对照：不带 on_hit 积木则不触发该技能（防假过）', async () => {
+    const b = clone(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { ultimateEffectRef: 'none', ultimateCdSec: 0, maxHp: 1000000, armor: 200, attackRangeCells: 1 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 1000000, attack: 10, attackRangeCells: 9 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c6'] });
+    const r: S7AutoBattleResult = (await engineOf(b)).run({ encounterRef: 'enc_n001', battleSeed: 'h', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
+    expect(trigCasts(r.log, 'player_p0c0').length).toBe(0);
   });
 });
 

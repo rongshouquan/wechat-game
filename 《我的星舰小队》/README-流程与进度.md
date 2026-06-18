@@ -36,7 +36,8 @@
      - ✅ **块2a-1**（2026-06-18）：`battle_unit_stat_param` 加 `ultimateCdSec` 字段（大招 CD，与普攻间隔同类；17 行占位均 10s，无大招写 0，精确值第二块定）+ TS/.mjs 双校验器认它（仅校验 ≥0）。**引擎尚未消费**，687 测试 + s7 校验器全绿、零行为变化。
      - ✅ **块2a-2**（2026-06-18）：引擎**能量→三类触发**完成。删 energy 字段/常量/gainEnergy/受击涨能/energy_change 日志/finalState.energy；主循环 9 步→7 步，新增 `stepTriggers`(CD 开局即放读 ultimateCdSec / battle_start / hp_below；短路晕眩拦触发) + `fireTrigger`(星核钩子平移：首次触发后放一次 coreEffectRef)；spawnUnit 给每单位建 RtTrigger(自带大招→默认CD + 装配额外触发)。**实际只 5 个测试受影响**(远好于预估31)：#4(开局大招清场→改测纯普攻寻敌)、#5/#6(能量描述→技能触发, 去 energy_change 断言)、#13(每tick回盾→短CD)、#25(反复短路→短CD)；删 1 个测受击满能测试(测的是已移除的能量机制)。**全套 59套件/686测试全绿 + 双校验器绿**。
        - 🔎 **自检纠了一处假过**：stun 测试原把敌人改带大招却没设 CD→按新规则敌人根本不放招、断言空过；已补 `ultimateCdSec:0.4` 让敌人真想放、再验证被晕压住(窗口取 >apply 排除开局即放那发)。
-     - ✅ **块2b**（2026-06-18）：事件/条件型触发——`on_kill`(击杀时,可重复)、`on_hit`(受击时,可重复)、`ally_down`(己方阵亡到阈值,一次性)。dealDamage 采集击杀/受击事件 + 各方阵亡计数;stepTriggers 评估后清事件标志(1 tick 延迟)。S7TriggerBlock 加 `ally_down`。装配层的条件型积木经 effectBlocks 自动接入。新增 4 集成测试(含 on_kill 对照防假过)。**全套 60套件/690测试全绿 + 校验器绿,零回归。**
+     - ✅ **块2b**（2026-06-18）：事件/条件型触发——`on_kill`(击杀时,可重复)、`on_hit`(受击时,可重复)、`ally_down`(己方阵亡到阈值,一次性)。dealDamage 采集击杀/受击事件 + 各方阵亡计数;stepTriggers 评估后清事件标志(1 tick 延迟)。S7TriggerBlock 加 `ally_down`。装配层的条件型积木经 effectBlocks 自动接入。新增 6 集成测试(on_kill 含对照+多次击杀重复性, on_hit 含对照, ally_down)。**全套 60套件/692测试全绿,零回归。**
+       - 🔎 **深度自检(应 Ron 追问)纠了一处测试设计缺陷**:触发标志原误用了带 AoE 伤害的 `eff_ult_shield_bubble`,加上星核钩子(coreEffectRef)首触发后放黑洞清场,致"多次触发"测试假过(只触发1次)→改用纯自盾 `eff_state_shield` + 测试内 `coreEffectRef:none` 隔离;并验证了星核钩子确实工作。
    - 其后：块3 星核+过载核心原子炮 → 块4 插件品质制+合成 → 块5 驾驶员运行时 → 块6 基地养成+货币 → 块7 3天7天活动(去每日任务)。
 5. 保持"逻辑纯 TS 可 Node 测"；每块改完 vitest + 提交。
 
