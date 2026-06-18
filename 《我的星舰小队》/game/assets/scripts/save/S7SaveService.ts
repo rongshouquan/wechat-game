@@ -21,14 +21,20 @@ import {
   createDefaultS7PluginInventory,
   normalizeS7PluginInventory,
 } from '../core/s7/S7PluginInventory';
+import {
+  S7BuildingState,
+  createDefaultS7BuildingState,
+  normalizeS7BuildingState,
+} from '../core/s7/S7BuildingState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
  * v1（CC-07B）：资源骨架。
  * v2（CC-07C）：playerState 增加 mainlineProgress；v1 旧 S7 档加载时保留 资源、补默认主线进度。
  * v3（6d-1）：playerState 增加 pluginInventory（插件实例库存）；旧档加载补默认空库存（加性迁移，无需重置）。
+ * v4（6b-2）：playerState 增加 buildings（建筑等级状态）；旧档加载补默认空建筑（加性迁移，无需重置）。
  */
-export const S7_CURRENT_SAVE_VERSION = 3;
+export const S7_CURRENT_SAVE_VERSION = 4;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -61,6 +67,8 @@ export interface S7PlayerState {
   mainlineProgress: S7MainlineProgressState;
   /** 插件实例库存（6d-1）：形状由 core/s7/S7PluginInventory 拥有，本层组合。 */
   pluginInventory: S7PluginInventoryState;
+  /** 建筑等级状态（6b-2）：形状由 core/s7/S7BuildingState 拥有，本层组合。 */
+  buildings: S7BuildingState;
 }
 
 export interface S7SaveData {
@@ -84,6 +92,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     resources: createDefaultS7ResourceState(),
     mainlineProgress: createDefaultS7MainlineProgress(),
     pluginInventory: createDefaultS7PluginInventory(),
+    buildings: createDefaultS7BuildingState(),
   };
 }
 
@@ -121,6 +130,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     resources: normalizeS7ResourceState(src.resources),
     mainlineProgress: normalizeS7MainlineProgress(src.mainlineProgress),
     pluginInventory: normalizeS7PluginInventory(src.pluginInventory),
+    buildings: normalizeS7BuildingState(src.buildings),
   };
 }
 
@@ -210,6 +220,9 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
     playerState: {
       resources: normalizeS7ResourceState(data.playerState?.resources),
       mainlineProgress: normalizeS7MainlineProgress(data.playerState?.mainlineProgress),
+      // 6b-2 修复：原 persist 漏写 pluginInventory（6d-1 加字段时遗漏），落盘会丢插件库存；现补 pluginInventory + buildings。
+      pluginInventory: normalizeS7PluginInventory(data.playerState?.pluginInventory),
+      buildings: normalizeS7BuildingState(data.playerState?.buildings),
     },
     lastOnlineTime: now,
   };
