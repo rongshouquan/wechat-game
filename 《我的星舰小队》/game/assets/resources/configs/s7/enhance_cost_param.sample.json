@@ -1,5 +1,1 @@
-[
-  {"schemaVersion":"s7-0.1.0","rowId":"core_enhance_1_2","targetType":"core","enhanceBand":"core_enhance_1_2","maxEnhance":2,"starOre":0,"pluginMat":0,"coreMat":100,"coreFrag":0,"note":"D7 首核可强化"},
-  {"schemaVersion":"s7-0.1.0","rowId":"core_enhance_3","targetType":"core","enhanceBand":"core_enhance_3","maxEnhance":3,"starOre":0,"pluginMat":0,"coreMat":250,"coreFrag":25,"note":"D14-D21 主力核心"},
-  {"schemaVersion":"s7-0.1.0","rowId":"core_enhance_4_5","targetType":"core","enhanceBand":"core_enhance_4_5","maxEnhance":5,"starOre":0,"pluginMat":0,"coreMat":650,"coreFrag":80,"note":"D21-D28 舒适追求，星核 5 阶封顶"}
-]
+[]

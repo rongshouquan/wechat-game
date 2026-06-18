@@ -47,12 +47,12 @@ const TIER_B_TABLES: S7ConfigTableName[] = [
 // 成长段位参数表（CC-07E-1）：rowId 主键，与 Tier B 参数表同族；逐表数值/口径由 validateGrowth 校验。
 const TIER_GROWTH_TABLES: S7ConfigTableName[] = ['growth_band_param'];
 
-// 插件不分等级（v1.0 §5.3）→ 无成长段/强化：成长 target 只剩 ship/pilot/core。
-const S7_GROWTH_TARGET_TYPES = ['ship', 'pilot', 'core'];
+// 首发成长段只剩 ship/pilot：插件不分等级（§5.3）、星核砍 5 阶强化（§5.4，留 P1）→ 均无成长段。
+const S7_GROWTH_TARGET_TYPES = ['ship', 'pilot'];
 const S7_GROWTH_CURVE_TYPES = ['band_linear', 'control_point'];
 const S7_GROWTH_SECONDARY_KINDS = ['stat', 'affix', 'effect', 'none'];
 const S7_GROWTH_EXPECTED_SECONDARY: Record<string, string> = {
-  ship: 'stat', core: 'effect', pilot: 'none',
+  ship: 'stat', pilot: 'none',
 };
 
 // 轻量实时自动战斗表（BATTLE-RT-03）：rowId 主键，与参数表同族通用校验；逐表契约由 validateBattle 校验。
@@ -597,15 +597,11 @@ function validateTierB(
   if (shipMaxLv !== 40) errors.push({ table: 'upgrade_cost_param', id: 'ship', message: `星舰等级上限必须为 40，实际 ${shipMaxLv}` });
   if (pilotMaxLv !== 40) errors.push({ table: 'upgrade_cost_param', id: 'pilot', message: `驾驶员等级上限必须为 40，实际 ${pilotMaxLv}` });
 
-  // enhance_cost_param：仅星核 5 阶强化（插件不分等级=无强化，v1.0 §5.3）。
-  let coreMaxEnh = 0;
-  for (const row of rowsByTable.enhance_cost_param) {
-    const id = String(row.rowId);
-    if (row.targetType !== 'core') errors.push({ table: 'enhance_cost_param', id, message: 'targetType 非法（仅 core；插件不分等级）' });
-    const e = num(row.maxEnhance) ?? 0;
-    if (row.targetType === 'core') coreMaxEnh = Math.max(coreMaxEnh, e);
+  // 首发无强化系统：砍星核 5 阶强化（v1.0 §5.4「不做重复星核深层养成（留 P1）」）、插件不分等级（§5.3）。
+  // → enhance_cost_param 应为空；P1 若做星核深层养成再启用本表与对应校验。
+  if (rowsByTable.enhance_cost_param.length > 0) {
+    errors.push({ table: 'enhance_cost_param', id: '-', message: '首发无强化系统，enhance_cost_param 应为空（已砍星核 5 阶强化，§5.4）' });
   }
-  if (coreMaxEnh !== 5) errors.push({ table: 'enhance_cost_param', id: 'core', message: `星核强化上限必须为 5，实际 ${coreMaxEnh}` });
 
   // refund_param：不跨币种、min<=max
   for (const row of rowsByTable.refund_param) {
@@ -1111,8 +1107,8 @@ function checkGrowthBandCoverage(
 /**
  * 成长段位参数表校验（CC-07E-1）：
  * - 字段枚举 / 数值 / curveType 逻辑（band_linear 段端点；control_point 单点 min=max）。
- * - secondaryKind 与 targetType 一致（ship=stat / core=effect / pilot=none；插件不分等级，无成长段）。
- * - 覆盖完整：ship/pilot band 连续覆盖 1-40、core 控制点恰为 {0,2,3,5}。
+ * - secondaryKind 与 targetType 一致（ship=stat / pilot=none；插件不分等级、星核砍强化→均无成长段）。
+ * - 覆盖完整：ship/pilot band 连续覆盖 1-40。（控制点曲线校验保留给 P1 星核深层养成。）
  */
 function validateGrowth(
   errors: S7ValidationError[],
@@ -1120,7 +1116,6 @@ function validateGrowth(
 ): void {
   const rows = rowsByTable.growth_band_param ?? [];
   const byTarget: Record<string, { from: number; to: number }[]> = { ship: [], pilot: [] };
-  const coreStages: number[] = [];
 
   for (const row of rows) {
     const id = String(row.rowId ?? '-');
@@ -1162,16 +1157,11 @@ function validateGrowth(
       if (interp !== null && f !== null && interp !== f) errors.push({ table: 'growth_band_param', id, message: 'control_point interpFromIndex 必须等于 fromIndex' });
       if (pmin !== null && pmax !== null && pmin !== pmax) errors.push({ table: 'growth_band_param', id, message: 'control_point powerMin 必须等于 powerMax' });
       if (smin !== null && smax !== null && smin !== smax) errors.push({ table: 'growth_band_param', id, message: 'control_point secondaryMin 必须等于 secondaryMax' });
-      if (tt === 'core' && f !== null) coreStages.push(f);
     }
   }
 
   checkGrowthBandCoverage(errors, byTarget.ship, 1, 40, 'ship');
   checkGrowthBandCoverage(errors, byTarget.pilot, 1, 40, 'pilot');
-  const sortedStages = [...coreStages].sort((a, b) => a - b);
-  if (JSON.stringify(sortedStages) !== JSON.stringify([0, 2, 3, 5])) {
-    errors.push({ table: 'growth_band_param', id: 'core', message: 'core 控制点 stage 必须为 {0,2,3,5}' });
-  }
 }
 
 /** 战斗表数组引用校验（不耦合 rsv/t11/t12 红线，那些只对默认实体/关系表生效）。 */

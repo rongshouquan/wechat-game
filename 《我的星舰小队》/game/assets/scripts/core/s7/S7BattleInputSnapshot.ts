@@ -23,8 +23,7 @@ export interface S7BattleInputUnitSnapshot {
   pluginIds?: string[];
   shipLevel?: number;
   pilotLevel?: number;
-  coreEnhance?: number;
-  // 插件不分等级（v1.0 §5.3）：无 pluginEnhanceById；变强靠品质替换 / 合成。
+  // 首发无强化系统：星核砍 5 阶强化（§5.4 留 P1）→ 无 coreEnhance；插件不分等级（§5.3）→ 无 pluginEnhanceById。
 }
 
 /**
@@ -70,7 +69,6 @@ export type S7BattleInputSnapshotErrorCode =
   | 'core_not_owned'
   | 'plugin_not_owned'
   | 'bad_level_value'
-  | 'bad_enhance_value'
   | 'unknown_ship'
   | 'unknown_pilot'
   | 'unknown_core'
@@ -139,7 +137,7 @@ function validateOwned(raw: unknown, path: string, add: AddError): Set<string> {
 function validateOptionalNonNegInt(
   value: unknown,
   path: string,
-  code: 'bad_level_value' | 'bad_enhance_value',
+  code: 'bad_level_value',
   add: AddError,
 ): void {
   if (value === undefined) return;
@@ -228,11 +226,10 @@ function validateUnit(
     }
   }
 
-  // 等级 / 强化值（可选）：非负整数。不附加任意上限（保守边界，避免乱造复杂规则）。
+  // 等级（可选）：非负整数。不附加任意上限（保守边界，避免乱造复杂规则）。
   validateOptionalNonNegInt(unit.shipLevel, at('shipLevel'), 'bad_level_value', add);
   validateOptionalNonNegInt(unit.pilotLevel, at('pilotLevel'), 'bad_level_value', add);
-  validateOptionalNonNegInt(unit.coreEnhance, at('coreEnhance'), 'bad_enhance_value', add);
-  // 插件不分等级（v1.0 §5.3）：不再校验 pluginEnhanceById（已从契约移除）。
+  // 首发无强化系统：不再校验 coreEnhance（星核砍 5 阶强化 §5.4）/ pluginEnhanceById（插件不分等级 §5.3），均已从契约移除。
 }
 
 /**

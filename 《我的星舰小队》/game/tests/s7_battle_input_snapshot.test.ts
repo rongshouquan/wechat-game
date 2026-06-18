@@ -53,7 +53,6 @@ function validSnapshot(over: Partial<S7BattleInputSnapshot> = {}): S7BattleInput
         pluginIds: ['plg01'],
         shipLevel: 10,
         pilotLevel: 8,
-        coreEnhance: 2,
       },
       { shipId: 'shp02', slotRef: 'p1c2' },
       { shipId: 'shp03', slotRef: 'p2c2' },
@@ -203,10 +202,7 @@ describe('S7BattleInputSnapshot - 等级 / 强化值', () => {
   it('pilotLevel 小数失败 (bad_level_value)', () => {
     expect(codes(validateS7BattleInputSnapshot(snapshotWithUnit0({ pilotLevel: 1.5 })))).toContain('bad_level_value');
   });
-  it('coreEnhance 非数失败 (bad_enhance_value)', () => {
-    expect(codes(validateS7BattleInputSnapshot(snapshotWithUnit0({ coreEnhance: 'x' as unknown as number })))).toContain('bad_enhance_value');
-  });
-  // 注：原 pluginEnhanceById 校验测试已随插件强化制移除（v1.0 §5.3 插件不分等级）。
+  // 注：原 coreEnhance / pluginEnhanceById 校验测试已随强化系统移除（星核砍5阶§5.4、插件不分等级§5.3，首发无强化）。
 });
 
 describe('S7BattleInputSnapshot - runtime 引用校验', () => {

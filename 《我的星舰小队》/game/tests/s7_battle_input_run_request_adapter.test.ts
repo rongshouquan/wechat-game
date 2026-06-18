@@ -94,7 +94,6 @@ describe('S7BattleInputRunRequestAdapter - 合法投影', () => {
           pluginIds: [pluginId],
           shipLevel: 10,
           pilotLevel: 8,
-          coreEnhance: 2,
         },
       ],
     });

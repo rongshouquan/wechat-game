@@ -207,13 +207,8 @@ for (const row of tables.source_tag_config) {
   if (pilotMax !== 40) fail('upgrade_cost_param', 'pilot', `驾驶员等级上限必须 40，实际 ${pilotMax}`);
 }
 {
-  let coreMax = 0;
-  for (const row of tables.enhance_cost_param) {
-    if (row.targetType !== 'core') fail('enhance_cost_param', row.rowId, 'targetType 非法（仅 core；插件不分等级）');
-    const e = num(row.maxEnhance) ?? 0;
-    if (row.targetType === 'core') coreMax = Math.max(coreMax, e);
-  }
-  if (coreMax !== 5) fail('enhance_cost_param', 'core', `星核强化上限必须 5，实际 ${coreMax}`);
+  // 首发无强化系统：砍星核5阶强化(§5.4 留P1) + 插件不分等级(§5.3) → enhance_cost_param 应为空
+  if (tables.enhance_cost_param.length > 0) fail('enhance_cost_param', '-', '首发无强化系统,enhance_cost_param 应为空(已砍星核5阶强化,§5.4)');
 }
 for (const row of tables.refund_param) {
   if (row.crossCurrency !== false) fail('refund_param', row.rowId, 'crossCurrency 必须 false');
@@ -275,14 +270,13 @@ for (const row of tables.anti_arbitrage_check) {
 
 // ---- 成长段位参数表（CC-07E-1，来源 03-04 v0.2 §3.2-3.5）----
 {
-  const GROWTH_TARGET_TYPES = ['ship', 'pilot', 'core']; // 插件不分等级 → 无成长段
+  const GROWTH_TARGET_TYPES = ['ship', 'pilot']; // 插件不分等级(§5.3)、星核砍强化(§5.4 留P1) → 均无成长段
   const GROWTH_CURVE_TYPES = ['band_linear', 'control_point'];
   const GROWTH_SECONDARY_KINDS = ['stat', 'affix', 'effect', 'none'];
-  const GROWTH_EXPECTED_SECONDARY = { ship: 'stat', core: 'effect', pilot: 'none' };
+  const GROWTH_EXPECTED_SECONDARY = { ship: 'stat', pilot: 'none' };
   const rows = load('growth_band_param'); tables.growth_band_param = rows;
   const seen = new Set();
   const byTarget = { ship: [], pilot: [] };
-  const coreStages = [];
   for (const row of rows) {
     const id = row.rowId;
     if (!row.schemaVersion || typeof row.schemaVersion !== 'string') fail('growth_band_param', id, '缺少合法 schemaVersion');
@@ -309,7 +303,6 @@ for (const row of tables.anti_arbitrage_check) {
       if (interp !== null && f !== null && interp !== f) fail('growth_band_param', id, 'control_point interpFromIndex 必须等于 fromIndex');
       if (pmin !== null && pmax !== null && pmin !== pmax) fail('growth_band_param', id, 'control_point powerMin 必须等于 powerMax');
       if (smin !== null && smax !== null && smin !== smax) fail('growth_band_param', id, 'control_point secondaryMin 必须等于 secondaryMax');
-      if (tt === 'core' && f !== null) coreStages.push(f);
     }
   }
   const cover = (bands, minLv, maxLv, label) => {
@@ -321,7 +314,6 @@ for (const row of tables.anti_arbitrage_check) {
   };
   cover(byTarget.ship, 1, 40, 'ship');
   cover(byTarget.pilot, 1, 40, 'pilot');
-  if (JSON.stringify([...coreStages].sort((a, b) => a - b)) !== JSON.stringify([0, 2, 3, 5])) fail('growth_band_param', 'core', 'core 控制点 stage 必须为 {0,2,3,5}');
 }
 
 // ---- Tier B 关系 / schema 表 ----

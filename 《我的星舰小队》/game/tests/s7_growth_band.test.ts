@@ -38,17 +38,9 @@ function loadBundle(): Record<S7ConfigTableName, unknown[]> {
 
 const fsReader: S7TableReader = async (t: S7ConfigTableName) => readTable<unknown[]>(t);
 
-// 与 simulate-s7-progression.mjs 一致的派生口径（band 段内线性 / control_point 分段线性）。
+// band 段内线性派生口径（ship/pilot）。（原 control_point 分段线性 piecewiseLerp 随星核成长段移除。）
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 const lerp = (min: number, max: number, t: number): number => min + (max - min) * t;
-function piecewiseLerp(points: [number, number][], x: number): number {
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const [x0, y0] = points[i];
-    const [x1, y1] = points[i + 1];
-    if (x >= x0 && x <= x1) return lerp(y0, y1, (x - x0) / (x1 - x0));
-  }
-  return x < points[0][0] ? points[0][1] : points[points.length - 1][1];
-}
 
 function rows(): S7GrowthBandParam[] {
   return readTable<S7GrowthBandParam[]>('growth_band_param');
@@ -64,7 +56,7 @@ function bandLevel(b: S7GrowthBandParam, level: number): number {
 describe('s7 growth_band_param - landing & validation', () => {
   it('loads through the S7 config runtime layer', async () => {
     const rt = await S7ConfigRuntime.load(fsReader);
-    expect(rt.getAll('growth_band_param').length).toBe(12); // 4 ship + 4 pilot + 4 core（插件不分等级，无成长段）
+    expect(rt.getAll('growth_band_param').length).toBe(8); // 4 ship + 4 pilot（插件不分等级§5.3、星核砍强化§5.4 → 均无成长段）
     expect(rt.getById('growth_band_param', 'ship_growth_lv_1_10')).toBeDefined();
   });
 
@@ -72,7 +64,7 @@ describe('s7 growth_band_param - landing & validation', () => {
     expect(validateS7ConfigBundle(loadBundle())).toEqual([]);
   });
 
-  it('covers ship/pilot Lv1-40, core stages {0,2,3,5}（插件不分等级，无成长段）', () => {
+  it('覆盖 ship/pilot Lv1-40；插件/星核均无成长段（§5.3/§5.4）', () => {
     const all = rows();
     const cover = (tt: string) =>
       all.filter((r) => r.targetType === tt && r.curveType === 'band_linear').sort((a, b2) => a.fromIndex - b2.fromIndex);
@@ -82,9 +74,8 @@ describe('s7 growth_band_param - landing & validation', () => {
     const pilot = cover('pilot');
     expect(pilot[0].fromIndex).toBe(1);
     expect(pilot[pilot.length - 1].toIndex).toBe(40);
-    expect(all.some((r) => r.targetType === 'plugin')).toBe(false); // 插件已无成长段（v1.0 §5.3）
-    const coreStages = all.filter((r) => r.targetType === 'core').map((r) => r.fromIndex).sort((a, b2) => a - b2);
-    expect(coreStages).toEqual([0, 2, 3, 5]);
+    expect(all.some((r) => r.targetType === 'plugin')).toBe(false); // 插件无成长段（§5.3）
+    expect(all.some((r) => r.targetType === 'core')).toBe(false);   // 星核砍强化→无成长段（§5.4，留P1）
   });
 });
 
@@ -100,18 +91,7 @@ describe('s7 growth_band_param - frozen §3.2-3.5 endpoints & derivation parity'
     expect(bandLevel(band('pilot', 'pilot_lv_31_40'), 40)).toBe(1100);
   });
 
-  // 注：原「plugin +0-3 / +11-15 派生」测试已随插件强化制移除（v1.0 §5.3 插件不分等级）。
-
-  it('core control points piecewise-lerp stage1=750 / stage4=1550 (CC-06A parity)', () => {
-    const corePower = rows()
-      .filter((r) => r.targetType === 'core')
-      .sort((a, b2) => a.fromIndex - b2.fromIndex)
-      .map((r) => [r.fromIndex, r.powerMin] as [number, number]);
-    expect(round2(piecewiseLerp(corePower, 0))).toBe(600);
-    expect(round2(piecewiseLerp(corePower, 1))).toBe(750);
-    expect(round2(piecewiseLerp(corePower, 4))).toBe(1550);
-    expect(round2(piecewiseLerp(corePower, 5))).toBe(1800);
-  });
+  // 注：原「plugin 派生」「core 控制点派生」测试已随 插件强化(§5.3)/星核5阶强化(§5.4) 移除。
 });
 
 describe('s7 growth_band_param - validator rejects bad rows', () => {
@@ -130,10 +110,5 @@ describe('s7 growth_band_param - validator rejects bad rows', () => {
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'growth_band_param')).toBe(true);
   });
 
-  it('rejects a control_point row with powerMin != powerMax', () => {
-    const b = loadBundle();
-    const g = b.growth_band_param as Array<Record<string, unknown>>;
-    g.find((r) => r.rowId === 'core_growth_stage_2')!.powerMax = 999;
-    expect(validateS7ConfigBundle(b).some((e) => e.table === 'growth_band_param')).toBe(true);
-  });
+  // 注：原「control_point 行 powerMin!=powerMax 拒绝」测试随星核成长段移除（首发无 control_point 行；该校验保留给 P1）。
 });
