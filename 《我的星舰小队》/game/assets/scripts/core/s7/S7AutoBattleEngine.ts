@@ -118,6 +118,9 @@ interface RtUnit {
   targetingTag: string;
   coreTriggered: boolean;
   triggers: RtTrigger[];
+  /** 块2b 事件型触发的本 tick 事件标志（stepTriggers 评估后清）。 */
+  hitSinceTrigger: boolean;
+  killedSinceTrigger: boolean;
   shield: number;
   states: Map<S7BattleStateTag, RtStateInst>;
 }
@@ -161,6 +164,8 @@ class BattleRun {
   private time = 0;
   private timeLimitSec = 0;
   private enemySeq = 0;
+  /** 块2b：各方累计阵亡数（ally_down 条件触发用）。 */
+  private readonly deadCount: Record<S7AutoBattleSide, number> = { player: 0, enemy: 0 };
 
   constructor(
     private readonly runtime: S7ConfigRuntime,
@@ -344,6 +349,9 @@ class BattleRun {
       for (const t of unit.triggers) {
         if (this.triggerReady(unit, t)) this.fireTrigger(unit, t);
       }
+      // 块2b：本 tick 的击杀/受击事件已评估完，清标志（下个 tick 重新采集）。
+      unit.hitSinceTrigger = false;
+      unit.killedSinceTrigger = false;
     }
   }
 
@@ -355,8 +363,14 @@ class BattleRun {
         return !t.fired;
       case 'hp_below':
         return !t.fired && unit.maxHp > 0 && unit.hp / unit.maxHp < (t.block.threshold ?? 0);
+      case 'on_kill':
+        return unit.killedSinceTrigger; // 可重复：每个有击杀的 tick 触发一次
+      case 'on_hit':
+        return unit.hitSinceTrigger; // 可重复：每个有受击的 tick 触发一次
+      case 'ally_down':
+        return !t.fired && this.deadCount[unit.side] >= (t.block.threshold ?? Infinity); // 一次性：己方阵亡到数
       default:
-        return false; // on_kill / on_hit（块2b）/ passive（走装配 modifier）
+        return false; // passive（走装配 modifier，不在此 fire）
     }
   }
 
@@ -422,7 +436,8 @@ class BattleRun {
     const effect = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', t.block.effectRef);
     // 先推进触发状态（即便 effectRef 为 none/缺失也推进，避免每 tick 重试）。
     if (t.block.on === 'cd') t.nextFireAt = this.time + (t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity);
-    else t.fired = true;
+    else if (t.block.on !== 'on_kill' && t.block.on !== 'on_hit') t.fired = true; // 一次性：battle_start/hp_below/ally_down
+    // on_kill/on_hit 可重复触发：靠 stepTriggers 清事件标志重新武装，不 latch fired。
     if (!effect) return;
     this.castLogged(unit, effect, 'ultimate_cast');
     if (!unit.coreTriggered && unit.coreEffectRef !== 'none') {
@@ -565,6 +580,13 @@ class BattleRun {
       hpAfter: target.hp,
       shieldAfter: target.shield,
     });
+    // 块2b：采集事件型触发的事件（在 stepTriggers 评估、清标志）。
+    if (!target.alive) {
+      caster.killedSinceTrigger = true;
+      this.deadCount[target.side] += 1;
+    } else {
+      target.hitSinceTrigger = true;
+    }
   }
 
   private addShield(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
@@ -790,6 +812,8 @@ class BattleRun {
       targetingTag: cv.targetingTag,
       coreTriggered: false,
       triggers,
+      hitSinceTrigger: false,
+      killedSinceTrigger: false,
       shield: 0,
       states: new Map(),
     };

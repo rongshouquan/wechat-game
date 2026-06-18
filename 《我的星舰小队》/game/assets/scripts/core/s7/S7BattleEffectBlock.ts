@@ -53,10 +53,10 @@ export interface S7AffixBlock {
 /** ② 触发类：技能/效果何时触发。块1 仅定义并收集，触发机制由块2 实现。 */
 export interface S7TriggerBlock {
   kind: 'trigger';
-  on: 'battle_start' | 'cd' | 'on_kill' | 'hp_below' | 'on_hit' | 'passive';
+  on: 'battle_start' | 'cd' | 'on_kill' | 'hp_below' | 'on_hit' | 'ally_down' | 'passive';
   /** on='cd' 时的冷却秒数。 */
   cdSec?: number;
-  /** on='hp_below' 时的血量阈值（0~1）。 */
+  /** on='hp_below' 血量阈值（0~1）；on='ally_down' 为"己方已阵亡数"阈值（达到即触发一次）。 */
   threshold?: number;
   /** 触发后释放的动作，指向 battle_effect_param.rowId。 */
   effectRef: string;
