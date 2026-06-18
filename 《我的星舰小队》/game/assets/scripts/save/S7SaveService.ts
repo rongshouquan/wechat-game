@@ -26,6 +26,11 @@ import {
   createDefaultS7BuildingState,
   normalizeS7BuildingState,
 } from '../core/s7/S7BuildingState';
+import {
+  S7PopulationState,
+  createDefaultS7Population,
+  normalizeS7Population,
+} from '../core/s7/S7Population';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -33,8 +38,9 @@ import {
  * v2（CC-07C）：playerState 增加 mainlineProgress；v1 旧 S7 档加载时保留 资源、补默认主线进度。
  * v3（6d-1）：playerState 增加 pluginInventory（插件实例库存）；旧档加载补默认空库存（加性迁移，无需重置）。
  * v4（6b-2）：playerState 增加 buildings（建筑等级状态）；旧档加载补默认空建筑（加性迁移，无需重置）。
+ * v5（6b-4b）：playerState 增加 population（居民/工人）；旧档加载补默认 0 人口（加性迁移，无需重置）。
  */
-export const S7_CURRENT_SAVE_VERSION = 4;
+export const S7_CURRENT_SAVE_VERSION = 5;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -69,6 +75,8 @@ export interface S7PlayerState {
   pluginInventory: S7PluginInventoryState;
   /** 建筑等级状态（6b-2）：形状由 core/s7/S7BuildingState 拥有，本层组合。 */
   buildings: S7BuildingState;
+  /** 基地人口居民/工人（6b-4b）：形状由 core/s7/S7Population 拥有，本层组合。 */
+  population: S7PopulationState;
 }
 
 export interface S7SaveData {
@@ -93,6 +101,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     mainlineProgress: createDefaultS7MainlineProgress(),
     pluginInventory: createDefaultS7PluginInventory(),
     buildings: createDefaultS7BuildingState(),
+    population: createDefaultS7Population(),
   };
 }
 
@@ -131,6 +140,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     mainlineProgress: normalizeS7MainlineProgress(src.mainlineProgress),
     pluginInventory: normalizeS7PluginInventory(src.pluginInventory),
     buildings: normalizeS7BuildingState(src.buildings),
+    population: normalizeS7Population(src.population),
   };
 }
 
@@ -220,9 +230,10 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
     playerState: {
       resources: normalizeS7ResourceState(data.playerState?.resources),
       mainlineProgress: normalizeS7MainlineProgress(data.playerState?.mainlineProgress),
-      // 6b-2 修复：原 persist 漏写 pluginInventory（6d-1 加字段时遗漏），落盘会丢插件库存；现补 pluginInventory + buildings。
+      // 6b-2 修复：原 persist 漏写 pluginInventory（6d-1 加字段时遗漏），落盘会丢插件库存；现补 pluginInventory + buildings + population。
       pluginInventory: normalizeS7PluginInventory(data.playerState?.pluginInventory),
       buildings: normalizeS7BuildingState(data.playerState?.buildings),
+      population: normalizeS7Population(data.playerState?.population),
     },
     lastOnlineTime: now,
   };

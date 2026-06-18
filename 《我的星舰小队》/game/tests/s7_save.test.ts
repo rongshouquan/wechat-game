@@ -43,9 +43,10 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(4); // 6b-2：v3→v4（加 buildings）
+    expect(data.saveVersion).toBe(5); // 6b-4b：v4→v5（加 population）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
+    expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -95,6 +96,7 @@ describe('s7 save - independent storage domain', () => {
     data.playerState.buildings.levels['bld_supply_station'] = 1;
     data.playerState.pluginInventory.plugins.push({ instanceId: 'pi1', pluginId: 'plg01', quality: 'fine' });
     data.playerState.pluginInventory.nextInstanceSeq = 2;
+    data.playerState.population = { residents: 7, workers: 3 };
     persistS7Save(adapter, data, NOW + 1000);
 
     const r = loadS7Save(adapter, NOW + 2000);
@@ -103,6 +105,8 @@ describe('s7 save - independent storage domain', () => {
     // 插件库存往返保留——旧 persist 漏写会让它退回默认空库存，此断言即为防回归
     expect(r.data.playerState.pluginInventory.plugins).toEqual([{ instanceId: 'pi1', pluginId: 'plg01', quality: 'fine' }]);
     expect(r.data.playerState.pluginInventory.nextInstanceSeq).toBe(2);
+    // 人口往返保留（6b-4b）
+    expect(r.data.playerState.population).toEqual({ residents: 7, workers: 3 });
   });
 
   it('restoreS7KeyState returns normalized 12-resource state + timestamp', () => {
@@ -220,6 +224,33 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.pluginInventory.plugins).toEqual([{ instanceId: 'pi1', pluginId: 'plg02', quality: 'superior' }]);
   });
 
+  it('迁移 v4 旧档到 v5：补默认 0 人口，保留建筑等旧字段（加性迁移，无需重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    // v4 旧档形状：有 resources/mainline/插件/buildings，但无 population。
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: 4,
+        lastOnlineTime: NOW,
+        playerState: {
+          resources: { starOre: 1500 },
+          mainlineProgress: { currentNodeId: 'n002', clearedNodeIds: ['n001'] },
+          pluginInventory: { plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 },
+          buildings: { levels: { bld_dock: 2 } },
+        },
+      }),
+    );
+    const r = loadS7Save(adapter, NOW + 5);
+    expect(r.migrated).toBe(true);
+    expect(r.corrupted).toBe(false);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
+    // 新字段 population 补默认 0
+    expect(r.data.playerState.population).toEqual({ residents: 0, workers: 0 });
+    // 旧字段保留
+    expect(r.data.playerState.resources.starOre).toBe(1500);
+    expect(r.data.playerState.buildings.levels).toEqual({ bld_dock: 2 });
+  });
+
   it('round-trips mainlineProgress through persist + load', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
@@ -268,7 +299,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('keeps S7 version counter independent from 流程版 CURRENT_SAVE_VERSION', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(4);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(5);
     // 流程版当前为 7；两者各自独立计数，本断言锁定"S7 不复用流程版版本号"。
     expect(S7_CURRENT_SAVE_VERSION).not.toBe(CURRENT_SAVE_VERSION);
   });
