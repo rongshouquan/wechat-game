@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "types": [
+      "node",
+      "./temp/declarations/cc",
+      "./temp/declarations/cc.env",
+      "./temp/declarations/cc.custom-macro",
+      "./temp/declarations/jsb"
+    ],
+    "esModuleInterop": true
+  },
+  "include": [
+    "assets/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}

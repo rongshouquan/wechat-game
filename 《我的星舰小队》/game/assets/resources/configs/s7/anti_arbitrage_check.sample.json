@@ -1,0 +1,8 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"arb_merchant_spread","ruleId":"merchant_spread","formula":"recycle_value <= shop_price * 0.35","blockOnFail":true,"note":"商人买卖差，超出阻断配置"},
+  {"schemaVersion":"s7-0.1.0","rowId":"arb_enhance_recycle","ruleId":"enhance_recycle","formula":"enhanced_recycle_value < base_cost + enhance_cost","blockOnFail":true,"note":"强化回收差，必亏"},
+  {"schemaVersion":"s7-0.1.0","rowId":"arb_refresh","ruleId":"refresh_arbitrage","formula":"expected_resale_value < refresh_cost + shop_price","blockOnFail":true,"note":"刷新套利阻断"},
+  {"schemaVersion":"s7-0.1.0","rowId":"arb_cross_currency","ruleId":"cross_currency_wash","formula":"refund_currency == original_currency_group","blockOnFail":true,"note":"跨币种洗白阻断"},
+  {"schemaVersion":"s7-0.1.0","rowId":"arb_high_risk_source","ruleId":"high_risk_source_inherit","formula":"source_tag inherits highest risk","blockOnFail":true,"note":"高风险来源标签继承"},
+  {"schemaVersion":"s7-0.1.0","rowId":"arb_seabei_path","ruleId":"seabei_main_path","formula":"critical_path_tag != merchant_only","blockOnFail":true,"note":"星贝主路径依赖阻断"}
+]

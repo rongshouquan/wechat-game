@@ -1,0 +1,15 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"source_mainline","sourceTag":"source_mainline","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"主线免费来源，来源标签延续到打开/选择/合成/分解/强化/回退/回收后的产物"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_boss","sourceTag":"source_boss","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"Boss 免费来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_action3","sourceTag":"source_action3","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"3 天行动免费来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_expansion7","sourceTag":"source_expansion7","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"7 天扩张免费来源，含第 7 天完整自选星核"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_salvage","sourceTag":"source_salvage","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"打捞免费来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_range","sourceTag":"source_range","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"靶场免费来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_supply","sourceTag":"source_supply","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"补给券免费来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_beacon","sourceTag":"source_beacon","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"信标免费来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_star_cargo","sourceTag":"source_star_cargo","sourceCategory":"free","riskLevel":"low","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"lossy","note":"星辉货舱免费 3 选 1 来源"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_merchant","sourceTag":"source_merchant","sourceCategory":"high_risk","riskLevel":"high","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"minimal","note":"商人购买物，买入回收必亏，不可洗白为普通可回收物"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_ad_extra","sourceTag":"source_ad_extra","sourceCategory":"high_risk","riskLevel":"high","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"minimal","note":"广告额外产物，不计不看广告保底，不可形成星贝利润链"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_sponsor","sourceTag":"source_sponsor","sourceCategory":"high_risk","riskLevel":"high","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"minimal","note":"赞助补给产物，不计不看广告保底"},
+  {"schemaVersion":"s7-0.1.0","rowId":"source_treasure","sourceTag":"source_treasure","sourceCategory":"high_risk","riskLevel":"high","inheritOnTransform":true,"washProtected":true,"recyclePolicy":"minimal","note":"扩张宝库产物，第 7 天完整自选星核必保，来源标签延续不刷星贝"}
+]

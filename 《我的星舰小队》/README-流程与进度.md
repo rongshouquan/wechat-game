@@ -19,10 +19,12 @@
 - **工作方式（选 b）**：把 Codex 的 `game/` **复制进 `F:\Claude Code\《我的星舰小队》\game`**，用本工作区轻流程接着干（丢掉 Codex 重流程；Codex 的 S7 设计文档留作参考）。
 - `prototype/`（从零写的 TS 引擎）**已被超越**，留作 v1.0 逻辑参考（星核/驾驶员/原子炮的 v1.0 实现可移植进新底座），不再单独发展。
 
-**下次开工步骤（C1 改造）**：
-1. 复制 `F:\Codex\星舰小队\game` → `《我的星舰小队》\game`（只拷源工程：`assets/ settings/ package.json tsconfig` 等；**不拷 `build/ library/ temp/ node_modules/`**，可重建）；不带 Codex `项目管理` 流程。
-2. 跑通：必要时 `npm i` → `npm test`(vitest) 过 → Cocos Creator 3.8.8 打开能 build。
-3. Claude 精读 S7 战斗引擎 + config，亲自核实与 v1.0 对齐，产出**改造路线图**。
+**C1 改造步骤进度**：
+1. ✅ 复制 `F:\Codex\星舰小队\game` → `《我的星舰小队》\game`（已拷 `assets/ settings/ tests/ tools/` + `package.json package-lock.json tsconfig.json project.config.json .gitignore`；**未拷** `build/ library/ temp/ node_modules/ .creator/ profiles/ .git/ CLAUDE.md .claude/ project.private.config.json` —— 可重建/本地/Codex 重流程）。
+2. ✅ 跑通（2026-06-18）：`npm i`(79 包) → `npm test` **57 套件 / 672 测试全绿** → `validate:configs` / `validate:configs:s7`(43 表) 均绿。
+   - 为让纯逻辑测试脱离 Cocos 编辑器在 Node 下跑，改了两处：① 根 `tsconfig.json` 去掉 `extends "./temp/tsconfig.cocos.json"`（temp/ 不入库，缺失会让 vitest 整体崩）使其自包含；② 新增 `vitest.config.ts`（pin `test.include` + esbuild `tsconfigRaw`）。两处都不影响 Cocos 编辑器。
+   - ⚠️ 仍需 Ron 手动一次：用 **Cocos Creator 3.8.8 打开本工程**确认能导入/构建（GUI 步骤无法代跑）。`npm run typecheck` 须先开过 Cocos 生成 `temp/declarations/cc*` 才能过（仅缺 cc 类型声明，与逻辑无关）。
+3. ▶ **下一步**：Claude 精读 S7 战斗引擎 + config，亲自核实与 v1.0 对齐，产出**改造路线图**。
 4. 按路线图逐块改造到 v1.0：**新增** 驾驶员层 / 星核 / 基地养成；**改架构** 插件品质制 / 货币(星矿等) / 活动(3天7天·去每日任务)；**战斗补** 原子炮AoE普攻 + 敌方格子 5×7 + 调参。
 5. 保持"逻辑纯 TS 可 Node 测"；每块改完 vitest + 提交。
 

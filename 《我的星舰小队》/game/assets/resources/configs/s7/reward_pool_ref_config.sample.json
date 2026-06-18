@@ -1,0 +1,211 @@
+[
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_mainline_basic",
+    "nodeRefs": ["n001", "n002", "n003", "n004", "n005", "n007", "n008", "n013", "n014", "n019", "n020"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "mainline_basic",
+    "rewardParamRef": ["mainline_sf01_normal", "mainline_sf02_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "基础主线包按节点所在星域引用既有 03-04 普通节点参数行，不写逐节点数值。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_elite_basic",
+    "nodeRefs": ["n006"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "elite_basic",
+    "rewardParamRef": ["mainline_sf01_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "首个精英节点沿用普通包口径补足，不提供唯一通关物。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_mainline_growth",
+    "nodeRefs": ["n009", "n011", "n012", "n017", "n021", "n026", "n027", "n029", "n032", "n036", "n040", "n041", "n042", "n044", "n045", "n046", "n050", "n051", "n052", "n055", "n057", "n058", "n061", "n062", "n064", "n065", "n067", "n068", "n069", "n071", "n073", "n074"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "mainline_growth",
+    "rewardParamRef": ["mainline_sf01_normal", "mainline_sf02_normal", "mainline_sf03_normal", "mainline_sf04_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "主线成长承接按节点所在星域引用既有普通节点参数行；检查点/boss_prep 节点不额外新增数值，仍取同星域普通包口径。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_elite_growth",
+    "nodeRefs": ["n010", "n016", "n028", "n031", "n035", "n043", "n048", "n059", "n066", "n072"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "elite_growth",
+    "rewardParamRef": ["mainline_sf01_normal", "mainline_sf02_normal", "mainline_sf03_normal", "mainline_sf04_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "精英成长包按节点所在星域引用既有普通节点参数行，不写概率与掉落表。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_cargo_free_good",
+    "nodeRefs": ["n015"],
+    "sourceTag": "source_star_cargo",
+    "poolRoleTag": "cargo_free_good",
+    "rewardParamRef": ["cargo_early"],
+    "goodItemTag": "cargo_early_good_item_required",
+    "noAdRequiredTag": true,
+    "notes": "免费 3 选 1 至少含 1 个好东西，引用既有 star_cargo_reward_param.cargo_early；广告只能额外补选，不得替代免费好东西。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_boss_1",
+    "nodeRefs": ["n018"],
+    "sourceTag": "source_boss",
+    "poolRoleTag": "boss_1_clear",
+    "rewardParamRef": ["boss_n018"],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequiredTag": true,
+    "notes": "进入 SF02 的基础成长奖励，不绑定唯一通关物。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_fleet_anchor",
+    "nodeRefs": ["n022"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "fleet_5_checkpoint",
+    "rewardParamRef": ["mainline_sf02_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "免费 5 舰成立由既有 D7 floor 与节点奖励共同验算，本锚点不新增星舰图纸量级。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_plugin_intro",
+    "nodeRefs": ["n023"],
+    "sourceTag": "source_supply",
+    "poolRoleTag": "plugin_intro",
+    "rewardParamRef": ["supply_newbie", "supply_plugin"],
+    "goodItemTag": "default_plugin_candidate_allowed",
+    "noAdRequiredTag": true,
+    "notes": "只允许默认 18 插件内候选或插件材料，不提供 PLG-RSV，不写抽取概率。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_expansion7_anchor",
+    "nodeRefs": ["n024"],
+    "sourceTag": "source_expansion7",
+    "poolRoleTag": "day7_full_core",
+    "rewardParamRef": ["expansion7_d7"],
+    "goodItemTag": "full_core_required",
+    "noAdRequiredTag": true,
+    "notes": "第 7 天完整自选星核必须完整、免费、不碎片化、不随机化、不广告化，引用既有 expansion7_d7。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_core_intro",
+    "nodeRefs": ["n025"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "core_intro",
+    "rewardParamRef": ["mainline_sf02_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "星核教学后的普通成长承接，完整星核仍只由 reward_expansion7_anchor 承担。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_beacon_intro",
+    "nodeRefs": ["n030"],
+    "sourceTag": "source_beacon",
+    "poolRoleTag": "beacon_intro",
+    "rewardParamRef": ["beacon_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "短板补充入口引导，不写概率，不构成唯一主线路径。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_review_comfort",
+    "nodeRefs": ["n033", "n047", "n053", "n063", "n070"],
+    "sourceTag": "source_mainline",
+    "poolRoleTag": "review_comfort",
+    "rewardParamRef": ["mainline_sf02_normal", "mainline_sf03_normal", "mainline_sf04_normal"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "本锚点精确对应 70 回退可删的 5 个节点；70 盘合并到邻近免费来源，不允许广告/商人/星贝补洞。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_range_intro",
+    "nodeRefs": ["n034"],
+    "sourceTag": "source_range",
+    "poolRoleTag": "range_intro",
+    "rewardParamRef": ["range_basic"],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "阵容测试引导，不给临时战力，不依赖广告。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_boss_2",
+    "nodeRefs": ["n037"],
+    "sourceTag": "source_boss",
+    "poolRoleTag": "boss_2_clear",
+    "rewardParamRef": ["boss_n037"],
+    "goodItemTag": "core_frag_support",
+    "noAdRequiredTag": true,
+    "notes": "支撑保护期转折与 2 核构筑，不替代 N038 免费总重置。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_reset_none",
+    "nodeRefs": ["n038"],
+    "sourceTag": "source_none",
+    "poolRoleTag": "reset_gate_none",
+    "rewardParamRef": [],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "N038 为全队整备/免费总重置节点，奖励为空，不用资源补偿保护期转折。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_notice_none",
+    "nodeRefs": ["n039"],
+    "sourceTag": "source_none",
+    "poolRoleTag": "protection_notice_none",
+    "rewardParamRef": [],
+    "goodItemTag": "none",
+    "noAdRequiredTag": true,
+    "notes": "N039 为保护期结束正式提醒节点，奖励为空，不补资源。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_core_path_anchor",
+    "nodeRefs": ["n049", "n054", "n060"],
+    "sourceTag": "source_expansion7",
+    "poolRoleTag": "core_3_path_checkpoint",
+    "rewardParamRef": ["expansion7_d21"],
+    "goodItemTag": "core_path_support",
+    "noAdRequiredTag": true,
+    "notes": "用于验算免费 3 核路径阶段成立，不额外新增完整星核，不把 5 核写成主线门槛。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_boss_3",
+    "nodeRefs": ["n056"],
+    "sourceTag": "source_boss",
+    "poolRoleTag": "boss_3_clear",
+    "rewardParamRef": ["boss_n056"],
+    "goodItemTag": "core_path_support",
+    "noAdRequiredTag": true,
+    "notes": "支撑 3 核路径稳定，不强迫 5 核。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_final_boss_anchor",
+    "nodeRefs": ["n075"],
+    "sourceTag": "source_boss",
+    "poolRoleTag": "final_boss_clear",
+    "rewardParamRef": ["boss_n075", "cargo_late"],
+    "goodItemTag": "cargo_late_good_item_required",
+    "noAdRequiredTag": true,
+    "notes": "主线收束奖励引用既有 boss_n075 与 star_cargo_reward_param.cargo_late 好东西标准，不做付费转化，不上探 N075 压力。"
+  }
+]

@@ -1,0 +1,5 @@
+[
+  {"schemaVersion":"0.1.0","adSlotId":"ad_offline_double","adType":"rewarded_video","entry":"offline_reward_double","rewardId":"rw_ad_offline_double","dailyLimit":3,"sessionLimit":2,"cooldownSec":300,"activeTriggerOnly":true,"allowRetryOnFail":true,"flowKeyPrefix":"ad_offline_double"},
+  {"schemaVersion":"0.1.0","adSlotId":"ad_defeat_supply","adType":"rewarded_video","entry":"defeat_supply","rewardId":"rw_ad_defeat_supply","dailyLimit":3,"sessionLimit":2,"cooldownSec":300,"activeTriggerOnly":true,"allowRetryOnFail":true,"flowKeyPrefix":"ad_defeat_supply"},
+  {"schemaVersion":"0.1.0","adSlotId":"ad_quick_cruise","adType":"rewarded_video","entry":"quick_cruise","rewardId":"rw_ad_quick_cruise","dailyLimit":2,"sessionLimit":1,"cooldownSec":300,"activeTriggerOnly":true,"allowRetryOnFail":true,"flowKeyPrefix":"ad_quick_cruise"}
+]

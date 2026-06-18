@@ -1,0 +1,688 @@
+// BATTLE-RT-04: S7 专用纯 TS 实时自动战斗核心 S7AutoBattleEngine 测试。
+// 覆盖任务包 §7 的 25 个要点：n001/n018/n075 跑通、同/异 seed、站位寻敌、能量/大招、
+// 短路、护盾、治疗、清群/贯穿/后排、mark/vulnerable/shield_break、星核、Boss 阶段与召唤上限、
+// 超时判负、静态隔离、配置只读、日志上限、tick 顺序稳定、日志 schema、满场召唤、输入校验、状态重入。
+// 允许在内存里 clone 配置表制造边界用例；不改磁盘样例表。
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import {
+  S7ConfigRuntime,
+  createInMemoryS7TableReader,
+} from '../assets/scripts/config/s7/S7ConfigRuntime';
+import { S7ConfigTableName, S7_TABLE_FILES } from '../assets/scripts/config/s7/ConfigTypesS7';
+import { S7AutoBattleEngine } from '../assets/scripts/core/s7/S7AutoBattleEngine';
+import {
+  S7AutoBattleLogEntry,
+  S7AutoBattlePlayerUnitInput,
+  S7AutoBattleResult,
+} from '../assets/scripts/core/s7/S7AutoBattleTypes';
+
+const S7_DIR = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7');
+
+type Bundle = Record<S7ConfigTableName, unknown[]>;
+type Row = Record<string, unknown>;
+
+function loadBundle(): Bundle {
+  const bundle = {} as Bundle;
+  for (const t of Object.keys(S7_TABLE_FILES) as S7ConfigTableName[]) {
+    bundle[t] = JSON.parse(readFileSync(path.join(S7_DIR, `${t}.sample.json`), 'utf-8')) as unknown[];
+  }
+  return bundle;
+}
+
+function cloneBundle(b: Bundle): Bundle {
+  return JSON.parse(JSON.stringify(b)) as Bundle;
+}
+
+function row(b: Bundle, table: S7ConfigTableName, rowId: string): Row {
+  const r = (b[table] as Row[]).find((x) => x.rowId === rowId);
+  if (!r) throw new Error(`fixture 缺少 ${table}.${rowId}`);
+  return r;
+}
+
+async function runtimeOf(b: Bundle): Promise<S7ConfigRuntime> {
+  return S7ConfigRuntime.load(createInMemoryS7TableReader(b));
+}
+
+async function engineOf(b: Bundle): Promise<S7AutoBattleEngine> {
+  return new S7AutoBattleEngine(await runtimeOf(b));
+}
+
+// ---- 日志查询小工具 ----
+const ofType = (log: S7AutoBattleLogEntry[], type: string): S7AutoBattleLogEntry[] => log.filter((e) => e.type === type);
+const typeSet = (log: S7AutoBattleLogEntry[]): Set<string> => new Set(log.map((e) => e.type));
+function firstAttack(log: S7AutoBattleLogEntry[], actorId: string): S7AutoBattleLogEntry | undefined {
+  return log.find((e) => e.type === 'unit_attack' && e.actorId === actorId);
+}
+function summonedCount(log: S7AutoBattleLogEntry[]): number {
+  return ofType(log, 'spawn_wave')
+    .filter((e) => e.note === 'phase_summon' || e.note === 'effect_summon')
+    .reduce((acc, e) => acc + (e.targetIds?.length ?? 0), 0);
+}
+
+// ---- 常用阵容 ----
+const TRIO: S7AutoBattlePlayerUnitInput[] = [
+  { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' },
+  { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' },
+  { unitStatRef: 'bu_ship_guardian', slotRef: 'p2c2' },
+];
+const FIVE: S7AutoBattlePlayerUnitInput[] = [
+  { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' },
+  { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' },
+  { unitStatRef: 'bu_ship_gunner', slotRef: 'p2c2' },
+  { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c1' },
+  { unitStatRef: 'bu_ship_guardian', slotRef: 'p2c1' },
+];
+
+describe('S7AutoBattleEngine - n001 群怪割草 (#1)', () => {
+  it('用 3 艘样例星舰刷出两波共 14 只小怪并跑完，含必备事件', async () => {
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'seed-1', playerUnits: TRIO });
+    expect(r.winner).toBe('player');
+    expect(r.reason).toBe('all_enemies_down');
+    const waves = ofType(r.log, 'spawn_wave').filter((e) => e.note === 'spawn_n001_w1' || e.note === 'spawn_n001_w2');
+    expect(waves.length).toBe(2);
+    const spawned = waves.reduce((a, e) => a + (e.targetIds?.length ?? 0), 0);
+    expect(spawned).toBe(14);
+    for (const t of ['spawn_wave', 'unit_attack', 'damage', 'unit_down', 'battle_end']) {
+      expect(typeSet(r.log).has(t)).toBe(true);
+    }
+    expect(ofType(r.log, 'unit_down').length).toBe(14);
+  });
+});
+
+describe('S7AutoBattleEngine - 同/异 seed (#2,#3)', () => {
+  it('同一 seed 跑两次 result 与 log 完全一致 (#2)', async () => {
+    const engine = await engineOf(loadBundle());
+    const a = engine.run({ encounterRef: 'enc_n001', battleSeed: 'same', playerUnits: TRIO });
+    const b = engine.run({ encounterRef: 'enc_n001', battleSeed: 'same', playerUnits: TRIO });
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+
+  it('最近目标并列时不同 seed 产生可观察差异 (#3)', async () => {
+    // 两个与攻击者等距的敌人（r0c0 / r2c0 对 p1c2 均为距离 2），高血量保活，首攻目标由 seed 决定。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1', 'spawn_n001_w2'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0 });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w2'), { count: 1, slotRefs: ['r2c0'], spawnDelaySec: 0 });
+    const engine = await engineOf(b);
+    const attacker = { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' };
+    const firstTargets = new Set<string>();
+    for (const seed of ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8']) {
+      const r = engine.run({ encounterRef: 'enc_n001', battleSeed: seed, playerUnits: [attacker] });
+      const fa = firstAttack(r.log, 'player_p1c2');
+      if (fa?.targetIds?.[0]) firstTargets.add(fa.targetIds[0]);
+    }
+    expect(firstTargets.size).toBeGreaterThan(1); // 不同 seed 命中了不同的并列目标
+  });
+});
+
+describe('S7AutoBattleEngine - 站位影响寻敌 (#4)', () => {
+  it('前排 vs 后排同一星舰首次出手时机不同', async () => {
+    // 近战 vanguard(range1)：p0c2(行0)可即时打到 w1 行0 敌人；p1c2(行1)够不到行0，须等 w2 行1(5s 后)。
+    const engine = await engineOf(loadBundle());
+    const front = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }] });
+    const back = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' }] });
+    const frontFirst = firstAttack(front.log, 'player_p0c2');
+    const backFirst = firstAttack(back.log, 'player_p1c2');
+    expect(frontFirst?.timeSec).toBe(0);
+    expect(backFirst).toBeDefined();
+    expect(backFirst!.timeSec).toBeGreaterThan(0);
+    expect(backFirst!.timeSec).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('S7AutoBattleEngine - 能量与大招 (#5,#6)', () => {
+  it('被动能量把单位推到 100 后立刻放大招（无普攻、纯被动驱动）(#5)', async () => {
+    // guardian 放后排(p0c0)够不到 r0c6 远敌→不普攻；passive 拉满→自身护盾大招。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { passiveEnergyPerSec: 100 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1, attackRangeCells: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c6'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pass', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
+    expect(firstAttack(r.log, 'player_p0c0')).toBeUndefined(); // 全程够不到，无普攻
+    const ults = ofType(r.log, 'ultimate_cast').filter((e) => e.actorId === 'player_p0c0');
+    expect(ults.length).toBeGreaterThan(0);
+    expect(typeSet(r.log).has('energy_change')).toBe(true);
+  });
+
+  it('普攻后能量达到 100 立刻放大招（纯普攻供能，无被动）(#6)', async () => {
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, passiveEnergyPerSec: 0, attackRangeCells: 7 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'atk', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const ult = ofType(r.log, 'ultimate_cast').find((e) => e.actorId === 'player_p0c2');
+    expect(ult).toBeDefined();
+    // 大招所在 tick 必有该单位的普攻（普攻后供能触发）。
+    const sameTickAttack = r.log.some((e) => e.type === 'unit_attack' && e.actorId === 'player_p0c2' && e.timeSec === ult!.timeSec);
+    expect(sameTickAttack).toBe(true);
+  });
+});
+
+describe('S7AutoBattleEngine - 短路抑制行动 (#7)', () => {
+  it('short_circuit 期间敌人不普攻、不放大招', async () => {
+    // 一艘 passive 拉满的船在 t=0 用 short_circuit_pulse 短路全体敌人；对照组用清群大招不带控制。
+    const make = (ultRef: string): Bundle => {
+      const b = cloneBundle(loadBundle());
+      Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500, ultimateEffectRef: ultRef, attackRangeCells: 7 });
+      Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 30 });
+      Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+      Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });
+      return b;
+    };
+    const sc = await engineOf(make('eff_ult_short_circuit_pulse'));
+    const rSc = sc.run({ encounterRef: 'enc_n001', battleSeed: 'sc', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const scApply = ofType(rSc.log, 'state_apply').find((e) => e.stateTag === 'short_circuit');
+    expect(scApply).toBeDefined();
+    // 短路窗口 [t, t+2) 内被短路敌人不出手。
+    const enemyAttacksInWindow = rSc.log.filter(
+      (e) => e.type === 'unit_attack' && e.side === 'enemy' && e.timeSec >= scApply!.timeSec && e.timeSec < scApply!.timeSec + 2,
+    );
+    expect(enemyAttacksInWindow.length).toBe(0);
+  });
+});
+
+describe('S7AutoBattleEngine - 护盾先扣盾再扣血 (#8)', () => {
+  it('护盾吸收伤害时先掉 shield，盾破后才掉 hp', async () => {
+    // 敌人自带护盾(自我开盾)，玩家攻击：先看 shieldAfter 下降而 hp 不变，盾清空后 hp 才下降。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 1000, armor: 25, attack: 1, passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_effect_param', 'eff_state_shield'), { durationSec: 60 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_shield', count: 1, slotRefs: ['r0c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'shield', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const dmgs = r.log.filter((e) => e.type === 'damage' && e.side === 'player' && (e.targetIds ?? []).some((id) => id.startsWith('enemy_')));
+    expect(dmgs.length).toBeGreaterThan(2);
+    // 至少存在“扣盾不掉血”的命中（amount=0 且 shieldAfter 较小于满盾），且其 hpAfter 仍为满血。
+    const absorbed = dmgs.find((e) => (e.amount ?? -1) === 0 && (e.shieldAfter ?? 0) > 0);
+    expect(absorbed).toBeDefined();
+    expect(absorbed!.hpAfter).toBe(1000); // 盾未破前 hp 不变
+  });
+});
+
+describe('S7AutoBattleEngine - 治疗与超时 (#9)', () => {
+  it('repair_burst 能治疗友方且不会因互奶在超时后误判玩家胜', async () => {
+    // 一艘奶(ult=repair_burst)+一艘脆皮坦受伤；面对高血 Boss 打不死→超时判敌方胜，但 heal 真实发生。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { ultimateEffectRef: 'eff_ult_repair_burst', attack: 100, passiveEnergyPerSec: 30 });
+    const engine = await engineOf(b);
+    const lineup: S7AutoBattlePlayerUnitInput[] = [
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c0' }, // 奶妈放后排少挨打
+      { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }, // 前排受伤目标
+    ];
+    const r = engine.run({ encounterRef: 'enc_n018', battleSeed: 'heal', playerUnits: lineup });
+    const heals = ofType(r.log, 'heal').filter((e) => (e.amount ?? 0) > 0);
+    expect(heals.length).toBeGreaterThan(0); // 真实奶到友方
+    expect(heals.every((e) => typeof e.shieldAfter === 'number')).toBe(true); // RT-04-fix#1：heal 补 shieldAfter
+    if (r.reason === 'timeout') {
+      expect(r.winner).toBe('enemy'); // 超时未清敌→敌方胜，绝不因奶量误判玩家赢
+    }
+  });
+});
+
+describe('S7AutoBattleEngine - 大招目标模板 (#10,#11,#12)', () => {
+  it('clear_barrage 单次大招命中多个敌人 (#10)', async () => {
+    // vanguard 大招=clear_barrage(maxTargets8)，passive 拉满 t=0 即放，铺一行 7 个小怪。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'cb', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' }] });
+    const ult = ofType(r.log, 'ultimate_cast').find((e) => e.effectType === 'clear_barrage');
+    expect(ult).toBeDefined();
+    expect((ult!.targetIds ?? []).length).toBeGreaterThan(1);
+  });
+
+  it('line_pierce 按列命中 (#11)', async () => {
+    // 敌人排成一列(r0c0/r1c0/r2c0)，gunner 大招=line_pierce(column_line) 命中同列多人。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 3, slotRefs: ['r0c0', 'r1c0', 'r2c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'lp', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' }] });
+    const ult = ofType(r.log, 'ultimate_cast').find((e) => e.effectType === 'line_pierce');
+    expect(ult).toBeDefined();
+    expect((ult!.targetIds ?? []).length).toBeGreaterThan(1);
+  });
+
+  it('backline_strike 优先打后排(高列) (#12)', async () => {
+    // 敌人 r0c0(前) 与 r0c6(后排)，某船大招=backline_strike 应先点后排 r0c6。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500, ultimateEffectRef: 'eff_ult_backline_strike' });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 2, slotRefs: ['r0c0', 'r0c6'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'bl', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' }] });
+    const ult = ofType(r.log, 'ultimate_cast').find((e) => e.effectType === 'backline_strike');
+    expect(ult).toBeDefined();
+    // 后排 r0c6 是第二个出怪(enemy_0001)；backline_first 应先选它。
+    expect(ult!.targetIds?.[0]).toBe('enemy_0001');
+  });
+});
+
+describe('S7AutoBattleEngine - mark/vulnerable/shield_break 行为 (#13)', () => {
+  it('mark：同距离并列时被标记目标优先被选中', async () => {
+    // marker(passive 拉满,t=0 标记最近的 r0c0)；attacker 对 r0c0/r2c0 等距，应恒选被标记的 r0c0。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { passiveEnergyPerSec: 500, ultimateEffectRef: 'eff_state_mark', attackRangeCells: 1 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1', 'spawn_n001_w2'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0 });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w2'), { count: 1, slotRefs: ['r2c0'], spawnDelaySec: 0 });
+    const engine = await engineOf(b);
+    const lineup: S7AutoBattlePlayerUnitInput[] = [
+      { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }, // marker：最近=r0c0
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' }, // attacker：r0c0/r2c0 等距
+    ];
+    // 跨多个 seed 都应选中被标记的 enemy_0000(r0c0)，证明并非 RNG 偶然。
+    for (const seed of ['m1', 'm2', 'm3', 'm4', 'm5']) {
+      const r = engine.run({ encounterRef: 'enc_n001', battleSeed: seed, playerUnits: lineup });
+      expect(ofType(r.log, 'state_apply').some((e) => e.stateTag === 'mark')).toBe(true);
+      const gunnerHits = r.log.filter((e) => e.type === 'unit_attack' && e.actorId === 'player_p1c2');
+      expect(gunnerHits.length).toBeGreaterThan(0);
+      expect(gunnerHits[0].targetIds?.[0]).toBe('enemy_0000');
+    }
+  });
+
+  it('vulnerable：被易伤目标受到 1.25x 伤害（80→100）', async () => {
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_vulnerable', passiveEnergyPerSec: 7 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, armor: 25, attack: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'vuln', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const apply = ofType(r.log, 'state_apply').find((e) => e.stateTag === 'vulnerable');
+    expect(apply).toBeDefined();
+    const dmgs = r.log.filter((e) => e.type === 'damage' && e.actorId === 'player_p0c2');
+    expect(dmgs.some((e) => e.amount === 80)).toBe(true); // 易伤前
+    const after = dmgs.filter((e) => e.timeSec > apply!.timeSec);
+    expect(after.some((e) => e.amount === 100)).toBe(true); // 易伤后 1.25x
+  });
+
+  it('shield_break：破盾期间护盾掉得更快（80→120/击）', async () => {
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 100000, armor: 25, attack: 1, passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_effect_param', 'eff_state_shield'), { durationSec: 60 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_shield_break', passiveEnergyPerSec: 7 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_shield', count: 1, slotRefs: ['r0c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'sb', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const apply = ofType(r.log, 'state_apply').find((e) => e.stateTag === 'shield_break');
+    expect(apply).toBeDefined();
+    const hits = r.log.filter((e) => e.type === 'damage' && e.actorId === 'player_p0c2');
+    // 敌人每 tick 自我回满盾到 20000；普攻命中后 shieldAfter = 20000 - shieldLoss。
+    expect(hits.some((e) => e.shieldAfter === 19920)).toBe(true); // 破盾前掉 80
+    expect(hits.some((e) => e.shieldAfter === 19880 && e.timeSec >= apply!.timeSec)).toBe(true); // 破盾后掉 120
+  });
+});
+
+describe('S7AutoBattleEngine - 星核触发 (#14)', () => {
+  it('coreEffectRef 在首次大招后触发一次 core_trigger', async () => {
+    // gunner 带 coreEffectRef=eff_core_blackhole；n001 跑通时应恰有一次 core_trigger。
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'core', playerUnits: TRIO });
+    const cores = ofType(r.log, 'core_trigger').filter((e) => e.actorId === 'player_p1c2');
+    expect(cores.length).toBe(1);
+    expect(cores[0].effectRef).toBe('eff_core_blackhole');
+  });
+});
+
+describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
+  it('n018 Boss 触发 start / mid / final 三阶段 (#15)', async () => {
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n018', battleSeed: 'n018', playerUnits: FIVE });
+    const phases = ofType(r.log, 'boss_phase').map((e) => e.phaseTag);
+    expect(phases).toEqual(['start', 'mid', 'final']);
+  });
+
+  it('n075 Boss 召唤总量不超过 10 并记录 boss_phase (#16)', async () => {
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n075', battleSeed: 'n075', playerUnits: FIVE });
+    expect(ofType(r.log, 'boss_phase').length).toBeGreaterThan(0);
+    expect(summonedCount(r.log)).toBeLessThanOrEqual(10);
+  });
+});
+
+describe('S7AutoBattleEngine - 超时判负 (#17)', () => {
+  it('超时未清敌时玩家失败，reason=timeout', async () => {
+    // 单艘脆皮 vs n075 终 Boss：必然超时或被清，构造极弱阵容确保非 all_enemies_down。
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n075', battleSeed: 'to', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
+    expect(r.winner).toBe('enemy');
+    expect(['timeout', 'all_players_down']).toContain(r.reason);
+    // 进一步：超大血量 Boss、单奶阵容必然超时。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { ultimateEffectRef: 'eff_ult_repair_burst', maxHp: 100000, armor: 200 });
+    const engine2 = await engineOf(b);
+    const r2 = engine2.run({ encounterRef: 'enc_n075', battleSeed: 'to2', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
+    expect(r2.reason).toBe('timeout');
+    expect(r2.winner).toBe('enemy');
+    expect(r2.durationSec).toBe(45);
+  });
+});
+
+describe('S7AutoBattleEngine - 静态隔离 (#18)', () => {
+  it('引擎/类型/RNG 源文件不 import 流程版战斗模块或 cc', () => {
+    const forbidden = [
+      'BattleEngine', 'BattleUnit', 'HeroConfig', 'EnemyConfig', 'SkillConfig',
+      'BattleLaunchService', 'BattlePlaybackService',
+    ];
+    for (const file of ['S7AutoBattleEngine.ts', 'S7AutoBattleTypes.ts', 'S7AutoBattleRng.ts']) {
+      const src = readFileSync(path.resolve(__dirname, '..', 'assets', 'scripts', 'core', 's7', file), 'utf-8');
+      const importLines = src.split('\n').filter((l) => /^\s*import\b/.test(l));
+      for (const line of importLines) {
+        for (const name of forbidden) expect(line.includes(name)).toBe(false);
+        expect(/from\s+['"]cc['"]/.test(line)).toBe(false);
+        expect(/combat\//.test(line)).toBe(false);
+      }
+    }
+  });
+});
+
+describe('S7AutoBattleEngine - 运行不改配置 (#19)', () => {
+  it('跑一场战斗不修改 runtime 里的配置行', async () => {
+    const rt = await runtimeOf(loadBundle());
+    const before = JSON.stringify({
+      units: rt.getAll('battle_unit_stat_param'),
+      effects: rt.getAll('battle_effect_param'),
+      encounters: rt.getAll('battle_encounter_param'),
+      spawns: rt.getAll('battle_spawn_param'),
+      phases: rt.getAll('battle_boss_phase_param'),
+    });
+    const engine = new S7AutoBattleEngine(rt);
+    engine.run({ encounterRef: 'enc_n018', battleSeed: 'immut', playerUnits: FIVE });
+    engine.run({ encounterRef: 'enc_n075', battleSeed: 'immut', playerUnits: FIVE });
+    const after = JSON.stringify({
+      units: rt.getAll('battle_unit_stat_param'),
+      effects: rt.getAll('battle_effect_param'),
+      encounters: rt.getAll('battle_encounter_param'),
+      spawns: rt.getAll('battle_spawn_param'),
+      phases: rt.getAll('battle_boss_phase_param'),
+    });
+    expect(after).toBe(before);
+  });
+});
+
+describe('S7AutoBattleEngine - 日志上限 (#20)', () => {
+  it('n075 日志为事件触发，长度有上限（< 1000）', async () => {
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n075', battleSeed: 'len', playerUnits: FIVE });
+    expect(r.log.length).toBeLessThan(1000);
+  });
+});
+
+describe('S7AutoBattleEngine - tick 顺序稳定 (#21)', () => {
+  it('同 seed 下整条日志的(类型/时间/行动者)序列完全固定', async () => {
+    const engine = await engineOf(loadBundle());
+    const a = engine.run({ encounterRef: 'enc_n018', battleSeed: 'order', playerUnits: FIVE });
+    const b = engine.run({ encounterRef: 'enc_n018', battleSeed: 'order', playerUnits: FIVE });
+    const seq = (r: S7AutoBattleResult): string => r.log.map((e) => `${e.timeSec}|${e.type}|${e.actorId ?? ''}|${e.stateTag ?? ''}|${e.phaseTag ?? ''}`).join('\n');
+    expect(seq(a)).toBe(seq(b));
+    // 同一 tick 内固定顺序：state_expire 早于该 tick 的 unit_attack；boss_phase 早于 unit_down。
+    const byTick = new Map<number, string[]>();
+    for (const e of a.log) {
+      const arr = byTick.get(e.timeSec) ?? [];
+      arr.push(e.type);
+      byTick.set(e.timeSec, arr);
+    }
+    for (const [, types] of byTick) {
+      const iExpire = types.indexOf('state_expire');
+      const iAttack = types.indexOf('unit_attack');
+      if (iExpire >= 0 && iAttack >= 0) expect(iExpire).toBeLessThan(iAttack);
+      const iPhase = types.lastIndexOf('boss_phase');
+      const iDown = types.indexOf('unit_down');
+      if (iPhase >= 0 && iDown >= 0) expect(iPhase).toBeLessThan(iDown);
+    }
+  });
+});
+
+describe('S7AutoBattleEngine - 日志 schema (#22)', () => {
+  it('关键事件含必备字段', async () => {
+    const engine = await engineOf(loadBundle());
+    const r = engine.run({ encounterRef: 'enc_n018', battleSeed: 'schema', playerUnits: FIVE });
+    for (const e of r.log) {
+      expect(typeof e.timeSec).toBe('number');
+      expect(typeof e.type).toBe('string');
+      switch (e.type) {
+        case 'spawn_wave':
+          expect(Array.isArray(e.targetIds)).toBe(true);
+          break;
+        case 'unit_attack':
+          expect(typeof e.actorId).toBe('string');
+          expect(Array.isArray(e.targetIds)).toBe(true);
+          expect(typeof e.effectRef).toBe('string');
+          break;
+        case 'damage':
+          expect(typeof e.actorId).toBe('string');
+          expect(Array.isArray(e.targetIds)).toBe(true);
+          expect(typeof e.amount).toBe('number');
+          expect(typeof e.hpAfter).toBe('number');
+          expect(typeof e.shieldAfter).toBe('number');
+          expect(typeof e.effectRef).toBe('string');
+          break;
+        case 'heal':
+          expect(typeof e.amount).toBe('number');
+          expect(typeof e.hpAfter).toBe('number');
+          expect(typeof e.shieldAfter).toBe('number'); // RT-04-fix#1
+          break;
+        case 'state_apply':
+          expect(typeof e.stateTag).toBe('string');
+          expect(Array.isArray(e.targetIds)).toBe(true);
+          if (e.stateTag === 'shield') {
+            // RT-04-fix#1：护盾变化必须带 amount + hpAfter + shieldAfter。
+            expect(typeof e.amount).toBe('number');
+            expect(typeof e.hpAfter).toBe('number');
+            expect(typeof e.shieldAfter).toBe('number');
+          }
+          break;
+        case 'state_expire':
+          expect(typeof e.stateTag).toBe('string');
+          expect(typeof e.actorId).toBe('string');
+          break;
+        case 'ultimate_cast':
+        case 'core_trigger':
+          expect(typeof e.actorId).toBe('string');
+          expect(typeof e.effectRef).toBe('string');
+          break;
+        case 'boss_phase':
+          expect(typeof e.phaseTag).toBe('string');
+          expect(typeof e.actorId).toBe('string');
+          break;
+        case 'unit_down':
+          expect(typeof e.actorId).toBe('string');
+          break;
+        case 'battle_end':
+          expect(typeof e.winner).toBe('string');
+          expect(typeof e.reason).toBe('string');
+          expect(typeof e.durationSec).toBe('number');
+          break;
+        default:
+          break;
+      }
+    }
+  });
+});
+
+describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
+  it('召唤受 summonCountCap 与空格双重约束：cap 触顶 / 满场少召 / 不报错', async () => {
+    // 23a：把 phase summonUnitRefs 加长到 12，cap=10；空格充裕时总召唤恰好触顶 cap。
+    const b1 = cloneBundle(loadBundle());
+    Object.assign(row(b1, 'battle_boss_phase_param', 'phase_n075_mid'), {
+      summonUnitRefs: Array(12).fill('bu_enemy_boss_add'),
+      summonCountCap: 10,
+    });
+    Object.assign(row(b1, 'battle_unit_stat_param', 'bu_boss_n075'), { maxHp: 2500 }); // 确保打到 50% 触发 mid
+    const e1 = await engineOf(b1);
+    const r1 = e1.run({ encounterRef: 'enc_n075', battleSeed: 'cap', playerUnits: FIVE });
+    expect(ofType(r1.log, 'boss_phase').some((e) => e.phaseTag === 'mid')).toBe(true);
+    expect(summonedCount(r1.log)).toBe(10); // 触顶 cap（空格足够：boss 9 格 + 2 开场附属，余 10 空格）
+
+    // 23b：开场把敌方格子几乎填满（仅余 3 空格），mid 想召 12 但只能少召 3，不报错不无限刷。
+    const b2 = cloneBundle(loadBundle());
+    Object.assign(row(b2, 'battle_boss_phase_param', 'phase_n075_mid'), {
+      summonUnitRefs: Array(12).fill('bu_enemy_boss_add'),
+      summonCountCap: 10,
+    });
+    Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n075'), { maxHp: 2500 });
+    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n075_adds'), {
+      count: 9,
+      slotRefs: ['r0c0', 'r0c1', 'r0c5', 'r0c6', 'r1c0', 'r1c1', 'r1c5', 'r1c6', 'r2c0'],
+      maxConcurrentOnField: 21,
+    });
+    const e2 = await engineOf(b2);
+    const r2 = e2.run({ encounterRef: 'enc_n075', battleSeed: 'cap2', playerUnits: FIVE });
+    const summoned2 = summonedCount(r2.log);
+    expect(summoned2).toBeLessThanOrEqual(10);
+    expect(summoned2).toBeLessThan(10); // 满场少召，未触顶 cap
+  });
+});
+
+describe('S7AutoBattleEngine - 输入校验 (#24)', () => {
+  it('非法/重复玩家格、超过 5 艘、unitStatRef 非 ship 均抛错', async () => {
+    const engine = await engineOf(loadBundle());
+    const base = { encounterRef: 'enc_n001', battleSeed: 'x' };
+    // 非法格
+    expect(() => engine.run({ ...base, playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p3c0' }] })).toThrow();
+    expect(() => engine.run({ ...base, playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'r0c0' }] })).toThrow();
+    // 重复格
+    expect(() => engine.run({ ...base, playerUnits: [
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c0' },
+      { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c0' },
+    ] })).toThrow();
+    // 超过 5 艘
+    expect(() => engine.run({ ...base, playerUnits: [
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c0' },
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c1' },
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' },
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c0' },
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c1' },
+      { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c2' },
+    ] })).toThrow();
+    // unitStatRef 不是 ship（用敌人单位）
+    expect(() => engine.run({ ...base, playerUnits: [{ unitStatRef: 'bu_enemy_swarm', slotRef: 'p0c0' }] })).toThrow();
+    // 未知 unitStatRef
+    expect(() => engine.run({ ...base, playerUnits: [{ unitStatRef: 'bu_nope', slotRef: 'p0c0' }] })).toThrow();
+  });
+});
+
+describe('S7AutoBattleEngine - 状态重入 (#25)', () => {
+  it('同名状态再次命中刷新持续时间，不叠层（到期次数=1 且 = 末次施加+时长）', async () => {
+    // caster 反复短路 E(高血保活)，但被远程敌 F 在 ~2s 击杀后停手；E 的 short_circuit 仅在末次施加+2s 到期一次。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), {
+      ultimateEffectRef: 'eff_state_short_circuit', passiveEnergyPerSec: 100, maxHp: 200, attackRangeCells: 1,
+    });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1 }); // E：victim
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { attack: 120, attackRangeCells: 7, passiveEnergyPerSec: 0 }); // F：远程击杀 caster
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), {
+      enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1', 'spawn_n001_w2'],
+    });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_swarm', count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0 });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w2'), { unitStatRef: 'bu_enemy_shield', count: 1, slotRefs: ['r0c1'], spawnDelaySec: 0 });
+    const engine = await engineOf(b);
+    const lineup: S7AutoBattlePlayerUnitInput[] = [
+      { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }, // caster（会被 F 杀）
+      { unitStatRef: 'bu_ship_guardian', slotRef: 'p2c0' }, // 续命，使战斗在 caster 死后继续
+    ];
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'reentry', playerUnits: lineup });
+    const applies = ofType(r.log, 'state_apply').filter((e) => e.stateTag === 'short_circuit' && (e.targetIds ?? []).includes('enemy_0000'));
+    const expires = ofType(r.log, 'state_expire').filter((e) => e.stateTag === 'short_circuit' && e.actorId === 'enemy_0000');
+    expect(applies.length).toBeGreaterThanOrEqual(2); // 多次命中
+    expect(expires.length).toBe(1); // 不叠层：连续覆盖只到期一次
+    const lastApplyBefore = Math.max(...applies.filter((a) => a.timeSec <= expires[0].timeSec).map((a) => a.timeSec));
+    expect(Math.round((expires[0].timeSec - lastApplyBefore) * 10) / 10).toBe(2); // 到期 = 末次施加 + 2s
+  });
+});
+
+describe('S7AutoBattleEngine - 受击满能立刻放大招 (RT-04-fix#2)', () => {
+  it('受击方涨能量到 100 后在同一结算内立刻释放大招（不等下一 tick）', async () => {
+    // P：后排 range1 够不到远敌→不普攻；passive=0→能量只能来自“受击”。远程敌 E 每 tick 打 P。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
+      passiveEnergyPerSec: 0, attackRangeCells: 1, ultimateEffectRef: 'eff_ult_shield_bubble', maxHp: 100000, armor: 200,
+    });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), {
+      attack: 1, attackRangeCells: 9, attackIntervalSec: 0.2, maxHp: 100000,
+    });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c6'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'onhit', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    expect(firstAttack(r.log, 'player_p0c2')).toBeUndefined(); // 全程够不到敌人→无普攻，能量纯靠受击
+    const ultIdx = r.log.findIndex((e) => e.type === 'ultimate_cast' && e.actorId === 'player_p0c2');
+    expect(ultIdx).toBeGreaterThan(-1);
+    const ult = r.log[ultIdx];
+    // 触发大招的“受击伤害”在同一 tick 且日志位置先于大招 → 证明受击满能即时释放（非下一 tick 的 step4）。
+    const triggeredByHit = r.log
+      .slice(0, ultIdx)
+      .some((e) => e.type === 'damage' && (e.targetIds ?? []).includes('player_p0c2') && e.timeSec === ult.timeSec);
+    expect(triggeredByHit).toBe(true);
+  });
+});
+
+describe('S7AutoBattleEngine - stun 抑制行动 (RT-04-fix#3)', () => {
+  it('stun 期间敌人不普攻、不放大招（即便能量已满）', async () => {
+    const b = cloneBundle(loadBundle());
+    // 玩家 passive 拉满→t=0 用 eff_state_stun 晕住最近敌人；敌人 passive 拉满且带大招，验证被晕时既不普攻也不放大招。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500, ultimateEffectRef: 'eff_state_stun', attackRangeCells: 7, maxHp: 100000 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 30, passiveEnergyPerSec: 100, ultimateEffectRef: 'eff_ult_burst_nuke' });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'stun', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const apply = ofType(r.log, 'state_apply').find((e) => e.stateTag === 'stun');
+    expect(apply).toBeDefined();
+    const inWindow = (e: S7AutoBattleLogEntry): boolean => e.side === 'enemy' && e.timeSec >= apply!.timeSec && e.timeSec < apply!.timeSec + 2;
+    expect(r.log.filter((e) => e.type === 'unit_attack' && inWindow(e)).length).toBe(0); // 不普攻
+    expect(r.log.filter((e) => e.type === 'ultimate_cast' && inWindow(e)).length).toBe(0); // 不放大招（能量满也压住）
+  });
+});
+
+describe('S7AutoBattleEngine - berserk 行为 (RT-04-fix#3)', () => {
+  it('berserk 生效后攻击力 x1.25（普攻伤害 80→100）', async () => {
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_berserk', passiveEnergyPerSec: 7 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, armor: 25, attack: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'zerk', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    const apply = ofType(r.log, 'state_apply').find((e) => e.stateTag === 'berserk');
+    expect(apply).toBeDefined();
+    const dmgs = r.log.filter((e) => e.type === 'damage' && e.actorId === 'player_p0c2');
+    expect(dmgs.some((e) => e.amount === 80)).toBe(true); // 狂暴前：100*100/125=80
+    expect(dmgs.some((e) => e.amount === 100 && e.timeSec >= apply!.timeSec)).toBe(true); // 狂暴后：attack x1.25 → 100
+  });
+});
+
+describe('S7AutoBattleEngine - pending spawn 不提前胜利 (RT-04-fix#4)', () => {
+  it('两波之间清场不提前判胜，后续 wave 仍会刷出', async () => {
+    // 两波各 1 只，w2 延迟 5s；gunner 秒掉 w1 后场上一度无敌人，但仍有 pending w2 → 不能提前判玩家胜。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1', 'spawn_n001_w2'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0 });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w2'), { unitStatRef: 'bu_enemy_swarm', count: 1, slotRefs: ['r0c0'], spawnDelaySec: 5 });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pending', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
+    expect(ofType(r.log, 'spawn_wave').length).toBe(2); // 两波都刷出（未在 w1 清场时提前胜利）
+    expect(r.durationSec).toBeGreaterThanOrEqual(5); // 战斗持续到 w2 到达后才结束
+    expect(r.winner).toBe('player');
+    expect(r.reason).toBe('all_enemies_down');
+    expect(ofType(r.log, 'unit_down').length).toBe(2); // 两波敌人都被清掉
+  });
+});

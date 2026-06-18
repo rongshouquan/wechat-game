@@ -1,0 +1,6 @@
+[
+  {"schemaVersion":"s7-0.1.0","bossNodeId":"n018","mainProblemTag":"shield","templateRef":"t04","secondaryPressureTag":"swarm_low","previewTagRefs":["tut15"],"forbiddenMechanicTag":"no_summon_berserk_complex_backline"},
+  {"schemaVersion":"s7-0.1.0","bossNodeId":"n037","mainProblemTag":"backline","templateRef":"t05","secondaryPressureTag":"summon_low","previewTagRefs":["tut25"],"forbiddenMechanicTag":"no_backline_burst_summon_stack"},
+  {"schemaVersion":"s7-0.1.0","bossNodeId":"n056","mainProblemTag":"burst","templateRef":"t08","secondaryPressureTag":"berserk_preview","previewTagRefs":["tut34"],"forbiddenMechanicTag":"no_full_interrupt_system"},
+  {"schemaVersion":"s7-0.1.0","bossNodeId":"n075","mainProblemTag":"berserk","templateRef":"t10","secondaryPressureTag":"one_of_t03_t05_t08_t09","previewTagRefs":["tut38"],"forbiddenMechanicTag":"no_full_chaos_no_t11_t12_default"}
+]

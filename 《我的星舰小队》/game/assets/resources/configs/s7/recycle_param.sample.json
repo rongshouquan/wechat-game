@@ -1,0 +1,10 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_normal_basic","sourceTag":"source_mainline","itemType":"normal_basic_material","refundRateMinPct":20,"refundRateMaxPct":35,"recyclable":true,"currencyGroup":"same_category","note":"普通来源基础材料有损回收，返同类资源或低额星贝"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_normal_enhance","sourceTag":"source_mainline","itemType":"normal_enhance_material","refundRateMinPct":35,"refundRateMaxPct":55,"recyclable":true,"currencyGroup":"same_category","note":"普通来源强化材料，不返高流动星贝"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_normal_plugin","sourceTag":"source_mainline","itemType":"normal_plugin_body","refundRateMinPct":20,"refundRateMaxPct":40,"recyclable":true,"currencyGroup":"plugin_mat","note":"普通插件本体回收为插件材料，保留来源标签"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_merchant","sourceTag":"source_merchant","itemType":"merchant_bought","refundRateMinPct":0,"refundRateMaxPct":15,"recyclable":true,"currencyGroup":"low_seabei","note":"商人购买物买入回收必亏"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_ad_extra","sourceTag":"source_ad_extra","itemType":"ad_extra","refundRateMinPct":0,"refundRateMaxPct":10,"recyclable":true,"currencyGroup":"same_source_low","note":"广告额外物同来源低值，不可洗白"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_sponsor","sourceTag":"source_sponsor","itemType":"sponsor_supply","refundRateMinPct":0,"refundRateMaxPct":10,"recyclable":true,"currencyGroup":"same_source_low","note":"赞助补给产物，不计不看广告保底"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_treasure","sourceTag":"source_treasure","itemType":"treasure_product","refundRateMinPct":0,"refundRateMaxPct":10,"recyclable":true,"currencyGroup":"same_source_low","note":"扩张宝库产物，不刷星贝"},
+  {"schemaVersion":"s7-0.1.0","rowId":"recycle_full_core","sourceTag":"source_expansion7","itemType":"full_core","refundRateMinPct":0,"refundRateMaxPct":0,"recyclable":false,"currencyGroup":"none","note":"完整星核不可回收，防止核心路径套利"}
+]

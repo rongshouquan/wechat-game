@@ -1,0 +1,8 @@
+[
+  {"schemaVersion":"s7-0.1.0","streamTag":"shield_window","shipRefs":["shp02","shp07","shp12"],"pilotRefs":["pil02","pil07","pil05"],"coreRefs":["core01","core06"],"pluginRefs":["plg01","plg02","plg13"],"boundaryNote":"没有 core01 仍可用星舰破盾和插件集火"},
+  {"schemaVersion":"s7-0.1.0","streamTag":"backline_suppress","shipRefs":["shp03","shp09","shp10"],"pilotRefs":["pil03","pil09","pil10"],"coreRefs":["core02","core05"],"pluginRefs":["plg03","plg04","plg05","plg16"],"boundaryNote":"没有 core02 仍可用后排舰和压制插件"},
+  {"schemaVersion":"s7-0.1.0","streamTag":"anti_burst","shipRefs":["shp01","shp05","shp06","shp11"],"pilotRefs":["pil01","pil05","pil06","pil09"],"coreRefs":["core03","core05"],"pluginRefs":["plg06","plg07","plg08","plg11","plg14"],"boundaryNote":"不允许广告补战力"},
+  {"schemaVersion":"s7-0.1.0","streamTag":"clear_swarm","shipRefs":["shp04","shp08","shp10"],"pilotRefs":["pil04","pil08","pil10"],"coreRefs":["core04","core06"],"pluginRefs":["plg09","plg10","plg17","plg18"],"boundaryNote":"插件不能制造自由刷怪生态"},
+  {"schemaVersion":"s7-0.1.0","streamTag":"boss_berserk","shipRefs":["shp02","shp05","shp06","shp07","shp11"],"pilotRefs":["pil02","pil05","pil06","pil07","pil01"],"coreRefs":["core01","core03","core05","core06"],"pluginRefs":["plg08","plg12","plg13","plg14"],"boundaryNote":"不写 Boss 阶段时间轴"},
+  {"schemaVersion":"s7-0.1.0","streamTag":"summon_handle","shipRefs":["shp03","shp04","shp08","shp12"],"pilotRefs":["pil03","pil04","pil08","pil10"],"coreRefs":["core02","core04"],"pluginRefs":["plg15","plg16","plg17"],"boundaryNote":"不扩展召唤生态"}
+]

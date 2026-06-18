@@ -1,0 +1,9 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"core_enhance_1_2","targetType":"core","enhanceBand":"core_enhance_1_2","maxEnhance":2,"starOre":0,"pluginMat":0,"coreMat":100,"coreFrag":0,"note":"D7 首核可强化"},
+  {"schemaVersion":"s7-0.1.0","rowId":"core_enhance_3","targetType":"core","enhanceBand":"core_enhance_3","maxEnhance":3,"starOre":0,"pluginMat":0,"coreMat":250,"coreFrag":25,"note":"D14-D21 主力核心"},
+  {"schemaVersion":"s7-0.1.0","rowId":"core_enhance_4_5","targetType":"core","enhanceBand":"core_enhance_4_5","maxEnhance":5,"starOre":0,"pluginMat":0,"coreMat":650,"coreFrag":80,"note":"D21-D28 舒适追求，星核 5 阶封顶"},
+  {"schemaVersion":"s7-0.1.0","rowId":"plugin_enhance_0_3","targetType":"plugin","enhanceBand":"plugin_enhance_0_3","maxEnhance":3,"starOre":60,"pluginMat":50,"coreMat":0,"coreFrag":0,"note":"D7 基础插件"},
+  {"schemaVersion":"s7-0.1.0","rowId":"plugin_enhance_4_6","targetType":"plugin","enhanceBand":"plugin_enhance_4_6","maxEnhance":6,"starOre":180,"pluginMat":120,"coreMat":0,"coreFrag":0,"note":"D14 主力插件"},
+  {"schemaVersion":"s7-0.1.0","rowId":"plugin_enhance_7_10","targetType":"plugin","enhanceBand":"plugin_enhance_7_10","maxEnhance":10,"starOre":420,"pluginMat":300,"coreMat":0,"coreFrag":0,"note":"D21-D28 主力插件"},
+  {"schemaVersion":"s7-0.1.0","rowId":"plugin_enhance_11_15","targetType":"plugin","enhanceBand":"plugin_enhance_11_15","maxEnhance":15,"starOre":900,"pluginMat":700,"coreMat":0,"coreFrag":0,"note":"D28 后追求，插件 +15 封顶，不作为主线门槛"}
+]

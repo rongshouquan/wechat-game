@@ -1,0 +1,6 @@
+[
+  {"schemaVersion":"s7-0.1.0","starfieldId":"sf01","nodeRangeTag":"n001_n018","mainProblemTags":["swarm","shield"],"reuseProblemTags":[],"bossValidationTag":"shield","fallback70Policy":"keep_all"},
+  {"schemaVersion":"s7-0.1.0","starfieldId":"sf02","nodeRangeTag":"n019_n037","mainProblemTags":["backline","summon"],"reuseProblemTags":["swarm","shield"],"bossValidationTag":"backline","fallback70Policy":"cut_1"},
+  {"schemaVersion":"s7-0.1.0","starfieldId":"sf03","nodeRangeTag":"n038_n056","mainProblemTags":["burst"],"reuseProblemTags":["swarm","shield","backline","summon"],"bossValidationTag":"burst","fallback70Policy":"cut_2"},
+  {"schemaVersion":"s7-0.1.0","starfieldId":"sf04","nodeRangeTag":"n057_n075","mainProblemTags":["berserk"],"reuseProblemTags":["swarm","shield","backline","burst","summon"],"bossValidationTag":"berserk","fallback70Policy":"cut_2"}
+]

@@ -1,0 +1,3 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"merchant_refresh","freeRefreshPerCycle":1,"paidRefreshCapPerCycle":3,"refreshCostSequence":[80,160,320],"rareItemSlotCap":1,"criticalPathItemBlock":true,"note":"刷新成本递增，刷新不重置限购；完整星核/默认关键星舰/主线必需物不可售"}
+]

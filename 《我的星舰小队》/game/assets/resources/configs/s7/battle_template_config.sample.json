@@ -1,0 +1,12 @@
+[
+  {"schemaVersion":"s7-0.1.0","templateId":"t01","name":"群怪铺场","mainProblemTag":"swarm","secondaryTagCap":1,"applicableStageTypes":["normal","elite"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t02","name":"分批增援","mainProblemTag":"swarm","secondaryTagCap":1,"applicableStageTypes":["normal","elite"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t03","name":"护盾墙","mainProblemTag":"shield","secondaryTagCap":1,"applicableStageTypes":["normal","elite"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t04","name":"护盾破口","mainProblemTag":"shield","secondaryTagCap":1,"applicableStageTypes":["elite","boss"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t05","name":"后排威胁","mainProblemTag":"backline","secondaryTagCap":1,"applicableStageTypes":["normal","elite"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t06","name":"后排支援","mainProblemTag":"backline","secondaryTagCap":1,"applicableStageTypes":["elite","boss"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t07","name":"开场爆发","mainProblemTag":"burst","secondaryTagCap":1,"applicableStageTypes":["normal","elite"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t08","name":"蓄力爆发窗口","mainProblemTag":"burst","secondaryTagCap":1,"applicableStageTypes":["elite","boss"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t09","name":"召唤压场","mainProblemTag":"summon","secondaryTagCap":1,"applicableStageTypes":["normal","elite"],"reservedSlotFlag":false},
+  {"schemaVersion":"s7-0.1.0","templateId":"t10","name":"Boss 狂暴","mainProblemTag":"berserk","secondaryTagCap":1,"applicableStageTypes":["boss"],"reservedSlotFlag":false}
+]

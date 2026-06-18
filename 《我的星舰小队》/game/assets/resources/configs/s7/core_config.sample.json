@@ -1,0 +1,8 @@
+[
+  {"schemaVersion":"s7-0.1.0","coreId":"core01","name":"破盾棱镜星核","roleNote":"破盾与破口窗口","effectNote":"强化护盾识别、破口窗口和同列集火倾向","coverProblemTags":["shield","berserk"],"shipFitRefs":["shp02","shp07","shp12"],"freePathNote":"第 7 天完整自选可选；后续随机三选一可出","forbiddenBindingNote":"护盾问题不能只靠 core01"},
+  {"schemaVersion":"s7-0.1.0","coreId":"core02","name":"远星标定星核","roleNote":"后排优先与召唤源标记","effectNote":"强化后排威胁识别、召唤源优先和远程压制倾向","coverProblemTags":["backline","summon"],"shipFitRefs":["shp03","shp09","shp10"],"freePathNote":"第 7 天完整自选可选；后续随机三选一可出","forbiddenBindingNote":"后排问题不能只靠 core02"},
+  {"schemaVersion":"s7-0.1.0","coreId":"core03","name":"星幕护壁星核","roleNote":"阵线保护与爆发减压","effectNote":"强化前排承压、关键位保护和爆发缓冲","coverProblemTags":["burst","berserk"],"shipFitRefs":["shp01","shp06","shp11"],"freePathNote":"第 7 天完整自选可选；后续随机三选一可出","forbiddenBindingNote":"爆发问题不能只靠 core03"},
+  {"schemaVersion":"s7-0.1.0","coreId":"core04","name":"扇区清场星核","roleNote":"范围清理与批次处理","effectNote":"强化范围清场、召唤物清理和连锁清残倾向","coverProblemTags":["swarm","summon"],"shipFitRefs":["shp04","shp08","shp10"],"freePathNote":"第 7 天完整自选可选；后续随机三选一可出","forbiddenBindingNote":"小怪 / 召唤不能只靠 core04"},
+  {"schemaVersion":"s7-0.1.0","coreId":"core05","name":"静滞制动星核","roleNote":"干扰、打断与窗口压制","effectNote":"强化蓄力窗口、爆发源压制、Boss 狂暴延缓方向","coverProblemTags":["burst","berserk","backline"],"shipFitRefs":["shp05","shp09","shp07"],"freePathNote":"第 7 天完整自选可选；后续随机三选一可出","forbiddenBindingNote":"打断 / 狂暴不能只靠 core05"},
+  {"schemaVersion":"s7-0.1.0","coreId":"core06","name":"舰队调度星核","roleNote":"技能周转与弱克制补位","effectNote":"强化大招周转、战术补位、短窗口集火与轻清场","coverProblemTags":["shield","swarm","berserk"],"shipFitRefs":["shp07","shp12","shp04"],"freePathNote":"第 7 天完整自选可选；后续随机三选一可出","forbiddenBindingNote":"不能成为万能通关钥匙"}
+]

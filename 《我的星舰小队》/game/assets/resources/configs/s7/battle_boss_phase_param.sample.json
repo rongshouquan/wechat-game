@@ -1,0 +1,8 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"phase_n018_start","bossNodeId":"n018","phaseTag":"start","triggerType":"battle_start","triggerValue":0,"effectRefs":["eff_state_shield"],"summonUnitRefs":[],"summonCountCap":0,"note":"开场开盾"},
+  {"schemaVersion":"s7-0.1.0","rowId":"phase_n018_mid","bossNodeId":"n018","phaseTag":"mid","triggerType":"hp_pct_below","triggerValue":50,"effectRefs":["eff_state_shield_break","eff_state_vulnerable"],"summonUnitRefs":["bu_enemy_shield"],"summonCountCap":3,"note":"中段破盾窗口 + 少量护盾附属"},
+  {"schemaVersion":"s7-0.1.0","rowId":"phase_n018_final","bossNodeId":"n018","phaseTag":"final","triggerType":"hp_pct_below","triggerValue":20,"effectRefs":["eff_ult_burst_nuke"],"summonUnitRefs":[],"summonCountCap":0,"note":"残血爆发窗口"},
+  {"schemaVersion":"s7-0.1.0","rowId":"phase_n075_start","bossNodeId":"n075","phaseTag":"start","triggerType":"battle_start","triggerValue":0,"effectRefs":["eff_state_shield"],"summonUnitRefs":[],"summonCountCap":0,"note":"开场开盾"},
+  {"schemaVersion":"s7-0.1.0","rowId":"phase_n075_mid","bossNodeId":"n075","phaseTag":"mid","triggerType":"hp_pct_below","triggerValue":50,"effectRefs":["eff_state_summon","eff_ult_short_circuit_pulse"],"summonUnitRefs":["bu_enemy_boss_add"],"summonCountCap":10,"note":"中段召唤压场（上限 10）+ 短路窗口"},
+  {"schemaVersion":"s7-0.1.0","rowId":"phase_n075_final","bossNodeId":"n075","phaseTag":"final","triggerType":"hp_pct_below","triggerValue":20,"effectRefs":["eff_state_berserk","eff_ult_burst_nuke"],"summonUnitRefs":[],"summonCountCap":0,"note":"狂暴窗口 + 爆发"}
+]

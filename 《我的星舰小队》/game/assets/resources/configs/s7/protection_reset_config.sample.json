@@ -1,0 +1,4 @@
+[
+  {"schemaVersion":"s7-0.1.0","nodeId":"n038","protectionPeriodTag":"ending_notice","freeResetFlag":true,"resetScopeTags":["ship_level","pilot_level","plugin_enhance","core_enhance","formation","equip_swap"],"alwaysReversibleTags":["formation","position","plugin_equip_swap","core_equip_swap","pilot_ship_swap"],"irreversibleWarningFlag":false},
+  {"schemaVersion":"s7-0.1.0","nodeId":"n039","protectionPeriodTag":"closed","freeResetFlag":false,"resetScopeTags":[],"alwaysReversibleTags":["formation","position","plugin_equip_swap","core_equip_swap","pilot_ship_swap"],"irreversibleWarningFlag":true}
+]

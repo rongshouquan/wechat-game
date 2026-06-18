@@ -1,0 +1,12 @@
+node_modules/
+library/
+temp/
+profiles/
+local/
+build/
+.creator/
+package-lock.json
+*.meta.bak
+
+# 微信开发者工具本地私有配置（每台机器私有，不入库）
+project.private.config.json

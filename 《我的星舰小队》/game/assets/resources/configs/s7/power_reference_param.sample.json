@@ -1,0 +1,6 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"d7","anchorDay":"d7","nodeRangeNote":"N020-N024","powerIndex":2300,"powerIndexMin":2000,"powerIndexMax":2800,"internalOnly":true,"freePathNote":"5 舰免费、第 7 天完整自选星核成立"},
+  {"schemaVersion":"s7-0.1.0","rowId":"d14","anchorDay":"d14","nodeRangeNote":"N037 左右","powerIndex":5600,"powerIndexMin":4800,"powerIndexMax":6500,"internalOnly":true,"freePathNote":"第二星域 Boss 后可进入 N038/N039"},
+  {"schemaVersion":"s7-0.1.0","rowId":"d21","anchorDay":"d21","nodeRangeNote":"N056 左右","powerIndex":9300,"powerIndexMin":8000,"powerIndexMax":10500,"internalOnly":true,"freePathNote":"3 核免费路径成立，5 核不是主线门槛"},
+  {"schemaVersion":"s7-0.1.0","rowId":"d28","anchorDay":"d28","nodeRangeNote":"N075 可通","powerIndex":13200,"powerIndexMin":12000,"powerIndexMax":14500,"internalOnly":true,"freePathNote":"75 主线不看广告可通"}
+]

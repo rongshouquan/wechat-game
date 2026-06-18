@@ -1,0 +1,22 @@
+[
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_1","enemies":[{"enemyId":"enemy_mech_drone","count":2}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_2","enemies":[{"enemyId":"enemy_mech_drone","count":2}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_3","enemies":[{"enemyId":"enemy_mech_drone","count":3}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_4","enemies":[{"enemyId":"enemy_mech_drone","count":3}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_5","enemies":[{"enemyId":"enemy_mech_drone","count":1},{"enemyId":"enemy_mech_hammer_boss","count":1}],"timeoutSec":90},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_6","enemies":[{"enemyId":"enemy_mech_drone","count":4}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_7","enemies":[{"enemyId":"enemy_mech_drone","count":4}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_8","enemies":[{"enemyId":"enemy_mech_drone","count":5}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_9","enemies":[{"enemyId":"enemy_mech_drone","count":4},{"enemyId":"enemy_mech_hammer_boss","count":1}],"timeoutSec":90},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_10","enemies":[{"enemyId":"enemy_mech_drone","count":2},{"enemyId":"enemy_mech_hammer_boss","count":1}],"bossEnemyId":"enemy_mech_hammer_boss","timeoutSec":90},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_11","enemies":[{"enemyId":"enemy_mech_drone","count":5}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_12","enemies":[{"enemyId":"enemy_mech_drone","count":5}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_13","enemies":[{"enemyId":"enemy_mech_drone","count":6}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_14","enemies":[{"enemyId":"enemy_mech_drone","count":6}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_15","enemies":[{"enemyId":"enemy_mech_drone","count":4},{"enemyId":"enemy_mech_hammer_boss","count":1}],"timeoutSec":90},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_16","enemies":[{"enemyId":"enemy_mech_drone","count":6}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_17","enemies":[{"enemyId":"enemy_mech_drone","count":7}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_18","enemies":[{"enemyId":"enemy_mech_drone","count":7}],"timeoutSec":60},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_19","enemies":[{"enemyId":"enemy_mech_drone","count":5},{"enemyId":"enemy_mech_hammer_boss","count":1}],"timeoutSec":90},
+  {"schemaVersion":"0.1.0","enemyGroupId":"eg_1_20","enemies":[{"enemyId":"enemy_mech_drone","count":3},{"enemyId":"enemy_mech_hammer_boss","count":1}],"bossEnemyId":"enemy_mech_hammer_boss","timeoutSec":90}
+]

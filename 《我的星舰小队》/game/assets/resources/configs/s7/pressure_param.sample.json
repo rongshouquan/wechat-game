@@ -1,0 +1,20 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"np_sf01","scope":"normal","refKey":"sf01","pressureMin":200,"pressureMax":1200,"note":"SF01 N001-N017 主模板 T01/T02/T03/T04，不压缩教学"},
+  {"schemaVersion":"s7-0.1.0","rowId":"np_sf02","scope":"normal","refKey":"sf02","pressureMin":1300,"pressureMax":3900,"note":"SF02 N019-N036 主模板 T05/T06/T09"},
+  {"schemaVersion":"s7-0.1.0","rowId":"np_sf03","scope":"normal","refKey":"sf03","pressureMin":4200,"pressureMax":7600,"note":"SF03 N040-N055 主模板 T07/T08/T09"},
+  {"schemaVersion":"s7-0.1.0","rowId":"np_sf04","scope":"normal","refKey":"sf04","pressureMin":8000,"pressureMax":12500,"note":"SF04 N057-N074 T10 + 已学模板复用"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ep_sf01","scope":"elite","refKey":"sf01","pressureMin":900,"pressureMax":1500,"secondaryPressureCap":1,"note":"主验证 T02/T04，不引入召唤或狂暴"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ep_sf02","scope":"elite","refKey":"sf02","pressureMin":2600,"pressureMax":5000,"secondaryPressureCap":1,"note":"主验证 T06/T09，后排或召唤二选一"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ep_sf03","scope":"elite","refKey":"sf03","pressureMin":6500,"pressureMax":9500,"secondaryPressureCap":1,"note":"主验证 T08/T09，爆发或召唤二选一"},
+  {"schemaVersion":"s7-0.1.0","rowId":"ep_sf04","scope":"elite","refKey":"sf04","pressureMin":10500,"pressureMax":14000,"secondaryPressureCap":1,"note":"T10 + 单副压力 T03/T05/T08/T09 中 1 个，不做全问题混战"},
+  {"schemaVersion":"s7-0.1.0","rowId":"bp_n018","scope":"boss","refKey":"n018","pressureRecommend":1500,"pressureMin":1300,"pressureMax":1800,"note":"SF01 主模板 T04，D7 前基础阵容可通"},
+  {"schemaVersion":"s7-0.1.0","rowId":"bp_n037","scope":"boss","refKey":"n037","pressureRecommend":5200,"pressureMin":4600,"pressureMax":6000,"note":"SF02 主模板 T05，D14 进入保护期转折"},
+  {"schemaVersion":"s7-0.1.0","rowId":"bp_n056","scope":"boss","refKey":"n056","pressureRecommend":9200,"pressureMin":8500,"pressureMax":10800,"note":"SF03 主模板 T08，D21 前后 3 核路径稳定"},
+  {"schemaVersion":"s7-0.1.0","rowId":"bp_n075","scope":"boss","refKey":"n075","pressureRecommend":13600,"pressureMin":12500,"pressureMax":14500,"note":"SF04 主模板 T10，D28 不看广告可通，上限 14500 不上探"},
+  {"schemaVersion":"s7-0.1.0","rowId":"tm_t01_t02","scope":"template_modifier","refKey":"t01_t02","modifier":1.00,"appliesToBoss":false,"note":"群怪与批次基准"},
+  {"schemaVersion":"s7-0.1.0","rowId":"tm_t03_t04","scope":"template_modifier","refKey":"t03_t04","modifier":1.10,"appliesToBoss":false,"note":"护盾识别与破口验证"},
+  {"schemaVersion":"s7-0.1.0","rowId":"tm_t05_t06","scope":"template_modifier","refKey":"t05_t06","modifier":1.12,"appliesToBoss":false,"note":"后排与支援压力"},
+  {"schemaVersion":"s7-0.1.0","rowId":"tm_t07_t08","scope":"template_modifier","refKey":"t07_t08","modifier":1.18,"appliesToBoss":false,"note":"开场爆发与窗口压力"},
+  {"schemaVersion":"s7-0.1.0","rowId":"tm_t09","scope":"template_modifier","refKey":"t09","modifier":1.18,"appliesToBoss":false,"note":"召唤压场"},
+  {"schemaVersion":"s7-0.1.0","rowId":"tm_t10","scope":"template_modifier","refKey":"t10","modifier":1.25,"appliesToBoss":false,"note":"Boss 狂暴，仅用于非 Boss 压力推导参考，不叠乘 boss_pressure"}
+]

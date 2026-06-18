@@ -1,0 +1,10 @@
+[
+  {"schemaVersion":"s7-0.1.0","rowId":"basic_material_pack","itemType":"basic_material_pack","shopValue":100,"priceMin":140,"priceMax":180,"purchaseLimit":6,"recyclable":true,"criticalPath":false,"note":"只补基础材料，低返还"},
+  {"schemaVersion":"s7-0.1.0","rowId":"growth_material_pack","itemType":"growth_material_pack","shopValue":180,"priceMin":260,"priceMax":340,"purchaseLimit":4,"recyclable":true,"criticalPath":false,"note":"不承接 5 舰，低返还"},
+  {"schemaVersion":"s7-0.1.0","rowId":"plugin_material_pack","itemType":"plugin_material_pack","shopValue":220,"priceMin":320,"priceMax":420,"purchaseLimit":4,"recyclable":true,"criticalPath":false,"note":"不承接唯一插件，低返还"},
+  {"schemaVersion":"s7-0.1.0","rowId":"supply_ticket","itemType":"supply_ticket","shopValue":180,"priceMin":260,"priceMax":360,"purchaseLimit":3,"recyclable":false,"criticalPath":false,"note":"不成为主补给保底"},
+  {"schemaVersion":"s7-0.1.0","rowId":"normal_beacon","itemType":"normal_beacon","shopValue":220,"priceMin":330,"priceMax":450,"purchaseLimit":3,"recyclable":false,"criticalPath":false,"note":"免费来源必须存在"},
+  {"schemaVersion":"s7-0.1.0","rowId":"rare_beacon","itemType":"rare_beacon","shopValue":420,"priceMin":650,"priceMax":850,"purchaseLimit":1,"recyclable":false,"criticalPath":false,"note":"不刷出无限高价值"},
+  {"schemaVersion":"s7-0.1.0","rowId":"core_frag_small_pack","itemType":"core_frag_small_pack","shopValue":500,"priceMin":800,"priceMax":1100,"purchaseLimit":1,"recyclable":false,"criticalPath":false,"note":"不承接第 7 天完整星核"},
+  {"schemaVersion":"s7-0.1.0","rowId":"star_cargo_ticket","itemType":"star_cargo_ticket","shopValue":800,"priceMin":1300,"priceMax":1700,"purchaseLimit":1,"recyclable":false,"criticalPath":false,"note":"limit 1/long_cycle；免费货舱好东西仍必保"}
+]

@@ -1,0 +1,12 @@
+[
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil01","name":"米娅","roleNote":"防线指挥","driveStyleNote":"承压、减压、保护相邻位","mainFitNote":"前排守护、护航","coverProblemTags":["burst","swarm"],"freePathNote":"新手主线赠送","forbiddenBindingNote":"不唯一绑定 SHP01"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil02","name":"洛克","roleNote":"破盾专家","driveStyleNote":"破盾、破口窗口、重点目标排序","mainFitNote":"破盾突击、轻破盾补位","coverProblemTags":["shield","berserk"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP02"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil03","name":"晴岚","roleNote":"精准射手","driveStyleNote":"后排点杀、召唤源优先","mainFitNote":"后排狙击、机动收割","coverProblemTags":["backline","summon"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP03"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil04","name":"桃火","roleNote":"清场炮手","driveStyleNote":"范围清怪、批次处理","mainFitNote":"范围清场、反召唤清理","coverProblemTags":["swarm","summon"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP04"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil05","name":"沐电","roleNote":"干扰工程师","driveStyleNote":"打断、延缓、压低爆发源威胁","mainFitNote":"控场干扰、后排压制","coverProblemTags":["burst","berserk"],"freePathNote":"免费任务线解锁","forbiddenBindingNote":"不唯一绑定 SHP05"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil06","name":"诺雅","roleNote":"维修官","driveStyleNote":"维修支援、容错、保护关键位","mainFitNote":"维修支援、前排守护","coverProblemTags":["burst","berserk"],"freePathNote":"免费任务线解锁","forbiddenBindingNote":"不唯一绑定 SHP06"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil07","name":"艾柚","roleNote":"能量调度员","driveStyleNote":"大招周转、窗口配合","mainFitNote":"充能、破盾窗口、战术补位","coverProblemTags":["shield","berserk"],"freePathNote":"7 天扩张免费候选","forbiddenBindingNote":"不唯一绑定 SHP07"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil08","name":"星澄","roleNote":"召唤巡查员","driveStyleNote":"召唤源标记、清召唤压力","mainFitNote":"反召唤、后排狙击","coverProblemTags":["summon","swarm"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP08"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil09","name":"维珂","roleNote":"电子压制员","driveStyleNote":"后排支援限制、远程威胁削弱","mainFitNote":"后排压制、控场干扰","coverProblemTags":["backline","burst"],"freePathNote":"免费星辉货舱 1 选候选","forbiddenBindingNote":"不唯一绑定 SHP09"},
+  {"schemaVersion":"s7-0.1.0","pilotId":"pil10","name":"凯尔","roleNote":"机动队长","driveStyleNote":"补刀、换线、低危目标收割","mainFitNote":"机动收割、后排狙击","coverProblemTags":["backline","swarm"],"freePathNote":"主线后段免费目标","forbiddenBindingNote":"不唯一绑定 SHP10"}
+]

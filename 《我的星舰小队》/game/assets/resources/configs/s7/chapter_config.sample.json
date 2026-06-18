@@ -1,0 +1,14 @@
+[
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch01","starfieldId":"sf01","nodeRangeTag":"n001_n006","primaryTemplateTags":["t01","t02"],"tutorialGoalTag":"first_battle_formation_clear","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch02","starfieldId":"sf01","nodeRangeTag":"n007_n012","primaryTemplateTags":["t03","t04"],"tutorialGoalTag":"shield_breakthrough_growth","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch03","starfieldId":"sf01","nodeRangeTag":"n013_n018","primaryTemplateTags":["t01","t03","t04"],"tutorialGoalTag":"region1_elite_boss_validation","bossRef":"n018"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch04","starfieldId":"sf02","nodeRangeTag":"n019_n024","primaryTemplateTags":["t05","t06"],"tutorialGoalTag":"backline_fleet_plugin_check","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch05","starfieldId":"sf02","nodeRangeTag":"n025_n031","primaryTemplateTags":["t09","t05"],"tutorialGoalTag":"day7_core_summon_targeting","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch06","starfieldId":"sf02","nodeRangeTag":"n032_n037","primaryTemplateTags":["t06","t09","t05"],"tutorialGoalTag":"backline_summon_boss_validation","bossRef":"n037"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch07","starfieldId":"sf03","nodeRangeTag":"n038_n044","primaryTemplateTags":["t07","t08"],"tutorialGoalTag":"protection_end_burst_charge_intro","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch08","starfieldId":"sf03","nodeRangeTag":"n045_n050","primaryTemplateTags":["t09","t07","t08"],"tutorialGoalTag":"summon_reuse_burst_position_review","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch09","starfieldId":"sf03","nodeRangeTag":"n051_n056","primaryTemplateTags":["t08","t10"],"tutorialGoalTag":"berserk_preview_burst_boss_validation","bossRef":"n056"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch10","starfieldId":"sf04","nodeRangeTag":"n057_n063","primaryTemplateTags":["t10","t03","t05"],"tutorialGoalTag":"berserk_axis_shield_backline_reuse","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch11","starfieldId":"sf04","nodeRangeTag":"n064_n069","primaryTemplateTags":["t10","t09","t08"],"tutorialGoalTag":"berserk_summon_burst_single_pressure","bossRef":"none"},
+  {"schemaVersion":"s7-0.1.0","chapterId":"ch12","starfieldId":"sf04","nodeRangeTag":"n070_n075","primaryTemplateTags":["t10","t05","t03"],"tutorialGoalTag":"mainline75_final_boss_validation","bossRef":"n075"}
+]
