@@ -71,13 +71,13 @@ export function buildS7BattleRunRequestFromInputSnapshot(
   }
 
   // 3. 投影：runtime / progress 原引用透传；runSeed 取快照显式值；
-  //    lineup 取每个单位的稳定 shipId + slotRef + coreId（coreId 仅透传，由组装器解析成效果积木；
-  //    适配器自身不把装配/培养字段转战斗属性）。
+  //    lineup 取每个单位的稳定 shipId + slotRef + pilotId + coreId（仅透传稳定 ID，由组装器解析成效果积木；
+  //    适配器自身不把装配/培养字段转战斗属性）。插件因带品质属「拥有实例」模型、透传留块6/4d。
   const request: S7BattleRunRequest = {
     runtime,
     progress,
     runSeed: snapshot.runSeed,
-    lineup: snapshot.units.map(({ shipId, slotRef, coreId }) => ({ shipId, slotRef, coreId })),
+    lineup: snapshot.units.map(({ shipId, slotRef, pilotId, coreId }) => ({ shipId, slotRef, pilotId, coreId })),
   };
   return { ok: true, request };
 }

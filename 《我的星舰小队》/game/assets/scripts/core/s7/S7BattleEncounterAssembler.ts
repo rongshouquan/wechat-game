@@ -17,6 +17,7 @@ import {
   S7BattleUnitStatParam,
   S7ShipConfig,
   S7PluginConfig,
+  S7PilotConfig,
 } from '../../config/s7/ConfigTypesS7';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7MainlineProgressState } from './S7MainlineProgress';
@@ -25,6 +26,7 @@ import { S7AutoBattleRunRequest, S7AutoBattlePlayerUnitInput } from './S7AutoBat
 import { S7EffectBlock } from './S7BattleEffectBlock';
 import { coreBlocks } from './S7CoreEffects';
 import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES } from './S7PluginEffects';
+import { pilotBlocks } from './S7PilotEffects';
 
 const MAX_LINEUP = 5;
 /** 每艘星舰固定 3 槽（武器/技能(CD)/战术），不能堆同类、同名不重复（v1.0 §5.3）。 */
@@ -43,6 +45,8 @@ export interface S7BattleLineupPluginInput {
 export interface S7BattleLineupUnitInput {
   shipId: string;
   slotRef: string;
+  /** 驾驶员（块5）：组装时解析成行为AI+驾驶天赋积木喂装配层；缺省 = 无驾驶员。 */
+  pilotId?: string;
   /** 装备的星核（块3）：组装时解析成效果积木喂装配层；缺省 = 无核。 */
   coreId?: string;
   /** 装备的插件（块4a，≤3，槽位不能重复）：组装时按品质解析成效果积木喂装配层；缺省 = 无插件。
@@ -91,6 +95,7 @@ export type S7BattleEncounterAssemblerErrorCode =
   | 'unknown_ship'
   | 'missing_ship_battle_unit'
   | 'ambiguous_ship_battle_unit'
+  | 'unknown_pilot'
   | 'too_many_plugins'
   | 'unknown_plugin'
   | 'duplicate_plugin'
@@ -220,6 +225,7 @@ export class S7BattleEncounterAssembler {
     const ships = this.runtime.getAll<S7ShipConfig>('ship_config');
     const units = this.runtime.getAll<S7BattleUnitStatParam>('battle_unit_stat_param');
     const pluginConfigs = this.runtime.getAll<S7PluginConfig>('plugin_config');
+    const pilotConfigs = this.runtime.getAll<S7PilotConfig>('pilot_config');
     const seenSlots = new Set<string>();
     const playerUnits: S7AutoBattlePlayerUnitInput[] = [];
 
@@ -247,10 +253,15 @@ export class S7BattleEncounterAssembler {
         throw new S7BattleEncounterAssemblerError('ambiguous_ship_battle_unit', `星舰 ${shipId} 在 battle_unit_stat_param 命中多行战斗属性`);
       }
 
-      // 块3 星核 + 块4a 插件：装备件各自解析成效果积木，合并喂装配层。
-      // 顺序：先星核质变、后插件数值微调（deriveUnit 对修正/词条的合并与顺序无关，此序仅表语义）。
+      // 校验驾驶员归属（给了 pilotId 必须存在于 pilot_config）。
+      if (item.pilotId !== undefined && !pilotConfigs.some((p) => p.pilotId === item.pilotId)) {
+        throw new S7BattleEncounterAssemblerError('unknown_pilot', `未知驾驶员 "${String(item.pilotId)}"（不存在于 pilot_config）`);
+      }
+      // 块3 星核 + 块5 驾驶员 + 块4a 插件：装备件各自解析成效果积木，合并喂装配层。
+      // 顺序：星核质变 → 驾驶员行为/天赋 → 插件数值微调（deriveUnit 合并与顺序无关，此序仅表语义）。
       const blocks: S7EffectBlock[] = [
         ...(item.coreId ? coreBlocks(item.coreId) : []),
+        ...(item.pilotId ? pilotBlocks(item.pilotId) : []),
         ...this.resolvePluginBlocks(item.plugins, pluginConfigs),
       ];
       playerUnits.push(

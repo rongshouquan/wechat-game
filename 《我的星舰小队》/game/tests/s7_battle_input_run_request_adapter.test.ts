@@ -75,7 +75,7 @@ describe('S7BattleInputRunRequestAdapter - 合法投影', () => {
     expect(res.request.lineup as unknown).not.toBe(snapshot.units);
   });
 
-  it('coreId 透传进 lineup（块3 装备路径）；驾驶员/插件/等级/强化仍只经校验、不进 lineup', async () => {
+  it('coreId + pilotId 透传进 lineup（块3/块5 装备路径）；插件/等级/强化仍只经校验、不进 lineup', async () => {
     const runtime = await runtimeOf(loadBundle());
     const pilotId = (runtime.getAll('pilot_config')[0] as { pilotId: string }).pilotId;
     const coreId = (runtime.getAll('core_config')[0] as { coreId: string }).coreId;
@@ -101,8 +101,8 @@ describe('S7BattleInputRunRequestAdapter - 合法投影', () => {
     const res = buildS7BattleRunRequestFromInputSnapshot({ runtime, progress: progressAt('n001'), snapshot });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
-    expect(res.request.lineup).toEqual([{ shipId: 'shp01', slotRef: 'p0c2', coreId }]); // 块3：coreId 透传
-    expect(Object.keys(res.request.lineup[0]).sort()).toEqual(['coreId', 'shipId', 'slotRef']); // 仅此三项；pilot/plugin/等级/强化不进
+    expect(res.request.lineup).toEqual([{ shipId: 'shp01', slotRef: 'p0c2', pilotId, coreId }]); // 块3 coreId + 块5 pilotId 透传
+    expect(Object.keys(res.request.lineup[0]).sort()).toEqual(['coreId', 'pilotId', 'shipId', 'slotRef']); // 仅此四项；plugin/等级/强化不进
   });
 
   it('返回的 request 可经 S7BattleRunService 跑通 n001，battleSeed = n001:<runSeed>', async () => {
