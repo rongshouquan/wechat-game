@@ -58,6 +58,22 @@ function codeOf(fn: () => unknown): string {
   return 'no_throw';
 }
 
+describe('S7BattleEncounterAssembler - 装备星核解析为效果积木 (块3b)', () => {
+  it('lineup 带 coreId=core07(过载核心) → 该单位 playerUnits 携带原子炮+间隔set积木', async () => {
+    const asm = await assemblerOf(loadBundle());
+    const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'core', lineup: [{ shipId: 'shp01', slotRef: 'p0c2', coreId: 'core07' }] });
+    const blocks = out.request.playerUnits[0].effectBlocks ?? [];
+    expect(blocks.some((b) => b.kind === 'action' && b.effectRef === 'eff_atomic_cannon')).toBe(true); // 普攻槽换原子炮
+    expect(blocks.some((b) => b.kind === 'modifier' && b.stat === 'attackIntervalSec' && b.op === 'set')).toBe(true); // 间隔 set 10s
+  });
+
+  it('不带 coreId → 该单位无 effectBlocks（对照，防假过）', async () => {
+    const asm = await assemblerOf(loadBundle());
+    const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'core', lineup: [{ shipId: 'shp01', slotRef: 'p0c2' }] });
+    expect(out.request.playerUnits[0].effectBlocks).toBeUndefined();
+  });
+});
+
 describe('S7BattleEncounterAssembler - n001/n018/n075 组装 (#1,#3,#4)', () => {
   it('n001 + [shp01,shp02,shp03] 组装出 enc_n001 (#1)', async () => {
     const asm = await assemblerOf(loadBundle());

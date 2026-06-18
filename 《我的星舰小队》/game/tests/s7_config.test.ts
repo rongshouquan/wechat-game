@@ -47,7 +47,7 @@ describe('s7 tier a config', () => {
     expect(b.battle_template_config).toHaveLength(10);
     expect(b.ship_config).toHaveLength(12);
     expect(b.pilot_config).toHaveLength(10);
-    expect(b.core_config).toHaveLength(6);
+    expect(b.core_config).toHaveLength(7);
     expect(b.plugin_config).toHaveLength(18);
   });
 

@@ -7,7 +7,7 @@ import { S7EffectBlock } from './S7BattleEffectBlock';
 /** 新手核「过载核心」(v1.0 §5.4/§11)：首个 Boss 首杀固定掉落、人人相同（非三选一）。
  *  质变：本舰普攻变「原子炮」——开局即放、约半个敌方战场 AoE 巨量伤害、普攻间隔变 10s。
  *  前期超爽（开局一炮秒一片）、中期够用、后期过渡，非毕业核。 */
-export const S7_CORE_OVERLOAD_ID = 'core_overload';
+export const S7_CORE_OVERLOAD_ID = 'core07';
 
 /** 各星核的运行时质变积木表（coreId → 积木）。未列出的核暂无运行时质变（返回空）。 */
 const CORE_BLOCKS: Record<string, S7EffectBlock[]> = {

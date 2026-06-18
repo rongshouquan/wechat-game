@@ -21,6 +21,7 @@ import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BattleEntry, S7BattleContext } from './S7BattleEntry';
 import { S7AutoBattleRunRequest, S7AutoBattlePlayerUnitInput } from './S7AutoBattleTypes';
+import { coreBlocks } from './S7CoreEffects';
 
 const MAX_LINEUP = 5;
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
@@ -31,6 +32,8 @@ const REQUIRED_SEED_POLICY = 'node_id_plus_run_seed';
 export interface S7BattleLineupUnitInput {
   shipId: string;
   slotRef: string;
+  /** 装备的星核（块3）：组装时解析成效果积木喂装配层；缺省 = 无核。后续驾驶员/插件同理扩展。 */
+  coreId?: string;
 }
 
 /** 组装请求：只读节点进度 + 运行种子 + 玩家阵容（稳定 shipId）。 */
@@ -224,7 +227,13 @@ export class S7BattleEncounterAssembler {
         throw new S7BattleEncounterAssemblerError('ambiguous_ship_battle_unit', `星舰 ${shipId} 在 battle_unit_stat_param 命中多行战斗属性`);
       }
 
-      playerUnits.push({ unitStatRef: matched[0].rowId, slotRef });
+      // 块3：装备的星核解析成效果积木喂装配层（驾驶员/插件后续同理）。无核或无质变 → 不带 effectBlocks。
+      const blocks = item.coreId ? coreBlocks(item.coreId) : [];
+      playerUnits.push(
+        blocks.length > 0
+          ? { unitStatRef: matched[0].rowId, slotRef, effectBlocks: blocks }
+          : { unitStatRef: matched[0].rowId, slotRef },
+      );
     }
 
     return playerUnits;

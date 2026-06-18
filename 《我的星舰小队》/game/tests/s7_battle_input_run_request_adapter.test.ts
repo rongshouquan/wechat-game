@@ -1,6 +1,6 @@
 // BATTLE-RT-07E-2-1: S7BattleInputRunRequestAdapter 测试。
-// 覆盖：合法快照 + 节点一致 -> ok:true；runtime/progress 原引用；runSeed 透传；lineup 新数组只含 {shipId,slotRef}；
-// 驾驶员/插件/星核/等级/强化不进入 request；返回 request 可经 S7BattleRunService 跑通 n001（battleSeed=n001:<runSeed>）；
+// 覆盖：合法快照 + 节点一致 -> ok:true；runtime/progress 原引用；runSeed 透传；lineup 新数组含 {shipId,slotRef,coreId}（块3 透传 coreId）；
+// 驾驶员/插件/等级/强化不进入 request；返回 request 可经 S7BattleRunService 跑通 n001（battleSeed=n001:<runSeed>）；
 // 非法快照 -> invalid_snapshot（保留 validation，不抛错）；节点不一致 -> node_progress_mismatch；
 // adapter 不修改 snapshot/progress；shp04（无 battle_unit_stat_param）可生成 request、由既有 assembler 抛 missing_ship_battle_unit；
 // 源码静态隔离与未来在线化不堵死。真实链路用样例配置加载 runtime；不改磁盘样例表。
@@ -75,7 +75,7 @@ describe('S7BattleInputRunRequestAdapter - 合法投影', () => {
     expect(res.request.lineup as unknown).not.toBe(snapshot.units);
   });
 
-  it('驾驶员/插件/星核/等级/强化只经校验，不进入 request.lineup', async () => {
+  it('coreId 透传进 lineup（块3 装备路径）；驾驶员/插件/等级/强化仍只经校验、不进 lineup', async () => {
     const runtime = await runtimeOf(loadBundle());
     const pilotId = (runtime.getAll('pilot_config')[0] as { pilotId: string }).pilotId;
     const coreId = (runtime.getAll('core_config')[0] as { coreId: string }).coreId;
@@ -102,8 +102,8 @@ describe('S7BattleInputRunRequestAdapter - 合法投影', () => {
     const res = buildS7BattleRunRequestFromInputSnapshot({ runtime, progress: progressAt('n001'), snapshot });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
-    expect(res.request.lineup).toEqual([{ shipId: 'shp01', slotRef: 'p0c2' }]);
-    expect(Object.keys(res.request.lineup[0]).sort()).toEqual(['shipId', 'slotRef']);
+    expect(res.request.lineup).toEqual([{ shipId: 'shp01', slotRef: 'p0c2', coreId }]); // 块3：coreId 透传
+    expect(Object.keys(res.request.lineup[0]).sort()).toEqual(['coreId', 'shipId', 'slotRef']); // 仅此三项；pilot/plugin/等级/强化不进
   });
 
   it('返回的 request 可经 S7BattleRunService 跑通 n001，battleSeed = n001:<runSeed>', async () => {

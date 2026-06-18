@@ -27,7 +27,7 @@ const TIER_A = {
   battle_template_config: { idField: 'templateId', count: 10, ids: seq('t', 1, 10) },
   ship_config: { idField: 'shipId', count: 12, ids: seq('shp', 1, 12) },
   pilot_config: { idField: 'pilotId', count: 10, ids: seq('pil', 1, 10) },
-  core_config: { idField: 'coreId', count: 6, ids: seq('core', 1, 6) },
+  core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
   plugin_config: { idField: 'pluginId', count: 18, ids: seq('plg', 1, 18) },
 };
 const TIER_B = ['source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param', 'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param', 'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check'];

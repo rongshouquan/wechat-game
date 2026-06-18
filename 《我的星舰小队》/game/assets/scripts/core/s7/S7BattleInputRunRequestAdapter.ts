@@ -13,8 +13,8 @@
 // - adapter 不 new S7BattleRunService、不调用 run()、不跑 S7AutoBattleEngine。
 // - 不接 UI / 战报 / 胜负弹窗，不结算 / 不发奖励 / 不应用 rewardAnchorRef，不推进主线 / 不调 completeS7Node，
 //   不读写存档 / 玩家态 / 编队，不接服务器 / 微信云 / 联网 / 账号 / 设备标识 / 排行榜 / 好友 / 公会 / 支付 / 充值。
-// - 不把驾驶员 / 插件 / 星核 / 等级 / 强化转成战斗属性：这些字段只在快照校验阶段被检查，
-//   不进入 lineup（运行壳当前只消费稳定 shipId + slotRef）。
+// - 适配器自身不把驾驶员 / 插件 / 星核 / 等级 / 强化"转成战斗属性"；其中 coreId 作为稳定 ID
+//   透传进 lineup，由组装器(S7BattleEncounterAssembler)解析成效果积木（块3）。其余装配/培养字段暂不透传。
 // - 不生成生产 runSeed：runSeed 直接取调用方快照里的显式值，不使用时间 / 随机 / 账号 / 设备。
 // - 未来在线化不堵死：稳定 ID、显式 seed、可复现、可在 Node/Vitest 本地测试。
 
@@ -71,12 +71,13 @@ export function buildS7BattleRunRequestFromInputSnapshot(
   }
 
   // 3. 投影：runtime / progress 原引用透传；runSeed 取快照显式值；
-  //    lineup 仅取每个单位的稳定 shipId + slotRef（其余装配 / 培养字段不转战斗属性）。
+  //    lineup 取每个单位的稳定 shipId + slotRef + coreId（coreId 仅透传，由组装器解析成效果积木；
+  //    适配器自身不把装配/培养字段转战斗属性）。
   const request: S7BattleRunRequest = {
     runtime,
     progress,
     runSeed: snapshot.runSeed,
-    lineup: snapshot.units.map(({ shipId, slotRef }) => ({ shipId, slotRef })),
+    lineup: snapshot.units.map(({ shipId, slotRef, coreId }) => ({ shipId, slotRef, coreId })),
   };
   return { ok: true, request };
 }

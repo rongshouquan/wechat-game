@@ -52,7 +52,7 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     expect(rt.getAll('battle_template_config')).toHaveLength(10);
     expect(rt.getAll('ship_config')).toHaveLength(12);
     expect(rt.getAll('pilot_config')).toHaveLength(10);
-    expect(rt.getAll('core_config')).toHaveLength(6);
+    expect(rt.getAll('core_config')).toHaveLength(7); // 块3b 注册过载核心 core07
     expect(rt.getAll('plugin_config')).toHaveLength(18);
     expect(rt.getAll('mainline_node_config')).toHaveLength(75);
   });

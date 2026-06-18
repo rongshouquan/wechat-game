@@ -167,7 +167,7 @@ export const S7_EXPECTED_COUNT: Record<TierATable, number> = {
   battle_template_config: 10,
   ship_config: 12,
   pilot_config: 10,
-  core_config: 6,
+  core_config: 7,
   plugin_config: 18,
 };
 
@@ -175,7 +175,7 @@ export const S7_DEFAULT_IDS: Record<TierATable, string[]> = {
   battle_template_config: seq('t', 1, 10),
   ship_config: seq('shp', 1, 12),
   pilot_config: seq('pil', 1, 10),
-  core_config: seq('core', 1, 6),
+  core_config: seq('core', 1, 7),
   plugin_config: seq('plg', 1, 18),
 };
 
