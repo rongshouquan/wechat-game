@@ -59,6 +59,17 @@ describe('s7 mainline model - topology', () => {
     expect(m.nodeView('n999')).toBeUndefined();
   });
 
+  it('clearedStarfieldTier：按各星域最后节点是否通关算最高通关星域（离线星域系数用）', () => {
+    const m = buildModelFromFs();
+    // 星域最后节点：sf01→n018 / sf02→n037 / sf03→n056 / sf04→n075
+    expect(m.clearedStarfieldTier([])).toBe(0); // 未通关任何星域
+    expect(m.clearedStarfieldTier(['n001', 'n017'])).toBe(0); // sf01 最后节点 n018 未过
+    expect(m.clearedStarfieldTier(['n001', 'n018'])).toBe(1); // sf01 通关
+    expect(m.clearedStarfieldTier(['n018', 'n037'])).toBe(2); // sf02 通关
+    expect(m.clearedStarfieldTier(['n018', 'n037', 'n056'])).toBe(3);
+    expect(m.clearedStarfieldTier(['n018', 'n037', 'n056', 'n075'])).toBe(4); // 全通关
+  });
+
   it('70-fallback projection drops exactly the 5 cut_70 nodes, keeps merge_70 nodes', () => {
     const m = buildModelFromFs();
     expect([...m.cut70NodeIds].sort()).toEqual([...CUT_70].sort());

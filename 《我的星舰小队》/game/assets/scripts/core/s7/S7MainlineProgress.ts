@@ -225,6 +225,27 @@ export class S7MainlineModel {
   }
 
   /**
+   * 已通关最高星域档（1-based）：某星域的"最后一个节点"（该 starfieldId 下 order 最大者）在 clearedNodeIds 内
+   * 即视为该星域已通关；返回最高通关星域号（sf0N → N），一个都没通关返回 0。
+   * 用于离线产出"星域系数"（v1.0 §7：产出速率随已通关最高星域永久抬升基线）。与建筑无关，读主线进度。
+   */
+  clearedStarfieldTier(clearedNodeIds: string[]): number {
+    const cleared = new Set(clearedNodeIds);
+    const lastNodeBySf = new Map<string, { order: number; nodeId: string }>();
+    for (const view of this.nodeViews.values()) {
+      const cur = lastNodeBySf.get(view.starfieldId);
+      if (!cur || view.order > cur.order) lastNodeBySf.set(view.starfieldId, { order: view.order, nodeId: view.nodeId });
+    }
+    let tier = 0;
+    for (const [sfId, last] of lastNodeBySf) {
+      if (!cleared.has(last.nodeId)) continue;
+      const n = parseInt(sfId.replace(/\D/g, ''), 10);
+      if (Number.isFinite(n) && n > tier) tier = n;
+    }
+    return tier;
+  }
+
+  /**
    * 节点保护期状态视图：以节点自身 protectionPeriodTag 为基底，
    * 若 protection_reset_config 含该节点（n038/n039）则合入 freeReset/resetScope/irreversibleWarning，
    * 否则三项取保守默认（false/[]/false）。未知节点返回 undefined。
