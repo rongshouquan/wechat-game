@@ -46,7 +46,7 @@ import {
 } from './S7BattleGrid';
 // 效果装配层：玩家单位四层积木 → 最终战斗属性（块1）。
 import { deriveUnit, S7DeriveBaseStat, S7DerivedUnit } from './S7BattleStatDerivation';
-import { S7TriggerBlock } from './S7BattleEffectBlock';
+import { S7TriggerBlock, S7AffixKey } from './S7BattleEffectBlock';
 
 // ===== 首版行为常量（RT-04 首版口径，非最终平衡；报告中已列明）=====
 const TICK_SEC = 0.2;
@@ -76,6 +76,12 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
 ];
 const FRIENDLY_TAGS = new Set<string>(['self_team', 'lowest_hp_ally']);
+
+/** 无装配单位（敌人/召唤物/基线舰）的默认定向词条：全 0（冻结共享，战斗中只读不改）。 */
+const ZERO_AFFIXES: Readonly<Record<S7AffixKey, number>> = Object.freeze({
+  critRate: 0, critDmg: 0, shieldBreak: 0, skillHaste: 0,
+  healPower: 0, controlResist: 0, dmgVsSwarm: 0, dmgVsBoss: 0,
+});
 
 interface RtStateInst {
   tag: S7BattleStateTag;
@@ -123,6 +129,8 @@ interface RtUnit {
   killedSinceTrigger: boolean;
   shield: number;
   states: Map<S7BattleStateTag, RtStateInst>;
+  /** 定向词条（插件等装配产出；块4b 引擎按需消费）。无装配单位为全 0（ZERO_AFFIXES）。 */
+  affixes: Readonly<Record<S7AffixKey, number>>;
 }
 
 interface SummonBudget {
@@ -549,6 +557,8 @@ class BattleRun {
     if (!target.alive) return;
     let raw = this.effAttack(caster) * effect.effectPower * 100 / (100 + target.armor);
     if (target.states.has('vulnerable')) raw *= VULNERABLE_MULT;
+    // 块4b-1：定向加伤词条（施法者插件提供）。对 Boss 用 dmgVsBoss，对其余（小怪/非 Boss 目标）用 dmgVsSwarm。
+    raw *= 1 + (target.isBoss ? caster.affixes.dmgVsBoss : caster.affixes.dmgVsSwarm);
     const dmg = Math.max(1, Math.round(raw));
 
     let hpDmg = dmg;
@@ -613,7 +623,8 @@ class BattleRun {
 
   private heal(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
     if (!target.alive) return;
-    const amount = Math.round(caster.attack * effect.effectPower);
+    // 块4b-1：治疗强度词条（施法者插件提供）放大治疗量。
+    const amount = Math.round(caster.attack * effect.effectPower * (1 + caster.affixes.healPower));
     const before = target.hp;
     target.hp = Math.min(target.maxHp, target.hp + amount);
     const healed = target.hp - before;
@@ -816,6 +827,7 @@ class BattleRun {
       killedSinceTrigger: false,
       shield: 0,
       states: new Map(),
+      affixes: derived ? derived.affixes : ZERO_AFFIXES,
     };
     this.occupy(unit);
     this.units.push(unit);
