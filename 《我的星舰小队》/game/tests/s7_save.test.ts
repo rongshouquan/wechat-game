@@ -40,10 +40,11 @@ describe('s7 save - resource skeleton', () => {
     ]);
   });
 
-  it('default save data uses S7 version 2 and a fresh 12-resource player state + default mainline progress', () => {
+  it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(2);
+    expect(data.saveVersion).toBe(3);
+    expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1 }); // 6d-1：默认空库存
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -64,7 +65,7 @@ describe('s7 save - independent storage domain', () => {
     expect(r.isNew).toBe(true);
     expect(r.corrupted).toBe(false);
     expect(r.migrated).toBe(false);
-    expect(r.data.saveVersion).toBe(2);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
@@ -100,7 +101,7 @@ describe('s7 save - corruption / structure fallback', () => {
     const r = loadS7Save(adapter, NOW);
     expect(r.corrupted).toBe(true);
     expect(r.isNew).toBe(false);
-    expect(r.data.saveVersion).toBe(2);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
@@ -144,12 +145,12 @@ describe('s7 save - corruption / structure fallback', () => {
     const r = loadS7Save(adapter, NOW);
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
-    expect(r.data.saveVersion).toBe(2);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     expect(r.data.playerState.resources.starOre).toBe(7);
     expect(Object.keys(r.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
   });
 
-  it('迁移 v1 旧档到 v2：保留有效资源、丢弃已废弃币(battleLog/pluginMat/coreMat)、补默认主线进度', () => {
+  it('迁移 v1 旧档到当前版本：保留有效资源、丢弃已废弃币(battleLog/pluginMat/coreMat)、补默认主线进度+空插件库存', () => {
     const adapter = new MemoryStorageAdapter();
     // v1 旧档形状：仅 resources（含现已废弃的 battleLog/pluginMat/coreMat），无 mainlineProgress。
     const v1Resources: Record<string, number> = {
@@ -163,7 +164,7 @@ describe('s7 save - corruption / structure fallback', () => {
     const r = loadS7Save(adapter, NOW + 5);
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
-    expect(r.data.saveVersion).toBe(2);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     // 现有效资源逐一保留
     for (const k of S7_RESOURCE_KEYS) expect(r.data.playerState.resources[k]).toBe(v1Resources[k]);
     // 已废弃币被规范化丢弃（不再在键集内）
@@ -222,7 +223,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('keeps S7 version counter independent from 流程版 CURRENT_SAVE_VERSION', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(2);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(3);
     // 流程版当前为 7；两者各自独立计数，本断言锁定"S7 不复用流程版版本号"。
     expect(S7_CURRENT_SAVE_VERSION).not.toBe(CURRENT_SAVE_VERSION);
   });

@@ -16,13 +16,19 @@ import {
   createDefaultS7MainlineProgress,
   normalizeS7MainlineProgress,
 } from '../core/s7/S7MainlineProgress';
+import {
+  S7PluginInventoryState,
+  createDefaultS7PluginInventory,
+  normalizeS7PluginInventory,
+} from '../core/s7/S7PluginInventory';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
  * v1（CC-07B）：资源骨架。
  * v2（CC-07C）：playerState 增加 mainlineProgress；v1 旧 S7 档加载时保留 资源、补默认主线进度。
+ * v3（6d-1）：playerState 增加 pluginInventory（插件实例库存）；旧档加载补默认空库存（加性迁移，无需重置）。
  */
-export const S7_CURRENT_SAVE_VERSION = 2;
+export const S7_CURRENT_SAVE_VERSION = 3;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -53,6 +59,8 @@ export type S7ResourceState = Record<S7ResourceKey, number>;
 export interface S7PlayerState {
   resources: S7ResourceState;
   mainlineProgress: S7MainlineProgressState;
+  /** 插件实例库存（6d-1）：形状由 core/s7/S7PluginInventory 拥有，本层组合。 */
+  pluginInventory: S7PluginInventoryState;
 }
 
 export interface S7SaveData {
@@ -75,6 +83,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
   return {
     resources: createDefaultS7ResourceState(),
     mainlineProgress: createDefaultS7MainlineProgress(),
+    pluginInventory: createDefaultS7PluginInventory(),
   };
 }
 
@@ -111,6 +120,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
   return {
     resources: normalizeS7ResourceState(src.resources),
     mainlineProgress: normalizeS7MainlineProgress(src.mainlineProgress),
+    pluginInventory: normalizeS7PluginInventory(src.pluginInventory),
   };
 }
 
