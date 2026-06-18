@@ -71,6 +71,8 @@ export interface S7AutoBattleLogEntry {
   effectRef?: string;
   effectType?: string;
   amount?: number;
+  /** 块4b-2：本次伤害是否暴击（暴击词条命中时 true；非伤害事件省略）。 */
+  crit?: boolean;
   hpAfter?: number;
   shieldAfter?: number;
   energyAfter?: number;

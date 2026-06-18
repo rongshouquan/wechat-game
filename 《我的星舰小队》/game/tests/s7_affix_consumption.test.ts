@@ -132,3 +132,131 @@ describe('块4b-1 治疗强度 healPower', () => {
     expect(boosted).toBe(Math.round(base * 1.5));
   });
 });
+
+// ===== 块4b-2：要新约定的 3 类（暴击 / 控制抗性 / 技能急速）+ 破盾值 =====
+
+describe('块4b-2 暴击 critRate/critDmg', () => {
+  async function dmgEntry(blocks: S7EffectBlock[] | null): Promise<{ amount: number; crit: boolean }> {
+    const r = (await engineOf(dmgBundle('enemy'))).run({
+      encounterRef: 'enc_n001', battleSeed: 'crit',
+      playerUnits: [blocks
+        ? { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2', effectBlocks: blocks }
+        : { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }],
+    });
+    const d = r.log.find((e) => e.type === 'damage' && e.actorId === 'player_p0c2');
+    if (!d) throw new Error('无伤害日志');
+    return { amount: d.amount as number, crit: d.crit === true };
+  }
+  const crit = (rate: number, dmg: number): S7EffectBlock[] =>
+    [{ kind: 'affix', affix: 'critRate', value: rate, source: 't' }, { kind: 'affix', affix: 'critDmg', value: dmg, source: 't' }];
+
+  it('critRate=1 必暴 + critDmg=1 → 首发=基线×2 且日志 crit=true；无暴击词条=基线、无 crit 标记', async () => {
+    const base = await dmgEntry(null);
+    const c = await dmgEntry(crit(1, 1));
+    expect(base.crit).toBe(false);          // 未装：不掷随机、不带 crit 字段
+    expect(c.crit).toBe(true);              // critRate=1 必暴
+    expect(c.amount).toBe(base.amount * 2); // critDmg=1 → ×2
+  });
+
+  it('防假过：critRate=0 但 critDmg 高 → 不触发(基线、无暴击标记)；critRate=1 但 critDmg=0 → 暴击但无加成(=基线)', async () => {
+    const base = await dmgEntry(null);
+    const noRoll = await dmgEntry(crit(0, 5)); // 概率0 → 短路不掷、不暴击
+    expect(noRoll.crit).toBe(false);
+    expect(noRoll.amount).toBe(base.amount);
+    const zeroDmg = await dmgEntry(crit(1, 0)); // 必暴但暴伤+0
+    expect(zeroDmg.crit).toBe(true);
+    expect(zeroDmg.amount).toBe(base.amount);
+  });
+});
+
+describe('块4b-2 破盾值 shieldBreak', () => {
+  // 带盾敌人 bu_enemy_shield：开局自带 eff_state_shield(self_team) → t0 给自己上盾(盾量=maxHp*0.2，很大)；玩家普攻啃盾。
+  function shieldBundle(): Bundle {
+    const b = clone(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
+      ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none', attackRangeCells: 7, maxHp: 1000000, armor: 500, attack: 1000,
+    });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 100000000, attack: 1, armor: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_shield', 'bu_enemy_swarm'], spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_shield', count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0, maxConcurrentOnField: 1 });
+    return b;
+  }
+  async function firstHit(blocks: S7EffectBlock[] | null): Promise<{ shieldAfter: number; hpDmg: number }> {
+    const r = (await engineOf(shieldBundle())).run({
+      encounterRef: 'enc_n001', battleSeed: 'sb',
+      playerUnits: [blocks
+        ? { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2', effectBlocks: blocks }
+        : { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }],
+    });
+    const d = r.log.find((e) => e.type === 'damage' && e.actorId === 'player_p0c2');
+    if (!d) throw new Error('无伤害日志');
+    return { shieldAfter: d.shieldAfter as number, hpDmg: d.amount as number };
+  }
+  it('装 shieldBreak → 同一发啃掉更多护盾（shieldAfter 更低），未装=基线', async () => {
+    const base = await firstHit(null);
+    const broken = await firstHit(affix('shieldBreak', 0.5));
+    expect(base.hpDmg).toBe(0);   // 盾够大 → 首发全被盾吸收
+    expect(broken.hpDmg).toBe(0);
+    expect(broken.shieldAfter).toBeLessThan(base.shieldAfter); // 破盾系数高 → 盾掉更多
+  });
+});
+
+describe('块4b-2 控制抗性 controlResist', () => {
+  // 敌人开局眩晕玩家(ult 改 eff_state_stun, single_target, 2s, CD10)；玩家高血、攻1(双方都不死→跑到超时)。
+  function stunBundle(): Bundle {
+    const b = clone(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
+      maxHp: 100000000, armor: 500, attack: 1, attackRangeCells: 7, ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none',
+    });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), {
+      maxHp: 100000000, attack: 1, armor: 1, ultimateEffectRef: 'eff_state_stun', ultimateCdSec: 10, coreEffectRef: 'none',
+    });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm'], spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_swarm', count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0, maxConcurrentOnField: 1 });
+    return b;
+  }
+  async function firstStunExpire(blocks: S7EffectBlock[] | null): Promise<number> {
+    const r = (await engineOf(stunBundle())).run({
+      encounterRef: 'enc_n001', battleSeed: 'cr',
+      playerUnits: [blocks
+        ? { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2', effectBlocks: blocks }
+        : { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }],
+    });
+    const e = r.log.find((x) => x.type === 'state_expire' && x.actorId === 'player_p0c2' && x.stateTag === 'stun');
+    if (!e) throw new Error('无玩家眩晕到期日志');
+    return e.timeSec;
+  }
+  it('装 controlResist=0.5 → 眩晕到期更早（时长减半），未装=基线', async () => {
+    const base = await firstStunExpire(null);
+    const resisted = await firstStunExpire(affix('controlResist', 0.5));
+    expect(resisted).toBeLessThan(base); // 抗性缩短控制时长 → 更早解除
+  });
+});
+
+describe('块4b-2 技能急速 skillHaste', () => {
+  // 玩家带 CD 大招(repair_burst 自奶,不伤敌不终战), CD10; 无普攻、高血→跑到超时，统计大招释放次数。
+  function ultBundle(): Bundle {
+    const b = clone(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
+      maxHp: 100000000, armor: 500, attack: 1, attackRangeCells: 7, normalEffectRef: 'none', ultimateEffectRef: 'eff_ult_repair_burst', ultimateCdSec: 10, coreEffectRef: 'none',
+    });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000000, attack: 1, armor: 1 });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm'], spawnPlanRefs: ['spawn_n001_w1'] });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_swarm', count: 1, slotRefs: ['r0c0'], spawnDelaySec: 0, maxConcurrentOnField: 1 });
+    return b;
+  }
+  async function ultCasts(blocks: S7EffectBlock[] | null): Promise<number> {
+    const r = (await engineOf(ultBundle())).run({
+      encounterRef: 'enc_n001', battleSeed: 'sh',
+      playerUnits: [blocks
+        ? { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2', effectBlocks: blocks }
+        : { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }],
+    });
+    return r.log.filter((e) => e.type === 'ultimate_cast' && e.actorId === 'player_p0c2').length;
+  }
+  it('装 skillHaste=1 → 大招 CD 减半、同场释放次数明显更多，未装=基线', async () => {
+    const base = await ultCasts(null);
+    const hasted = await ultCasts(affix('skillHaste', 1));
+    expect(hasted).toBeGreaterThan(base);
+  });
+});

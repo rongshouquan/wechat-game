@@ -443,7 +443,11 @@ class BattleRun {
   private fireTrigger(unit: RtUnit, t: RtTrigger): void {
     const effect = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', t.block.effectRef);
     // 先推进触发状态（即便 effectRef 为 none/缺失也推进，避免每 tick 重试）。
-    if (t.block.on === 'cd') t.nextFireAt = this.time + (t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity);
+    // 块4b-2：技能急速词条（本单位插件提供）缩短触发型技能 CD：effCd = cdSec/(1+skillHaste)。skillHaste=0 时不变（零回归）。
+    if (t.block.on === 'cd') {
+      const baseCd = t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity;
+      t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + unit.affixes.skillHaste));
+    }
     else if (t.block.on !== 'on_kill' && t.block.on !== 'on_hit') t.fired = true; // 一次性：battle_start/hp_below/ally_down
     // on_kill/on_hit 可重复触发：靠 stepTriggers 清事件标志重新武装，不 latch fired。
     if (!effect) return;
@@ -559,11 +563,16 @@ class BattleRun {
     if (target.states.has('vulnerable')) raw *= VULNERABLE_MULT;
     // 块4b-1：定向加伤词条（施法者插件提供）。对 Boss 用 dmgVsBoss，对其余（小怪/非 Boss 目标）用 dmgVsSwarm。
     raw *= 1 + (target.isBoss ? caster.affixes.dmgVsBoss : caster.affixes.dmgVsSwarm);
+    // 块4b-2：暴击词条。仅 critRate>0 才掷随机数（&& 短路）——保证无暴击单位不消费 RNG、不扰动既有并列裁决序列（零回归）。
+    //   命中暴击 → 伤害 ×(1+暴击伤害)。暴击倍率/概率为占位语义，精确值第二块。
+    const crit = caster.affixes.critRate > 0 && this.rng.next() < caster.affixes.critRate;
+    if (crit) raw *= 1 + caster.affixes.critDmg;
     const dmg = Math.max(1, Math.round(raw));
 
     let hpDmg = dmg;
     if (target.shield > 0) {
-      const shieldMult = target.states.has('shield_break') ? SHIELD_BREAK_MULT : 1.0;
+      // 块4b-2：破盾值词条（施法者插件提供）叠加到破盾系数 → 同一发对护盾啃得更多。
+      const shieldMult = (target.states.has('shield_break') ? SHIELD_BREAK_MULT : 1.0) + caster.affixes.shieldBreak;
       const shieldLoss = Math.round(dmg * shieldMult);
       if (shieldLoss <= target.shield) {
         target.shield -= shieldLoss;
@@ -587,6 +596,7 @@ class BattleRun {
       effectRef: effect.rowId,
       effectType: effect.effectType,
       amount: hpDmg,
+      ...(crit ? { crit: true } : {}), // 仅暴击时带字段：非暴击伤害日志保持原形状（零回归）
       hpAfter: target.hp,
       shieldAfter: target.shield,
     });
@@ -642,7 +652,12 @@ class BattleRun {
 
   private applyState(caster: RtUnit, target: RtUnit, tag: S7BattleStateTag, durationSec: number, effectRef: string): void {
     if (tag === 'none' || !target.alive) return;
-    const duration = durationSec > 0 ? durationSec : 1;
+    let duration = durationSec > 0 ? durationSec : 1;
+    // 块4b-2：控制抗性词条（受控方插件提供）只作用于硬控（CONTROL_TAGS）→ 缩短控制时长；抗性钳到 [0,1]。
+    if (CONTROL_TAGS.includes(tag)) {
+      const resist = Math.min(1, Math.max(0, target.affixes.controlResist));
+      duration *= 1 - resist;
+    }
     // 同名状态不叠层，只刷新持续时间。
     target.states.set(tag, { tag, expireAt: this.time + duration });
     this.pushLog('state_apply', {
