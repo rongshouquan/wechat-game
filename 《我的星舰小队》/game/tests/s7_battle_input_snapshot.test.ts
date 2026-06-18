@@ -54,7 +54,6 @@ function validSnapshot(over: Partial<S7BattleInputSnapshot> = {}): S7BattleInput
         shipLevel: 10,
         pilotLevel: 8,
         coreEnhance: 2,
-        pluginEnhanceById: { plg01: 3 },
       },
       { shipId: 'shp02', slotRef: 'p1c2' },
       { shipId: 'shp03', slotRef: 'p2c2' },
@@ -102,7 +101,6 @@ describe('S7BattleInputSnapshot - 合法快照', () => {
           pilotId,
           coreId,
           pluginIds: [pluginId],
-          pluginEnhanceById: { [pluginId]: 1 },
         },
       ],
     });
@@ -208,14 +206,7 @@ describe('S7BattleInputSnapshot - 等级 / 强化值', () => {
   it('coreEnhance 非数失败 (bad_enhance_value)', () => {
     expect(codes(validateS7BattleInputSnapshot(snapshotWithUnit0({ coreEnhance: 'x' as unknown as number })))).toContain('bad_enhance_value');
   });
-  it('pluginEnhanceById 负值失败 (bad_enhance_value)', () => {
-    expect(codes(validateS7BattleInputSnapshot(snapshotWithUnit0({ pluginIds: ['plg01'], pluginEnhanceById: { plg01: -2 } })))).toContain('bad_enhance_value');
-  });
-  it('pluginEnhanceById 键不在 pluginIds 内失败 (plugin_enhance_unknown_ref)', () => {
-    const snap = snapshotWithUnit0({ pluginIds: ['plg01'], pluginEnhanceById: { plg01: 1, plg02: 1 } });
-    // plg02 既不在 pluginIds 内、也不在 ownedPlugins 内：应同时含越界引用错误。
-    expect(codes(validateS7BattleInputSnapshot(snap))).toContain('plugin_enhance_unknown_ref');
-  });
+  // 注：原 pluginEnhanceById 校验测试已随插件强化制移除（v1.0 §5.3 插件不分等级）。
 });
 
 describe('S7BattleInputSnapshot - runtime 引用校验', () => {

@@ -120,13 +120,13 @@ describe('s7 tier b economy params', () => {
     for (const r of rows.filter((x) => x.scope === 'template_modifier')) expect(r.appliesToBoss).toBe(false);
   });
 
-  it('enforces level/enhance caps lv40 / core5 / plugin15', () => {
+  it('enforces level/enhance caps lv40 / core5（插件不分等级，无强化）', () => {
     const up = readSample<Array<{ targetType: string; maxLevel: number }>>('upgrade_cost_param');
     expect(Math.max(...up.filter((r) => r.targetType === 'ship').map((r) => r.maxLevel))).toBe(40);
     expect(Math.max(...up.filter((r) => r.targetType === 'pilot').map((r) => r.maxLevel))).toBe(40);
     const en = readSample<Array<{ targetType: string; maxEnhance: number }>>('enhance_cost_param');
     expect(Math.max(...en.filter((r) => r.targetType === 'core').map((r) => r.maxEnhance))).toBe(5);
-    expect(Math.max(...en.filter((r) => r.targetType === 'plugin').map((r) => r.maxEnhance))).toBe(15);
+    expect(en.some((r) => r.targetType === 'plugin')).toBe(false); // 插件已无强化行（v1.0 §5.3）
   });
 
   it('enforces merchant refresh rules and full-core non-recyclable', () => {

@@ -24,8 +24,7 @@ export interface S7BattleInputUnitSnapshot {
   shipLevel?: number;
   pilotLevel?: number;
   coreEnhance?: number;
-  /** 插件强化值，按 pluginId 索引；键必须落在本单位 pluginIds 内。 */
-  pluginEnhanceById?: Record<string, number>;
+  // 插件不分等级（v1.0 §5.3）：无 pluginEnhanceById；变强靠品质替换 / 合成。
 }
 
 /**
@@ -72,7 +71,6 @@ export type S7BattleInputSnapshotErrorCode =
   | 'plugin_not_owned'
   | 'bad_level_value'
   | 'bad_enhance_value'
-  | 'plugin_enhance_unknown_ref'
   | 'unknown_ship'
   | 'unknown_pilot'
   | 'unknown_core'
@@ -214,7 +212,6 @@ function validateUnit(
   }
 
   // pluginIds（可选）：每个插件必须属于 ownedPlugins；runtime 开启时必须存在于配置。
-  const pluginIdSet = new Set<string>();
   if (unit.pluginIds !== undefined) {
     if (!Array.isArray(unit.pluginIds)) {
       add('plugin_not_owned', at('pluginIds'), 'pluginIds 必须是字符串数组');
@@ -225,7 +222,6 @@ function validateUnit(
           add('plugin_not_owned', p, 'pluginId 必须是非空字符串');
           return;
         }
-        pluginIdSet.add(pid);
         if (!owned.plugin.has(pid)) add('plugin_not_owned', p, `插件 ${pid} 不在 ownedPlugins 内`);
         if (runtime && !runtime.has('plugin_config', pid)) add('unknown_plugin', p, `plugin_config 中无插件 ${pid}`);
       });
@@ -236,20 +232,7 @@ function validateUnit(
   validateOptionalNonNegInt(unit.shipLevel, at('shipLevel'), 'bad_level_value', add);
   validateOptionalNonNegInt(unit.pilotLevel, at('pilotLevel'), 'bad_level_value', add);
   validateOptionalNonNegInt(unit.coreEnhance, at('coreEnhance'), 'bad_enhance_value', add);
-
-  // pluginEnhanceById（可选）：值必须是非负整数，键必须落在本单位 pluginIds 内。
-  if (unit.pluginEnhanceById !== undefined) {
-    const map = unit.pluginEnhanceById;
-    if (typeof map !== 'object' || map === null || Array.isArray(map)) {
-      add('bad_enhance_value', at('pluginEnhanceById'), 'pluginEnhanceById 必须是 Record<string, number>');
-    } else {
-      for (const [pid, val] of Object.entries(map as Record<string, unknown>)) {
-        const p = `${at('pluginEnhanceById')}.${pid}`;
-        if (!isNonNegativeInteger(val)) add('bad_enhance_value', p, '插件强化值必须是非负整数');
-        if (!pluginIdSet.has(pid)) add('plugin_enhance_unknown_ref', p, `插件强化引用 ${pid} 不在本单位 pluginIds 内`);
-      }
-    }
-  }
+  // 插件不分等级（v1.0 §5.3）：不再校验 pluginEnhanceById（已从契约移除）。
 }
 
 /**

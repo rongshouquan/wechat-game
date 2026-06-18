@@ -47,11 +47,12 @@ const TIER_B_TABLES: S7ConfigTableName[] = [
 // 成长段位参数表（CC-07E-1）：rowId 主键，与 Tier B 参数表同族；逐表数值/口径由 validateGrowth 校验。
 const TIER_GROWTH_TABLES: S7ConfigTableName[] = ['growth_band_param'];
 
-const S7_GROWTH_TARGET_TYPES = ['ship', 'pilot', 'core', 'plugin'];
+// 插件不分等级（v1.0 §5.3）→ 无成长段/强化：成长 target 只剩 ship/pilot/core。
+const S7_GROWTH_TARGET_TYPES = ['ship', 'pilot', 'core'];
 const S7_GROWTH_CURVE_TYPES = ['band_linear', 'control_point'];
 const S7_GROWTH_SECONDARY_KINDS = ['stat', 'affix', 'effect', 'none'];
 const S7_GROWTH_EXPECTED_SECONDARY: Record<string, string> = {
-  ship: 'stat', plugin: 'affix', core: 'effect', pilot: 'none',
+  ship: 'stat', core: 'effect', pilot: 'none',
 };
 
 // 轻量实时自动战斗表（BATTLE-RT-03）：rowId 主键，与参数表同族通用校验；逐表契约由 validateBattle 校验。
@@ -596,17 +597,15 @@ function validateTierB(
   if (shipMaxLv !== 40) errors.push({ table: 'upgrade_cost_param', id: 'ship', message: `星舰等级上限必须为 40，实际 ${shipMaxLv}` });
   if (pilotMaxLv !== 40) errors.push({ table: 'upgrade_cost_param', id: 'pilot', message: `驾驶员等级上限必须为 40，实际 ${pilotMaxLv}` });
 
-  // enhance_cost_param：星核 5 阶 / 插件 +15
-  let coreMaxEnh = 0; let pluginMaxEnh = 0;
+  // enhance_cost_param：仅星核 5 阶强化（插件不分等级=无强化，v1.0 §5.3）。
+  let coreMaxEnh = 0;
   for (const row of rowsByTable.enhance_cost_param) {
     const id = String(row.rowId);
-    if (row.targetType !== 'core' && row.targetType !== 'plugin') errors.push({ table: 'enhance_cost_param', id, message: 'targetType 非法' });
+    if (row.targetType !== 'core') errors.push({ table: 'enhance_cost_param', id, message: 'targetType 非法（仅 core；插件不分等级）' });
     const e = num(row.maxEnhance) ?? 0;
     if (row.targetType === 'core') coreMaxEnh = Math.max(coreMaxEnh, e);
-    if (row.targetType === 'plugin') pluginMaxEnh = Math.max(pluginMaxEnh, e);
   }
   if (coreMaxEnh !== 5) errors.push({ table: 'enhance_cost_param', id: 'core', message: `星核强化上限必须为 5，实际 ${coreMaxEnh}` });
-  if (pluginMaxEnh !== 15) errors.push({ table: 'enhance_cost_param', id: 'plugin', message: `插件强化上限必须为 15，实际 ${pluginMaxEnh}` });
 
   // refund_param：不跨币种、min<=max
   for (const row of rowsByTable.refund_param) {
@@ -1112,15 +1111,15 @@ function checkGrowthBandCoverage(
 /**
  * 成长段位参数表校验（CC-07E-1）：
  * - 字段枚举 / 数值 / curveType 逻辑（band_linear 段端点；control_point 单点 min=max）。
- * - secondaryKind 与 targetType 一致（ship=stat / plugin=affix / core=effect / pilot=none）。
- * - 覆盖完整：ship/pilot band 连续覆盖 1-40、plugin 覆盖 1-15、core 控制点恰为 {0,2,3,5}。
+ * - secondaryKind 与 targetType 一致（ship=stat / core=effect / pilot=none；插件不分等级，无成长段）。
+ * - 覆盖完整：ship/pilot band 连续覆盖 1-40、core 控制点恰为 {0,2,3,5}。
  */
 function validateGrowth(
   errors: S7ValidationError[],
   rowsByTable: Record<string, Record<string, unknown>[]>,
 ): void {
   const rows = rowsByTable.growth_band_param ?? [];
-  const byTarget: Record<string, { from: number; to: number }[]> = { ship: [], pilot: [], plugin: [] };
+  const byTarget: Record<string, { from: number; to: number }[]> = { ship: [], pilot: [] };
   const coreStages: number[] = [];
 
   for (const row of rows) {
@@ -1157,7 +1156,7 @@ function validateGrowth(
       if (interp !== null && t !== null && interp >= t) errors.push({ table: 'growth_band_param', id, message: 'interpFromIndex 必须 < toIndex（插值分母非零）' });
       if (interp !== null && f !== null && interp > f) errors.push({ table: 'growth_band_param', id, message: 'interpFromIndex 不得 > fromIndex' });
       if (pmin !== null && pmax !== null && pmin > pmax) errors.push({ table: 'growth_band_param', id, message: 'powerMin<=powerMax 不成立' });
-      if ((tt === 'ship' || tt === 'pilot' || tt === 'plugin') && f !== null && t !== null) byTarget[tt].push({ from: f, to: t });
+      if ((tt === 'ship' || tt === 'pilot') && f !== null && t !== null) byTarget[tt].push({ from: f, to: t });
     } else if (ct === 'control_point') {
       if (f !== null && t !== null && f !== t) errors.push({ table: 'growth_band_param', id, message: 'control_point fromIndex 必须等于 toIndex' });
       if (interp !== null && f !== null && interp !== f) errors.push({ table: 'growth_band_param', id, message: 'control_point interpFromIndex 必须等于 fromIndex' });
@@ -1169,7 +1168,6 @@ function validateGrowth(
 
   checkGrowthBandCoverage(errors, byTarget.ship, 1, 40, 'ship');
   checkGrowthBandCoverage(errors, byTarget.pilot, 1, 40, 'pilot');
-  checkGrowthBandCoverage(errors, byTarget.plugin, 1, 15, 'plugin');
   const sortedStages = [...coreStages].sort((a, b) => a - b);
   if (JSON.stringify(sortedStages) !== JSON.stringify([0, 2, 3, 5])) {
     errors.push({ table: 'growth_band_param', id: 'core', message: 'core 控制点 stage 必须为 {0,2,3,5}' });

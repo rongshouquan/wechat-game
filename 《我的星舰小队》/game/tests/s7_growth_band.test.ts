@@ -64,7 +64,7 @@ function bandLevel(b: S7GrowthBandParam, level: number): number {
 describe('s7 growth_band_param - landing & validation', () => {
   it('loads through the S7 config runtime layer', async () => {
     const rt = await S7ConfigRuntime.load(fsReader);
-    expect(rt.getAll('growth_band_param').length).toBe(16);
+    expect(rt.getAll('growth_band_param').length).toBe(12); // 4 ship + 4 pilot + 4 core（插件不分等级，无成长段）
     expect(rt.getById('growth_band_param', 'ship_growth_lv_1_10')).toBeDefined();
   });
 
@@ -72,7 +72,7 @@ describe('s7 growth_band_param - landing & validation', () => {
     expect(validateS7ConfigBundle(loadBundle())).toEqual([]);
   });
 
-  it('covers ship/pilot Lv1-40, plugin +1-15, core stages {0,2,3,5}', () => {
+  it('covers ship/pilot Lv1-40, core stages {0,2,3,5}（插件不分等级，无成长段）', () => {
     const all = rows();
     const cover = (tt: string) =>
       all.filter((r) => r.targetType === tt && r.curveType === 'band_linear').sort((a, b2) => a.fromIndex - b2.fromIndex);
@@ -82,9 +82,7 @@ describe('s7 growth_band_param - landing & validation', () => {
     const pilot = cover('pilot');
     expect(pilot[0].fromIndex).toBe(1);
     expect(pilot[pilot.length - 1].toIndex).toBe(40);
-    const plugin = cover('plugin');
-    expect(plugin[0].fromIndex).toBe(1);
-    expect(plugin[plugin.length - 1].toIndex).toBe(15);
+    expect(all.some((r) => r.targetType === 'plugin')).toBe(false); // 插件已无成长段（v1.0 §5.3）
     const coreStages = all.filter((r) => r.targetType === 'core').map((r) => r.fromIndex).sort((a, b2) => a - b2);
     expect(coreStages).toEqual([0, 2, 3, 5]);
   });
@@ -102,15 +100,7 @@ describe('s7 growth_band_param - frozen §3.2-3.5 endpoints & derivation parity'
     expect(bandLevel(band('pilot', 'pilot_lv_31_40'), 40)).toBe(1100);
   });
 
-  it('plugin +0-3 keeps interp domain 0..3 outputting +1=106.67 (CC-06A parity)', () => {
-    const b = band('plugin', 'plugin_enhance_0_3');
-    expect(b.interpFromIndex).toBe(0);
-    expect(b.fromIndex).toBe(1);
-    expect(b.toIndex).toBe(3);
-    expect(bandLevel(b, 1)).toBe(106.67);
-    expect(bandLevel(b, 3)).toBe(160);
-    expect(bandLevel(band('plugin', 'plugin_enhance_11_15'), 15)).toBe(750);
-  });
+  // 注：原「plugin +0-3 / +11-15 派生」测试已随插件强化制移除（v1.0 §5.3 插件不分等级）。
 
   it('core control points piecewise-lerp stage1=750 / stage4=1550 (CC-06A parity)', () => {
     const corePower = rows()
