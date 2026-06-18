@@ -92,7 +92,6 @@ export interface S7AutoBattleUnitFinalState {
   hp: number;
   maxHp: number;
   shield: number;
-  energy: number;
   alive: boolean;
 }
 

@@ -122,7 +122,10 @@ describe('S7AutoBattleEngine - 同/异 seed (#2,#3)', () => {
 describe('S7AutoBattleEngine - 站位影响寻敌 (#4)', () => {
   it('前排 vs 后排同一星舰首次出手时机不同', async () => {
     // 近战 vanguard(range1)：p0c2(行0)可即时打到 w1 行0 敌人；p1c2(行1)够不到行0，须等 w2 行1(5s 后)。
-    const engine = await engineOf(loadBundle());
+    // 块2：去掉 vanguard 大招（否则开局即放 clear_barrage 会先清掉小怪、令普攻无目标），以隔离“按站位的普攻时机”。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { ultimateEffectRef: 'none', ultimateCdSec: 0 });
+    const engine = await engineOf(b);
     const front = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }] });
     const back = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' }] });
     const frontFirst = firstAttack(front.log, 'player_p0c2');
@@ -134,9 +137,9 @@ describe('S7AutoBattleEngine - 站位影响寻敌 (#4)', () => {
   });
 });
 
-describe('S7AutoBattleEngine - 能量与大招 (#5,#6)', () => {
-  it('被动能量把单位推到 100 后立刻放大招（无普攻、纯被动驱动）(#5)', async () => {
-    // guardian 放后排(p0c0)够不到 r0c6 远敌→不普攻；passive 拉满→自身护盾大招。
+describe('S7AutoBattleEngine - 技能触发 (#5,#6)', () => {
+  it('够不到敌人(无普攻)的单位仍按 CD 触发释放技能 (#5)', async () => {
+    // guardian 放后排(p0c0)够不到 r0c6 远敌→不普攻；其大招按 CD 触发(开局即放)→自身护盾技能。
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { passiveEnergyPerSec: 100 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1, attackRangeCells: 1 });
@@ -146,11 +149,10 @@ describe('S7AutoBattleEngine - 能量与大招 (#5,#6)', () => {
     const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pass', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
     expect(firstAttack(r.log, 'player_p0c0')).toBeUndefined(); // 全程够不到，无普攻
     const ults = ofType(r.log, 'ultimate_cast').filter((e) => e.actorId === 'player_p0c0');
-    expect(ults.length).toBeGreaterThan(0);
-    expect(typeSet(r.log).has('energy_change')).toBe(true);
+    expect(ults.length).toBeGreaterThan(0); // 无普攻也能靠 CD 触发放技能
   });
 
-  it('普攻后能量达到 100 立刻放大招（纯普攻供能，无被动）(#6)', async () => {
+  it('技能(CD触发)可与普攻在同一 tick 发生 (#6)', async () => {
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, passiveEnergyPerSec: 0, attackRangeCells: 7 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1 });
@@ -160,7 +162,7 @@ describe('S7AutoBattleEngine - 能量与大招 (#5,#6)', () => {
     const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'atk', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
     const ult = ofType(r.log, 'ultimate_cast').find((e) => e.actorId === 'player_p0c2');
     expect(ult).toBeDefined();
-    // 大招所在 tick 必有该单位的普攻（普攻后供能触发）。
+    // CD 触发的大招与普攻可在同一 tick 发生（开局即放 + 普攻均在 t=0）。
     const sameTickAttack = r.log.some((e) => e.type === 'unit_attack' && e.actorId === 'player_p0c2' && e.timeSec === ult!.timeSec);
     expect(sameTickAttack).toBe(true);
   });
@@ -315,7 +317,7 @@ describe('S7AutoBattleEngine - mark/vulnerable/shield_break 行为 (#13)', () =>
 
   it('shield_break：破盾期间护盾掉得更快（80→120/击）', async () => {
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 100000, armor: 25, attack: 1, passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 100000, armor: 25, attack: 1, ultimateCdSec: 0.2 }); // 块2：每 tick 自我回盾到 20000 改由短 CD(0.2=每 tick) 触发
     Object.assign(row(b, 'battle_effect_param', 'eff_state_shield'), { durationSec: 60 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_shield_break', passiveEnergyPerSec: 7 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1'] });
@@ -590,7 +592,7 @@ describe('S7AutoBattleEngine - 状态重入 (#25)', () => {
     // caster 反复短路 E(高血保活)，但被远程敌 F 在 ~2s 击杀后停手；E 的 short_circuit 仅在末次施加+2s 到期一次。
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), {
-      ultimateEffectRef: 'eff_state_short_circuit', passiveEnergyPerSec: 100, maxHp: 200, attackRangeCells: 1,
+      ultimateEffectRef: 'eff_state_short_circuit', ultimateCdSec: 0.4, maxHp: 200, attackRangeCells: 1, // 块2：反复短路改由短 CD(0.4s) 触发
     });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1 }); // E：victim
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { attack: 120, attackRangeCells: 7, passiveEnergyPerSec: 0 }); // F：远程击杀 caster
@@ -614,47 +616,25 @@ describe('S7AutoBattleEngine - 状态重入 (#25)', () => {
   });
 });
 
-describe('S7AutoBattleEngine - 受击满能立刻放大招 (RT-04-fix#2)', () => {
-  it('受击方涨能量到 100 后在同一结算内立刻释放大招（不等下一 tick）', async () => {
-    // P：后排 range1 够不到远敌→不普攻；passive=0→能量只能来自“受击”。远程敌 E 每 tick 打 P。
-    const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
-      passiveEnergyPerSec: 0, attackRangeCells: 1, ultimateEffectRef: 'eff_ult_shield_bubble', maxHp: 100000, armor: 200,
-    });
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), {
-      attack: 1, attackRangeCells: 9, attackIntervalSec: 0.2, maxHp: 100000,
-    });
-    Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
-    Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c6'] });
-    const engine = await engineOf(b);
-    const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'onhit', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
-    expect(firstAttack(r.log, 'player_p0c2')).toBeUndefined(); // 全程够不到敌人→无普攻，能量纯靠受击
-    const ultIdx = r.log.findIndex((e) => e.type === 'ultimate_cast' && e.actorId === 'player_p0c2');
-    expect(ultIdx).toBeGreaterThan(-1);
-    const ult = r.log[ultIdx];
-    // 触发大招的“受击伤害”在同一 tick 且日志位置先于大招 → 证明受击满能即时释放（非下一 tick 的 step4）。
-    const triggeredByHit = r.log
-      .slice(0, ultIdx)
-      .some((e) => e.type === 'damage' && (e.targetIds ?? []).includes('player_p0c2') && e.timeSec === ult.timeSec);
-    expect(triggeredByHit).toBe(true);
-  });
-});
+// 块2：原“受击满能立刻放大招 (RT-04-fix#2)”测试已删除——其验证的“受击涨能→放大招”机制随
+// v1.0 取消能量条而移除（不为绿而绿：该机制已不存在，故删测而非改断言）。受击触发(on_hit)留块2b 再立测试。
 
 describe('S7AutoBattleEngine - stun 抑制行动 (RT-04-fix#3)', () => {
-  it('stun 期间敌人不普攻、不放大招（即便能量已满）', async () => {
+  it('stun 期间敌人不普攻、不放大招（晕眩压住其普攻与 CD 触发）', async () => {
     const b = cloneBundle(loadBundle());
-    // 玩家 passive 拉满→t=0 用 eff_state_stun 晕住最近敌人；敌人 passive 拉满且带大招，验证被晕时既不普攻也不放大招。
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500, ultimateEffectRef: 'eff_state_stun', attackRangeCells: 7, maxHp: 100000 });
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 30, passiveEnergyPerSec: 100, ultimateEffectRef: 'eff_ult_burst_nuke' });
+    // 玩家 t=0 用 eff_state_stun 晕住最近敌人；敌人带大招且短 CD(0.4s 会持续想放)，验证被晕期间既不普攻也不放大招。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { ultimateEffectRef: 'eff_state_stun', attackRangeCells: 7, maxHp: 100000 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 30, ultimateEffectRef: 'eff_ult_burst_nuke', ultimateCdSec: 0.4 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });
     const engine = await engineOf(b);
     const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'stun', playerUnits: [{ unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }] });
     const apply = ofType(r.log, 'state_apply').find((e) => e.stateTag === 'stun');
     expect(apply).toBeDefined();
-    const inWindow = (e: S7AutoBattleLogEntry): boolean => e.side === 'enemy' && e.timeSec >= apply!.timeSec && e.timeSec < apply!.timeSec + 2;
-    expect(r.log.filter((e) => e.type === 'unit_attack' && inWindow(e)).length).toBe(0); // 不普攻
-    expect(r.log.filter((e) => e.type === 'ultimate_cast' && inWindow(e)).length).toBe(0); // 不放大招（能量满也压住）
+    // 窗口取“晕眩生效后”（> apply）：排除同 tick 内敌人先于被晕的开局即放那一发（敌方在 stableUnits 先于玩家处理）。
+    const inWindow = (e: S7AutoBattleLogEntry): boolean => e.side === 'enemy' && e.timeSec > apply!.timeSec && e.timeSec < apply!.timeSec + 2;
+    expect(r.log.filter((e) => e.type === 'unit_attack' && inWindow(e)).length).toBe(0); // 晕眩期不普攻
+    expect(r.log.filter((e) => e.type === 'ultimate_cast' && inWindow(e)).length).toBe(0); // 晕眩期不放大招（CD 到点也被压住）
   });
 });
 

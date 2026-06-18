@@ -46,14 +46,11 @@ import {
 } from './S7BattleGrid';
 // 效果装配层：玩家单位四层积木 → 最终战斗属性（块1）。
 import { deriveUnit, S7DeriveBaseStat, S7DerivedUnit } from './S7BattleStatDerivation';
+import { S7TriggerBlock } from './S7BattleEffectBlock';
 
 // ===== 首版行为常量（RT-04 首版口径，非最终平衡；报告中已列明）=====
 const TICK_SEC = 0.2;
-const ENERGY_FULL = 100;
-/** 普攻命中：攻击方获得能量。 */
-const ENERGY_ON_ATTACK = 12;
-/** 普攻命中：受击方少量获得能量（低于攻击收益）。 */
-const ENERGY_ON_HIT = 4;
+// 块2：取消能量条，技能改三类触发（CD/开局/条件）。原 ENERGY_FULL/ON_ATTACK/ON_HIT 已移除。
 const VULNERABLE_MULT = 1.25;
 const SHIELD_BREAK_MULT = 1.5;
 const BERSERK_ATTACK_MULT = 1.25;
@@ -85,6 +82,15 @@ interface RtStateInst {
   expireAt: number;
 }
 
+/** 运行时触发项：块1 的触发积木 + 运行时计时/闩锁状态（块2）。 */
+interface RtTrigger {
+  block: S7TriggerBlock;
+  /** on='cd' 的下次可放时刻（初始 0 = 开局即放第一次）。 */
+  nextFireAt: number;
+  /** 一次性触发（battle_start / hp_below）是否已放过。 */
+  fired: boolean;
+}
+
 interface RtUnit {
   unitId: string;
   side: S7AutoBattleSide;
@@ -101,7 +107,6 @@ interface RtUnit {
   attackIntervalSec: number;
   attackRangeCells: number;
   passiveEnergyPerSec: number;
-  energy: number;
   nextAttackAt: number;
   alive: boolean;
   downLogged: boolean;
@@ -112,6 +117,7 @@ interface RtUnit {
   coreEffectRef: string;
   targetingTag: string;
   coreTriggered: boolean;
+  triggers: RtTrigger[];
   shield: number;
   states: Map<S7BattleStateTag, RtStateInst>;
 }
@@ -182,16 +188,14 @@ class BattleRun {
     for (let tick = 0; tick < maxTicks; tick += 1) {
       this.time = roundTime(tick * TICK_SEC);
 
-      this.stepSpawnWaves();        // 1
-      this.stepExpireStates();      // 2
-      this.stepPassiveEnergy();     // 3
-      this.stepPassiveUltimates();  // 4
-      const attacked = this.stepNormalAttacks(); // 5
-      this.stepAttackUltimates(attacked);        // 6
-      this.stepBossPhases();        // 7
-      this.stepCleanupDead();       // 8
+      this.stepSpawnWaves();        // 1 出怪
+      this.stepExpireStates();      // 2 状态到期
+      this.stepTriggers();          // 3 三类触发（CD / 开局即放 / 血量阈值；on_kill/on_hit 留块2b）
+      this.stepNormalAttacks();     // 4 普攻
+      this.stepBossPhases();        // 5 Boss 阶段
+      this.stepCleanupDead();       // 6 清理死亡
 
-      decided = this.checkOutcome(); // 9
+      decided = this.checkOutcome(); // 7 判胜负 / 超时
       if (decided) break;
     }
 
@@ -332,24 +336,32 @@ class BattleRun {
     }
   }
 
-  /** 3：给存活单位增加被动能量（不每 tick 记 energy_change）。 */
-  private stepPassiveEnergy(): void {
-    for (const unit of this.units) {
-      if (!unit.alive) continue;
-      unit.energy = Math.min(ENERGY_FULL, unit.energy + unit.passiveEnergyPerSec * TICK_SEC);
-    }
-  }
-
-  /** 4：检查满能单位（含被动满能），未被短路/晕眩则立刻放大招。 */
-  private stepPassiveUltimates(): void {
+  /** 3：评估并释放三类触发（CD / 开局即放 / 血量阈值）。on_kill/on_hit 留块2b；passive 走装配 modifier、不在此 fire。 */
+  private stepTriggers(): void {
     for (const unit of this.stableUnits()) {
-      this.tryCastUltimate(unit);
+      if (!unit.alive) continue;
+      if (this.hasControl(unit)) continue; // 短路 / 晕眩：无法触发技能
+      for (const t of unit.triggers) {
+        if (this.triggerReady(unit, t)) this.fireTrigger(unit, t);
+      }
     }
   }
 
-  /** 5：按稳定顺序处理可行动单位普攻；返回本 tick 实际出手的单位。 */
-  private stepNormalAttacks(): RtUnit[] {
-    const attacked: RtUnit[] = [];
+  private triggerReady(unit: RtUnit, t: RtTrigger): boolean {
+    switch (t.block.on) {
+      case 'cd':
+        return this.time + 1e-9 >= t.nextFireAt;
+      case 'battle_start':
+        return !t.fired;
+      case 'hp_below':
+        return !t.fired && unit.maxHp > 0 && unit.hp / unit.maxHp < (t.block.threshold ?? 0);
+      default:
+        return false; // on_kill / on_hit（块2b）/ passive（走装配 modifier）
+    }
+  }
+
+  /** 4：按稳定顺序处理可行动单位普攻。 */
+  private stepNormalAttacks(): void {
     for (const unit of this.stableUnits()) {
       if (!this.canAct(unit)) continue;
       if (this.time + 1e-9 < unit.nextAttackAt) continue;
@@ -365,17 +377,7 @@ class BattleRun {
         effectType: normal.effectType,
       });
       this.applyEffectToTargets(unit, normal, targets);
-      this.gainEnergy(unit, ENERGY_ON_ATTACK);
       unit.nextAttackAt = this.time + this.effInterval(unit);
-      attacked.push(unit);
-    }
-    return attacked;
-  }
-
-  /** 6：普攻结算后，攻击方能量达到 100 则立刻放大招。 */
-  private stepAttackUltimates(attacked: RtUnit[]): void {
-    for (const unit of attacked) {
-      this.tryCastUltimate(unit);
     }
   }
 
@@ -413,22 +415,16 @@ class BattleRun {
     return null;
   }
 
-  // ===== 大招 / 星核 =====
+  // ===== 触发 / 星核 =====
 
-  /** 满能且未被控制时释放大招；大招后首次触发 coreEffectRef 一次。返回是否释放。 */
-  private tryCastUltimate(unit: RtUnit): boolean {
-    if (!unit.alive) return false;
-    if (unit.energy < ENERGY_FULL) return false;
-    if (this.hasControl(unit)) return false;
-    const ult = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', unit.ultimateEffectRef);
-    if (!ult) {
-      // 无大招效果（'none'）：不放大招，但保留满能，待其拥有有效大招时再放（首版正常单位均有大招或恒为 none）。
-      return false;
-    }
-    this.pushLog('energy_change', { actorId: unit.unitId, side: unit.side, energyAfter: ENERGY_FULL });
-    this.castLogged(unit, ult, 'ultimate_cast');
-    unit.energy -= ENERGY_FULL;
-
+  /** 释放一条触发的效果并推进其计时/闩锁；首次任意触发后放一次 coreEffectRef（占位钩子，星核大改留块3）。 */
+  private fireTrigger(unit: RtUnit, t: RtTrigger): void {
+    const effect = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', t.block.effectRef);
+    // 先推进触发状态（即便 effectRef 为 none/缺失也推进，避免每 tick 重试）。
+    if (t.block.on === 'cd') t.nextFireAt = this.time + (t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity);
+    else t.fired = true;
+    if (!effect) return;
+    this.castLogged(unit, effect, 'ultimate_cast');
     if (!unit.coreTriggered && unit.coreEffectRef !== 'none') {
       const core = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', unit.coreEffectRef);
       if (core) {
@@ -436,7 +432,6 @@ class BattleRun {
         this.castLogged(unit, core, 'core_trigger');
       }
     }
-    return true;
   }
 
   /**
@@ -570,11 +565,6 @@ class BattleRun {
       hpAfter: target.hp,
       shieldAfter: target.shield,
     });
-    if (target.alive) {
-      this.gainEnergy(target, ENERGY_ON_HIT);
-      // RT-04-fix#2：受击涨能量满后立刻放大招（未短路/晕眩则同结算内即触发，不等下一 tick）。
-      this.tryCastUltimate(target);
-    }
   }
 
   private addShield(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
@@ -764,6 +754,15 @@ class BattleRun {
   private spawnUnit(stat: S7BattleUnitStatParam, side: S7AutoBattleSide, row: number, col: number, slotRef: string, derived: S7DerivedUnit | null = null): RtUnit {
     const cv = derived ?? stat; // 战斗数值：有装配结果用装配后的，否则用基线 stat（无装配时零行为变化）。
     const unitId = side === 'player' ? `player_${slotRef}` : `enemy_${pad4(this.enemySeq++)}`;
+    const triggers: RtTrigger[] = [];
+    // 星舰自带大招 → 默认 CD 触发（开局即放：nextFireAt=0）。无大招(none) 或 CD<=0 不补。
+    if (cv.ultimateEffectRef !== 'none' && stat.ultimateCdSec > 0) {
+      triggers.push({ block: { kind: 'trigger', on: 'cd', cdSec: stat.ultimateCdSec, effectRef: cv.ultimateEffectRef }, nextFireAt: 0, fired: false });
+    }
+    // 装配层提供的额外触发（驾驶员/插件/星核内容，块3/4/5；当前通常为空）。
+    if (derived) {
+      for (const tb of derived.triggers) triggers.push({ block: tb, nextFireAt: 0, fired: false });
+    }
     const unit: RtUnit = {
       unitId,
       side,
@@ -780,7 +779,6 @@ class BattleRun {
       attackIntervalSec: cv.attackIntervalSec,
       attackRangeCells: cv.attackRangeCells,
       passiveEnergyPerSec: cv.passiveEnergyPerSec,
-      energy: 0,
       nextAttackAt: 0,
       alive: true,
       downLogged: false,
@@ -791,6 +789,7 @@ class BattleRun {
       coreEffectRef: cv.coreEffectRef,
       targetingTag: cv.targetingTag,
       coreTriggered: false,
+      triggers,
       shield: 0,
       states: new Map(),
     };
@@ -862,9 +861,6 @@ class BattleRun {
     return unit.states.has('berserk') ? unit.attackIntervalSec * BERSERK_INTERVAL_MULT : unit.attackIntervalSec;
   }
 
-  private gainEnergy(unit: RtUnit, amount: number): void {
-    unit.energy = Math.min(ENERGY_FULL, unit.energy + amount);
-  }
 
   /** 全体单位的稳定遍历顺序：先 side 后 unitId，保证同 seed 处理/日志顺序固定。 */
   private stableUnits(): RtUnit[] {
@@ -884,7 +880,6 @@ class BattleRun {
       hp: u.hp,
       maxHp: u.maxHp,
       shield: u.shield,
-      energy: Math.round(u.energy * 100) / 100,
       alive: u.alive,
     });
     return {
