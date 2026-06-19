@@ -179,7 +179,8 @@ export class S7DemoController extends Component {
         // 战斗胜但结算被拒（如重复挑战）：不发奖、不推进。
         this.setResult(`${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, new Color(220, 210, 140));
       } else {
-        this.setResult(`${nodeId} 败：${outcome.battle.summary.hintCode} ${hpTag}`, new Color(235, 150, 150));
+        // 败：翻成大白话败因 + 提示去升级旗舰（让"卡墙→变强"指向明确，便于试玩）。
+        this.setResult(`${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n→ 先「升级旗舰」攒强了再来`, new Color(235, 150, 150));
       }
     } catch (err) {
       // 无遭遇配置节点（原型内容缺口）：组装器抛错，按"暂无关卡"提示，不崩。
@@ -268,6 +269,20 @@ export class S7DemoController extends Component {
     if (!this.resultLabel) return;
     this.resultLabel.string = text;
     this.resultLabel.color = color;
+  }
+
+  /** 战斗败因码→中文短句（仅显示用，未列出的回退原码）。 */
+  private zhHint(code: string): string {
+    const map: Record<string, string> = {
+      enemy_win_all_players_down: '全队被打光',
+      enemy_win_timeout: '超时没清场',
+      enemy_win_shield_not_broken: '护盾没破掉',
+      enemy_win_swarm_overflow: '敌人太多清不完',
+      enemy_win_summon_overflow: '召唤物压场',
+      enemy_win_boss_final_phase: '头目狂暴翻盘',
+      enemy_win_unknown: '战斗失利',
+    };
+    return map[code] ?? code;
   }
 
   /** 货币键→中文短名（仅显示用，未列出的回退键名）。 */

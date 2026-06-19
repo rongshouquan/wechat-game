@@ -135,10 +135,10 @@ describe('S7BattleEncounterAssembler - context / encounter 校验 (#6,#7,#8)', (
     expect(codeOf(() => asm.assemble({ progress: progressAt('n038'), runSeed: 1, lineup: TRIO }))).toBe('battle_context_error');
   });
 
-  it('有 context 但缺 encounter 返回 missing_encounter（n006）(#7)', async () => {
+  it('有 context 但缺 encounter 返回 missing_encounter（n008）(#7)', async () => {
     const asm = await assemblerOf(loadBundle());
-    // 当前样例 battle_encounter_param 只覆盖 n001/n018/n075；n006 是合法 elite context 但无 encounter。
-    expect(codeOf(() => asm.assemble({ progress: progressAt('n006'), runSeed: 1, lineup: TRIO }))).toBe('missing_encounter');
+    // 样例 battle_encounter_param 覆盖 n001-n007/n018/n075；n008 是合法 normal context 但暂无 encounter（原型内容缺口）。
+    expect(codeOf(() => asm.assemble({ progress: progressAt('n008'), runSeed: 1, lineup: TRIO }))).toBe('missing_encounter');
   });
 
   it('篡改 encounter 的 template/problem/secondary 任一字段返回 encounter_context_mismatch (#8)', async () => {

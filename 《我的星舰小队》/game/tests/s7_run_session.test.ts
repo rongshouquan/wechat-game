@@ -113,10 +113,10 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     expect(s.resources.hullAlloy).toBe(125); // 5×25
   });
 
-  it('连续段边界：推进到 n006(精英·暂无遭遇)→ playCurrentNode 抛错(不吞错)；记录原型内容缺口', async () => {
+  it('连续段边界：推进到 n008(暂无遭遇)→ playCurrentNode 抛错(不吞错)；记录原型内容缺口', async () => {
     await ensure();
-    const s = new S7RunSession(freshResources(), { currentNodeId: 'n006', clearedNodeIds: [] }, runtime, model);
-    // n006 样例无 enc_n006(精英战遭遇内容待补) → 组装器抛错(按"不吞错"原则透传；表现层须处理"暂无关卡")。
+    const s = new S7RunSession(freshResources(), { currentNodeId: 'n008', clearedNodeIds: [] }, runtime, model);
+    // 难度关卡已补 n006(精英)/n007(头目卡墙)→连续可玩段延到 n007；n008 起仍无遭遇 → 组装器抛错(不吞错；表现层显示"暂无关卡")。
     expect(() => s.playCurrentNode('r1')).toThrow();
   });
 

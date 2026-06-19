@@ -40,10 +40,10 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
   });
 
   it('lands exactly the 5 new battle tables with first-round fixture rows', () => {
-    expect(readTable('battle_unit_stat_param')).toHaveLength(17);
+    expect(readTable('battle_unit_stat_param')).toHaveLength(20); // C1b难度关卡：+swarm_tough/burst_raider/shield_warden(n006/n007 敌人)
     expect(readTable('battle_effect_param')).toHaveLength(19); // 块3 新增 eff_atomic_cannon(过载核心原子炮)
-    expect(readTable('battle_encounter_param')).toHaveLength(7); // C1b-step1c：+enc_n002..n005(连续可玩段)
-    expect(readTable('battle_spawn_param')).toHaveLength(10); // C1b-step1c：+spawn_n002..n005_w1(单波一次性刷新)
+    expect(readTable('battle_encounter_param')).toHaveLength(9); // C1b难度关卡：+enc_n006(精英)/enc_n007(头目卡墙)
+    expect(readTable('battle_spawn_param')).toHaveLength(14); // C1b难度关卡：+spawn_n006_w1/w2 + spawn_n007_boss/adds
     expect(readTable('battle_boss_phase_param')).toHaveLength(6);
   });
 
