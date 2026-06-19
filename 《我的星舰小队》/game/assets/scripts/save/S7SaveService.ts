@@ -46,6 +46,11 @@ import {
   createDefaultS7ActivityProgress,
   normalizeS7ActivityProgress,
 } from '../core/s7/S7ActivityProgress';
+import {
+  S7UnitLevelState,
+  createDefaultS7UnitLevelState,
+  normalizeS7UnitLevelState,
+} from '../core/s7/S7UnitLevelState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -59,8 +64,9 @@ import {
  * v7（块6余项）：playerState 增加 exclusiveShards(专属碎片库存) + chests(宝箱×3)；旧档加载补默认空（加性迁移，无需重置）。
  * v8（块7a）：playerState 增加 activityProgress(3天/7天活动进度+领取)；旧档加载补默认空（加性迁移，无需重置）。
  * v9（块7b）：activityProgress 每活动增加 cycleStartTime(周期起算)+settlementCount(累计结算次数)；旧档补默认 0（加性迁移）。
+ * v10（C1b 升级变强）：playerState 增加 unitLevels(星舰/驾驶员等级)；旧档加载补默认空(=全 1 级，加性迁移)。
  */
-export const S7_CURRENT_SAVE_VERSION = 9;
+export const S7_CURRENT_SAVE_VERSION = 10;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -106,6 +112,8 @@ export interface S7PlayerState {
   chests: S7ChestInventoryState;
   /** 活动进度（块7a）：3天行动/7天扩张的进度+领取，形状由 core/s7/S7ActivityProgress 拥有。 */
   activityProgress: S7ActivityProgressState;
+  /** 单位等级（C1b 升级变强）：星舰/驾驶员等级，形状由 core/s7/S7UnitLevelState 拥有。 */
+  unitLevels: S7UnitLevelState;
 }
 
 export interface S7SaveData {
@@ -134,6 +142,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     exclusiveShards: createDefaultS7ExclusiveShardInventory(),
     chests: createDefaultS7ChestInventory(),
     activityProgress: createDefaultS7ActivityProgress(),
+    unitLevels: createDefaultS7UnitLevelState(),
   };
 }
 
@@ -182,6 +191,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     exclusiveShards: normalizeS7ExclusiveShardInventory(src.exclusiveShards),
     chests: normalizeS7ChestInventory(src.chests),
     activityProgress: normalizeS7ActivityProgress(src.activityProgress),
+    unitLevels: normalizeS7UnitLevelState(src.unitLevels),
   };
 }
 
@@ -279,6 +289,7 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       exclusiveShards: normalizeS7ExclusiveShardInventory(data.playerState?.exclusiveShards),
       chests: normalizeS7ChestInventory(data.playerState?.chests),
       activityProgress: normalizeS7ActivityProgress(data.playerState?.activityProgress),
+      unitLevels: normalizeS7UnitLevelState(data.playerState?.unitLevels),
     },
     lastOnlineTime: now,
   };
