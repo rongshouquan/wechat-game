@@ -39,8 +39,10 @@ import {
  * v3（6d-1）：playerState 增加 pluginInventory（插件实例库存）；旧档加载补默认空库存（加性迁移，无需重置）。
  * v4（6b-2）：playerState 增加 buildings（建筑等级状态）；旧档加载补默认空建筑（加性迁移，无需重置）。
  * v5（6b-4b）：playerState 增加 population（居民/工人）；旧档加载补默认 0 人口（加性迁移，无需重置）。
+ * v6（块6余项）：钱包扩键——新增 starGem(星空宝石)/pilotShardUniversal(通用驾驶员碎片)、信标 beacon 拆 3 档
+ *   (beaconCommon/beaconRare/beaconEpic)。新键默认 0（加性）；旧档的笼统 beacon 量并入 beaconCommon（不丢、见 normalize）。
  */
-export const S7_CURRENT_SAVE_VERSION = 5;
+export const S7_CURRENT_SAVE_VERSION = 6;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -52,11 +54,14 @@ export const S7_SAVE_STORAGE_KEY = 'starship_squad_s7_save_v1';
  * S7 首发 资源键（顺序与 03-04 v0.2 §2.2 free_resource_anchor_param 字段一致）。
  * 作为 资源状态的唯一键集真源。
  */
-// 货币键（6a-2 重构）：删 battleLog/pluginMat/coreMat（升级额外消耗/插件强化料/星核强化料，均已废弃）。
-// 新增 starGem(星空宝石)/pilotShardUniversal(通用驾驶员碎片) + 信标拆 3 档，待第二块连 anchor 毕业预算数值一起加。
+// 货币键（6a-2 重构 + 块6余项扩键）：
+//   6a-2 删 battleLog/pluginMat/coreMat（升级额外消耗/插件强化料/星核强化料，均已废弃）。
+//   块6余项：新增 starGem(星空宝石)/pilotShardUniversal(通用驾驶员碎片)；信标拆 3 档 beaconCommon/Rare/Epic（撤笼统 beacon）。
+// 注：新键不进"免费毕业预算表"（那张表只盯核心软货币，见 ConfigValidatorS7.ANCHOR_BUDGET_KEYS），故扩钱包不再被逼填预算数值。
 export const S7_RESOURCE_KEYS = [
-  'starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken',
-  'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
+  'starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken',
+  'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
+  'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo',
 ] as const;
 
 export type S7ResourceKey = (typeof S7_RESOURCE_KEYS)[number];
@@ -127,6 +132,12 @@ function normalizeS7ResourceState(raw: unknown): S7ResourceState {
       if (typeof v === 'number' && Number.isFinite(v) && v >= 0) {
         out[key] = v;
       }
+    }
+    // v6 迁移（信标拆 3 档）：旧档的笼统 beacon 量并入 beaconCommon，不丢玩家信标。
+    // 幂等——新档无 beacon 字段则跳过；写到 out（已不含 beacon 键），与未知键丢弃规则不冲突。
+    const legacyBeacon = src.beacon;
+    if (typeof legacyBeacon === 'number' && Number.isFinite(legacyBeacon) && legacyBeacon > 0) {
+      out.beaconCommon += legacyBeacon;
     }
   }
   return out;

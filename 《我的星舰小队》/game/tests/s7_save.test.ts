@@ -33,17 +33,20 @@ describe('s7 save - resource skeleton', () => {
     for (const k of S7_RESOURCE_KEYS) expect(res[k]).toBe(0);
   });
 
-  it('enumerates the exact canonical resource keys（6a-2：删 battleLog/pluginMat/coreMat）', () => {
+  it('enumerates the exact canonical resource keys（块6余项：+starGem/pilotShardUniversal、信标拆 3 档、撤 beacon）', () => {
     expect([...S7_RESOURCE_KEYS]).toEqual([
-      'starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken',
-      'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
+      'starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken',
+      'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
+      'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo',
     ]);
+    // 笼统 beacon 已撤、不在键集内（拆成 3 档）。
+    expect([...S7_RESOURCE_KEYS]).not.toContain('beacon');
   });
 
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(5); // 6b-4b：v4→v5（加 population）
+    expect(data.saveVersion).toBe(6); // 块6余项：v5→v6（钱包扩键 + 信标拆 3 档）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -109,7 +112,7 @@ describe('s7 save - independent storage domain', () => {
     expect(r.data.playerState.population).toEqual({ residents: 7, workers: 3 });
   });
 
-  it('restoreS7KeyState returns normalized 12-resource state + timestamp', () => {
+  it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
     const restored = restoreS7KeyState(createDefaultS7SaveData(NOW));
     expect(Object.keys(restored.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(restored.lastOnlineTime).toBe(NOW);
@@ -187,10 +190,20 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    // 现有效资源逐一保留
-    for (const k of S7_RESOURCE_KEYS) expect(r.data.playerState.resources[k]).toBe(v1Resources[k]);
-    // 已废弃币被规范化丢弃（不再在键集内）
     const res = r.data.playerState.resources as Record<string, unknown>;
+    // 仍存在的旧键逐一保留（排除已被拆/撤的 beacon——它走 v6 carry，单独断言）
+    for (const k of S7_RESOURCE_KEYS) {
+      if (k === 'beaconCommon') continue;
+      if (k in v1Resources) expect(r.data.playerState.resources[k]).toBe(v1Resources[k]);
+    }
+    // v6 迁移：旧档笼统 beacon(5) 并入 beaconCommon、不丢；其余信标档与新币默认 0。
+    expect(r.data.playerState.resources.beaconCommon).toBe(5);
+    expect(r.data.playerState.resources.beaconRare).toBe(0);
+    expect(r.data.playerState.resources.beaconEpic).toBe(0);
+    expect(r.data.playerState.resources.starGem).toBe(0);
+    expect(r.data.playerState.resources.pilotShardUniversal).toBe(0);
+    expect(res.beacon).toBeUndefined(); // 笼统 beacon 已不在键集内
+    // 已废弃币被规范化丢弃（不再在键集内）
     for (const dead of ['battleLog', 'pluginMat', 'coreMat']) expect(res[dead]).toBeUndefined();
     // 补默认主线进度
     expect(r.data.playerState.mainlineProgress.currentNodeId).toBe('n001');
@@ -251,6 +264,41 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.buildings.levels).toEqual({ bld_dock: 2 });
   });
 
+  it('迁移 v5 旧档到 v6：笼统 beacon 并入 beaconCommon，新币默认 0，旧字段保留（加性迁移）', () => {
+    const adapter = new MemoryStorageAdapter();
+    // v5 旧档形状：钱包用笼统 beacon、无 starGem/pilotShardUniversal/beacon 三档。
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: 5,
+        lastOnlineTime: NOW,
+        playerState: {
+          resources: { starOre: 2200, beacon: 7, starCargo: 3 },
+          mainlineProgress: { currentNodeId: 'n003', clearedNodeIds: ['n001', 'n002'] },
+          pluginInventory: { plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 },
+          buildings: { levels: { bld_dock: 4 } },
+          population: { residents: 5, workers: 2 },
+        },
+      }),
+    );
+    const r = loadS7Save(adapter, NOW + 5);
+    expect(r.migrated).toBe(true);
+    expect(r.corrupted).toBe(false);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
+    // beacon(7) → beaconCommon；其余信标档/新币默认 0
+    expect(r.data.playerState.resources.beaconCommon).toBe(7);
+    expect(r.data.playerState.resources.beaconRare).toBe(0);
+    expect(r.data.playerState.resources.beaconEpic).toBe(0);
+    expect(r.data.playerState.resources.starGem).toBe(0);
+    expect(r.data.playerState.resources.pilotShardUniversal).toBe(0);
+    expect((r.data.playerState.resources as Record<string, unknown>).beacon).toBeUndefined();
+    // 旧字段全保留
+    expect(r.data.playerState.resources.starOre).toBe(2200);
+    expect(r.data.playerState.resources.starCargo).toBe(3);
+    expect(r.data.playerState.buildings.levels).toEqual({ bld_dock: 4 });
+    expect(r.data.playerState.population).toEqual({ residents: 5, workers: 2 });
+  });
+
   it('round-trips mainlineProgress through persist + load', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
@@ -299,7 +347,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('keeps S7 version counter independent from 流程版 CURRENT_SAVE_VERSION', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(5);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(6);
     // 流程版当前为 7；两者各自独立计数，本断言锁定"S7 不复用流程版版本号"。
     expect(S7_CURRENT_SAVE_VERSION).not.toBe(CURRENT_SAVE_VERSION);
   });
