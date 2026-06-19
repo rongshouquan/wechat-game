@@ -19,13 +19,18 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
+import { S7UpgradeCostParam } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession } from '../../core/s7/S7RunSession';
+import { getShipLevel } from '../../core/s7/S7UnitLevelState';
+import { upgradeShipOneLevel } from '../../core/s7/S7UnitUpgradeService';
 
 const { ccclass } = _decorator;
 
 /** 固定开发种子：同节点同阵容可复现（早期节点默认 3 舰确定性胜）。 */
 const S7_DEMO_RUN_SEED = 's7-demo';
+/** 演示用旗舰 = 默认阵容首舰；「升级旗舰」升它、出战时它按等级变强。 */
+const S7_DEMO_FLAGSHIP_ID = 'shp01';
 
 @ccclass('S7DemoController')
 export class S7DemoController extends Component {
@@ -33,6 +38,7 @@ export class S7DemoController extends Component {
   private session: S7RunSession | null = null;
   private playerState: S7PlayerState | null = null;
   private saveVersion = S7_CURRENT_SAVE_VERSION;
+  private upgradeCostRows: S7UpgradeCostParam[] = [];
 
   private statusLabel: Label | null = null;
   private resultLabel: Label | null = null;
@@ -41,8 +47,9 @@ export class S7DemoController extends Component {
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
     this.adapter = adapter;
     const model = S7MainlineModel.fromRuntime(runtime);
+    this.upgradeCostRows = runtime.getAll<S7UpgradeCostParam>('upgrade_cost_param');
 
-    // 读 S7 存档（独立域）：取出资源 + 主线进度，建最小循环会话。
+    // 读 S7 存档（独立域）：取出资源 + 主线进度 + 单位等级，建最小循环会话（带 unitLevels → 升级反映到战斗）。
     const now = Date.now();
     const loaded = loadS7Save(adapter, now);
     this.playerState = loaded.data.playerState;
@@ -52,6 +59,7 @@ export class S7DemoController extends Component {
       this.playerState.mainlineProgress,
       runtime,
       model,
+      this.playerState.unitLevels,
     );
 
     this.buildUi();
@@ -78,17 +86,20 @@ export class S7DemoController extends Component {
     this.makeLabel('《我的星舰小队》S7 最小循环演示', 30, new Color(255, 230, 120), 0, H * 0.30);
     this.makeLabel('（色块原型 · 点出战推进主线）', 20, new Color(170, 180, 200), 0, H * 0.30 - 40);
 
-    // 状态行：星矿/合金/当前节点。
-    this.statusLabel = this.makeLabel('', 28, new Color(230, 240, 255), 0, H * 0.10);
+    // 状态行：星矿/合金/当前节点 + 旗舰等级。
+    this.statusLabel = this.makeLabel('', 26, new Color(230, 240, 255), 0, H * 0.13);
 
     // 「出战」按钮（蓝色块）。
-    this.makeButton('出战', 280, 96, new Color(60, 120, 220, 255), 0, -H * 0.08, () => this.onSortie());
+    this.makeButton('出战', 280, 92, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.onSortie());
 
-    // 上一战结果（多行）。
-    this.resultLabel = this.makeLabel('点「出战」开始', 24, new Color(180, 230, 180), 0, -H * 0.24);
+    // 「升级旗舰」按钮（绿色块）：花星矿+合金升旗舰一级 → 出战更强。
+    this.makeButton('升级旗舰', 280, 84, new Color(60, 170, 110, 255), 0, -H * 0.14, () => this.onUpgradeFlagship());
 
-    // 「重置存档」小按钮（演示用：回到 n001、清零资源，便于反复验证）。
-    this.makeButton('重置存档', 180, 64, new Color(120, 70, 70, 255), 0, -H * 0.36, () => this.onReset());
+    // 上一战 / 升级结果（多行）。
+    this.resultLabel = this.makeLabel('点「出战」开始', 23, new Color(180, 230, 180), 0, -H * 0.26);
+
+    // 「重置存档」小按钮（演示用：回到 n001、清零资源与等级，便于反复验证）。
+    this.makeButton('重置存档', 170, 60, new Color(120, 70, 70, 255), 0, -H * 0.37, () => this.onReset());
   }
 
   private makeLabel(text: string, fontSize: number, color: Color, x: number, y: number): Label {
@@ -163,14 +174,41 @@ export class S7DemoController extends Component {
     this.refresh();
   }
 
-  /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源、落盘。 */
+  /** 点「升级旗舰」：花星矿+合金把旗舰升 1 级（升级服务）→ 出战更强 → 刷新 + 落盘。 */
+  private onUpgradeFlagship(): void {
+    if (!this.session || !this.playerState) return;
+    const r = upgradeShipOneLevel(
+      this.playerState.unitLevels,
+      this.session.resources,
+      this.upgradeCostRows,
+      S7_DEMO_FLAGSHIP_ID,
+    );
+    if (r.ok) {
+      this.setResult(
+        `旗舰升到 Lv.${r.toLevel}！花 ${r.spent.starOre}星矿+${r.spent.hullAlloy}合金 → 出战更强`,
+        new Color(150, 235, 180),
+      );
+    } else if (r.reason === 'max_level') {
+      this.setResult('旗舰已满级（Lv.40）', new Color(220, 210, 140));
+    } else if (r.reason === 'insufficient' && r.needed) {
+      this.setResult(`资源不够：升级需 ${r.needed.starOre}星矿+${r.needed.hullAlloy}合金（先出战攒资源）`, new Color(235, 150, 150));
+    } else {
+      this.setResult('暂无该等级的升级成本配置', new Color(200, 200, 200));
+    }
+    this.persist();
+    this.refresh();
+  }
+
+  /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
   private onReset(): void {
     if (!this.session || !this.playerState) return;
     for (const key of Object.keys(this.session.resources)) {
       this.session.resources[key] = 0;
     }
     this.session.progress = createDefaultS7MainlineProgress();
-    this.setResult('已重置：回到 n001、资源清零', new Color(180, 200, 230));
+    this.playerState.unitLevels.shipLevels = {};
+    this.playerState.unitLevels.pilotLevels = {};
+    this.setResult('已重置：回到 n001、资源清零、等级归 1', new Color(180, 200, 230));
     this.persist();
     this.refresh();
   }
@@ -178,12 +216,14 @@ export class S7DemoController extends Component {
   // ===== 刷新 / 落盘 =====
 
   private refresh(): void {
-    if (!this.session || !this.statusLabel) return;
+    if (!this.session || !this.statusLabel || !this.playerState) return;
     const r = this.session.resources;
     const ore = Math.floor(r.starOre ?? 0);
     const alloy = Math.floor(r.hullAlloy ?? 0);
     const cleared = this.session.progress.clearedNodeIds.length;
-    this.statusLabel.string = `星矿 ${ore}    合金 ${alloy}\n当前节点 ${this.session.currentNodeId}    已通关 ${cleared}`;
+    const flagLv = getShipLevel(this.playerState.unitLevels, S7_DEMO_FLAGSHIP_ID);
+    this.statusLabel.string =
+      `星矿 ${ore}    合金 ${alloy}\n当前节点 ${this.session.currentNodeId}    已通关 ${cleared}\n旗舰 ${S7_DEMO_FLAGSHIP_ID}  Lv.${flagLv}`;
   }
 
   /** 把会话当前态写回 S7 存档域并落盘（独立 key，不动流程版存档）。 */

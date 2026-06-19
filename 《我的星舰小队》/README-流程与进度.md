@@ -20,10 +20,14 @@
    - **step1 接线纯TS胶水 ✅ 完成（2026-06-19，无头可测）**：`S7NodeSettlement`(节点→奖励解析 + 首通发软货币+推进，§8重复不刷靠 completeS7Node 顺序校验) + `S7RunSession`(playS7Node 跑战斗判胜 + 会话 playCurrentNode 跑+结算+应用)。复用 `S7DefaultBattleLineup`/`S7BattleRunService`。默认3舰确定性胜 n001→发 starOre90/hullAlloy25→推进 n002。
    - **step1c 连续遭遇内容 ✅ 完成（2026-06-19，无头可测）**：给 n002-n005 补 normal 群怪遭遇(复用 sf01 swarm·单波一次性刷新§8·与节点 template/problem/secondary 对齐)，凑成 **n001→n005 五连战可玩段**；实测默认 3 舰确定性全胜、逐关 +90矿/+25合金(累 450/125)、逐节点推进，n006(精英)为边界。
    - **step2 Cocos 表现层（色块壳）✅ 完成 + 真机预览验证通过（2026-06-19）**：`S7DemoController`(程序化色块·MainSceneController 顶层挂载) 调 `S7RunSession`，主界面显示 星矿/合金/当前节点 + 「出战」+ 结果 + 「重置存档」，胜则发奖+推进+落盘(S7 独立存档域)，无遭遇节点优雅兜底。Cocos-open 门已过(✗0/控制台无红字)。
-   - **C1b 最小竖切片到此跑通**。后续可选扩展（见下「下一步候选」）：①战斗逐帧色块回放；②补 n006+ 精英/Boss 遭遇延长可玩段；③接「升级变强→打更难」养成耦合；④把离线/打捞/活动/宝箱/商人等已立逻辑逐个接进可玩循环。
-5. **真机快速验证（色块）**：确认能跑、不卡、循环转得起来、节奏手感对。
-6. **接入美术（分批）**：先定轻量美术接入规范（风格/分辨率/图集/命名/包体预算 主包 3.8MB 警戒·4.0MB 阻断），再按模块换皮、每批控包体看真机效果。
-7. C2 扩到可玩 → C3 内容铺量 → C4 打磨上线。
+   - **C1b 最小竖切片到此跑通**。
+5. **C1b 升级变强闭环 🔄（2026-06-19）**：步1-4 纯TS全测完成、步5 demo 接线待微信验证。
+   - 步1 等级存档 `S7UnitLevelState`(星舰/驾驶员等级,存档 v9→v10)；步2 `S7UnitGrowth`(等级→战力 growth_band→按倍率放大血攻成长积木)；步3 `S7UnitUpgradeService`(花星矿+合金升1级,读 upgrade_cost 段总成本÷10)；步4 装配器吃等级(编队带 shipLevel→织成长积木)+集成测试证"升级后同关更强(血更厚+残血更多)"。
+   - 步5 demo(`S7DemoController`)加「升级旗舰」按钮+旗舰等级显示+会话带 unitLevels(升级反映到战斗)。**Ron 拍板**:先不做"更难的关逼升级"、用"战力倍率放大血攻"占位映射。
+   - **占位(第二块校准)**:战力双乘血攻的放大幅度、逐级成本曲线、驾驶员天赋成长。**剩可选扩展**:战斗色块回放、n006+精英/Boss遭遇、更难的关、离线/打捞/活动/宝箱接进循环。
+6. **真机快速验证（色块）**：确认能跑、不卡、循环转得起来、节奏手感对。
+7. **接入美术（分批）**：先定轻量美术接入规范（风格/分辨率/图集/命名/包体预算 主包 3.8MB 警戒·4.0MB 阻断），再按模块换皮、每批控包体看真机效果。
+8. C2 扩到可玩 → C3 内容铺量 → C4 打磨上线。
 - **第二块数值待补表**：信标打捞产出表（每档信标×时间档→必得/概率得/数量）、插件经济（合成/回收成本+战力贡献，连带重写毕业预算模拟器）、抽卡保底出率、关卡墙逐节点值；**信标 3 档/starGem/pilotShardUniversal 是否纳入"免费毕业预算表"**（块6余项已把它们排在表外、不逼填，第二块定信标经济时再议）。
 > 排期顺序与"为什么这样排"见对话讨论；美术接入规范待 Ron 定风格方向。
 
@@ -49,7 +53,7 @@
 - 建筑/离线/人口数值全 v0.1、各种占位语义 → 待原型/真机校准 + 第二块定点。
 - 活动引擎(块7a/7b)已建(进度/里程碑/完成/周期滚动/结算/跨期追赶)，但**未接**：①进度喂入(推关/打捞/抽卡等→addActivityProgress)、②`tickActivityCycles` 需在登录/回前台时调一次(C1b 编排)、③里程碑阈值+奖励内容(第二块数值)、④结算/完成发奖(发宝箱→走邮件§10.6/背包，邮件壳留 C1b)、⑤7天扩张宝藏"第1次自选/第N次随机"开箱内容(读 settlementCount,内容侧)。
 - **原型遭遇内容（C1b-step1c 已补 n001-n005，仍有缺口）**：现 n001→n005 连续可玩(normal 群怪)；**n006(精英)及之后大量节点仍无遭遇配置**，推进到无遭遇节点会抛错(按不吞错透传，表现层须处理"暂无关卡")。后续按需补精英/Boss 遭遇延长可玩段(敌人/出怪/压力/Boss阶段)——属原型内容/第二块。
-- 新增 `core/s7/*.ts` 共 16 个待 Cocos 打开认 `.ts.meta`（块6余项 +S7ExclusiveShardInventory/S7ChestInventory；块7 +S7ActivityProgress；C1b +S7NodeSettlement/S7RunSession）；`npm run typecheck` 须先开 Cocos 生成 cc 类型。
+- 新增 `core/s7/*.ts` 共 19 个待 Cocos 打开认 `.ts.meta`（块6余项 +S7ExclusiveShardInventory/S7ChestInventory；块7 +S7ActivityProgress；C1b +S7NodeSettlement/S7RunSession；升级变强 +S7UnitLevelState/S7UnitGrowth/S7UnitUpgradeService）；另 ui/view 新增 S7DemoController；`npm run typecheck` 须先开 Cocos 生成 cc 类型。
 
 ## 📂 文件索引
 - `系统玩法设计-v1.0.md` — 【根文件·唯一真源】完整系统/玩法设计（改动看 §17 变更记录）。
@@ -61,4 +65,4 @@
 - 分项稿（已并入根文件）：`资源货币方案-提案-v1.md`、`资源与玩法产出总表-v1.md`、`插件方案-v1.md`、`战斗单位四层定位-v1.md`。
 
 ## Git
-仓库根 `F:\Claude Code`（remote `rongshouquan/wechat-game`）；同目录另有无关内嵌仓库 `untangle`（**勿动**）。块0~C1b-step2 已 push；**微信构建坑修复（Set 展开降级）+ 本次文档 已提交、待 push**。里程碑提交、干净节点 push 备份。
+仓库根 `F:\Claude Code`（remote `rongshouquan/wechat-game`）；同目录另有无关内嵌仓库 `untangle`（**勿动**）。块0~升级变强步1-4 已 push；**升级变强 step5 demo接线（待微信验证）+ 本次文档 已提交、待 push**。里程碑提交、干净节点 push 备份。
