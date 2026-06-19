@@ -1510,7 +1510,12 @@ export function validateS7ConfigBundle(
   const pilotIds = new Set<string>(rowsByTable.pilot_config.map((r) => String(r.pilotId)));
   const pluginIds = new Set<string>(rowsByTable.plugin_config.map((r) => String(r.pluginId)));
   const templateIds = new Set<string>(rowsByTable.battle_template_config.map((r) => String(r.templateId)));
-  const shipAndCoreIds = new Set<string>([...shipIds, ...coreIds]);
+  // 注意：禁用 [...shipIds, ...coreIds] 的 Set 展开——Cocos 微信小游戏构建对"展开 Set"会降级编错成空数组
+  // （同 S7MainlineProgress 注释里的 [...new Set()] 坑），导致默认实体表为空、插件 fitRefs 全部误报不存在。
+  // 改用 Set.forEach 逐个 add（方法调用，不走会被编错的迭代展开协议）。
+  const shipAndCoreIds = new Set<string>();
+  shipIds.forEach((x) => shipAndCoreIds.add(x));
+  coreIds.forEach((x) => shipAndCoreIds.add(x));
 
   for (const row of rowsByTable.battle_template_config) {
     const id = String(row.templateId);
