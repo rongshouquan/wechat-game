@@ -21,10 +21,11 @@ import {
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
-import { S7RunSession } from '../../core/s7/S7RunSession';
+import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel } from '../../core/s7/S7UnitLevelState';
 import { upgradeShipOneLevel } from '../../core/s7/S7UnitUpgradeService';
 import { unitPowerAtLevel } from '../../core/s7/S7UnitGrowth';
+import { buildS7BattlePlayback, S7BattlePlayback, S7PlaybackFrame } from '../../core/s7/S7BattlePlayback';
 
 const { ccclass } = _decorator;
 
@@ -46,6 +47,24 @@ export class S7DemoController extends Component {
 
   private statusLabel: Label | null = null;
   private resultLabel: Label | null = null;
+
+  // ===== B2 战斗色块回放（叠加层）=====
+  private viewW = 720;
+  private viewH = 1280;
+  private stageNode: Node | null = null;
+  private stageGfx: Graphics | null = null;
+  private skipBtn: Node | null = null;
+  /** 当前在播的回放（null=未在播）。 */
+  private playback: S7BattlePlayback | null = null;
+  private frameIdx = 0;
+  private stepClock = 0;
+  /** 每帧停留秒数（在 startPlayback 按总帧数压到约 3 秒内）。 */
+  private stepSec = 0.06;
+  private playing = false;
+  /** 单位 unitId → 战场屏幕局部坐标 + 是否头目（块更大）。 */
+  private posById = new Map<string, { x: number; y: number; boss: boolean }>();
+  /** 回放结束后再显示的结果文案（播放期间先按住）。 */
+  private pendingResult: { text: string; color: Color } | null = null;
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
@@ -83,6 +102,8 @@ export class S7DemoController extends Component {
     const parentUt = this.node.parent?.getComponent(UITransform);
     const W = parentUt ? parentUt.contentSize.width : 720;
     const H = parentUt ? parentUt.contentSize.height : 1280;
+    this.viewW = W;
+    this.viewH = H;
     const ut = this.node.addComponent(UITransform);
     ut.setContentSize(W, H);
 
@@ -111,6 +132,18 @@ export class S7DemoController extends Component {
 
     // 「重置存档」小按钮（演示用：回到 n001、清零资源与等级，便于反复验证）。
     this.makeButton('重置存档', 170, 60, new Color(120, 70, 70, 255), 0, -H * 0.37, () => this.onReset());
+
+    // B2 战斗回放叠加层（默认隐藏；出战时弹出、播完隐藏）。挂在最后→盖在按钮之上。
+    const stage = new Node('S7BattleStage');
+    stage.layer = this.node.layer;
+    this.node.addChild(stage);
+    stage.setPosition(0, H * 0.02, 0);
+    this.stageGfx = stage.addComponent(Graphics);
+    stage.active = false;
+    this.stageNode = stage;
+    // 「跳过」按钮：回放时显示（盖在出战位上），点了直接跳到结果。
+    this.skipBtn = this.makeButton('跳过 ▶▶', 200, 64, new Color(95, 100, 120, 255), 0, -H * 0.02, () => this.onSkip());
+    this.skipBtn.active = false;
   }
 
   private makeLabel(text: string, fontSize: number, color: Color, x: number, y: number): Label {
@@ -134,7 +167,7 @@ export class S7DemoController extends Component {
     x: number,
     y: number,
     onTap: () => void,
-  ): void {
+  ): Node {
     const node = new Node('S7DemoButton');
     node.layer = this.node.layer;
     this.node.addChild(node);
@@ -154,46 +187,195 @@ export class S7DemoController extends Component {
     label.color = new Color(255, 255, 255);
     label.string = text;
     node.on(Node.EventType.TOUCH_END, onTap, this);
+    return node;
   }
 
   // ===== 交互 =====
 
-  /** 点「出战」：打当前节点 → 胜则发奖+推进（会话内部完成）→ 刷新 + 落盘；无遭遇节点显示「暂无关卡」。 */
+  /**
+   * 点「出战」：打当前节点（会话内部完成发奖+推进）→ 落盘 → 播色块回放 → 播完显示结果。
+   * 无遭遇节点显示「暂无关卡」。回放期间禁止再次出战/升级/重置（playing 守门）。
+   */
   private onSortie(): void {
-    if (!this.session) return;
+    if (!this.session || this.playing) return;
     const nodeId = this.session.currentNodeId;
+    let outcome: S7PlayNodeOutcome;
     try {
-      const outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED);
-      // 全队残血%（升级后血更厚+少挨打 → 残血更高,让"变强"看得见）。
-      const players = outcome.battle.result.finalState.players;
-      const totMax = players.reduce((s, u) => s + u.maxHp, 0);
-      const totHp = players.reduce((s, u) => s + Math.max(0, u.hp), 0);
-      const hpTag = `[全队残血 ${totMax > 0 ? Math.round((totHp / totMax) * 100) : 0}%]`;
-      if (outcome.won && outcome.settlement && outcome.settlement.ok) {
-        const grants = outcome.settlement.grants
-          .map((g) => `+${g.amount}${this.zhRes(g.resourceId)}`)
-          .join(' ');
-        const tail = outcome.settlement.finished ? '（已通关最终节点）' : `→ 推进到 ${outcome.settlement.nextNodeId}`;
-        this.setResult(`${nodeId} 胜！${hpTag} ${grants || '（无软货币）'} ${tail}`, new Color(160, 235, 160));
-      } else if (outcome.won) {
-        // 战斗胜但结算被拒（如重复挑战）：不发奖、不推进。
-        this.setResult(`${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, new Color(220, 210, 140));
-      } else {
-        // 败：翻成大白话败因 + 提示去升级旗舰（让"卡墙→变强"指向明确，便于试玩）。
-        this.setResult(`${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n→ 先「升级旗舰」攒强了再来`, new Color(235, 150, 150));
-      }
+      outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED);
     } catch (err) {
-      // 无遭遇配置节点（原型内容缺口）：组装器抛错，按"暂无关卡"提示，不崩。
+      // 无遭遇配置节点（原型内容缺口）：组装器抛错，按"暂无关卡"提示，不崩、不落盘（无事发生）。
       this.setResult(`${nodeId} 暂无关卡（原型遭遇待补）`, new Color(200, 200, 200));
       console.warn('[S7DemoController] 该节点暂无战斗遭遇', nodeId, err);
+      this.refresh();
+      return;
     }
+    // 状态已变（胜则发奖+推进），先落盘；结果文案按住、等回放放完再亮（边看打边出结果更有体感）。
     this.persist();
+    this.pendingResult = this.composeResultText(nodeId, outcome);
+    this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
+  }
+
+  /** 组装"上一战结果"文案（胜/重复挑战/败），回放结束后显示。 */
+  private composeResultText(nodeId: string, outcome: S7PlayNodeOutcome): { text: string; color: Color } {
+    const players = outcome.battle.result.finalState.players;
+    const totMax = players.reduce((s, u) => s + u.maxHp, 0);
+    const totHp = players.reduce((s, u) => s + Math.max(0, u.hp), 0);
+    const hpTag = `[全队残血 ${totMax > 0 ? Math.round((totHp / totMax) * 100) : 0}%]`;
+    if (outcome.won && outcome.settlement && outcome.settlement.ok) {
+      const grants = outcome.settlement.grants.map((g) => `+${g.amount}${this.zhRes(g.resourceId)}`).join(' ');
+      const tail = outcome.settlement.finished ? '（已通关最终节点）' : `→ 推进到 ${outcome.settlement.nextNodeId}`;
+      return { text: `${nodeId} 胜！${hpTag} ${grants || '（无软货币）'} ${tail}`, color: new Color(160, 235, 160) };
+    }
+    if (outcome.won) {
+      return { text: `${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, color: new Color(220, 210, 140) };
+    }
+    return {
+      text: `${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n→ 先「升级旗舰」攒强了再来`,
+      color: new Color(235, 150, 150),
+    };
+  }
+
+  // ===== B2 回放驱动 =====
+
+  /** 开播：算各单位战场坐标、亮出叠加层与「跳过」，从第 0 帧起逐帧推进（update 驱动）。 */
+  private startPlayback(pb: S7BattlePlayback): void {
+    if (!this.stageNode || !this.skipBtn) return;
+    this.playback = pb;
+    this.frameIdx = 0;
+    this.stepClock = 0;
+    // 总时长压到 ~2.8 秒内：每帧停留 = clamp(2.8/帧数, 0.03, 0.10)。
+    this.stepSec = Math.max(0.03, Math.min(0.10, 2.8 / Math.max(1, pb.frames.length - 1)));
+    this.computePositions(pb);
+    this.playing = true;
+    this.stageNode.active = true;
+    this.skipBtn.active = true;
+    this.setResult('⚔ 交战中…', new Color(210, 220, 240));
+    this.drawFrame(pb.frames[0]);
+  }
+
+  /** 每帧推进回放（cc 自动调用）。 */
+  update(dt: number): void {
+    if (!this.playing || !this.playback) return;
+    this.stepClock += dt;
+    const frames = this.playback.frames;
+    while (this.stepClock >= this.stepSec && this.frameIdx < frames.length - 1) {
+      this.frameIdx += 1;
+      this.stepClock -= this.stepSec;
+    }
+    this.drawFrame(frames[this.frameIdx]);
+    if (this.frameIdx >= frames.length - 1) this.finishPlayback();
+  }
+
+  /** 点「跳过」：直接跳到最后一帧并收尾。 */
+  private onSkip(): void {
+    if (!this.playing || !this.playback) return;
+    this.frameIdx = this.playback.frames.length - 1;
+    this.drawFrame(this.playback.frames[this.frameIdx]);
+    this.finishPlayback();
+  }
+
+  /** 收尾：停播、隐藏叠加层与「跳过」、亮出结果文案、刷新状态行。 */
+  private finishPlayback(): void {
+    this.playing = false;
+    if (this.stageNode) this.stageNode.active = false;
+    if (this.skipBtn) this.skipBtn.active = false;
+    if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
     this.refresh();
+  }
+
+  /** 预算各单位的战场局部坐标：敌方在上半区（前列 col 小→靠中间），我方在下半区（前列 col 大→靠中间）。 */
+  private computePositions(pb: S7BattlePlayback): void {
+    this.posById.clear();
+    const hw = this.viewW * 0.46;
+    const hh = this.viewH * 0.20;
+    const gap = hh * 0.12;
+    for (const u of pb.roster) {
+      const boss = u.unitStatRef.indexOf('warden') >= 0 || u.unitStatRef.indexOf('boss') >= 0;
+      let x: number;
+      let y: number;
+      if (u.side === 'player') {
+        x = -hw + ((u.row + 0.5) / 3) * (2 * hw);
+        y = -gap - ((2 - u.col) / 2) * (hh - gap); // col2(前排)靠中间, col0(后排)靠底
+      } else {
+        x = -hw + ((u.row + 0.5) / 5) * (2 * hw);
+        y = gap + (u.col / 6) * (hh - gap); // col0(前排)靠中间, col6(后排)靠顶
+      }
+      this.posById.set(u.unitId, { x, y, boss });
+    }
+  }
+
+  /** 画一帧：底板 + 攻击连线 + 双方色块（血条/死亡变灰/出手描边）。 */
+  private drawFrame(frame: S7PlaybackFrame): void {
+    const g = this.stageGfx;
+    if (!g || !this.playback) return;
+    const hw = this.viewW * 0.46;
+    const hh = this.viewH * 0.20;
+    g.clear();
+    // 底板
+    g.fillColor = new Color(8, 11, 22, 242);
+    g.roundRect(-hw - 12, -hh - 12, 2 * hw + 24, 2 * hh + 24, 12);
+    g.fill();
+    // 中线（双方分界）
+    g.strokeColor = new Color(60, 70, 90, 200);
+    g.lineWidth = 1;
+    g.moveTo(-hw, 0);
+    g.lineTo(hw, 0);
+    g.stroke();
+
+    // 攻击连线（画在色块下层）
+    for (const a of frame.attacks) {
+      const from = this.posById.get(a.actorId);
+      const tid = a.targetIds.length > 0 ? a.targetIds[0] : undefined;
+      const to = tid ? this.posById.get(tid) : undefined;
+      if (!from || !to) continue;
+      g.strokeColor = a.side === 'player' ? new Color(140, 220, 255, 230) : new Color(255, 180, 120, 230);
+      g.lineWidth = a.isUltimate ? 5 : 2;
+      g.moveTo(from.x, from.y);
+      g.lineTo(to.x, to.y);
+      g.stroke();
+    }
+
+    const attackers = new Set<string>(frame.attacks.map((a) => a.actorId));
+    for (const u of this.playback.roster) {
+      const s = frame.units[u.unitId];
+      if (!s || !s.present) continue;
+      const p = this.posById.get(u.unitId);
+      if (!p) continue;
+      const half = p.boss ? 26 : 15;
+      if (!s.alive) {
+        // 死亡：灰色小方块
+        g.fillColor = new Color(70, 70, 82, 255);
+        g.rect(p.x - half * 0.7, p.y - half * 0.7, half * 1.4, half * 1.4);
+        g.fill();
+        continue;
+      }
+      // 本体（我方蓝 / 敌方红 / 头目紫）
+      g.fillColor = u.side === 'player'
+        ? new Color(70, 150, 235, 255)
+        : (p.boss ? new Color(200, 90, 205, 255) : new Color(230, 110, 80, 255));
+      g.rect(p.x - half, p.y - half, 2 * half, 2 * half);
+      g.fill();
+      // 出手描边（本帧有攻击的单位高亮）
+      if (attackers.has(u.unitId)) {
+        g.strokeColor = new Color(255, 245, 180, 255);
+        g.lineWidth = 3;
+        g.rect(p.x - half, p.y - half, 2 * half, 2 * half);
+        g.stroke();
+      }
+      // 血条（块顶）
+      const bw = 2 * half;
+      g.fillColor = new Color(40, 40, 46, 255);
+      g.rect(p.x - half, p.y + half + 3, bw, 5);
+      g.fill();
+      g.fillColor = s.hpPct > 50 ? new Color(90, 210, 120, 255) : s.hpPct > 25 ? new Color(230, 200, 90, 255) : new Color(230, 90, 90, 255);
+      g.rect(p.x - half, p.y + half + 3, (bw * s.hpPct) / 100, 5);
+      g.fill();
+    }
   }
 
   /** 点「升级旗舰」：花星矿+合金把旗舰升 1 级（升级服务）→ 出战更强 → 刷新 + 落盘。 */
   private onUpgradeFlagship(): void {
-    if (!this.session || !this.playerState) return;
+    if (!this.session || !this.playerState || this.playing) return;
     const r = upgradeShipOneLevel(
       this.playerState.unitLevels,
       this.session.resources,
@@ -218,7 +400,7 @@ export class S7DemoController extends Component {
 
   /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
   private onReset(): void {
-    if (!this.session || !this.playerState) return;
+    if (!this.session || !this.playerState || this.playing) return;
     for (const key of Object.keys(this.session.resources)) {
       this.session.resources[key] = 0;
     }
