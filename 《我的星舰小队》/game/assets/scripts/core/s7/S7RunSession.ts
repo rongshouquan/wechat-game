@@ -15,6 +15,7 @@ import { S7MainlineModel, S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BattleRunService, S7BattleRunResult } from './S7BattleRunService';
 import { S7BattleLineupUnitInput } from './S7BattleEncounterAssembler';
 import { createS7DefaultDryRunLineup } from './S7DefaultBattleLineup';
+import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
 import {
   S7NodeSettlementResult,
   settleS7NodeVictory,
@@ -74,6 +75,8 @@ export class S7RunSession {
     public progress: S7MainlineProgressState,
     private readonly runtime: S7ConfigRuntime,
     private readonly model: S7MainlineModel,
+    /** 单位等级（C1b 升级变强，可选）：给了则默认出战阵容按各舰等级折成成长积木→战斗更强。 */
+    private readonly unitLevels?: S7UnitLevelState,
   ) {}
 
   /** 当前待打节点。 */
@@ -81,9 +84,17 @@ export class S7RunSession {
     return this.progress.currentNodeId;
   }
 
+  /** 默认出战阵容（按 unitLevels 给各舰带上等级；无 unitLevels 则原样）。 */
+  private defaultLeveledLineup(): S7BattleLineupUnitInput[] {
+    const base = createS7DefaultDryRunLineup();
+    if (!this.unitLevels) return base;
+    return base.map((u) => ({ ...u, shipLevel: getShipLevel(this.unitLevels!, u.shipId) }));
+  }
+
   /**
    * 打当前节点：跑战斗 → 胜且首通则发软货币(入账 resources)+推进进度。返回完整 outcome。
    * 负 / 重复挑战(结算 ok:false)：resources 与 progress 均不变。
+   * 未显式传 lineup 时用"按等级变强"的默认阵容（升过级的船在战斗里更强）。
    */
   playCurrentNode(runSeed: string | number, lineup?: S7BattleLineupUnitInput[]): S7PlayNodeOutcome {
     const outcome = playS7Node({
@@ -91,7 +102,7 @@ export class S7RunSession {
       model: this.model,
       progress: this.progress,
       runSeed,
-      lineup,
+      lineup: lineup ?? this.defaultLeveledLineup(),
     });
     if (outcome.won && outcome.settlement && outcome.settlement.ok) {
       applyResourceGrants(this.resources, outcome.settlement.grants);

@@ -18,6 +18,7 @@ import {
   S7ShipConfig,
   S7PluginConfig,
   S7PilotConfig,
+  S7GrowthBandParam,
 } from '../../config/s7/ConfigTypesS7';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7MainlineProgressState } from './S7MainlineProgress';
@@ -27,6 +28,7 @@ import { S7EffectBlock } from './S7BattleEffectBlock';
 import { coreBlocks } from './S7CoreEffects';
 import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES } from './S7PluginEffects';
 import { pilotBlocks } from './S7PilotEffects';
+import { shipGrowthBlocks, pilotGrowthBlocks } from './S7UnitGrowth';
 
 const MAX_LINEUP = 5;
 /** 每艘星舰固定 3 槽（武器/技能(CD)/战术），不能堆同类、同名不重复（v1.0 §5.3）。 */
@@ -52,6 +54,10 @@ export interface S7BattleLineupUnitInput {
   /** 装备的插件（块4a，≤3，槽位不能重复）：组装时按品质解析成效果积木喂装配层；缺省 = 无插件。
    *  注：品质来自「拥有插件实例」模型；该模型的存档化(背包/合成/回收)留块6，此处由调用方直接给。 */
   plugins?: S7BattleLineupPluginInput[];
+  /** 星舰等级（C1b 升级变强）：缺省 1 级；经 S7UnitGrowth.shipGrowthBlocks 折成成长积木放大血/攻。 */
+  shipLevel?: number;
+  /** 驾驶员等级（C1b 升级变强）：缺省 1 级；当前 pilotGrowthBlocks 占位返回空（§5.2 驾驶员升级无原始属性）。 */
+  pilotLevel?: number;
 }
 
 /** 组装请求：只读节点进度 + 运行种子 + 玩家阵容（稳定 shipId）。 */
@@ -226,6 +232,7 @@ export class S7BattleEncounterAssembler {
     const units = this.runtime.getAll<S7BattleUnitStatParam>('battle_unit_stat_param');
     const pluginConfigs = this.runtime.getAll<S7PluginConfig>('plugin_config');
     const pilotConfigs = this.runtime.getAll<S7PilotConfig>('pilot_config');
+    const growthBands = this.runtime.getAll<S7GrowthBandParam>('growth_band_param'); // C1b 升级变强：等级→成长积木
     const seenSlots = new Set<string>();
     const playerUnits: S7AutoBattlePlayerUnitInput[] = [];
 
@@ -260,6 +267,9 @@ export class S7BattleEncounterAssembler {
       // 块3 星核 + 块5 驾驶员 + 块4a 插件：装备件各自解析成效果积木，合并喂装配层。
       // 顺序：星核质变 → 驾驶员行为/天赋 → 插件数值微调（deriveUnit 合并与顺序无关，此序仅表语义）。
       const blocks: S7EffectBlock[] = [
+        // C1b 升级变强：星舰/驾驶员等级成长积木（按战力倍率放大血/攻；pilot 占位空）。
+        ...shipGrowthBlocks(growthBands, item.shipLevel ?? 1),
+        ...pilotGrowthBlocks(growthBands, item.pilotLevel ?? 1),
         ...(item.coreId ? coreBlocks(item.coreId) : []),
         ...(item.pilotId ? pilotBlocks(item.pilotId) : []),
         ...this.resolvePluginBlocks(item.plugins, pluginConfigs),
