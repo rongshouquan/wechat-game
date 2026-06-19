@@ -117,7 +117,9 @@ export interface S7FreeResourceAnchorParam {
   rowId: string;
   anchorDay: string;
   band: 'floor' | 'expected';
-  // 6a-2：删废弃币 battleLog/pluginMat/coreMat 列（新增币/信标拆档待第二块连数值一起加）。
+  // 6a-2：删废弃币 battleLog/pluginMat/coreMat 列。
+  // 块6余项：本表是"免费毕业预算"参照，只盯核心软货币——撤 beacon 列（信标拆 3 档后其经济交第二块·信标打捞数值表重定）；
+  //   新增币 starGem/pilotShardUniversal 同样不进本表（不被逼填毕业预算数值）。键集与 ConfigValidatorS7.ANCHOR_BUDGET_KEYS 对齐。
   starOre: number;
   hullAlloy: number;
   shipBlueprint: number;
@@ -125,7 +127,6 @@ export interface S7FreeResourceAnchorParam {
   coreFrag: number;
   fullCore: number;
   supplyTicket: number;
-  beacon: number;
   starCargo: number;
   sourceScopeNote: string;
 }

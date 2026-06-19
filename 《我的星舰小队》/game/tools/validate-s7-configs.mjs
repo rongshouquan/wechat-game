@@ -13,7 +13,10 @@ const PROBLEM_TAGS = ['swarm', 'shield', 'backline', 'burst', 'berserk', 'summon
 const STAGE_TYPES = ['normal', 'elite', 'boss'];
 const SHIP_TYPES = ['free', 'stream'];
 const PLUGIN_SLOTS = ['weapon', 'skill', 'tactical'];
-const RESOURCE_VOCAB = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken', 'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo']; // 6a-2 删 battleLog/pluginMat/coreMat
+// 资源词表（钱包全集）：奖励发放按此校验，与 S7SaveService.S7_RESOURCE_KEYS 对齐。块6余项 +starGem/pilotShardUniversal、信标拆 3 档（撤 beacon）。
+const RESOURCE_VOCAB = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken', 'coreFrag', 'fullCore', 'starGem', 'supplyTicket', 'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo'];
+// 免费毕业预算追踪子集（anchor 表列集）：只盯核心软货币，与钱包全集解耦——扩钱包不被逼填预算数值（信标经济交第二块）。
+const ANCHOR_BUDGET_KEYS = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken', 'coreFrag', 'fullCore', 'supplyTicket', 'starCargo'];
 const REWARD_SOURCE_TYPES = ['mainline', 'boss', 'action3', 'expansion7', 'salvage', 'range', 'supply', 'beacon', 'star_cargo'];
 const ANCHOR_DAYS = ['d7', 'd14', 'd21', 'd28'];
 
@@ -188,7 +191,7 @@ for (const row of tables.source_tag_config) {
   for (const d of ANCHOR_DAYS) {
     const p = byAnchor[d];
     if (!p || !p.floor || !p.expected) { fail('free_resource_anchor_param', d, `缺少 ${d} floor/expected`); continue; }
-    for (const res of RESOURCE_VOCAB) {
+    for (const res of ANCHOR_BUDGET_KEYS) {
       const f = num(p.floor[res]), e = num(p.expected[res]);
       if (f === null || e === null) fail('free_resource_anchor_param', d, `资源 ${res} 缺数值`);
       else if (f > e) fail('free_resource_anchor_param', d, `资源 ${res} floor(${f})>expected(${e})`);

@@ -25,10 +25,18 @@ const S7_STAGE_TYPES = ['normal', 'elite', 'boss'];
 const S7_SHIP_TYPES = ['free', 'stream'];
 const S7_PLUGIN_SLOTS = ['weapon', 'skill', 'tactical'];
 
-// 6a-2：删废弃币 battleLog/pluginMat/coreMat（新增 starGem/pilotShardUniversal、信标拆 3 档留第二块连 anchor 数值一起加）。
+// 资源词表（钱包全集，块6余项扩键）：奖励发放(reward_param.resourceId)按此校验，与 S7SaveService.S7_RESOURCE_KEYS 对齐。
+// 6a-2 删废弃币 battleLog/pluginMat/coreMat；块6余项 +starGem/pilotShardUniversal、信标拆 3 档 beaconCommon/Rare/Epic（撤 beacon）。
 const RESOURCE_VOCAB = [
+  'starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken',
+  'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
+  'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo',
+];
+// 免费毕业预算追踪子集（free_resource_anchor_param 列集）：只盯核心软货币——与钱包全集解耦，
+// 故扩钱包(starGem/信标 3 档等)不再被逼填毕业预算数值；信标经济交第二块·信标打捞数值表后再议是否纳入。
+const ANCHOR_BUDGET_KEYS = [
   'starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken',
-  'coreFrag', 'fullCore', 'supplyTicket', 'beacon', 'starCargo',
+  'coreFrag', 'fullCore', 'supplyTicket', 'starCargo',
 ];
 const REWARD_SOURCE_TYPES = [
   'mainline', 'boss', 'action3', 'expansion7', 'salvage', 'range', 'supply', 'beacon', 'star_cargo',
@@ -579,7 +587,7 @@ function validateTierB(
       errors.push({ table: 'free_resource_anchor_param', id: d, message: `缺少 ${d} 的 floor / expected 行` });
       continue;
     }
-    for (const res of RESOURCE_VOCAB) {
+    for (const res of ANCHOR_BUDGET_KEYS) {
       const f = num(pair.floor[res]); const e = num(pair.expected[res]);
       if (f === null || e === null) errors.push({ table: 'free_resource_anchor_param', id: d, message: `资源 ${res} 缺数值` });
       else if (f > e) errors.push({ table: 'free_resource_anchor_param', id: d, message: `资源 ${res} floor(${f}) > expected(${e})` });
