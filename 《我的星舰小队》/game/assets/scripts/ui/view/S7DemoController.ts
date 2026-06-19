@@ -26,8 +26,39 @@ import { getShipLevel } from '../../core/s7/S7UnitLevelState';
 import { upgradeShipOneLevel } from '../../core/s7/S7UnitUpgradeService';
 import { unitPowerAtLevel } from '../../core/s7/S7UnitGrowth';
 import { buildS7BattlePlayback, S7BattlePlayback, S7PlaybackFrame } from '../../core/s7/S7BattlePlayback';
+import {
+  computeS7OfflineSettlement,
+  applyOfflineGains,
+  S7OfflineSettlement,
+} from '../../core/s7/S7OfflineSettlement';
+import {
+  buildBuildingUpgradeView,
+  upgradeBuildingWithDiscount,
+} from '../../core/s7/S7BuildingUpgradeFlow';
+import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState } from '../../core/s7/S7BuildingState';
+import { S7PopulationState, createDefaultS7Population } from '../../core/s7/S7Population';
+import {
+  shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
+  salvageTeamCount, researchTeamBonusPct, merchantShopSlots,
+} from '../../core/s7/S7BuildingEffects';
 
 const { ccclass } = _decorator;
+
+/** demo 默认解锁的 7 栋建筑（真实游戏靠主线/教程解锁；demo 开局直接开到 1 级，便于演示养成）。 */
+const S7_DEMO_DEFAULT_BUILDINGS = [
+  'bld_dock', 'bld_pilot_training_bay', 'bld_habitat', 'bld_supply_station',
+  'bld_salvage_port', 'bld_merchant_station', 'bld_research_tower',
+];
+/** 建筑中文名（仅显示用）。 */
+const S7_BUILDING_NAMES: Record<string, string> = {
+  bld_dock: '船坞',
+  bld_pilot_training_bay: '训练舱',
+  bld_habitat: '居住舱',
+  bld_supply_station: '补给站',
+  bld_salvage_port: '打捞港',
+  bld_merchant_station: '商人小站',
+  bld_research_tower: '研究塔',
+};
 
 /** 固定开发种子：同节点同阵容可复现（早期节点默认 3 舰确定性胜）。 */
 const S7_DEMO_RUN_SEED = 's7-demo';
@@ -66,10 +97,23 @@ export class S7DemoController extends Component {
   /** 回放结束后再显示的结果文案（播放期间先按住）。 */
   private pendingResult: { text: string; color: Color } | null = null;
 
+  // ===== C 养成接入（离线产出 + 建筑升级）=====
+  private model: S7MainlineModel | null = null;
+  private buildings: S7BuildingState | null = null;
+  private population: S7PopulationState | null = null;
+  /** 本次上线算出的未领离线收益（null=无）。 */
+  private offlinePending: S7OfflineSettlement | null = null;
+  private offlineBtn: Node | null = null;
+  /** 建筑面板叠加层 + 每行 Label（与 S7_DEMO_DEFAULT_BUILDINGS 等长平行）。 */
+  private baseNode: Node | null = null;
+  private baseRowLabels: Label[] = [];
+  private baseCloseBtn: Node | null = null;
+
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
     this.adapter = adapter;
     const model = S7MainlineModel.fromRuntime(runtime);
+    this.model = model;
     this.upgradeCostRows = runtime.getAll<S7UpgradeCostParam>('upgrade_cost_param');
     this.growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
     // 旗舰基础血/攻（用于状态行展示"有效血/攻随等级变大"，让升级变强一眼可见）。
@@ -92,8 +136,31 @@ export class S7DemoController extends Component {
       this.playerState.unitLevels,
     );
 
+    // C 养成接入：拿建筑/人口引用、确保默认建筑已解锁、按"上次在线→现在"算离线收益（待领取）。
+    const buildings = this.playerState.buildings;
+    const population = this.playerState.population;
+    this.buildings = buildings;
+    this.population = population;
+    this.ensureDefaultBuildingsUnlocked(); // 就地解锁 buildings（同引用）
+    const offline = computeS7OfflineSettlement(
+      model, buildings, population, this.playerState.mainlineProgress, loaded.data.lastOnlineTime, now,
+    );
+    this.offlinePending = offline.hasGains ? offline : null;
+
     this.buildUi();
     this.refresh();
+    // 上线即有离线收益：在结果行提示金额，引导点上方金色「领取」。
+    if (this.offlinePending) {
+      this.setResult(`离线攒了 ${this.offlineGainsText(this.offlinePending.gains)}，点上方「领取离线收益」`, new Color(235, 215, 130));
+    }
+  }
+
+  /** demo 便利：把 7 栋默认建筑解锁到 1 级（仅对尚未解锁的，保留已升等级）。 */
+  private ensureDefaultBuildingsUnlocked(): void {
+    if (!this.buildings) return;
+    for (const id of S7_DEMO_DEFAULT_BUILDINGS) {
+      if (!isBuildingUnlocked(this.buildings, id)) unlockBuilding(this.buildings, id);
+    }
   }
 
   // ===== UI 搭建（程序化色块）=====
@@ -124,8 +191,13 @@ export class S7DemoController extends Component {
     // 「出战」按钮（蓝色块）。
     this.makeButton('出战', 280, 92, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.onSortie());
 
-    // 「升级旗舰」按钮（绿色块）：花星矿+合金升旗舰一级 → 出战更强。
-    this.makeButton('升级旗舰', 280, 84, new Color(60, 170, 110, 255), 0, -H * 0.14, () => this.onUpgradeFlagship());
+    // 「升级旗舰」（绿）+「基地」（橙）并排：升旗舰=战力养成；基地=建筑养成（开建筑面板）。
+    this.makeButton('升级旗舰', 230, 84, new Color(60, 170, 110, 255), -122, -H * 0.14, () => this.onUpgradeFlagship());
+    this.makeButton('基地', 230, 84, new Color(200, 140, 60, 255), 122, -H * 0.14, () => this.openBase());
+
+    // 「领取离线收益」按钮（金色·仅有未领收益时显示）：贴合"随用随停、回来有收获"。金额在结果行显示。
+    this.offlineBtn = this.makeButton('领取离线收益', 440, 70, new Color(210, 170, 60, 255), 0, H * 0.205, () => this.onClaimOffline());
+    this.offlineBtn.active = false;
 
     // 上一战 / 升级结果（多行）。
     this.resultLabel = this.makeLabel('点「出战」开始', 23, new Color(180, 230, 180), 0, -H * 0.26);
@@ -144,6 +216,63 @@ export class S7DemoController extends Component {
     // 「跳过」按钮：回放时显示（盖在出战位上），点了直接跳到结果。
     this.skipBtn = this.makeButton('跳过 ▶▶', 200, 64, new Color(95, 100, 120, 255), 0, -H * 0.02, () => this.onSkip());
     this.skipBtn.active = false;
+
+    this.buildBasePanel(W, H);
+  }
+
+  /** 搭"基地建筑"面板叠加层（默认隐藏）：底板 + 标题 + 7 行(点行=升该建筑) + 关闭。行文案在 refreshBasePanel 填。 */
+  private buildBasePanel(W: number, H: number): void {
+    const panel = new Node('S7BasePanel');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(10, 14, 26, 248);
+    g.roundRect(-W * 0.45, -H * 0.32, W * 0.9, H * 0.64, 14);
+    g.fill();
+    panel.active = false;
+    this.baseNode = panel;
+
+    const title = new Node('S7BaseTitle');
+    title.layer = this.node.layer;
+    panel.addChild(title);
+    title.setPosition(0, H * 0.27, 0);
+    const tl = title.addComponent(Label);
+    tl.fontSize = 22;
+    tl.lineHeight = 28;
+    tl.color = new Color(255, 230, 120);
+    tl.string = '基地建筑（原型：仅居住舱→离线 真生效，余为展示）';
+
+    // 7 行：每行一个可点 Node（行底板 + Label），点击升对应建筑。
+    this.baseRowLabels = [];
+    for (let i = 0; i < S7_DEMO_DEFAULT_BUILDINGS.length; i += 1) {
+      const id = S7_DEMO_DEFAULT_BUILDINGS[i];
+      const rowY = H * 0.20 - i * H * 0.052;
+      const row = new Node(`S7BaseRow_${id}`);
+      row.layer = this.node.layer;
+      panel.addChild(row);
+      row.setPosition(0, rowY, 0);
+      const rut = row.addComponent(UITransform);
+      rut.setContentSize(W * 0.84, H * 0.046);
+      const rg = row.addComponent(Graphics);
+      rg.fillColor = new Color(30, 38, 56, 255);
+      rg.roundRect(-W * 0.42, -H * 0.022, W * 0.84, H * 0.044, 8);
+      rg.fill();
+      const lblNode = new Node('rowlbl');
+      lblNode.layer = this.node.layer;
+      row.addChild(lblNode);
+      const lbl = lblNode.addComponent(Label);
+      lbl.fontSize = 20;
+      lbl.lineHeight = 26;
+      lbl.color = new Color(230, 240, 255);
+      lbl.string = '';
+      this.baseRowLabels.push(lbl);
+      row.on(Node.EventType.TOUCH_END, () => this.onUpgradeBuilding(id), this);
+    }
+
+    // 关闭按钮（挂在 this.node 上，随面板一起显隐）。
+    this.baseCloseBtn = this.makeButton('关闭', 180, 64, new Color(95, 100, 120, 255), 0, -H * 0.28, () => this.closeBase());
+    this.baseCloseBtn.active = false;
   }
 
   private makeLabel(text: string, fontSize: number, color: Color, x: number, y: number): Label {
@@ -407,9 +536,109 @@ export class S7DemoController extends Component {
     this.session.progress = createDefaultS7MainlineProgress();
     this.playerState.unitLevels.shipLevels = {};
     this.playerState.unitLevels.pilotLevels = {};
-    this.setResult('已重置：回到 n001、资源清零、等级归 1', new Color(180, 200, 230));
+    // C：建筑/人口也归零（重新解锁默认建筑到 1 级），清未领离线。
+    this.playerState.buildings = createDefaultS7BuildingState();
+    this.playerState.population = createDefaultS7Population();
+    this.buildings = this.playerState.buildings;
+    this.population = this.playerState.population;
+    this.ensureDefaultBuildingsUnlocked();
+    this.offlinePending = null;
+    this.closeBase();
+    this.setResult('已重置：回到 n001、资源清零、等级归 1、建筑回 1 级', new Color(180, 200, 230));
     this.persist();
     this.refresh();
+  }
+
+  // ===== C 离线收益领取 =====
+
+  /** 点「领取离线收益」：把离线进账入账 → 落盘(刷新 lastOnlineTime 关闭本次窗口) → 刷新。 */
+  private onClaimOffline(): void {
+    if (!this.session || this.playing || !this.offlinePending) return;
+    const cap = this.offlinePending.overflowed ? '（已达存储上限·升居住舱可扩）' : '';
+    applyOfflineGains(this.session.resources, this.offlinePending.gains);
+    const text = this.offlineGainsText(this.offlinePending.gains);
+    this.offlinePending = null;
+    this.setResult(`领取离线收益 ${text}${cap}`, new Color(235, 215, 130));
+    this.persist();
+    this.refresh();
+  }
+
+  /** 离线进账三币种的"+X名"串（仅正向）。 */
+  private offlineGainsText(g: Record<string, number>): string {
+    return (['starOre', 'hullAlloy', 'pilotToken'])
+      .filter((k) => (g[k] ?? 0) > 0)
+      .map((k) => `+${g[k]}${this.zhRes(k)}`)
+      .join(' ') || '（无）';
+  }
+
+  // ===== C 建筑面板 =====
+
+  /** 打开基地建筑面板（回放期间禁用）。 */
+  private openBase(): void {
+    if (this.playing || !this.baseNode) return;
+    this.refreshBasePanel();
+    this.baseNode.active = true;
+    if (this.baseCloseBtn) this.baseCloseBtn.active = true;
+  }
+
+  private closeBase(): void {
+    if (this.baseNode) this.baseNode.active = false;
+    if (this.baseCloseBtn) this.baseCloseBtn.active = false;
+  }
+
+  /** 点某建筑行：升 1 级（花星矿，工人折扣）→ 落盘 + 刷新（含面板）。 */
+  private onUpgradeBuilding(buildingId: string): void {
+    if (!this.session || !this.buildings || !this.population || this.playing) return;
+    const r = upgradeBuildingWithDiscount(this.buildings, this.session.resources, this.population, buildingId);
+    const name = S7_BUILDING_NAMES[buildingId] ?? buildingId;
+    if (r.ok) {
+      this.setResult(`${name} 升到 Lv.${r.newLevel}！花 ${r.starOreSpent}星矿`, new Color(150, 235, 180));
+    } else if (r.code === 'insufficient_star_ore') {
+      this.setResult(`${name} 星矿不够（先出战/领离线攒矿）`, new Color(235, 150, 150));
+    } else if (r.code === 'max_level') {
+      this.setResult(`${name} 已满级（Lv.10）`, new Color(220, 210, 140));
+    } else {
+      this.setResult(`${name} 暂不可升级`, new Color(200, 200, 200));
+    }
+    this.persist();
+    this.refresh();
+    this.refreshBasePanel();
+  }
+
+  /** 刷新建筑面板各行文案（等级/效果/折后成本/买不买得起）。 */
+  private refreshBasePanel(): void {
+    if (!this.buildings || !this.session || !this.population) return;
+    const rows = buildBuildingUpgradeView(S7_DEMO_DEFAULT_BUILDINGS, this.buildings, this.session.resources, this.population);
+    for (let i = 0; i < rows.length && i < this.baseRowLabels.length; i += 1) {
+      const row = rows[i];
+      const name = S7_BUILDING_NAMES[row.buildingId] ?? row.buildingId;
+      const lbl = this.baseRowLabels[i];
+      const eff = this.effectSummary(row.buildingId, row.level);
+      if (!row.unlocked) {
+        lbl.string = `${name}  未解锁`;
+        lbl.color = new Color(140, 140, 150);
+      } else if (row.atMax) {
+        lbl.string = `${name} Lv.${row.level} 满级 · ${eff}`;
+        lbl.color = new Color(190, 200, 220);
+      } else {
+        lbl.string = `${name} Lv.${row.level} · ${eff} · 升级 ${row.discountedCost}矿`;
+        lbl.color = row.canAfford ? new Color(180, 235, 180) : new Color(220, 160, 150);
+      }
+    }
+  }
+
+  /** 建筑当前等级的效果一句话（显示用；原型仅居住舱→离线 真生效，余为展示）。 */
+  private effectSummary(buildingId: string, level: number): string {
+    switch (buildingId) {
+      case 'bld_habitat': return `离线${Math.round(offlineStorageHours(level))}h·产率+${Math.round(offlineRateBonusPct(level))}%`;
+      case 'bld_dock': return `旗舰等级上限${shipLevelCap(level)}`;
+      case 'bld_pilot_training_bay': return `驾驶员上限${driverLevelCap(level)}`;
+      case 'bld_research_tower': return `全队伤害+${researchTeamBonusPct(level)}%`;
+      case 'bld_salvage_port': return `打捞队${salvageTeamCount(level)}`;
+      case 'bld_merchant_station': return `商店槽${merchantShopSlots(level)}`;
+      case 'bld_supply_station': return '抽卡出率(预览)';
+      default: return '';
+    }
   }
 
   // ===== 刷新 / 落盘 =====
@@ -428,6 +657,8 @@ export class S7DemoController extends Component {
     const effAtk = Math.round(this.flagshipBaseAtk * ratio);
     this.statusLabel.string =
       `星矿 ${ore}    合金 ${alloy}\n当前节点 ${this.session.currentNodeId}    已通关 ${cleared}\n旗舰 ${S7_DEMO_FLAGSHIP_ID} Lv.${flagLv}  血${effHp} 攻${effAtk}`;
+    // C：有未领离线收益才显示金色「领取」按钮。
+    if (this.offlineBtn) this.offlineBtn.active = this.offlinePending !== null;
   }
 
   /** 把会话当前态写回 S7 存档域并落盘（独立 key，不动流程版存档）。 */
