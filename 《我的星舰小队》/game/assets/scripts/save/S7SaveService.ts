@@ -31,6 +31,16 @@ import {
   createDefaultS7Population,
   normalizeS7Population,
 } from '../core/s7/S7Population';
+import {
+  S7ExclusiveShardInventoryState,
+  createDefaultS7ExclusiveShardInventory,
+  normalizeS7ExclusiveShardInventory,
+} from '../core/s7/S7ExclusiveShardInventory';
+import {
+  S7ChestInventoryState,
+  createDefaultS7ChestInventory,
+  normalizeS7ChestInventory,
+} from '../core/s7/S7ChestInventory';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -41,8 +51,9 @@ import {
  * v5（6b-4b）：playerState 增加 population（居民/工人）；旧档加载补默认 0 人口（加性迁移，无需重置）。
  * v6（块6余项）：钱包扩键——新增 starGem(星空宝石)/pilotShardUniversal(通用驾驶员碎片)、信标 beacon 拆 3 档
  *   (beaconCommon/beaconRare/beaconEpic)。新键默认 0（加性）；旧档的笼统 beacon 量并入 beaconCommon（不丢、见 normalize）。
+ * v7（块6余项）：playerState 增加 exclusiveShards(专属碎片库存) + chests(宝箱×3)；旧档加载补默认空（加性迁移，无需重置）。
  */
-export const S7_CURRENT_SAVE_VERSION = 6;
+export const S7_CURRENT_SAVE_VERSION = 7;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -82,6 +93,10 @@ export interface S7PlayerState {
   buildings: S7BuildingState;
   /** 基地人口居民/工人（6b-4b）：形状由 core/s7/S7Population 拥有，本层组合。 */
   population: S7PopulationState;
+  /** 专属碎片库存（块6余项）：unitId→专属碎片数，形状由 core/s7/S7ExclusiveShardInventory 拥有。 */
+  exclusiveShards: S7ExclusiveShardInventoryState;
+  /** 宝箱×3 未开库存（块6余项）：星辉货舱/行动宝藏/扩张宝藏计数，形状由 core/s7/S7ChestInventory 拥有。 */
+  chests: S7ChestInventoryState;
 }
 
 export interface S7SaveData {
@@ -107,6 +122,8 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     pluginInventory: createDefaultS7PluginInventory(),
     buildings: createDefaultS7BuildingState(),
     population: createDefaultS7Population(),
+    exclusiveShards: createDefaultS7ExclusiveShardInventory(),
+    chests: createDefaultS7ChestInventory(),
   };
 }
 
@@ -152,6 +169,8 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     pluginInventory: normalizeS7PluginInventory(src.pluginInventory),
     buildings: normalizeS7BuildingState(src.buildings),
     population: normalizeS7Population(src.population),
+    exclusiveShards: normalizeS7ExclusiveShardInventory(src.exclusiveShards),
+    chests: normalizeS7ChestInventory(src.chests),
   };
 }
 
@@ -245,6 +264,9 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       pluginInventory: normalizeS7PluginInventory(data.playerState?.pluginInventory),
       buildings: normalizeS7BuildingState(data.playerState?.buildings),
       population: normalizeS7Population(data.playerState?.population),
+      // 块6余项：persist 须显式列全字段（6b-2 教训：漏列会落盘丢字段）——补 exclusiveShards + chests。
+      exclusiveShards: normalizeS7ExclusiveShardInventory(data.playerState?.exclusiveShards),
+      chests: normalizeS7ChestInventory(data.playerState?.chests),
     },
     lastOnlineTime: now,
   };

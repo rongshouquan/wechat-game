@@ -46,10 +46,12 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(6); // 块6余项：v5→v6（钱包扩键 + 信标拆 3 档）
+    expect(data.saveVersion).toBe(7); // 块6余项：v6（钱包扩键）→v7（专属碎片库存 + 宝箱×3）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
+    expect(data.playerState.exclusiveShards).toEqual({ shards: {} }); // 块6余项：默认空专属碎片库存
+    expect(data.playerState.chests).toEqual({ starlightCargo: 0, actionTreasure: 0, expansionTreasure: 0 }); // 块6余项：默认空宝箱
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -110,6 +112,20 @@ describe('s7 save - independent storage domain', () => {
     expect(r.data.playerState.pluginInventory.nextInstanceSeq).toBe(2);
     // 人口往返保留（6b-4b）
     expect(r.data.playerState.population).toEqual({ residents: 7, workers: 3 });
+  });
+
+  it('round-trips exclusiveShards + chests through persist + load（块6余项·防 persist 漏字段）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const data = createDefaultS7SaveData(NOW);
+    data.playerState.exclusiveShards.shards['ship01'] = 12;
+    data.playerState.exclusiveShards.shards['pil03'] = 5;
+    data.playerState.chests = { starlightCargo: 2, actionTreasure: 1, expansionTreasure: 3 };
+    persistS7Save(adapter, data, NOW + 1000);
+
+    const r = loadS7Save(adapter, NOW + 2000);
+    // 漏写会让它退回默认空，本断言即为防回归（呼应 6b-2 persist 漏 pluginInventory 的教训）
+    expect(r.data.playerState.exclusiveShards.shards).toEqual({ ship01: 12, pil03: 5 });
+    expect(r.data.playerState.chests).toEqual({ starlightCargo: 2, actionTreasure: 1, expansionTreasure: 3 });
   });
 
   it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
@@ -299,6 +315,37 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.population).toEqual({ residents: 5, workers: 2 });
   });
 
+  it('迁移 v6 旧档到 v7：补默认空专属碎片库存 + 空宝箱，保留旧字段（加性迁移，无需重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    // v6 旧档形状：有钱包/主线/插件/建筑/人口，但无 exclusiveShards / chests。
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: 6,
+        lastOnlineTime: NOW,
+        playerState: {
+          resources: { starOre: 1800, beaconCommon: 2 },
+          mainlineProgress: { currentNodeId: 'n006', clearedNodeIds: ['n001', 'n002', 'n003', 'n004', 'n005'] },
+          pluginInventory: { plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 },
+          buildings: { levels: { bld_dock: 5 } },
+          population: { residents: 3, workers: 1 },
+        },
+      }),
+    );
+    const r = loadS7Save(adapter, NOW + 5);
+    expect(r.migrated).toBe(true);
+    expect(r.corrupted).toBe(false);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
+    // 新字段补默认空
+    expect(r.data.playerState.exclusiveShards).toEqual({ shards: {} });
+    expect(r.data.playerState.chests).toEqual({ starlightCargo: 0, actionTreasure: 0, expansionTreasure: 0 });
+    // 旧字段全保留
+    expect(r.data.playerState.resources.starOre).toBe(1800);
+    expect(r.data.playerState.resources.beaconCommon).toBe(2);
+    expect(r.data.playerState.buildings.levels).toEqual({ bld_dock: 5 });
+    expect(r.data.playerState.population).toEqual({ residents: 3, workers: 1 });
+  });
+
   it('round-trips mainlineProgress through persist + load', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
@@ -346,9 +393,11 @@ describe('s7 save - 流程版 SaveService isolation', () => {
     expect(r.isNew).toBe(true); // 未读取流程版 key，视为无 S7 档
   });
 
-  it('keeps S7 version counter independent from 流程版 CURRENT_SAVE_VERSION', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(6);
-    // 流程版当前为 7；两者各自独立计数，本断言锁定"S7 不复用流程版版本号"。
-    expect(S7_CURRENT_SAVE_VERSION).not.toBe(CURRENT_SAVE_VERSION);
+  it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
+    expect(S7_CURRENT_SAVE_VERSION).toBe(7);
+    expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
+    // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
+    // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）
+    expect(S7_SAVE_STORAGE_KEY).not.toBe(SAVE_STORAGE_KEY);
   });
 });
