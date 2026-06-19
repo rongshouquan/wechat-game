@@ -58,8 +58,9 @@ import {
  *   (beaconCommon/beaconRare/beaconEpic)。新键默认 0（加性）；旧档的笼统 beacon 量并入 beaconCommon（不丢、见 normalize）。
  * v7（块6余项）：playerState 增加 exclusiveShards(专属碎片库存) + chests(宝箱×3)；旧档加载补默认空（加性迁移，无需重置）。
  * v8（块7a）：playerState 增加 activityProgress(3天/7天活动进度+领取)；旧档加载补默认空（加性迁移，无需重置）。
+ * v9（块7b）：activityProgress 每活动增加 cycleStartTime(周期起算)+settlementCount(累计结算次数)；旧档补默认 0（加性迁移）。
  */
-export const S7_CURRENT_SAVE_VERSION = 8;
+export const S7_CURRENT_SAVE_VERSION = 9;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。

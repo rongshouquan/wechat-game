@@ -46,16 +46,16 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(8); // 块7a：v7→v8（活动进度）
+    expect(data.saveVersion).toBe(9); // 块7b：v8→v9（活动周期字段）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
     expect(data.playerState.exclusiveShards).toEqual({ shards: {} }); // 块6余项：默认空专属碎片库存
     expect(data.playerState.chests).toEqual({ starlightCargo: 0, actionTreasure: 0, expansionTreasure: 0 }); // 块6余项：默认空宝箱
     expect(data.playerState.activityProgress).toEqual({
-      action3: { progress: 0, claimedMilestones: [], completionClaimed: false },
-      expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false },
-    }); // 块7a：默认空活动进度
+      action3: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
+      expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
+    }); // 块7a/7b：默认空活动进度（含周期字段）
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -135,13 +135,13 @@ describe('s7 save - independent storage domain', () => {
   it('round-trips activityProgress through persist + load（块7a·防 persist 漏字段）', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
-    data.playerState.activityProgress.action3 = { progress: 150, claimedMilestones: ['a1'], completionClaimed: true };
-    data.playerState.activityProgress.expansion7 = { progress: 40, claimedMilestones: [], completionClaimed: false };
+    data.playerState.activityProgress.action3 = { progress: 150, claimedMilestones: ['a1'], completionClaimed: true, cycleStartTime: NOW, settlementCount: 1 };
+    data.playerState.activityProgress.expansion7 = { progress: 40, claimedMilestones: [], completionClaimed: false, cycleStartTime: NOW, settlementCount: 0 };
     persistS7Save(adapter, data, NOW + 1000);
 
     const r = loadS7Save(adapter, NOW + 2000);
-    expect(r.data.playerState.activityProgress.action3).toEqual({ progress: 150, claimedMilestones: ['a1'], completionClaimed: true });
-    expect(r.data.playerState.activityProgress.expansion7).toEqual({ progress: 40, claimedMilestones: [], completionClaimed: false });
+    expect(r.data.playerState.activityProgress.action3).toEqual({ progress: 150, claimedMilestones: ['a1'], completionClaimed: true, cycleStartTime: NOW, settlementCount: 1 });
+    expect(r.data.playerState.activityProgress.expansion7).toEqual({ progress: 40, claimedMilestones: [], completionClaimed: false, cycleStartTime: NOW, settlementCount: 0 });
   });
 
   it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
@@ -362,7 +362,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.population).toEqual({ residents: 3, workers: 1 });
   });
 
-  it('迁移 v7 旧档到 v8：补默认空活动进度，保留旧字段（加性迁移，无需重置）', () => {
+  it('迁移 v7 旧档到当前：补默认空活动进度，保留旧字段（加性迁移，无需重置）', () => {
     const adapter = new MemoryStorageAdapter();
     // v7 旧档形状：有钱包/主线/插件/建筑/人口/专属碎片/宝箱，但无 activityProgress。
     adapter.setString(
@@ -385,10 +385,10 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    // 新字段补默认空
+    // 新字段补默认空（含块7b 周期字段）
     expect(r.data.playerState.activityProgress).toEqual({
-      action3: { progress: 0, claimedMilestones: [], completionClaimed: false },
-      expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false },
+      action3: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
+      expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
     });
     // 旧字段全保留
     expect(r.data.playerState.resources.starGem).toBe(4);
@@ -444,7 +444,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(8);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(9);
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）

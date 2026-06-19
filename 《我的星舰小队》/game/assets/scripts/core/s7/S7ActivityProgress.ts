@@ -11,7 +11,13 @@
 export const S7_ACTIVITY_TYPES = ['action3', 'expansion7'] as const;
 export type S7ActivityType = (typeof S7_ACTIVITY_TYPES)[number];
 
-/** 单个活动的当前进度状态（块7a：不含周期时间字段，周期滚动留块7b）。 */
+/** 各活动周期时长（秒，定义性常量）：action3=3天=72h、expansion7=7天=168h（v1.0 §10.5）。 */
+export const S7_ACTIVITY_DURATION_SEC: Record<S7ActivityType, number> = {
+  action3: 72 * 3600,
+  expansion7: 168 * 3600,
+};
+
+/** 单个活动的状态（块7a 进度/领取 + 块7b 周期字段）。 */
 export interface S7ActivityState {
   /** 当前周期累计进度点（≥0，可非整数——进度权重可由喂入方决定）。 */
   progress: number;
@@ -19,13 +25,17 @@ export interface S7ActivityState {
   claimedMilestones: string[];
   /** 完成奖励是否已领。 */
   completionClaimed: boolean;
+  /** 块7b：当前周期开始时刻（ms）。0 = 尚未起算，首次 tick 时以 now 初始化（连续自动滚动）。 */
+  cycleStartTime: number;
+  /** 块7b：累计已结算次数（用于 7 天扩张"第 1 次自选核 / 第 N 次随机"，由开箱侧读取）。 */
+  settlementCount: number;
 }
 
 /** 活动进度子状态：键集恒为 S7_ACTIVITY_TYPES。 */
 export type S7ActivityProgressState = Record<S7ActivityType, S7ActivityState>;
 
 function createDefaultActivityState(): S7ActivityState {
-  return { progress: 0, claimedMilestones: [], completionClaimed: false };
+  return { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 };
 }
 
 /** 默认空活动进度（两种活动均零）。 */
@@ -54,6 +64,11 @@ function normalizeActivityState(raw: unknown): S7ActivityState {
     }
   }
   out.completionClaimed = src.completionClaimed === true;
+  // 块7b：cycleStartTime 取有限非负数(否则 0=未起算)；settlementCount 取非负整数(否则 0)。
+  const cs = src.cycleStartTime;
+  if (typeof cs === 'number' && Number.isFinite(cs) && cs >= 0) out.cycleStartTime = cs;
+  const sc = src.settlementCount;
+  if (typeof sc === 'number' && Number.isInteger(sc) && sc >= 0) out.settlementCount = sc;
   return out;
 }
 
@@ -136,4 +151,70 @@ export function claimCompletion(
   if (!canClaimCompletion(state, type, completionThreshold)) return false;
   state[type].completionClaimed = true;
   return true;
+}
+
+// ===== 块7b：周期窗口（连续自动滚动）+ 结算 + 跨期追赶 =====
+
+/** 周期 tick 的每类配置：完成阈值（达到才算"窗口内攒够"、结算才发宝藏；由第二块细表填）。 */
+export interface S7ActivityCycleConfig {
+  completionThreshold: number;
+}
+
+/** 一次结算事件：哪种活动 + 本次结算后的累计结算序号（1=第 1 次，供 7 天扩张 1st/Nth 内容判定）。 */
+export interface S7ActivitySettlement {
+  type: S7ActivityType;
+  settlementCount: number;
+}
+
+/** 某活动当前周期结束时刻（ms）。未起算(cycleStartTime=0)返回 0。供 UI 倒计时。 */
+export function activityCycleEndTime(state: S7ActivityProgressState, type: S7ActivityType): number {
+  const st = state[type];
+  if (st.cycleStartTime <= 0) return 0;
+  return st.cycleStartTime + S7_ACTIVITY_DURATION_SEC[type] * 1000;
+}
+
+/** 结算宝藏对应的宝箱类型（供调用方 addChest）：3天→行动宝藏 / 7天→扩张宝藏。 */
+export function settlementChestType(type: S7ActivityType): 'actionTreasure' | 'expansionTreasure' {
+  return type === 'action3' ? 'actionTreasure' : 'expansionTreasure';
+}
+
+/**
+ * 推进活动周期到 now（连续自动滚动 · 确定可复算 · 纯函数，now 由边界传入）：
+ * - 首次（cycleStartTime=0）：以 now 起算当前周期，不结算。
+ * - 每过完一个周期窗口：若该轮 progress 已达完成阈值 → 记一次结算(settlementCount+1)并产出结算事件；
+ *   随后滚入下一轮（cycleStartTime+=时长、progress/里程碑/完成 全部重置）。
+ * - 跨期追赶（§12）：离开太久跨多轮——只有"离开当下那轮"可能达标结算；被略过的轮 progress 已重置为 0、
+ *   达不到阈值 → 自动作废（守"少玩 3-4 天明显落后"红线，不补偿）。
+ * 返回本次产生的所有结算事件（按时间顺序）；调用方据此发宝箱(settlementChestType)+走邮件/背包。就地修改 state。
+ */
+export function tickActivityCycles(
+  state: S7ActivityProgressState,
+  now: number,
+  config: Record<S7ActivityType, S7ActivityCycleConfig>,
+): S7ActivitySettlement[] {
+  const events: S7ActivitySettlement[] = [];
+  if (typeof now !== 'number' || !Number.isFinite(now)) return events;
+  for (const type of S7_ACTIVITY_TYPES) {
+    const st = state[type];
+    const durMs = S7_ACTIVITY_DURATION_SEC[type] * 1000;
+    if (st.cycleStartTime <= 0) {
+      st.cycleStartTime = now; // 首次起算，本 tick 不结算
+      continue;
+    }
+    const threshold = config?.[type]?.completionThreshold;
+    // 防御：时钟回退 / now < 周期开始 → while 不成立、原样不动。
+    while (now >= st.cycleStartTime + durMs) {
+      // 该轮窗口已结束：达完成阈值才结算（未攒够即作废）。
+      if (typeof threshold === 'number' && Number.isFinite(threshold) && st.progress >= threshold) {
+        st.settlementCount += 1;
+        events.push({ type, settlementCount: st.settlementCount });
+      }
+      // 滚入下一轮：起点后移一个窗口，进度/里程碑/完成 全部重置。
+      st.cycleStartTime += durMs;
+      st.progress = 0;
+      st.claimedMilestones = [];
+      st.completionClaimed = false;
+    }
+  }
+  return events;
 }
