@@ -153,17 +153,22 @@ export class S7DemoController extends Component {
     const nodeId = this.session.currentNodeId;
     try {
       const outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED);
+      // 全队残血%（升级后血更厚+少挨打 → 残血更高,让"变强"看得见）。
+      const players = outcome.battle.result.finalState.players;
+      const totMax = players.reduce((s, u) => s + u.maxHp, 0);
+      const totHp = players.reduce((s, u) => s + Math.max(0, u.hp), 0);
+      const hpTag = `[全队残血 ${totMax > 0 ? Math.round((totHp / totMax) * 100) : 0}%]`;
       if (outcome.won && outcome.settlement && outcome.settlement.ok) {
         const grants = outcome.settlement.grants
           .map((g) => `+${g.amount}${this.zhRes(g.resourceId)}`)
           .join(' ');
         const tail = outcome.settlement.finished ? '（已通关最终节点）' : `→ 推进到 ${outcome.settlement.nextNodeId}`;
-        this.setResult(`${nodeId} 胜！ ${grants || '（无软货币）'} ${tail}`, new Color(160, 235, 160));
+        this.setResult(`${nodeId} 胜！${hpTag} ${grants || '（无软货币）'} ${tail}`, new Color(160, 235, 160));
       } else if (outcome.won) {
         // 战斗胜但结算被拒（如重复挑战）：不发奖、不推进。
-        this.setResult(`${nodeId} 胜（重复挑战，不再发奖）`, new Color(220, 210, 140));
+        this.setResult(`${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, new Color(220, 210, 140));
       } else {
-        this.setResult(`${nodeId} 败：${outcome.battle.summary.hintCode}`, new Color(235, 150, 150));
+        this.setResult(`${nodeId} 败：${outcome.battle.summary.hintCode} ${hpTag}`, new Color(235, 150, 150));
       }
     } catch (err) {
       // 无遭遇配置节点（原型内容缺口）：组装器抛错，按"暂无关卡"提示，不崩。
