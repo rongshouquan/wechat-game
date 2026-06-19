@@ -95,12 +95,28 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     expect(wins).toBeGreaterThanOrEqual(1); // n001 默认阵容确定性胜
   });
 
-  it('推进到"无遭遇配置"的节点(n002)→ playCurrentNode 抛错(不吞错)；记录原型内容缺口', async () => {
+  it('连续循环转起来：从 n001 连打到 n005（step1c 补的遭遇）全胜、逐关发奖累加、进度逐节点前移', async () => {
     await ensure();
     const s = new S7RunSession(freshResources(), createDefaultS7MainlineProgress(), runtime, model);
-    s.playCurrentNode('r1'); // 胜 n001 → 推进到 n002
-    expect(s.currentNodeId).toBe('n002');
-    // n002 样例无 enc_n002 → 组装器抛 missing_encounter（按"不吞错"原则透传；表现层须处理）。
+    const path: string[] = [];
+    for (const expectNode of ['n001', 'n002', 'n003', 'n004', 'n005']) {
+      expect(s.currentNodeId).toBe(expectNode);
+      const oreBefore = s.resources.starOre;
+      const o = s.playCurrentNode('demo');
+      expect(o.won).toBe(true); // 默认 3 舰阵容确定性清掉早期群怪
+      expect(o.settlement && o.settlement.ok).toBe(true);
+      expect(s.resources.starOre).toBeGreaterThan(oreBefore); // 每关都发软货币
+      path.push(s.currentNodeId);
+    }
+    expect(path).toEqual(['n002', 'n003', 'n004', 'n005', 'n006']); // 逐节点前移
+    expect(s.resources.starOre).toBe(450); // 5×90
+    expect(s.resources.hullAlloy).toBe(125); // 5×25
+  });
+
+  it('连续段边界：推进到 n006(精英·暂无遭遇)→ playCurrentNode 抛错(不吞错)；记录原型内容缺口', async () => {
+    await ensure();
+    const s = new S7RunSession(freshResources(), { currentNodeId: 'n006', clearedNodeIds: [] }, runtime, model);
+    // n006 样例无 enc_n006(精英战遭遇内容待补) → 组装器抛错(按"不吞错"原则透传；表现层须处理"暂无关卡")。
     expect(() => s.playCurrentNode('r1')).toThrow();
   });
 
