@@ -19,11 +19,12 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
-import { S7UpgradeCostParam } from '../../config/s7/ConfigTypesS7';
+import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession } from '../../core/s7/S7RunSession';
 import { getShipLevel } from '../../core/s7/S7UnitLevelState';
 import { upgradeShipOneLevel } from '../../core/s7/S7UnitUpgradeService';
+import { unitPowerAtLevel } from '../../core/s7/S7UnitGrowth';
 
 const { ccclass } = _decorator;
 
@@ -39,6 +40,9 @@ export class S7DemoController extends Component {
   private playerState: S7PlayerState | null = null;
   private saveVersion = S7_CURRENT_SAVE_VERSION;
   private upgradeCostRows: S7UpgradeCostParam[] = [];
+  private growthBands: S7GrowthBandParam[] = [];
+  private flagshipBaseHp = 0;
+  private flagshipBaseAtk = 0;
 
   private statusLabel: Label | null = null;
   private resultLabel: Label | null = null;
@@ -48,6 +52,13 @@ export class S7DemoController extends Component {
     this.adapter = adapter;
     const model = S7MainlineModel.fromRuntime(runtime);
     this.upgradeCostRows = runtime.getAll<S7UpgradeCostParam>('upgrade_cost_param');
+    this.growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
+    // 旗舰基础血/攻（用于状态行展示"有效血/攻随等级变大"，让升级变强一眼可见）。
+    const flagshipBase = runtime
+      .getAll<S7BattleUnitStatParam>('battle_unit_stat_param')
+      .find((u) => u.targetType === 'ship' && u.unitRef === S7_DEMO_FLAGSHIP_ID);
+    this.flagshipBaseHp = flagshipBase?.maxHp ?? 0;
+    this.flagshipBaseAtk = flagshipBase?.attack ?? 0;
 
     // 读 S7 存档（独立域）：取出资源 + 主线进度 + 单位等级，建最小循环会话（带 unitLevels → 升级反映到战斗）。
     const now = Date.now();
@@ -227,8 +238,13 @@ export class S7DemoController extends Component {
     const alloy = Math.floor(r.hullAlloy ?? 0);
     const cleared = this.session.progress.clearedNodeIds.length;
     const flagLv = getShipLevel(this.playerState.unitLevels, S7_DEMO_FLAGSHIP_ID);
+    // 旗舰有效血/攻 = 基础 × 战力倍率(power(lv)/power(1))——升级后数字变大,直观看到变强。
+    const p1 = unitPowerAtLevel(this.growthBands, 'ship', 1);
+    const ratio = p1 > 0 ? unitPowerAtLevel(this.growthBands, 'ship', flagLv) / p1 : 1;
+    const effHp = Math.round(this.flagshipBaseHp * ratio);
+    const effAtk = Math.round(this.flagshipBaseAtk * ratio);
     this.statusLabel.string =
-      `星矿 ${ore}    合金 ${alloy}\n当前节点 ${this.session.currentNodeId}    已通关 ${cleared}\n旗舰 ${S7_DEMO_FLAGSHIP_ID}  Lv.${flagLv}`;
+      `星矿 ${ore}    合金 ${alloy}\n当前节点 ${this.session.currentNodeId}    已通关 ${cleared}\n旗舰 ${S7_DEMO_FLAGSHIP_ID} Lv.${flagLv}  血${effHp} 攻${effAtk}`;
   }
 
   /** 把会话当前态写回 S7 存档域并落盘（独立 key，不动流程版存档）。 */
