@@ -51,6 +51,8 @@ import { createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgres
 import { AudioFeedback } from '../../audio/AudioFeedback';
 import { popIn, pulseScale } from '../UiFx';
 import { BattleView } from './BattleView';
+// C1b-step2：S7 最小可玩循环色块演示层（程序化 UI，调已单测的 core/s7 纯逻辑；不动流程版装配）。
+import { S7DemoController } from './S7DemoController';
 import { RecommendedTargetView } from './RecommendedTargetView';
 import { OneTapUpgradePanel } from './OneTapUpgradePanel';
 import { OfflineRewardPanel } from './OfflineRewardPanel';
@@ -247,6 +249,8 @@ export class MainSceneController extends Component {
       );
       // RT-07D-1：预加载成功且已持有 runtime 后，跑一次本地 dry-run 开发探针（仅调试日志，错误自包含，不影响预加载结论）。
       this.runS7DryRunProbe();
+      // C1b-step2：挂载 S7 最小可玩循环色块演示层（盖在最上层；调已单测的 S7RunSession；错误自包含，不影响流程版）。
+      this.mountS7Demo(runtime);
     } catch (err) {
       // 不静默兜底、不伪造 runtime：保持 s7Runtime=null 并明确报错。
       this.s7Runtime = null;
@@ -284,6 +288,31 @@ export class MainSceneController extends Component {
       );
     } catch (err) {
       console.error('[MainSceneController] S7 dry-run 探针失败（仅调试，不影响正式流程）', err);
+    }
+  }
+
+  /**
+   * C1b-step2：在 Canvas 顶层挂载 S7 最小可玩循环色块演示层。
+   * 程序化创建一个覆盖节点 + S7DemoController，注入已加载的 runtime 与存储适配器；
+   * 演示层只读写 S7 独立存档域、调已单测的 S7RunSession，不动流程版 AppContext/存档。
+   * 全程错误自包含：失败仅日志、保留流程版可用。
+   */
+  private mountS7Demo(runtime: S7ConfigRuntime): void {
+    try {
+      const canvas = this.findNodeByName(this.sceneRoot(), 'Canvas');
+      if (!canvas) {
+        console.warn('[MainSceneController] 未找到 Canvas，S7 演示层跳过');
+        return;
+      }
+      const node = new Node('S7DemoOverlay');
+      node.layer = canvas.layer;
+      canvas.addChild(node);
+      node.setSiblingIndex(canvas.children.length - 1); // 置顶覆盖
+      const demo = node.addComponent(S7DemoController);
+      demo.init(runtime, this.pickStorageAdapter());
+      console.log('[MainSceneController] S7 最小循环演示层已挂载');
+    } catch (err) {
+      console.error('[MainSceneController] S7 演示层挂载失败（不影响流程版）', err);
     }
   }
 
