@@ -18,7 +18,7 @@ export const BEACON_RESOURCE: Record<S7BeaconTier, string> = {
 export type S7SalvageReward =
   | { kind: 'resource'; resourceId: string; amount: number }
   | { kind: 'ship_body'; shipId: string }                         // 完整星舰 C 阶（应用侧：已拥有→折该船专属碎片）
-  | { kind: 'plugin'; quality: 'fine' | 'good' | 'legendary' }    // 插件（品质·应用侧挑 pluginId 入库）
+  | { kind: 'plugin'; quality: 'fine' | 'superior' | 'legendary' } // 插件（品质·对齐 S7PluginQuality·应用侧挑 pluginId 入库）
   | { kind: 'chest'; chestId: string; amount: number }            // 星辉货舱
   | { kind: 'population'; pop: 'resident' | 'worker'; amount: number };
 
@@ -87,7 +87,7 @@ export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
       guaranteedExtra: [R('coreFrag', 5)], // 稀有保底 1 份稀有干货（星核碎片/优秀插件随一→占位给星核碎片）
       baseRolls: 2, perHourRolls: 0.35,
       discovery: [
-        { reward: { kind: 'plugin', quality: 'good' }, weight: 28 },
+        { reward: { kind: 'plugin', quality: 'superior' }, weight: 28 },
         { reward: R('shipBlueprint', 6), weight: 22 },
         { reward: R('pilotShardUniversal', 6), weight: 22 },
         { reward: R('coreFrag', 6), weight: 18 },
@@ -105,7 +105,7 @@ export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
       baseRolls: 3, perHourRolls: 0.4,
       discovery: [
         { reward: { kind: 'plugin', quality: 'legendary' }, weight: 14, cap1: true }, // 传奇仅史诗·单次≤1
-        { reward: { kind: 'plugin', quality: 'good' }, weight: 20 },
+        { reward: { kind: 'plugin', quality: 'superior' }, weight: 20 },
         { reward: R('shipBlueprint', 12), weight: 18 },
         { reward: R('pilotShardUniversal', 12), weight: 18 },
         { reward: R('coreFrag', 12), weight: 16 },

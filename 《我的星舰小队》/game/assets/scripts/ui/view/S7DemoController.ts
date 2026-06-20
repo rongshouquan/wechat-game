@@ -35,7 +35,7 @@ import {
   buildBuildingUpgradeView,
   upgradeBuildingWithDiscount,
 } from '../../core/s7/S7BuildingUpgradeFlow';
-import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState } from '../../core/s7/S7BuildingState';
+import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState, getBuildingLevel } from '../../core/s7/S7BuildingState';
 import { S7PopulationState, createDefaultS7Population } from '../../core/s7/S7Population';
 import {
   shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
@@ -60,6 +60,13 @@ import {
 } from '../../core/s7/S7GachaService';
 import { S7AdGateway, S7MockAdAdapter } from '../../core/s7/S7AdGateway';
 import { S7AutoBattleRng } from '../../core/s7/S7AutoBattleRng';
+// D 信标打捞（step1 引擎已单测）：主界面「打捞港」进打捞界面。
+import { DEFAULT_S7_SALVAGE_CONFIG, S7BeaconTier, BEACON_RESOURCE, S7SalvageReward } from '../../core/s7/S7SalvageConfig';
+import {
+  startSalvage, collectSalvage, salvageAdSpeedup, salvageRemainingMs, isSalvageDone, salvageTeamLimit,
+} from '../../core/s7/S7SalvageService';
+import { addExclusiveShards } from '../../core/s7/S7ExclusiveShardInventory';
+import { addChest } from '../../core/s7/S7ChestInventory';
 
 const { ccclass } = _decorator;
 
@@ -205,6 +212,17 @@ export class S7DemoController extends Component {
   private gachaTabBtns: { pool: S7GachaPoolId; node: Node }[] = [];
   private gachaSingleBtn: Node | null = null;      // 单抽按钮（券<1 变灰）
   private gachaTenBtn: Node | null = null;         // 十连按钮（券<10 变灰）
+
+  // ===== D 打捞港界面（信标打捞）=====
+  private salvageNode: Node | null = null;
+  private salvageSelTier: S7BeaconTier = 'common';
+  private salvageSelHours = 2;
+  private salvageInfoLabel: Label | null = null;    // 信标存量 + 打捞队占用
+  private salvageResultLabel: Label | null = null;  // 收菜/操作结果
+  private salvageListNode: Node | null = null;      // 进行中任务列表容器（刷新重建）
+  private salvageTierBtns: { tier: S7BeaconTier; node: Node }[] = [];
+  private salvageHourBtns: { hours: number; node: Node }[] = [];
+  private salvageTicking = false;                   // 打捞界面开着时每秒刷新倒计时
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -310,6 +328,13 @@ export class S7DemoController extends Component {
       for (const f of S7_DEMO_SEED_FORMATION) assignSlot(this.squad, f.slotRef, f.shipId, f.pilotId);
       // C DEV-TEMP：顺带发一批补给券，方便一进来就能抽十连演示（正式券来源=赞助补给/商人/活动）。
       if (this.playerState && (this.playerState.resources.supplyTicket ?? 0) < 188) this.playerState.resources.supplyTicket = 188;
+      // D DEV-TEMP：顺带发各档信标，方便一进来就能打捞演示（正式信标来源=商人/活动/关卡/打捞概率）。
+      if (this.playerState) {
+        const r = this.playerState.resources;
+        if ((r.beaconCommon ?? 0) < 8) r.beaconCommon = 8;
+        if ((r.beaconRare ?? 0) < 5) r.beaconRare = 5;
+        if ((r.beaconEpic ?? 0) < 3) r.beaconEpic = 3;
+      }
     }
     // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
     // 顺序固定 → 实例号 pi1.. 确定、重置后可复现。
@@ -389,6 +414,7 @@ export class S7DemoController extends Component {
     this.buildLevelSelectPanel(W, H);
     this.buildResultPopup(W, H);
     this.buildGachaPanel(W, H); // C 抽卡界面（星港补给站进）
+    this.buildSalvagePanel(W, H); // D 打捞界面（打捞港进）
   }
 
   // ===== 星港主界面 hub =====
@@ -416,7 +442,7 @@ export class S7DemoController extends Component {
     const gap = 150;
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
     this.makeHubEntry('船坞', '即将开放', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.hubToast('船坞·即将开放'));
-    this.makeHubEntry('打捞港', '即将开放', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.hubToast('打捞港·即将开放'));
+    this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage());
     this.makeHubEntry('居住舱', '即将开放', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.hubToast('居住舱·即将开放'));
     this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
     this.makeHubEntry('商人小站', '即将开放', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.hubToast('商人小站·即将开放'));
@@ -695,6 +721,233 @@ export class S7DemoController extends Component {
     if (!this.runtime) return id;
     if (kind === 'ship') return this.runtime.getById<S7ShipConfig>('ship_config', id)?.name ?? id;
     return this.runtime.getById<S7PilotConfig>('pilot_config', id)?.name ?? id;
+  }
+
+  // ===== D 打捞港界面（信标打捞）=====
+
+  private readonly SALVAGE_TIERS: { tier: S7BeaconTier; name: string }[] = [
+    { tier: 'common', name: '普通' }, { tier: 'rare', name: '稀有' }, { tier: 'epic', name: '史诗' },
+  ];
+
+  /** 搭打捞浮层（默认隐藏）：标题/信标存量+队占用 + 选档 + 选时长 + 开打 + 进行中任务列表(倒计时/收菜/加速) + 返回。 */
+  private buildSalvagePanel(W: number, H: number): void {
+    const panel = new Node('S7Salvage'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(14, 24, 30, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.salvageNode = panel;
+
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+
+    this.mkPanelLabel(panel, '打捞港', 40, new Color(150, 220, 240), -W * 0.30, topY - 30);
+    this.salvageInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(210, 230, 245), 0, topY - 92);
+
+    // 选信标档。
+    this.mkPanelLabel(panel, '选信标档', 24, new Color(170, 190, 210), -W * 0.36, topY - 150);
+    this.salvageTierBtns = [];
+    const tierY = topY - 200;
+    this.SALVAGE_TIERS.forEach((t, i) => {
+      const x = (-1 + i) * W * 0.28;
+      const n = this.mkToggleBtn(panel, t.name, x, tierY, () => this.selectSalvageTier(t.tier));
+      this.salvageTierBtns.push({ tier: t.tier, node: n });
+    });
+
+    // 选时长。
+    this.mkPanelLabel(panel, '选时长', 24, new Color(170, 190, 210), -W * 0.36, topY - 270);
+    this.salvageHourBtns = [];
+    const hourY = topY - 320;
+    [2, 8, 24].forEach((h, i) => {
+      const x = (-1 + i) * W * 0.28;
+      const n = this.mkToggleBtn(panel, `${h}h`, x, hourY, () => this.selectSalvageHours(h));
+      this.salvageHourBtns.push({ hours: h, node: n });
+    });
+
+    this.addBtn(panel, '开始打捞 (耗1信标)', 420, 88, new Color(70, 160, 130, 255), 0, topY - 410, () => this.onSalvageStart(), 30);
+
+    // 进行中任务列表容器。
+    this.mkPanelLabel(panel, '— 进行中 —', 24, new Color(150, 170, 190), 0, topY - 480);
+    const list = new Node('svList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.salvageListNode = list;
+
+    this.salvageResultLabel = this.mkPanelLabel(panel, '选档+时长→开始打捞', 24, new Color(180, 230, 200), 0, botY + 130);
+    this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 44, () => this.closeSalvage(), 30);
+  }
+
+  /** 单选小按钮（选档/选时长用·存 node 供高亮）。 */
+  private mkToggleBtn(parent: Node, text: string, x: number, y: number, onTap: () => void): Node {
+    const n = new Node('tg'); n.layer = this.node.layer; parent.addChild(n); n.setPosition(x, y, 0);
+    n.addComponent(UITransform).setContentSize(180, 76);
+    n.addComponent(Graphics);
+    const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
+    const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 36; l.color = new Color(255, 255, 255); l.string = text;
+    n.on(Node.EventType.TOUCH_END, onTap, this);
+    return n;
+  }
+  private paintToggle(n: Node, selected: boolean, w = 180, h = 76): void {
+    const g = n.getComponent(Graphics); if (!g) return;
+    g.clear(); g.fillColor = selected ? new Color(80, 160, 130, 255) : new Color(46, 58, 66, 255);
+    g.roundRect(-w / 2, -h / 2, w, h, 10); g.fill();
+  }
+
+  private openSalvage(): void {
+    if (!this.salvageNode) return;
+    this.salvageNode.active = true;
+    if (this.salvageResultLabel) this.salvageResultLabel.string = '选档+时长→开始打捞';
+    this.refreshSalvage();
+    if (!this.salvageTicking) { this.salvageTicking = true; this.schedule(this.salvageTick, 1); } // 每秒刷倒计时
+  }
+  private closeSalvage(): void {
+    if (this.salvageNode) this.salvageNode.active = false;
+    if (this.salvageTicking) { this.salvageTicking = false; this.unschedule(this.salvageTick); }
+  }
+  private salvageTick = (): void => { if (this.salvageNode?.active) this.refreshSalvage(); };
+
+  private selectSalvageTier(tier: S7BeaconTier): void { this.salvageSelTier = tier; this.refreshSalvage(); }
+  private selectSalvageHours(h: number): void { this.salvageSelHours = h; this.refreshSalvage(); }
+
+  /** 打捞港等级 → 打捞队上限。 */
+  private salvageTeamMax(): number {
+    return salvageTeamLimit(this.buildings ? getBuildingLevel(this.buildings, 'bld_salvage_port') : 0);
+  }
+
+  /** 刷新打捞界面：信标存量/队占用、选档/时长高亮、进行中任务列表（倒计时+收菜/加速）。 */
+  private refreshSalvage(): void {
+    if (!this.playerState || !this.session || !this.salvageListNode) return;
+    const r = this.session.resources;
+    const teamMax = this.salvageTeamMax();
+    const used = this.playerState.salvage.missions.length;
+    if (this.salvageInfoLabel) {
+      this.salvageInfoLabel.string = `信标 普通${Math.floor(r.beaconCommon ?? 0)} 稀有${Math.floor(r.beaconRare ?? 0)} 史诗${Math.floor(r.beaconEpic ?? 0)}　打捞队 ${used}/${teamMax}`;
+    }
+    for (const b of this.salvageTierBtns) this.paintToggle(b.node, b.tier === this.salvageSelTier);
+    for (const b of this.salvageHourBtns) this.paintToggle(b.node, b.hours === this.salvageSelHours);
+
+    // 重建任务列表。
+    this.salvageListNode.removeAllChildren();
+    const band = getS7UsableBand();
+    let y = band.usableTopY - 540;
+    const now = Date.now();
+    if (this.playerState.salvage.missions.length === 0) {
+      this.mkPanelLabel(this.salvageListNode, '（暂无打捞·选档开始）', 24, new Color(150, 160, 175), 0, y);
+    }
+    for (const m of this.playerState.salvage.missions) {
+      const tierName = this.SALVAGE_TIERS.find((t) => t.tier === m.tier)?.name ?? m.tier;
+      const done = isSalvageDone(m, now);
+      const remain = salvageRemainingMs(m, now);
+      const txt = done ? `${tierName}·${m.hours}h ✅可收菜` : `${tierName}·${m.hours}h ⏳${this.fmtRemain(remain)}`;
+      this.mkPanelLabel(this.salvageListNode, txt, 26, done ? new Color(150, 235, 170) : new Color(220, 225, 235), -this.viewW * 0.20, y);
+      const mid = m.id;
+      if (done) {
+        this.addBtn(this.salvageListNode, '收菜', 150, 64, new Color(70, 160, 110, 255), this.viewW * 0.30, y, () => this.onSalvageCollect(mid), 28);
+      } else {
+        this.addBtn(this.salvageListNode, '看广告加速', 230, 64, new Color(200, 130, 70, 255), this.viewW * 0.26, y, () => this.onSalvageSpeedup(mid), 26);
+        this.addBtn(this.salvageListNode, '秒成', 110, 64, new Color(110, 90, 140, 255), this.viewW * 0.44, y, () => this.devFinishSalvage(mid), 24); // DEV-TEMP
+      }
+      y -= 92;
+    }
+  }
+
+  /** 剩余毫秒 → "Xh Ym Zs" 简显。 */
+  private fmtRemain(ms: number): string {
+    const s = Math.ceil(ms / 1000);
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    if (h > 0) return `${h}h${m}m`;
+    if (m > 0) return `${m}m${sec}s`;
+    return `${sec}s`;
+  }
+
+  private onSalvageStart(): void {
+    if (!this.playerState || !this.session) return;
+    const tier = this.salvageSelTier;
+    const key = BEACON_RESOURCE[tier];
+    if (Math.floor((this.session.resources as Record<string, number>)[key] ?? 0) <= 0) {
+      if (this.salvageResultLabel) this.salvageResultLabel.string = `没有${this.SALVAGE_TIERS.find((t) => t.tier === tier)?.name}信标（去商人/活动获取）`;
+      return;
+    }
+    const lv = this.buildings ? getBuildingLevel(this.buildings, 'bld_salvage_port') : 0;
+    const res = startSalvage(this.playerState.salvage, DEFAULT_S7_SALVAGE_CONFIG, tier, this.salvageSelHours, lv, Date.now());
+    if (!res.ok) {
+      if (this.salvageResultLabel) this.salvageResultLabel.string = res.reason === 'no_team_slot' ? '打捞队都在忙（升打捞港加队）' : '无法开打';
+      return;
+    }
+    (this.session.resources as Record<string, number>)[key] -= 1; // 扣 1 张该档信标
+    if (this.salvageResultLabel) this.salvageResultLabel.string = `已派出打捞队（${this.salvageSelHours}h）`;
+    this.persist();
+    this.refresh();
+    this.refreshSalvage();
+  }
+
+  private onSalvageCollect(missionId: string): void {
+    if (!this.playerState) return;
+    const res = collectSalvage(this.playerState.salvage, DEFAULT_S7_SALVAGE_CONFIG, missionId, Date.now(), new S7AutoBattleRng(`salvage_${missionId}_${Date.now()}`));
+    if (!res.ok) { if (this.salvageResultLabel) this.salvageResultLabel.string = res.reason === 'not_done' ? '还没打捞完' : '任务不存在'; return; }
+    const texts = res.rewards.map((rw) => this.applySalvageReward(rw));
+    if (this.salvageResultLabel) this.salvageResultLabel.string = `带回：${texts.filter(Boolean).join('、')}`;
+    this.persist();
+    this.refresh();
+    this.refreshSalvage();
+  }
+
+  private onSalvageSpeedup(missionId: string): void {
+    if (!this.adGateway || !this.playerState) return;
+    const lv = this.buildings ? getBuildingLevel(this.buildings, 'bld_salvage_port') : 0;
+    this.adGateway.show('salvage_speedup').then((ad) => {
+      if (!ad.ok) { if (this.salvageResultLabel) this.salvageResultLabel.string = '广告没看完，未加速'; return; }
+      const sp = salvageAdSpeedup(this.playerState!.salvage, DEFAULT_S7_SALVAGE_CONFIG, missionId, lv, Date.now());
+      if (this.salvageResultLabel) {
+        this.salvageResultLabel.string = sp.ok ? `加速成功（今日 ${sp.usedToday}/${sp.dailyLimit}）`
+          : sp.reason === 'daily_limit' ? '今日加速次数用尽' : sp.reason === 'already_done' ? '已可收菜' : '任务不存在';
+      }
+      this.persist();
+      this.refreshSalvage();
+    }).catch(() => { if (this.salvageResultLabel) this.salvageResultLabel.string = '广告加载失败'; });
+  }
+
+  /** DEV-TEMP：秒成（把任务结束时刻设为现在）便于灰盒验证收菜（真机不可能等2-24h）。正式版删。 */
+  private devFinishSalvage(missionId: string): void {
+    if (!this.playerState) return;
+    const m = this.playerState.salvage.missions.find((x) => x.id === missionId);
+    if (m) { m.endTime = Date.now(); this.persist(); this.refreshSalvage(); }
+  }
+
+  /** 把一条打捞奖励入账，返回中文短描述（供结果行汇总）。完整星舰已拥有→折该船专属碎片(15·同抽卡重复)。 */
+  private applySalvageReward(rw: S7SalvageReward): string {
+    if (!this.playerState || !this.session) return '';
+    switch (rw.kind) {
+      case 'resource': {
+        const res = this.session.resources as Record<string, number>;
+        if (res[rw.resourceId] === undefined) return ''; // 非钱包键（护栏：不会有 exShard 之类）
+        res[rw.resourceId] += rw.amount;
+        return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
+      }
+      case 'ship_body': {
+        if (this.squad && !this.squad.ownedShips.includes(rw.shipId)) {
+          this.squad.ownedShips.push(rw.shipId);
+          return `${this.unitName('ship', rw.shipId)}[C级]`;
+        }
+        addExclusiveShards(this.playerState.exclusiveShards, rw.shipId, 15); // 已拥有→折专属碎片
+        return `${this.unitName('ship', rw.shipId)}碎片×15`;
+      }
+      case 'plugin': {
+        if (this.pluginInventory) {
+          const ids = Array.from(this.pluginSlotMap.keys());
+          const pid = ids.length > 0 ? ids[this.pluginInventory.plugins.length % ids.length] : 'plg01';
+          addOwnedPlugin(this.pluginInventory, pid, rw.quality);
+        }
+        const q = rw.quality === 'fine' ? '精良' : rw.quality === 'superior' ? '优秀' : '传奇';
+        return `${q}插件`;
+      }
+      case 'chest':
+        addChest(this.playerState.chests, rw.chestId as any, rw.amount);
+        return `星辉货舱×${rw.amount}`;
+      case 'population':
+        if (rw.pop === 'resident') this.playerState.population.residents += rw.amount;
+        else this.playerState.population.workers += rw.amount;
+        return rw.pop === 'resident' ? `居民×${rw.amount}` : `工人×${rw.amount}`;
+    }
   }
 
   /** 战斗结果弹窗（胜/败统一·居中对话框+半屏遮罩）：v1.0 §4.5。背景遮罩半透明→保留刚结束的战斗画面。
