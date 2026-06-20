@@ -47,6 +47,7 @@ import {
 } from '../../core/s7/S7Squad';
 import { buildPrebattleView, S7PrebattleView } from '../../core/s7/S7PrebattleView';
 import { equipPlugin, unequipPlugin, equipCore, unequipCore } from '../../core/s7/S7ShipLoadout';
+import { coreBlocks } from '../../core/s7/S7CoreEffects';
 import {
   S7PluginInventoryState, S7OwnedPlugin, addOwnedPlugin, findOwnedPlugin,
 } from '../../core/s7/S7PluginInventory';
@@ -534,9 +535,9 @@ export class S7DemoController extends Component {
       }
     }
 
-    // 选中船详情（右侧）+「深装」(开插件/星核装卸面板) +「下场」键（清当前选中格）。
+    // 选中船详情（右侧）+「装配」(开插件/星核装卸面板) +「下场」键（清当前选中格）。
     this.prebattleDetailLabel = mk('', 26, new Color(220, 230, 250), W * 0.28, gridCy + gap * 0.6);
-    mkBtn('深装', 160, 64, new Color(70, 130, 110, 255), W * 0.16, gridCy - gap, () => this.openLoadout());
+    mkBtn('装配', 160, 64, new Color(70, 130, 110, 255), W * 0.16, gridCy - gap, () => this.openLoadout());
     mkBtn('下场', 160, 64, new Color(120, 70, 70, 255), W * 0.40, gridCy - gap, () => this.onPrebattleBench());
 
     // 拥有的船 / 驾驶员（点选中格后，点这里放入）——按钮/字放大。
@@ -764,7 +765,7 @@ export class S7DemoController extends Component {
     if (this.prebattleDetailLabel) {
       const sel = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot) : null;
       this.prebattleDetailLabel.string = sel
-        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${sel.pilotId ?? '缺员'}\n${this.loadoutSummaryText(this.prebattleSelSlot!)}\n（点「深装」装/卸插件·星核）`
+        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${sel.pilotId ?? '缺员'}\n${this.loadoutSummaryText(this.prebattleSelSlot!)}\n（点「装配」装/卸插件·星核）`
         : (this.prebattleSelSlot ? `选中 ${this.prebattleSelSlot}\n（空·点下方放船）` : '点一个格选中');
     }
   }
@@ -908,15 +909,18 @@ export class S7DemoController extends Component {
     const pluginRows = Math.ceil(plugins.length / perRow);
     y -= pluginRows * (bh + 10) + 24;
 
-    // 拥有星核（点装入星核槽）。
-    mkL('拥有星核（点装入星核槽）', 24, new Color(170, 185, 210), 0, y);
+    // 拥有星核（点装入星核槽）。标注"有效果/占位"：现仅过载核心(core07)做了战斗质变，core01-06 效果留后续内容块。
+    mkL('拥有星核（点装入·现仅过载核心有效果）', 24, new Color(170, 185, 210), 0, y);
     y -= 44;
     const cores = this.squad ? Object.keys(this.squad.ownedCores) : [];
     cores.forEach((coreId, i) => {
       const r = Math.floor(i / perRow);
       const c = i % perRow;
       const x = (c - (perRow - 1) / 2) * gx;
-      mkB(coreId, bw, bh, new Color(120, 90, 60, 255), x, y - r * (bh + 10), () => this.onLoadoutEquipCore(coreId));
+      const hasEffect = coreBlocks(coreId).length > 0;
+      const label = `${coreId}\n${hasEffect ? '有效果' : '占位·待做'}`;
+      const col = hasEffect ? new Color(150, 110, 60, 255) : new Color(80, 80, 90, 255);
+      mkB(label, bw, bh, col, x, y - r * (bh + 10), () => this.onLoadoutEquipCore(coreId));
     });
 
     mkB('关闭', 220, 70, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLoadout());
@@ -928,7 +932,7 @@ export class S7DemoController extends Component {
     const sel = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot) : null;
     if (!sel) {
       if (this.prebattleInfoLabel) {
-        this.prebattleInfoLabel.string = '⚠ 先点一个有船的格，再点「深装」';
+        this.prebattleInfoLabel.string = '⚠ 先点一个有船的格，再点「装配」';
         this.prebattleInfoLabel.color = new Color(240, 200, 120);
       }
       return;
@@ -947,7 +951,7 @@ export class S7DemoController extends Component {
     const ref = this.prebattleSelSlot;
     const slot = ref ? this.slotOf(ref) : null;
     if (!slot) { this.closeLoadout(); return; }
-    if (this.loadoutTitleLabel) this.loadoutTitleLabel.string = `单舰深装 — ${slot.shipId}（${ref}）`;
+    if (this.loadoutTitleLabel) this.loadoutTitleLabel.string = `装配 — ${slot.shipId}（${ref}）`;
     const tags: S7PluginSlot[] = ['weapon', 'skill', 'tactical'];
     tags.forEach((t, i) => {
       const inst = this.equippedInSlotType(ref!, t);
