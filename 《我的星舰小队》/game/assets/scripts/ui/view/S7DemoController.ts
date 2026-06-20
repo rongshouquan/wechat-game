@@ -19,7 +19,7 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
-import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam } from '../../config/s7/ConfigTypesS7';
+import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel } from '../../core/s7/S7UnitLevelState';
@@ -43,7 +43,7 @@ import {
 } from '../../core/s7/S7BuildingEffects';
 import { getS7UsableBand } from '../S7UiLayout';
 import {
-  S7SquadState, grantShip, grantPilot, assignSlot, clearSlot,
+  S7SquadState, grantShip, grantPilot, assignSlot, setSlotPilot, clearSlot,
 } from '../../core/s7/S7Squad';
 import { buildPrebattleView, S7PrebattleView } from '../../core/s7/S7PrebattleView';
 
@@ -133,6 +133,9 @@ export class S7DemoController extends Component {
   private prebattleCellLabels: Label[] = [];        // 9 格文字(与 SLOTS 平行)
   /** 当前选中的编队格(p{r}c{c})；null=未选。 */
   private prebattleSelSlot: string | null = null;
+  /** 选择关卡浮层 + 有遭遇可玩的节点 id（init 算）。 */
+  private levelSelectNode: Node | null = null;
+  private encounterNodeIds: string[] = [];
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
@@ -148,6 +151,10 @@ export class S7DemoController extends Component {
       .find((u) => u.targetType === 'ship' && u.unitRef === S7_DEMO_FLAGSHIP_ID);
     this.flagshipBaseHp = flagshipBase?.maxHp ?? 0;
     this.flagshipBaseAtk = flagshipBase?.attack ?? 0;
+    // 有遭遇可玩的节点（供「选择关卡」列表）：按 id 排序去重。
+    const encNodes = new Set<string>();
+    runtime.getAll<S7BattleEncounterParam>('battle_encounter_param').forEach((e) => encNodes.add(e.nodeRef));
+    this.encounterNodeIds = Array.from(encNodes).sort();
 
     // 读 S7 存档（独立域）：取出资源 + 主线进度 + 单位等级，建最小循环会话（带 unitLevels → 升级反映到战斗）。
     const now = Date.now();
@@ -272,6 +279,56 @@ export class S7DemoController extends Component {
 
     this.buildBasePanel(W, H);
     this.buildPrebattlePanel(W, H);
+    this.buildLevelSelectPanel(W, H);
+  }
+
+  /** 选择关卡浮层（graybox 跳关工具）：列有遭遇的可玩节点，点了把进度设到该关→回备战界面。
+   *  ⚠️ 这是 graybox 测试用跳关（设该节点为当前进度·前面记为已通）；正式主线关卡选择/地图(§8)是独立块、后面做。 */
+  private buildLevelSelectPanel(W: number, H: number): void {
+    const band = getS7UsableBand();
+    const panel = new Node('S7LevelSelect');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(10, 14, 26, 250);
+    g.rect(-W / 2, -H / 2, W, H);
+    g.fill();
+    const put = panel.addComponent(UITransform);
+    put.setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.levelSelectNode = panel;
+
+    const mkL = (t: string, s: number, c: Color, x: number, y: number): void => {
+      const n = new Node('lsl'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+      const l = n.addComponent(Label); l.fontSize = s; l.lineHeight = Math.round(s * 1.3); l.color = c; l.string = t;
+    };
+    const mkB = (t: string, w: number, h: number, c: Color, x: number, y: number, tap: () => void): void => {
+      const n = new Node('lsb'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+      const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
+      const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 10); bg.fill();
+      const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
+      const l = ln.addComponent(Label); l.fontSize = 24; l.lineHeight = 30; l.color = new Color(255, 255, 255); l.string = t;
+      n.on(Node.EventType.TOUCH_END, tap, this);
+    };
+
+    mkL('选择关卡（灰盒跳关·点了去打那一关）', 26, new Color(255, 230, 120), 0, band.usableTopY - 40);
+    // 节点按钮：每行 3 个，居中铺开。
+    const perRow = 3;
+    const bw = W * 0.26;
+    const bh = 64;
+    const gx = W * 0.30;
+    const gy = 96;
+    const top = band.usableTopY - 130;
+    this.encounterNodeIds.forEach((nodeId, i) => {
+      const r = Math.floor(i / perRow);
+      const c = i % perRow;
+      const x = (c - (perRow - 1) / 2) * gx;
+      const y = top - r * gy;
+      mkB(nodeId, bw, bh, new Color(60, 110, 170, 255), x, y, () => this.onPickLevel(nodeId));
+    });
+    mkB('关闭', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLevelSelect());
   }
 
   /** 搭"战前备战"叠加层（默认隐藏；点主界面出战时弹）。结构搭一次，内容由 refreshPrebattle 填。
@@ -338,8 +395,9 @@ export class S7DemoController extends Component {
       }
     }
 
-    // 选中船详情（右侧）。
-    this.prebattleDetailLabel = mk('', 20, new Color(220, 230, 250), W * 0.26, gridCy + gap * 0.3);
+    // 选中船详情（右侧）+「下场」小键（清当前选中格）。
+    this.prebattleDetailLabel = mk('', 20, new Color(220, 230, 250), W * 0.26, gridCy + gap * 0.5);
+    mkBtn('下场', 130, 50, new Color(120, 70, 70, 255), W * 0.26, gridCy - gap * 0.9, () => this.onPrebattleBench());
 
     // 拥有的船 / 驾驶员（点选中格后，点这里放入）。
     mk('拥有星舰（点格后点这里放入）', 18, new Color(170, 185, 210), 0, botY + H * 0.20);
@@ -347,10 +405,10 @@ export class S7DemoController extends Component {
     mk('拥有驾驶员', 18, new Color(170, 185, 210), 0, botY + H * 0.115);
     S7_DEMO_SEED_PILOTS.forEach((p, i) => mkBtn(p, W * 0.16, 52, new Color(120, 90, 170, 255), (i - 2) * W * 0.18, botY + H * 0.07, () => this.onPrebattlePickPilot(p)));
 
-    // 底部三键：下场(清当前格) / 返回星港 / 出战。
-    mkBtn('下场', 150, 60, new Color(120, 70, 70, 255), -W * 0.32, botY + 44, () => this.onPrebattleBench());
-    mkBtn('返回星港', 220, 70, new Color(120, 90, 160, 255), -W * 0.05, botY + 44, () => this.closePrebattle());
-    mkBtn('出战', 240, 76, new Color(220, 150, 50, 255), W * 0.28, botY + 44, () => this.onConfirmSortie());
+    // 底部三键（照 Ron 图）：选择关卡(左) / 返回星港(中·回基地) / 开始战斗(右·大)。
+    mkBtn('选择关卡', 200, 66, new Color(70, 130, 180, 255), -W * 0.32, botY + 46, () => this.openLevelSelect());
+    mkBtn('返回星港', 200, 66, new Color(120, 90, 160, 255), 0, botY + 46, () => this.closePrebattle());
+    mkBtn('🚀 开始战斗', 290, 90, new Color(225, 150, 45, 255), W * 0.30, botY + 46, () => this.onConfirmSortie());
   }
 
   /** 搭"基地建筑"面板叠加层（默认隐藏）：底板 + 标题 + 7 行(点行=升该建筑) + 关闭。行文案在 refreshBasePanel 填。 */
@@ -460,19 +518,21 @@ export class S7DemoController extends Component {
    */
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
-    this.closePrebattle(); // 收起战前备战层，露出战斗演出
     const nodeId = this.session.currentNodeId;
     let outcome: S7PlayNodeOutcome;
     try {
       outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED);
     } catch (err) {
-      // 无遭遇配置节点（原型内容缺口）：组装器抛错，按"暂无关卡"提示，不崩、不落盘（无事发生）。
-      this.setResult(`${nodeId} 暂无关卡（原型遭遇待补）`, new Color(200, 200, 200));
+      // 无遭遇节点（你已通到内容缺口·如 n008+）：不静默弹回基地——留在备战界面给明确提示，引导点「选择关卡」挑可玩关。
       console.warn('[S7DemoController] 该节点暂无战斗遭遇', nodeId, err);
-      this.refresh();
-      return;
+      if (this.prebattleInfoLabel) {
+        this.prebattleInfoLabel.string = `⚠ ${nodeId} 暂无遭遇（原型内容到此为止）\n点左下「选择关卡」挑一个可玩关`;
+        this.prebattleInfoLabel.color = new Color(240, 200, 120);
+      }
+      return; // 不关备战层、不落盘
     }
-    // 状态已变（胜则发奖+推进），先落盘；结果文案按住、等回放放完再亮（边看打边出结果更有体感）。
+    // 有遭遇：收起备战层 → 落盘 → 播战斗演出（结果按住、播完再亮）。
+    this.closePrebattle();
     this.persist();
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
@@ -588,12 +648,11 @@ export class S7DemoController extends Component {
     this.refreshPrebattle();
   }
 
-  /** 点拥有的驾驶员：配给当前选中格的船（该格须已有船）。 */
+  /** 点拥有的驾驶员：配给当前选中格的船（该格须已有船）；走唯一性（从别船自动卸下）。 */
   private onPrebattlePickPilot(pilotId: string): void {
     if (!this.squad || !this.prebattleSelSlot) return;
-    const slot = this.slotOf(this.prebattleSelSlot);
-    if (!slot) return; // 空格先放船
-    slot.pilotId = pilotId;
+    if (!this.slotOf(this.prebattleSelSlot)) return; // 空格先放船
+    setSlotPilot(this.squad, this.prebattleSelSlot, pilotId); // 一员只能驾一船·自动卸下
     this.persist();
     this.refreshPrebattle();
   }
@@ -604,6 +663,30 @@ export class S7DemoController extends Component {
     clearSlot(this.squad, this.prebattleSelSlot);
     this.persist();
     this.refreshPrebattle();
+  }
+
+  // ===== 选择关卡（graybox 跳关）=====
+  private openLevelSelect(): void {
+    if (this.playing || !this.levelSelectNode) return;
+    this.levelSelectNode.active = true;
+  }
+  private closeLevelSelect(): void {
+    if (this.levelSelectNode) this.levelSelectNode.active = false;
+  }
+  /** 选关：把进度设到该节点（前面节点记为已通→该关成为当前可打的"前沿"）→ 落盘 → 回备战界面刷新。
+   *  ⚠️ graybox 跳关语义(设前沿)；正式主线地图的解锁/重打语义后面定。 */
+  private onPickLevel(nodeId: string): void {
+    if (!this.session) return;
+    const m = /^n(\d+)$/.exec(nodeId);
+    const num = m ? parseInt(m[1], 10) : 1;
+    const cleared: string[] = [];
+    for (let i = 1; i < num; i += 1) cleared.push(`n${String(i).padStart(3, '0')}`);
+    this.session.progress = { currentNodeId: nodeId, clearedNodeIds: cleared };
+    this.persist();
+    this.closeLevelSelect();
+    this.prebattleSelSlot = null;
+    this.refreshPrebattle();
+    this.refresh();
   }
 
   /** 组装"上一战结果"文案（胜/重复挑战/败），回放结束后显示。 */

@@ -9,6 +9,7 @@ import {
   isShipOwned,
   coreOwnedCount,
   assignSlot,
+  setSlotPilot,
   clearSlot,
   buildSquadLineup,
   S7SquadState,
@@ -47,6 +48,27 @@ describe('S7Squad · 拥有与编队操作', () => {
     expect(s.formation).toHaveLength(1);
     clearSlot(s, 'p1c2');
     expect(s.formation).toHaveLength(0);
+  });
+
+  it('驾驶员唯一性：把同一员配到第二艘船 → 自动从第一艘卸下（v1.0 §4.4）', () => {
+    const s = createDefaultS7Squad();
+    assignSlot(s, 'p0c2', 'shp01', 'pil01');
+    assignSlot(s, 'p1c2', 'shp02', 'pil01'); // 同员 pil01 放到 shp02 → shp01 应被卸员
+    const a = s.formation.find((x) => x.shipId === 'shp01')!;
+    const b = s.formation.find((x) => x.shipId === 'shp02')!;
+    expect(a.pilotId).toBeNull(); // 自动卸下
+    expect(b.pilotId).toBe('pil01');
+  });
+
+  it('setSlotPilot：换驾驶员也遵守唯一性（从别船卸下）', () => {
+    const s = createDefaultS7Squad();
+    assignSlot(s, 'p0c2', 'shp01', 'pil01');
+    assignSlot(s, 'p1c2', 'shp02', 'pil02');
+    setSlotPilot(s, 'p1c2', 'pil01'); // 把 pil01 配给 shp02 → shp01 卸下 pil01
+    expect(s.formation.find((x) => x.shipId === 'shp01')!.pilotId).toBeNull();
+    expect(s.formation.find((x) => x.shipId === 'shp02')!.pilotId).toBe('pil01');
+    setSlotPilot(s, 'pXcX', 'pil03'); // 不存在的位 → 不动
+    expect(s.formation).toHaveLength(2);
   });
 
   it('assignSlot 满 5 位后第 6 艘不加', () => {
@@ -124,6 +146,10 @@ describe('S7Squad · buildSquadLineup 校验 + 转换', () => {
       { slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginIds: [] },
       { slotRef: 'p1c2', shipId: 'shp01', pilotId: 'pil02', coreId: null, pluginIds: [] },
     ] }))).toBe('dup_ship');
+    expect(code(owned({ formation: [
+      { slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginIds: [] },
+      { slotRef: 'p1c2', shipId: 'shp02', pilotId: 'pil01', coreId: null, pluginIds: [] },
+    ] }))).toBe('dup_pilot'); // 同员上两艘
     expect(code(owned({ formation: [{ slotRef: 'zzz', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginIds: [] }] }))).toBe('bad_slot');
     const six = ['p0c0', 'p0c1', 'p0c2', 'p1c0', 'p1c1', 'p1c2'].map((sl, i) => ({ slotRef: sl, shipId: `shp${i}`, pilotId: `pil${i}`, coreId: null, pluginIds: [] }));
     expect(code(squadOf({ ownedShips: six.map((x) => x.shipId), ownedPilots: six.map((x) => x.pilotId), formation: six }))).toBe('too_many');

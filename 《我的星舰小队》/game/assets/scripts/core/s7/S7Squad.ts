@@ -120,14 +120,31 @@ export const coreOwnedCount = (squad: S7SquadState, coreId: string): number => s
 // ===== 编队操作 =====
 
 /**
- * 把某拥有的星舰+驾驶员放到某阵位：移除该阵位旧配置 + 移除该船在别处的占位（保证同船只占一位），再写入。
+ * 把某拥有的星舰+驾驶员放到某阵位：移除该阵位旧配置 + 移除该船在别处的占位（同船只占一位），
+ * 并把该驾驶员从别处卸下（v1.0 §4.4 实例制·同实例同时只装一船·跨船自动卸下），再写入。
  * 只动数据、不校验拥有（拥有/合法性在 buildSquadLineup 统一校验）；slotRef 非法则不动。
  */
 export function assignSlot(squad: S7SquadState, slotRef: string, shipId: string, pilotId: string | null): void {
   if (!PLAYER_SLOT_PATTERN.test(slotRef)) return;
   squad.formation = squad.formation.filter((s) => s.slotRef !== slotRef && s.shipId !== shipId);
+  if (pilotId) {
+    for (const s of squad.formation) if (s.pilotId === pilotId) s.pilotId = null; // 驾驶员从别船自动卸下
+  }
   if (squad.formation.length >= S7_MAX_FORMATION_SLOTS) return; // 满 5 位不再加
   squad.formation.push({ slotRef, shipId, pilotId, coreId: null, pluginIds: [] });
+}
+
+/**
+ * 给某阵位（须已有船）换驾驶员：把该驾驶员从别处卸下（自动卸下），再配到本位。
+ * 目标位不存在则不动；pilotId 可为 null（卸下本位驾驶员）。
+ */
+export function setSlotPilot(squad: S7SquadState, slotRef: string, pilotId: string | null): void {
+  const target = squad.formation.find((s) => s.slotRef === slotRef);
+  if (!target) return;
+  if (pilotId) {
+    for (const s of squad.formation) if (s !== target && s.pilotId === pilotId) s.pilotId = null; // 同员从别船卸下
+  }
+  target.pilotId = pilotId;
 }
 
 /** 清空某阵位。 */
@@ -138,7 +155,7 @@ export function clearSlot(squad: S7SquadState, slotRef: string): void {
 // ===== 编队 → 战斗阵容 =====
 
 export type S7SquadLineupErrorCode =
-  | 'empty' | 'too_many' | 'bad_slot' | 'dup_slot' | 'dup_ship'
+  | 'empty' | 'too_many' | 'bad_slot' | 'dup_slot' | 'dup_ship' | 'dup_pilot'
   | 'not_owned_ship' | 'no_pilot' | 'not_owned_pilot' | 'not_owned_core';
 
 export type S7SquadLineupResult =
@@ -158,6 +175,7 @@ export function buildSquadLineup(squad: S7SquadState, unitLevels?: S7UnitLevelSt
 
   const seenSlots = new Set<string>();
   const seenShips = new Set<string>();
+  const seenPilots = new Set<string>();
   const lineup: S7BattleLineupUnitInput[] = [];
   for (const slot of f) {
     if (typeof slot.slotRef !== 'string' || !PLAYER_SLOT_PATTERN.test(slot.slotRef)) {
@@ -169,6 +187,8 @@ export function buildSquadLineup(squad: S7SquadState, unitLevels?: S7UnitLevelSt
     seenShips.add(slot.shipId);
     if (!isShipOwned(squad, slot.shipId)) return { ok: false, code: 'not_owned_ship', message: `未拥有星舰 ${slot.shipId}` };
     if (!slot.pilotId) return { ok: false, code: 'no_pilot', message: `${slot.slotRef} 缺驾驶员（空船不能上阵）` };
+    if (seenPilots.has(slot.pilotId)) return { ok: false, code: 'dup_pilot', message: `驾驶员 ${slot.pilotId} 同时上了多艘船（一员只能驾一船）` };
+    seenPilots.add(slot.pilotId);
     if (!isPilotOwned(squad, slot.pilotId)) return { ok: false, code: 'not_owned_pilot', message: `未拥有驾驶员 ${slot.pilotId}` };
     if (slot.coreId && coreOwnedCount(squad, slot.coreId) <= 0) {
       return { ok: false, code: 'not_owned_core', message: `未拥有星核 ${slot.coreId}` };
