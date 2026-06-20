@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(10); // C1b 升级变强：v9→v10（单位等级）
+    expect(data.saveVersion).toBe(11); // 阶段一A 阵容/编队：v10→v11（squad）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -57,6 +57,7 @@ describe('s7 save - resource skeleton', () => {
       expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
     }); // 块7a/7b：默认空活动进度（含周期字段）
     expect(data.playerState.unitLevels).toEqual({ shipLevels: {}, pilotLevels: {} }); // C1b 升级变强：默认空(全1级)
+    expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [] }); // 阶段一A：默认空阵容
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -432,6 +433,45 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.mainlineProgress.currentNodeId).toBe('n005');
   });
 
+  it('迁移 v10 旧档到当前：补默认空阵容 squad，保留旧字段（加性迁移，无需重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    // v10 旧档：有钱包/主线/单位等级，但无 squad。
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: 10,
+        lastOnlineTime: NOW,
+        playerState: {
+          resources: { starOre: 4200, hullAlloy: 900 },
+          mainlineProgress: { currentNodeId: 'n006', clearedNodeIds: ['n001', 'n002', 'n003', 'n004', 'n005'] },
+          unitLevels: { shipLevels: { shp01: 8 }, pilotLevels: {} },
+        },
+      }),
+    );
+    const r = loadS7Save(adapter, NOW + 5);
+    expect(r.migrated).toBe(true);
+    expect(r.corrupted).toBe(false);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
+    expect(r.data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [] }); // 新字段补默认空
+    expect(r.data.playerState.unitLevels.shipLevels.shp01).toBe(8); // 旧字段保留
+    expect(r.data.playerState.resources.starOre).toBe(4200);
+    expect(r.data.playerState.mainlineProgress.currentNodeId).toBe('n006');
+  });
+
+  it('round-trips squad through persist + load（防 persist 漏字段）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const data = createDefaultS7SaveData(NOW);
+    data.playerState.squad.ownedShips = ['shp01', 'shp02'];
+    data.playerState.squad.ownedPilots = ['pil01'];
+    data.playerState.squad.ownedCores = { core01: 1 };
+    data.playerState.squad.formation = [{ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginIds: [] }];
+    persistS7Save(adapter, data, NOW + 10);
+    const r = loadS7Save(adapter, NOW + 20);
+    expect(r.data.playerState.squad.ownedShips).toEqual(['shp01', 'shp02']);
+    expect(r.data.playerState.squad.formation).toHaveLength(1);
+    expect(r.data.playerState.squad.formation[0]).toMatchObject({ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01' });
+  });
+
   it('round-trips mainlineProgress through persist + load', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
@@ -480,7 +520,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(10);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(11);
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）

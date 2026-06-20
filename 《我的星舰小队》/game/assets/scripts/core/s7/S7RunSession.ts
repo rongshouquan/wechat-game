@@ -16,6 +16,7 @@ import { S7BattleRunService, S7BattleRunResult } from './S7BattleRunService';
 import { S7BattleLineupUnitInput } from './S7BattleEncounterAssembler';
 import { createS7DefaultDryRunLineup } from './S7DefaultBattleLineup';
 import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
+import { S7SquadState, buildSquadLineup } from './S7Squad';
 import {
   S7NodeSettlementResult,
   settleS7NodeVictory,
@@ -77,6 +78,8 @@ export class S7RunSession {
     private readonly model: S7MainlineModel,
     /** 单位等级（C1b 升级变强，可选）：给了则默认出战阵容按各舰等级折成成长积木→战斗更强。 */
     private readonly unitLevels?: S7UnitLevelState,
+    /** 玩家阵容/编队（阶段一A，可选）：给了且编队合法则默认出战用玩家编队（否则回退默认 3 舰）。 */
+    private readonly squad?: S7SquadState,
   ) {}
 
   /** 当前待打节点。 */
@@ -84,8 +87,15 @@ export class S7RunSession {
     return this.progress.currentNodeId;
   }
 
-  /** 默认出战阵容（按 unitLevels 给各舰带上等级；无 unitLevels 则原样）。 */
+  /**
+   * 默认出战阵容：① 给了 squad 且编队校验通过 → 用玩家编队（含星舰等级）；
+   * ② 否则回退默认 3 舰 dry-run（按 unitLevels 带等级）。保证未配编队/编队非法时仍能跑（零回归）。
+   */
   private defaultLeveledLineup(): S7BattleLineupUnitInput[] {
+    if (this.squad) {
+      const built = buildSquadLineup(this.squad, this.unitLevels);
+      if (built.ok) return built.lineup;
+    }
     const base = createS7DefaultDryRunLineup();
     if (!this.unitLevels) return base;
     return base.map((u) => ({ ...u, shipLevel: getShipLevel(this.unitLevels!, u.shipId) }));

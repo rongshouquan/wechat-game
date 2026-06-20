@@ -13,6 +13,7 @@ import {
   createDefaultS7MainlineProgress,
 } from '../assets/scripts/core/s7/S7MainlineProgress';
 import { playS7Node, S7RunSession } from '../assets/scripts/core/s7/S7RunSession';
+import { createDefaultS7Squad, grantShip, grantPilot, assignSlot } from '../assets/scripts/core/s7/S7Squad';
 
 const S7_DIR = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7');
 type Bundle = Record<S7ConfigTableName, unknown[]>;
@@ -130,5 +131,31 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     expect(o.settlement && o.settlement.ok).toBe(false); // 但结算被顺序校验拒
     expect(s.currentNodeId).toBe('n001'); // 进度不变
     expect(s.resources.starOre).toBe(0); // 不发奖
+  });
+});
+
+describe('阶段一A · 会话带 squad → 出战用玩家编队', () => {
+  it('给了合法 squad：n001 战斗按玩家编队出场（非默认 3 舰）', async () => {
+    await ensure();
+    // 玩家编队=单舰 shp03(卫士)在 p0c2 配 pil01；与默认 3 舰(shp01/02/03)不同。
+    const squad = createDefaultS7Squad();
+    grantShip(squad, 'shp03');
+    grantPilot(squad, 'pil01');
+    assignSlot(squad, 'p0c2', 'shp03', 'pil01');
+    const s = new S7RunSession(freshResources(), createDefaultS7MainlineProgress(), runtime, model, undefined, squad);
+    const o = s.playCurrentNode('r1');
+    const players = o.battle.result.finalState.players;
+    expect(players).toHaveLength(1); // 只上了 1 舰（玩家编队），非默认 3 舰
+    expect(players[0].slotRef).toBe('p0c2');
+    expect(players[0].unitStatRef).toBe('bu_ship_guardian'); // shp03→卫士战斗行，证明用了 squad
+  });
+
+  it('squad 编队为空（非法）：回退默认 3 舰 dry-run，零回归', async () => {
+    await ensure();
+    const emptySquad = createDefaultS7Squad(); // 无拥有、空编队 → buildSquadLineup 失败
+    const s = new S7RunSession(freshResources(), createDefaultS7MainlineProgress(), runtime, model, undefined, emptySquad);
+    const o = s.playCurrentNode('r1');
+    expect(o.battle.result.finalState.players).toHaveLength(3); // 回退默认 3 舰
+    expect(o.won).toBe(true); // 默认队仍确定性胜 n001
   });
 });

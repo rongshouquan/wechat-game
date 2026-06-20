@@ -1,0 +1,183 @@
+// 阵容/编队（阶段一 A-step1，纯 TS，不依赖 cc）：v1.0 §4.4「战前编队：3×3 上阵 5 舰、每舰必配驾驶员、每舰记忆 loadout」。
+//
+// 本模块拥有两件事的状态形状 + 默认/规范化 + 操作/校验/转换：
+//   ① 玩家"拥有"：星舰/驾驶员=拥有集合(本体单一，靠升阶/升星养)；星核=实例计数(coreId→拥有数)；插件实例库存另由 S7PluginInventory 管。
+//   ② 编队：≤5 个上阵位，每位 = 星舰 + 必配驾驶员（+ 星核/插件留"单舰深装"块接，本步默认空）。
+//   ③ buildSquadLineup：把编队校验后转成 S7BattleEncounterAssembler 吃的出战阵容（注入星舰等级）。
+//
+// 边界：core 层自包含——只依赖同族 S7* + 中性结构；不 import save（由 S7SaveService 组合进 S7PlayerState）、不 import cc、可 Node/vitest 测。
+// 数值真源 B1 / 设计真源 v1.0。
+
+import { S7BattleLineupUnitInput } from './S7BattleEncounterAssembler';
+import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
+
+/** 上阵位上限（v1.0 §4.1：3×3 九宫格、上阵 5 舰）。 */
+export const S7_MAX_FORMATION_SLOTS = 5;
+/** 玩家阵位格 p0c0..p2c2。 */
+const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
+
+/** 一个上阵位的配置。星核/插件本步默认空（coreId=null / pluginIds=[]），留"单舰深装"块接。 */
+export interface S7FormationSlot {
+  slotRef: string;
+  shipId: string;
+  /** 必配驾驶员；null = 该位缺驾驶员（v1.0 §4.4 空船不能上阵 → 校验会拦）。 */
+  pilotId: string | null;
+  coreId: string | null;
+  pluginIds: string[];
+}
+
+/** 阵容状态：拥有 roster + 编队。 */
+export interface S7SquadState {
+  ownedShips: string[];
+  ownedPilots: string[];
+  /** coreId → 拥有数（星核是实例，可多个）。 */
+  ownedCores: Record<string, number>;
+  formation: S7FormationSlot[];
+}
+
+export function createDefaultS7Squad(): S7SquadState {
+  return { ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [] };
+}
+
+function normStrArray(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v === 'string' && v.length > 0 && !out.includes(v)) out.push(v); // 去重、去空
+  }
+  return out;
+}
+
+function normCores(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof k === 'string' && k.length > 0 && typeof v === 'number' && Number.isInteger(v) && v > 0) {
+        out[k] = v;
+      }
+    }
+  }
+  return out;
+}
+
+/** 规范化阵容（防脏档/篡改）：拥有集合去重去空、星核计数取正整数、编队取合法且阵位不重复的 ≤5 行。 */
+export function normalizeS7Squad(raw: unknown): S7SquadState {
+  const src = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const formation: S7FormationSlot[] = [];
+  const seenSlots = new Set<string>();
+  const seenShips = new Set<string>();
+  if (Array.isArray(src.formation)) {
+    for (const r of src.formation) {
+      if (formation.length >= S7_MAX_FORMATION_SLOTS) break;
+      const row = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+      const slotRef = row.slotRef;
+      const shipId = row.shipId;
+      if (typeof slotRef !== 'string' || !PLAYER_SLOT_PATTERN.test(slotRef) || seenSlots.has(slotRef)) continue;
+      if (typeof shipId !== 'string' || shipId.length === 0 || seenShips.has(shipId)) continue; // 同船不占两位
+      seenSlots.add(slotRef);
+      seenShips.add(shipId);
+      formation.push({
+        slotRef,
+        shipId,
+        pilotId: typeof row.pilotId === 'string' && row.pilotId.length > 0 ? row.pilotId : null,
+        coreId: typeof row.coreId === 'string' && row.coreId.length > 0 ? row.coreId : null,
+        pluginIds: normStrArray(row.pluginIds),
+      });
+    }
+  }
+  return {
+    ownedShips: normStrArray(src.ownedShips),
+    ownedPilots: normStrArray(src.ownedPilots),
+    ownedCores: normCores(src.ownedCores),
+    formation,
+  };
+}
+
+// ===== 拥有（获取侧调用：抽卡/发奖/打捞接好后由它们调；A-step2 demo 先 seed 默认拥有）=====
+
+/** 获得一艘星舰本体（已拥有则幂等）。返回是否本次新增。 */
+export function grantShip(squad: S7SquadState, shipId: string): boolean {
+  if (squad.ownedShips.includes(shipId)) return false;
+  squad.ownedShips.push(shipId);
+  return true;
+}
+/** 获得一名驾驶员本体（已拥有则幂等）。 */
+export function grantPilot(squad: S7SquadState, pilotId: string): boolean {
+  if (squad.ownedPilots.includes(pilotId)) return false;
+  squad.ownedPilots.push(pilotId);
+  return true;
+}
+/** 获得 n 个某星核实例。 */
+export function grantCore(squad: S7SquadState, coreId: string, n = 1): void {
+  if (n <= 0) return;
+  squad.ownedCores[coreId] = (squad.ownedCores[coreId] ?? 0) + n;
+}
+
+export const isShipOwned = (squad: S7SquadState, shipId: string): boolean => squad.ownedShips.includes(shipId);
+export const isPilotOwned = (squad: S7SquadState, pilotId: string): boolean => squad.ownedPilots.includes(pilotId);
+export const coreOwnedCount = (squad: S7SquadState, coreId: string): number => squad.ownedCores[coreId] ?? 0;
+
+// ===== 编队操作 =====
+
+/**
+ * 把某拥有的星舰+驾驶员放到某阵位：移除该阵位旧配置 + 移除该船在别处的占位（保证同船只占一位），再写入。
+ * 只动数据、不校验拥有（拥有/合法性在 buildSquadLineup 统一校验）；slotRef 非法则不动。
+ */
+export function assignSlot(squad: S7SquadState, slotRef: string, shipId: string, pilotId: string | null): void {
+  if (!PLAYER_SLOT_PATTERN.test(slotRef)) return;
+  squad.formation = squad.formation.filter((s) => s.slotRef !== slotRef && s.shipId !== shipId);
+  if (squad.formation.length >= S7_MAX_FORMATION_SLOTS) return; // 满 5 位不再加
+  squad.formation.push({ slotRef, shipId, pilotId, coreId: null, pluginIds: [] });
+}
+
+/** 清空某阵位。 */
+export function clearSlot(squad: S7SquadState, slotRef: string): void {
+  squad.formation = squad.formation.filter((s) => s.slotRef !== slotRef);
+}
+
+// ===== 编队 → 战斗阵容 =====
+
+export type S7SquadLineupErrorCode =
+  | 'empty' | 'too_many' | 'bad_slot' | 'dup_slot' | 'dup_ship'
+  | 'not_owned_ship' | 'no_pilot' | 'not_owned_pilot' | 'not_owned_core';
+
+export type S7SquadLineupResult =
+  | { ok: true; lineup: S7BattleLineupUnitInput[] }
+  | { ok: false; code: S7SquadLineupErrorCode; message: string };
+
+/**
+ * 把编队校验后转成战斗阵容（喂 S7BattleEncounterAssembler）。
+ * 校验：非空 / ≤5 / 阵位合法且不重 / 同船不占两位 / 星舰与驾驶员必须拥有 / 每位必配驾驶员 / 星核(若装)必须拥有。
+ * 通过则注入星舰等级（unitLevels 给了的话）。插件留"单舰深装"块（本步 pluginIds 为空、不解析）。
+ * 任一不满足返回 ok:false（不抛错，调用方据 code 提示）。
+ */
+export function buildSquadLineup(squad: S7SquadState, unitLevels?: S7UnitLevelState): S7SquadLineupResult {
+  const f = squad.formation;
+  if (!Array.isArray(f) || f.length === 0) return { ok: false, code: 'empty', message: '编队为空，至少上阵 1 艘' };
+  if (f.length > S7_MAX_FORMATION_SLOTS) return { ok: false, code: 'too_many', message: `上阵最多 ${S7_MAX_FORMATION_SLOTS} 艘` };
+
+  const seenSlots = new Set<string>();
+  const seenShips = new Set<string>();
+  const lineup: S7BattleLineupUnitInput[] = [];
+  for (const slot of f) {
+    if (typeof slot.slotRef !== 'string' || !PLAYER_SLOT_PATTERN.test(slot.slotRef)) {
+      return { ok: false, code: 'bad_slot', message: `非法阵位 "${String(slot.slotRef)}"` };
+    }
+    if (seenSlots.has(slot.slotRef)) return { ok: false, code: 'dup_slot', message: `阵位 ${slot.slotRef} 重复` };
+    seenSlots.add(slot.slotRef);
+    if (seenShips.has(slot.shipId)) return { ok: false, code: 'dup_ship', message: `星舰 ${slot.shipId} 占了多个阵位` };
+    seenShips.add(slot.shipId);
+    if (!isShipOwned(squad, slot.shipId)) return { ok: false, code: 'not_owned_ship', message: `未拥有星舰 ${slot.shipId}` };
+    if (!slot.pilotId) return { ok: false, code: 'no_pilot', message: `${slot.slotRef} 缺驾驶员（空船不能上阵）` };
+    if (!isPilotOwned(squad, slot.pilotId)) return { ok: false, code: 'not_owned_pilot', message: `未拥有驾驶员 ${slot.pilotId}` };
+    if (slot.coreId && coreOwnedCount(squad, slot.coreId) <= 0) {
+      return { ok: false, code: 'not_owned_core', message: `未拥有星核 ${slot.coreId}` };
+    }
+    const unit: S7BattleLineupUnitInput = { shipId: slot.shipId, slotRef: slot.slotRef, pilotId: slot.pilotId };
+    if (slot.coreId) unit.coreId = slot.coreId;
+    if (unitLevels) unit.shipLevel = getShipLevel(unitLevels, slot.shipId);
+    // 插件：本步不解析 pluginIds（实例→{pluginId,quality} 留"单舰深装"块，届时经 S7PluginInventory 解析注入）。
+    lineup.push(unit);
+  }
+  return { ok: true, lineup };
+}
