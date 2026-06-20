@@ -119,17 +119,28 @@ describe('S7ShipLoadout · 插件装/卸（按船）', () => {
     expect(lo(s, 'shp02').pluginInstanceIds).toEqual([a.instanceId]); // 装到新船
   });
 
-  it('装来自别船的同槽插件 → 移过来 + 替换本舰同槽占位（原船该插件没了·本舰被替的回空闲）', () => {
+  it('装来自别船的同槽插件 + 本舰原有同槽 → 两船插件互换（不是单向移动）', () => {
     const s = squad2();
     const inv = createDefaultS7PluginInventory();
     const x = addOwnedPlugin(inv, 'plg02', 'fine'); // weapon → shp01
-    const y = addOwnedPlugin(inv, 'plg09', 'fine'); // weapon → shp02 占武器槽
+    const y = addOwnedPlugin(inv, 'plg09', 'fine'); // weapon → shp02
     equipPlugin(s, inv, 'shp01', x.instanceId, resolver);
     equipPlugin(s, inv, 'shp02', y.instanceId, resolver);
-    expect(equipPlugin(s, inv, 'shp02', x.instanceId, resolver)).toEqual({ ok: true }); // x 移到 shp02
-    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([]);            // 原船 x 没了
-    expect(lo(s, 'shp02').pluginInstanceIds).toEqual([x.instanceId]); // shp02 武器槽换成 x
-    expect(findPluginShip(s, y.instanceId)).toBeNull();              // 被替的 y 回空闲
+    // 把 shp02 的 y 装到 shp01(本舰武器槽是 x) → 交换：shp01=y, shp02=x。
+    expect(equipPlugin(s, inv, 'shp01', y.instanceId, resolver)).toEqual({ ok: true });
+    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([y.instanceId]); // shp01 换成 y
+    expect(lo(s, 'shp02').pluginInstanceIds).toEqual([x.instanceId]); // shp02 拿到 shp01 的 x（互换·非空闲）
+  });
+
+  it('装空闲插件到有同槽占位的船 → 替换(无交换对象)：旧的回空闲', () => {
+    const s = squad2();
+    const inv = createDefaultS7PluginInventory();
+    const x = addOwnedPlugin(inv, 'plg02', 'fine');  // weapon → shp01
+    const z = addOwnedPlugin(inv, 'plg09', 'fine');  // weapon · 空闲
+    equipPlugin(s, inv, 'shp01', x.instanceId, resolver);
+    expect(equipPlugin(s, inv, 'shp01', z.instanceId, resolver)).toEqual({ ok: true });
+    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([z.instanceId]); // 换成 z
+    expect(findPluginShip(s, x.instanceId)).toBeNull();               // x 无交换对象 → 回空闲
   });
 
   it('卸插件：not_owned_ship / 幂等', () => {
@@ -153,12 +164,22 @@ describe('S7ShipLoadout · 星核装/卸（按船）', () => {
     expect(lo(s, 'shp01').coreId).toBe('core01');
   });
 
-  it('同名核一场只1个：装到第二艘 → 自动从第一艘卸下（§5.4）', () => {
+  it('同名核一场只1个：装到第二艘(空核位) → 自动从第一艘卸下（§5.4·无交换对象）', () => {
     const s = squad2();
     equipCore(s, 'shp01', 'core01');
     expect(equipCore(s, 'shp02', 'core01')).toEqual({ ok: true });
     expect(lo(s, 'shp01').coreId).toBeNull(); // 从原船卸下
     expect(lo(s, 'shp02').coreId).toBe('core01');
+  });
+
+  it('两船各有核，把别船的核装到本舰 → 两核互换', () => {
+    const s = squad2();
+    grantCore(s, 'core02', 1);
+    equipCore(s, 'shp01', 'core01'); // shp01=core01
+    equipCore(s, 'shp02', 'core02'); // shp02=core02
+    expect(equipCore(s, 'shp01', 'core02')).toEqual({ ok: true }); // 把 shp02 的 core02 装到 shp01
+    expect(lo(s, 'shp01').coreId).toBe('core02');
+    expect(lo(s, 'shp02').coreId).toBe('core01'); // shp02 拿到 shp01 的 core01（互换）
   });
 
   it('卸核：not_owned_ship / 置空 / 幂等', () => {
@@ -180,12 +201,21 @@ describe('S7ShipLoadout · 驾驶员装/卸（按船·与插件/星核对称）'
     expect(lo(s, 'shp01').pilotId).toBe('pil01');
   });
 
-  it('一员只驾一船：配到第二艘 → 自动从第一艘卸下（§4.4）', () => {
+  it('一员只驾一船：配到第二艘(空员位) → 自动从第一艘卸下（§4.4·无交换对象）', () => {
     const s = squad2();
     equipPilot(s, 'shp01', 'pil01');
     expect(equipPilot(s, 'shp02', 'pil01')).toEqual({ ok: true });
     expect(lo(s, 'shp01').pilotId).toBeNull();
     expect(lo(s, 'shp02').pilotId).toBe('pil01');
+  });
+
+  it('两船各有驾驶员，把别船的员配到本舰 → 两员互换', () => {
+    const s = squad2();
+    equipPilot(s, 'shp01', 'pil01'); // shp01=pil01
+    equipPilot(s, 'shp02', 'pil02'); // shp02=pil02
+    expect(equipPilot(s, 'shp01', 'pil02')).toEqual({ ok: true }); // 把 shp02 的 pil02 配到 shp01
+    expect(lo(s, 'shp01').pilotId).toBe('pil02');
+    expect(lo(s, 'shp02').pilotId).toBe('pil01'); // 互换
   });
 
   it('卸驾驶员：not_owned_ship / 置空 / 幂等', () => {

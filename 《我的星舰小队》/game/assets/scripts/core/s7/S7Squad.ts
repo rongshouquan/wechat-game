@@ -237,6 +237,21 @@ export function clearSlot(squad: S7SquadState, slotRef: string): void {
   squad.formation = squad.formation.filter((s) => s.slotRef !== slotRef);
 }
 
+/**
+ * 九宫格拖动换位：把 fromSlot 的船拖到 toSlot。
+ *  - toSlot 有船 → 两船**互换**格子；
+ *  - toSlot 空 → fromSlot 的船**移**到 toSlot。
+ * fromSlot 没船则不动。驾驶员/装备跟船(shipLoadouts)，不受影响。slotRef 非法不动。
+ */
+export function moveOrSwapFormationSlot(squad: S7SquadState, fromSlot: string, toSlot: string): void {
+  if (fromSlot === toSlot || !PLAYER_SLOT_PATTERN.test(fromSlot) || !PLAYER_SLOT_PATTERN.test(toSlot)) return;
+  const from = squad.formation.find((s) => s.slotRef === fromSlot);
+  if (!from) return; // 起点没船
+  const to = squad.formation.find((s) => s.slotRef === toSlot);
+  if (to) { to.slotRef = fromSlot; from.slotRef = toSlot; } // 互换
+  else { from.slotRef = toSlot; } // 移动
+}
+
 // ===== 编队 → 战斗阵容 =====
 
 export type S7SquadLineupErrorCode =

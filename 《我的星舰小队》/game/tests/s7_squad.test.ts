@@ -11,6 +11,7 @@ import {
   assignSlot,
   setSlotPilot,
   clearSlot,
+  moveOrSwapFormationSlot,
   buildSquadLineup,
   getShipLoadout,
   getShipPilot,
@@ -66,6 +67,20 @@ describe('S7Squad · 拥有与编队操作', () => {
     assignSlot(s, 'p0c2', 'shp01', 'pil01');
     expect(s.formation[0]).toEqual({ slotRef: 'p0c2', shipId: 'shp01' });
     expect(getShipPilot(s, 'shp01')).toBe('pil01'); // 驾驶员跟船记忆
+  });
+
+  it('moveOrSwapFormationSlot：拖到空位=移动；拖到有船位=互换；起点无船不动', () => {
+    const s = createDefaultS7Squad();
+    assignSlot(s, 'p0c2', 'shp01', 'pil01');
+    assignSlot(s, 'p1c2', 'shp02', 'pil02');
+    moveOrSwapFormationSlot(s, 'p0c2', 'p0c0'); // 拖到空位 → 移动
+    expect(s.formation.find((x) => x.shipId === 'shp01')!.slotRef).toBe('p0c0');
+    moveOrSwapFormationSlot(s, 'p0c0', 'p1c2'); // 拖到有船位 → 互换
+    expect(s.formation.find((x) => x.shipId === 'shp01')!.slotRef).toBe('p1c2');
+    expect(s.formation.find((x) => x.shipId === 'shp02')!.slotRef).toBe('p0c0');
+    const before = JSON.stringify(s.formation);
+    moveOrSwapFormationSlot(s, 'p2c2', 'p0c1'); // 起点空位 → 不动
+    expect(JSON.stringify(s.formation)).toBe(before);
   });
 
   it('驾驶员/装备跟船：下场(clearSlot)仍保留，重新上阵自动带回（v1.0 §4.4）', () => {

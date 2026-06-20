@@ -9,7 +9,7 @@
  * 只接 S7 存档域（S7SaveService 独立 key），不动流程版 AppContext/存档；不接广告/服务器/支付。
  * 本组件是 cc 表现层，逻辑全部委托给 core/s7 纯 TS 服务（已 Node 单测）。
  */
-import { _decorator, Component, Node, Label, Color, Graphics, UITransform } from 'cc';
+import { _decorator, Component, Node, Label, Color, Graphics, UITransform, Vec3, EventTouch } from 'cc';
 import { SaveStorageAdapter } from '../../save/SaveStorageAdapter';
 import {
   S7_CURRENT_SAVE_VERSION,
@@ -43,7 +43,7 @@ import {
 } from '../../core/s7/S7BuildingEffects';
 import { getS7UsableBand } from '../S7UiLayout';
 import {
-  S7SquadState, grantShip, grantPilot, grantCore, assignSlot, clearSlot, buildSquadLineup,
+  S7SquadState, grantShip, grantPilot, grantCore, assignSlot, clearSlot, moveOrSwapFormationSlot, buildSquadLineup,
   isShipDeployed, findPilotShip, findCoreShip, findPluginShip,
 } from '../../core/s7/S7Squad';
 import { buildPrebattleView, shipPowerOf, S7PrebattleView } from '../../core/s7/S7PrebattleView';
@@ -561,7 +561,8 @@ export class S7DemoController extends Component {
         const cn = new Node(`pbCell_${slotRef}`);
         cn.layer = this.node.layer; ui.addChild(cn); cn.setPosition(p.x, p.y, 0);
         const ut = cn.addComponent(UITransform); ut.setContentSize(cell, cell);
-        cn.on(Node.EventType.TOUCH_END, () => this.onSelectPrebattleSlot(slotRef), this);
+        // 触摸结束：松手位置在别的格 = 拖动换位/移动；同格 = 点击进上阵界面。
+        cn.on(Node.EventType.TOUCH_END, (e: EventTouch) => this.onCellTouchEnd(slotRef, e), this);
         const ln = new Node('t'); ln.layer = this.node.layer; cn.addChild(ln);
         const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 36; l.color = new Color(230, 240, 255); l.string = '';
         this.prebattleCellLabels.push(l);
@@ -819,6 +820,36 @@ export class S7DemoController extends Component {
     }
   }
 
+  /** 找屏幕局部坐标落在哪个九宫格格子(超出所有格返回 null)。 */
+  private cellAtLocal(x: number, y: number): string | null {
+    const cell = this.fieldCell;
+    for (let r = 0; r < 3; r += 1) {
+      for (let c = 0; c < 3; c += 1) {
+        const p = this.fieldPlayerPos(r, c);
+        if (Math.abs(x - p.x) <= cell / 2 && Math.abs(y - p.y) <= cell / 2) return `p${r}c${c}`;
+      }
+    }
+    return null;
+  }
+
+  /** 格子触摸结束：松手落点在别的格 → 拖动(有船则 移动/互换)；落点同格/格外 → 点击进上阵界面。 */
+  private onCellTouchEnd(startSlot: string, e: EventTouch): void {
+    let target = startSlot;
+    const ut = this.prebattleNode ? this.prebattleNode.getComponent(UITransform) : null;
+    if (ut) {
+      const loc = e.getUILocation();
+      const local = ut.convertToNodeSpaceAR(new Vec3(loc.x, loc.y, 0));
+      target = this.cellAtLocal(local.x, local.y) ?? startSlot;
+    }
+    if (this.squad && target !== startSlot && this.slotOf(startSlot)) {
+      moveOrSwapFormationSlot(this.squad, startSlot, target); // 拖动：有船→移动/互换
+      this.persist();
+      this.refreshPrebattle();
+    } else {
+      this.onSelectPrebattleSlot(startSlot); // 点击：进上阵界面
+    }
+  }
+
   /** 点九宫格：把该格设为上场目标格 → 弹「上阵界面」。有船的格连带选中那艘船(右侧直接显示)；空格不选船(右侧空白)。 */
   private onSelectPrebattleSlot(slotRef: string): void {
     this.prebattleSelSlot = slotRef;
@@ -914,8 +945,11 @@ export class S7DemoController extends Component {
     const W = this.viewW, H = this.viewH;
     const list = this.boardingShipListNode;
     list.removeAllChildren();
-    // 排序：上阵的靠前 → 战力高靠前。
+    // 排序：① 当前格上的船最前 → ② 上阵的靠前 → ③ 战力高靠前。
+    const cellShip = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot)?.shipId ?? null : null;
     const ships = this.squad.ownedShips.slice().sort((a, b) => {
+      if (a === cellShip && b !== cellShip) return -1;
+      if (b === cellShip && a !== cellShip) return 1;
       const da = isShipDeployed(this.squad!, a) ? 1 : 0;
       const db = isShipDeployed(this.squad!, b) ? 1 : 0;
       if (da !== db) return db - da;
@@ -998,7 +1032,10 @@ export class S7DemoController extends Component {
     const listN = new Node('loList'); listN.layer = this.node.layer; panel.addChild(listN); listN.setPosition(0, 0, 0);
     this.loadoutListNode = listN;
 
-    this.addBtn(panel, '关闭', 260, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 32);
+    // 底部：一键卸装(左) / 关闭(中) / 一键装配(右)。
+    this.addBtn(panel, '一键卸装', 230, 84, new Color(125, 80, 80, 255), -W * 0.30, band.usableBottomY + 56, () => this.onLoadoutUnequipAll(), 30);
+    this.addBtn(panel, '关闭', 200, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 30);
+    this.addBtn(panel, '一键装配', 230, 84, new Color(70, 140, 110, 255), W * 0.30, band.usableBottomY + 56, () => this.onLoadoutAutoEquip(), 30);
 
     this.buildEquipDetailPopup(W, H);
     this.buildEquipConfirmPopup(W, H);
@@ -1147,6 +1184,61 @@ export class S7DemoController extends Component {
     else unequipPlugin(this.squad, shipId, ref.id);
   }
 
+  /** 本舰在该装备对应"部位"上是否已有装备（用于"互换/移来"文案判断）。 */
+  private currentShipHasSlotOccupant(ref: S7EquipRef): boolean {
+    const ship = this.prebattleSelShip;
+    const lo = ship && this.squad ? this.squad.shipLoadouts[ship] : undefined;
+    if (!lo) return false;
+    if (ref.kind === 'pilot') return !!lo.pilotId;
+    if (ref.kind === 'core') return !!lo.coreId;
+    const inst = this.pluginInventory ? findOwnedPlugin(this.pluginInventory, ref.id) : undefined;
+    const tag = inst ? this.pluginSlotMap.get(inst.pluginId) : undefined;
+    return !!tag && !!this.equippedInSlotType(ship!, tag);
+  }
+
+  /** 一键卸装：把本舰的 驾驶员 + 星核 + 全部插件 卸下。 */
+  private onLoadoutUnequipAll(): void {
+    const ship = this.prebattleSelShip;
+    if (!this.squad || !ship) return;
+    unequipPilot(this.squad, ship);
+    unequipCore(this.squad, ship);
+    const lo = this.squad.shipLoadouts[ship];
+    if (lo) for (const id of lo.pluginInstanceIds.slice()) unequipPlugin(this.squad, ship, id);
+    this.setLoadoutMsg('已一键卸装', new Color(200, 210, 235));
+    this.persist();
+    this.refreshLoadout();
+  }
+
+  /** 一键装配：本舰每个空部位，装上该类"空闲装备"里战力最高的（插件按品质·驾驶员/星核取第一个空闲）。 */
+  private onLoadoutAutoEquip(): void {
+    const ship = this.prebattleSelShip;
+    if (!this.squad || !ship) return;
+    const sq = this.squad;
+    // 驾驶员
+    if (!sq.shipLoadouts[ship]?.pilotId) {
+      const free = sq.ownedPilots.find((p) => !findPilotShip(sq, p));
+      if (free) equipPilot(sq, ship, free);
+    }
+    // 星核
+    if (!sq.shipLoadouts[ship]?.coreId) {
+      const free = Object.keys(sq.ownedCores).find((cid) => !findCoreShip(sq, cid));
+      if (free) equipCore(sq, ship, free);
+    }
+    // 插件三槽：空槽填该槽空闲插件里品质(战力)最高的。
+    if (this.pluginInventory) {
+      for (const tag of ['weapon', 'skill', 'tactical'] as S7PluginSlot[]) {
+        if (this.equippedInSlotType(ship, tag)) continue; // 本舰该槽已有
+        const best = this.pluginInventory.plugins
+          .filter((p) => this.pluginSlotMap.get(p.pluginId) === tag && !findPluginShip(sq, p.instanceId))
+          .sort((a, b) => (S7_QUALITY_RANK[b.quality] ?? 0) - (S7_QUALITY_RANK[a.quality] ?? 0))[0];
+        if (best) equipPlugin(sq, this.pluginInventory, ship, best.instanceId, this.pluginSlotOf);
+      }
+    }
+    this.setLoadoutMsg('已一键装配（空位填最优空闲装备）', new Color(160, 235, 160));
+    this.persist();
+    this.refreshLoadout();
+  }
+
   /** 点某装备 → 弹详情：标题/信息 + 主操作按钮(装/卸·按是否已装、装在哪)。 */
   private openEquipDetail(ref: S7EquipRef): void {
     const ship = this.prebattleSelShip;
@@ -1175,9 +1267,10 @@ export class S7DemoController extends Component {
       return;
     }
     if (this.equipActionMode === 'move') {
-      // 已在别船 → 二次确认弹窗
+      // 已在别船 → 二次确认弹窗。本舰该位已有装备=互换；空位=移来。
       const from = this.equipShipOf(ref);
-      if (this.equipConfirmLabel) this.equipConfirmLabel.string = `${this.equipDisplayName(ref)}\n将从 ${from} 移到 ${ship}，确认？`;
+      const verb = this.currentShipHasSlotOccupant(ref) ? `与 ${from} 互换该位装备` : `从 ${from} 移到本舰`;
+      if (this.equipConfirmLabel) this.equipConfirmLabel.string = `${this.equipDisplayName(ref)}\n将${verb}，确认？`;
       this.closeEquipDetail();
       if (this.equipConfirmNode) this.equipConfirmNode.active = true;
       return;

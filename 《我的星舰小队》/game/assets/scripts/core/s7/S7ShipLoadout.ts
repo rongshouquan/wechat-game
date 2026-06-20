@@ -10,7 +10,7 @@
 // 解耦：槽位类型(weapon/skill/tactical)是 plugin_config 的字段——core 层不读配置，由调用方注入 pluginSlotOf 解析器
 //   (pluginId → slotTag)，本模块只用它判"同类槽"。所有操作「先校验、后修改」：校验不过不改任何状态。
 
-import { S7SquadState, S7Loadout, coreOwnedCount, isShipOwned, isPilotOwned, setShipPilot } from './S7Squad';
+import { S7SquadState, S7Loadout, coreOwnedCount, isShipOwned, isPilotOwned, findPilotShip, findCoreShip, findPluginShip } from './S7Squad';
 import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 import { S7PluginSlot } from '../../config/s7/ConfigTypesS7';
 
@@ -42,11 +42,12 @@ function ensureLoadout(squad: S7SquadState, shipId: string): S7Loadout {
 
 /**
  * 给某船装一个插件实例（v1.0 §5.3 一船每类槽位仅 1 件·不堆叠）。校验拥有船/拥有插件/已知槽位，全过再改：
- *   ① 该实例从所有船卸下（单实例独占·含幂等重装）；
- *   ② **直接替换**：把目标船上"同类槽位"的占位插件卸下（被替下的回到空闲）；
- *   ③ 装到目标船。
- * 注：因每类槽≤1，故插件数永远 ≤3、同名(同 pluginId 必同槽)自然不重复——无需 slot_type_occupied/dup/too_many 报错。
- *   "已在别船"的二次确认是表现层(demo)的事，本层只管"装就替换"。
+ *   ① 记下源船(该实例当前在哪艘船)和目标船"同类槽位"的原占位 X；
+ *   ② 该实例从所有船卸下、目标船同类槽 X 也卸下；
+ *   ③ 装到目标船；
+ *   ④ **交换**：若该实例来自"别的船 B"且目标船原有 X → 把 X 装回 B（填 B 空出的同类槽）。
+ *      若该实例本是空闲(无源船) → X 被替下回到空闲(无交换对象)。
+ * 注：每类槽≤1 → 插件数永远 ≤3、同名(同 pluginId 必同槽)自然不重复——无需报错。
  */
 export function equipPlugin(
   squad: S7SquadState,
@@ -61,20 +62,30 @@ export function equipPlugin(
   const slotTag = pluginSlotOf(inst.pluginId);
   if (!slotTag) return { ok: false, code: 'unknown_plugin' };
 
-  // ① 该实例从所有船卸下（独占·跨所有船·含从目标船自身去重）。
+  const fromShip = findPluginShip(squad, instanceId); // 源船（本舰/别船/null）
+  const target = ensureLoadout(squad, shipId);
+  // 目标船同类槽原占位 X（≠自身）。
+  const occupant = target.pluginInstanceIds.find((id) => {
+    if (id === instanceId) return false;
+    const o = findOwnedPlugin(inv, id);
+    return !!o && pluginSlotOf(o.pluginId) === slotTag;
+  }) ?? null;
+
+  // 卸下该实例(全船) + 目标船 X。
   for (const l of Object.values(squad.shipLoadouts)) {
     const i = l.pluginInstanceIds.indexOf(instanceId);
     if (i >= 0) l.pluginInstanceIds.splice(i, 1);
   }
-  const target = ensureLoadout(squad, shipId);
-  // ② 替换：移除目标船上同类槽位的其它插件（被替下→空闲）。
-  target.pluginInstanceIds = target.pluginInstanceIds.filter((id) => {
-    const o = findOwnedPlugin(inv, id);
-    const tag = o ? pluginSlotOf(o.pluginId) : undefined;
-    return tag !== slotTag; // 同类槽的占位插件被替换掉；其余保留
-  });
-  // ③ 装上。
+  if (occupant) {
+    const i = target.pluginInstanceIds.indexOf(occupant);
+    if (i >= 0) target.pluginInstanceIds.splice(i, 1);
+  }
+  // 装上。
   target.pluginInstanceIds.push(instanceId);
+  // 交换：来自别船 + 目标原有 X → X 回填到源船同类槽（源船该槽已被实例腾空）。
+  if (fromShip && fromShip !== shipId && occupant) {
+    ensureLoadout(squad, fromShip).pluginInstanceIds.push(occupant);
+  }
   return { ok: true };
 }
 
@@ -97,10 +108,15 @@ export function equipCore(squad: S7SquadState, shipId: string, coreId: string): 
   if (!isShipOwned(squad, shipId)) return { ok: false, code: 'not_owned_ship' };
   if (coreOwnedCount(squad, coreId) <= 0) return { ok: false, code: 'not_owned_core' };
 
+  const fromShip = findCoreShip(squad, coreId);       // 源船（本舰/别船/null）
+  const target = ensureLoadout(squad, shipId);
+  const occupant = target.coreId;                     // 目标船原核
   for (const [sid, l] of Object.entries(squad.shipLoadouts)) {
     if (sid !== shipId && l.coreId === coreId) l.coreId = null; // 同名核从别船卸下
   }
-  ensureLoadout(squad, shipId).coreId = coreId;
+  target.coreId = coreId;
+  // 交换：来自别船 + 目标原有核 → 原核回填到源船。
+  if (fromShip && fromShip !== shipId && occupant) ensureLoadout(squad, fromShip).coreId = occupant;
   return { ok: true };
 }
 
@@ -114,12 +130,19 @@ export function unequipCore(squad: S7SquadState, shipId: string): S7LoadoutResul
 
 /**
  * 给某船配驾驶员（统一装配口·与插件/星核对称）。校验拥有船+拥有员；
- * 唯一性：一员只驾一船 → 配到本船时从别船自动卸下（setShipPilot 处理）。
+ * 一员只驾一船：配到本船时从别船卸下。**交换**：若来自别船 B 且本舰原有驾驶员 → 原驾驶员回填到 B。
  */
 export function equipPilot(squad: S7SquadState, shipId: string, pilotId: string): S7LoadoutResult {
   if (!isShipOwned(squad, shipId)) return { ok: false, code: 'not_owned_ship' };
   if (!isPilotOwned(squad, pilotId)) return { ok: false, code: 'not_owned_pilot' };
-  setShipPilot(squad, shipId, pilotId);
+  const fromShip = findPilotShip(squad, pilotId);     // 源船（本舰/别船/null）
+  const target = ensureLoadout(squad, shipId);
+  const occupant = target.pilotId;                    // 目标船原驾驶员
+  for (const [sid, l] of Object.entries(squad.shipLoadouts)) {
+    if (sid !== shipId && l.pilotId === pilotId) l.pilotId = null; // 从别船卸下
+  }
+  target.pilotId = pilotId;
+  if (fromShip && fromShip !== shipId && occupant) ensureLoadout(squad, fromShip).pilotId = occupant;
   return { ok: true };
 }
 
