@@ -5,10 +5,16 @@
 //   ⚠️ 不直接入账：领取只把奖励"返回"，由调用方按类型应用到 钱包(resource) / 宝箱库存(chest)（保持与具体 store 解耦）。
 //   不依赖 cc / 流程版；不使用随机；时间(createdAt/now)由调用方传入（确定可测、不读系统时钟）。
 
-/** 一笔邮件奖励：软货币/碎片(resource·进钱包) 或 宝箱(chest·进宝箱库存)。调用方按 type 入对应 store。 */
+/**
+ * 一笔邮件奖励，调用方按 type 入对应 store：
+ *  - resource：软货币/碎片 → 钱包；
+ *  - chest：宝箱 → 宝箱库存；
+ *  - unit：星舰/驾驶员「本体」→ squad（C 块抽卡专属池轮换补发用；领取侧若已拥有该本体则按规则折成专属碎片，见 S7GachaService）。
+ */
 export type S7MailReward =
   | { type: 'resource'; resourceId: string; amount: number }
-  | { type: 'chest'; chestId: string; amount: number };
+  | { type: 'chest'; chestId: string; amount: number }
+  | { type: 'unit'; unitKind: 'ship' | 'pilot'; unitId: string };
 
 export interface S7Mail {
   id: string;
@@ -36,6 +42,10 @@ export function createDefaultS7Mailbox(): S7MailboxState {
 
 function normReward(raw: unknown): S7MailReward | null {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  // unit：本体奖励无 amount（本体唯一），须先于 amount 校验判定，否则会被下方 amount<=0 误拦。
+  if (r.type === 'unit' && (r.unitKind === 'ship' || r.unitKind === 'pilot') && typeof r.unitId === 'string' && r.unitId.length > 0) {
+    return { type: 'unit', unitKind: r.unitKind, unitId: r.unitId };
+  }
   const amount = typeof r.amount === 'number' && Number.isFinite(r.amount) && r.amount > 0 ? Math.floor(r.amount) : 0;
   if (amount <= 0) return null;
   if (r.type === 'resource' && typeof r.resourceId === 'string' && r.resourceId.length > 0) {

@@ -92,4 +92,28 @@ describe('G2 · 邮件收发/领取', () => {
   it('normalize 非对象 → 默认空邮箱', () => {
     expect(normalizeS7Mailbox(null)).toEqual(createDefaultS7Mailbox());
   });
+
+  it('unit 本体奖励(C 块抽卡补发用)：收发/领取/规范化保留；非法 unit 被滤', () => {
+    const box = createDefaultS7Mailbox();
+    addMail(box, { kind: 'gacha_rotation_makeup', title: '补发', rewards: [
+      { type: 'unit', unitKind: 'ship', unitId: 'shp10' },
+      { type: 'resource', resourceId: 'exShard:shp10', amount: 60 },
+    ], createdAt: T });
+    const r = claimMail(box, 'm1', T + 5);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.rewards).toEqual([
+      { type: 'unit', unitKind: 'ship', unitId: 'shp10' },
+      { type: 'resource', resourceId: 'exShard:shp10', amount: 60 },
+    ]);
+    // 规范化：合法 unit 保留(无 amount 也不被误拦)，非法 unit(空 id / 错 kind) 被滤。
+    const norm = normalizeS7Mailbox({
+      mails: [{ id: 'm1', kind: 'k', title: 't', rewards: [
+        { type: 'unit', unitKind: 'pilot', unitId: 'pil03' },
+        { type: 'unit', unitKind: 'ship', unitId: '' },
+        { type: 'unit', unitKind: 'core', unitId: 'core01' },
+      ], read: false, claimed: false, createdAt: T, expireAt: null }],
+      nextSeq: 2,
+    });
+    expect(norm.mails[0].rewards).toEqual([{ type: 'unit', unitKind: 'pilot', unitId: 'pil03' }]);
+  });
 });

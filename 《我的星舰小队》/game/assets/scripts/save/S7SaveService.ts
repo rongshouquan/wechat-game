@@ -61,6 +61,11 @@ import {
   createDefaultS7Mailbox,
   normalizeS7Mailbox,
 } from '../core/s7/S7Mailbox';
+import {
+  S7GachaState,
+  createDefaultS7GachaState,
+  normalizeS7GachaState,
+} from '../core/s7/S7GachaState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -77,8 +82,9 @@ import {
  * v10（C1b 升级变强）：playerState 增加 unitLevels(星舰/驾驶员等级)；旧档加载补默认空(=全 1 级，加性迁移)。
  * v11（阶段一 A·阵容/编队）：playerState 增加 squad(拥有 星舰/驾驶员/星核 + 编队)；旧档加载补默认空(无拥有/空编队，加性迁移)。
  * v12（阶段一 G2·邮件系统）：playerState 增加 mailbox(邮件列表+序号)；旧档加载补默认空邮箱(加性迁移，无需重置)。
+ * v13（阶段一 C·抽卡三池）：playerState 增加 gacha(三池保底计数 + 专属池兑换进度/已领/期号)；旧档加载补默认空(加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 12;
+export const S7_CURRENT_SAVE_VERSION = 13;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -130,6 +136,8 @@ export interface S7PlayerState {
   squad: S7SquadState;
   /** 邮件（阶段一 G2）：活动结算/抽卡补发/补偿的发放管道，形状由 core/s7/S7Mailbox 拥有。 */
   mailbox: S7MailboxState;
+  /** 抽卡三池（阶段一 C）：三池保底计数 + 专属池兑换进度，形状由 core/s7/S7GachaState 拥有。 */
+  gacha: S7GachaState;
 }
 
 export interface S7SaveData {
@@ -161,6 +169,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     unitLevels: createDefaultS7UnitLevelState(),
     squad: createDefaultS7Squad(),
     mailbox: createDefaultS7Mailbox(),
+    gacha: createDefaultS7GachaState(),
   };
 }
 
@@ -212,6 +221,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     unitLevels: normalizeS7UnitLevelState(src.unitLevels),
     squad: normalizeS7Squad(src.squad),
     mailbox: normalizeS7Mailbox(src.mailbox),
+    gacha: normalizeS7GachaState(src.gacha),
   };
 }
 
@@ -314,6 +324,8 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       squad: normalizeS7Squad(data.playerState?.squad),
       // 阶段一G2：补 mailbox。
       mailbox: normalizeS7Mailbox(data.playerState?.mailbox),
+      // 阶段一C：补 gacha（抽卡三池状态）——显式列全，勿漏（6b-2 教训）。
+      gacha: normalizeS7GachaState(data.playerState?.gacha),
     },
     lastOnlineTime: now,
   };

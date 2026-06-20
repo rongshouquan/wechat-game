@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(12); // 阶段一G2 邮件：v11→v12（mailbox）
+    expect(data.saveVersion).toBe(13); // 阶段一C 抽卡三池：v12→v13（gacha）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -512,6 +512,47 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.mailbox.nextSeq).toBe(2);
   });
 
+  it('迁移 v12 旧档到当前：补默认空抽卡状态 gacha，保留旧字段（加性迁移，无需重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    // v12 旧档：有钱包/主线/阵容/邮箱，但无 gacha。
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: 12,
+        lastOnlineTime: NOW,
+        playerState: {
+          resources: { starOre: 1500, supplyTicket: 20 },
+          squad: { ownedShips: ['shp01'], ownedPilots: ['pil01'], ownedCores: {}, formation: [] },
+          mailbox: { mails: [], nextSeq: 1 },
+        },
+      }),
+    );
+    const r = loadS7Save(adapter, NOW + 5);
+    expect(r.migrated).toBe(true);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
+    expect(r.data.playerState.gacha).toEqual({
+      pity: { recruit: 0, refit: 0, exclusive: 0 },
+      exchangeProgress: 0, exchangeClaimed: 0, exclusivePeriod: -1, exclusiveShipId: null,
+    }); // 新字段补默认空
+    expect(r.data.playerState.squad.ownedShips).toEqual(['shp01']); // 旧字段保留
+    expect(r.data.playerState.resources.supplyTicket).toBe(20);
+  });
+
+  it('round-trips gacha through persist + load（防 persist 漏字段）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const data = createDefaultS7SaveData(NOW);
+    data.playerState.gacha = {
+      pity: { recruit: 3, refit: 7, exclusive: 1 },
+      exchangeProgress: 120, exchangeClaimed: 2, exclusivePeriod: 4, exclusiveShipId: 'shp11',
+    };
+    persistS7Save(adapter, data, NOW + 10);
+    const r = loadS7Save(adapter, NOW + 20);
+    expect(r.data.playerState.gacha).toEqual({
+      pity: { recruit: 3, refit: 7, exclusive: 1 },
+      exchangeProgress: 120, exchangeClaimed: 2, exclusivePeriod: 4, exclusiveShipId: 'shp11',
+    });
+  });
+
   it('round-trips mainlineProgress through persist + load', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
@@ -560,7 +601,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(12);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(13);
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）
