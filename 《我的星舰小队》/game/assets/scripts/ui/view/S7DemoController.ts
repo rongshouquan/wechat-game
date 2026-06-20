@@ -1188,6 +1188,9 @@ export class S7DemoController extends Component {
   private openBuildingUpgrade(buildingId: string): void {
     if (!this.buildingUpgradeNode) return;
     this.buildingUpgradeTarget = buildingId;
+    // 置顶：升级弹窗被多个建筑界面共用，必须盖在当前界面之上（否则被后建的船坞/训练舱浮层压在底下）。
+    const parent = this.buildingUpgradeNode.parent;
+    if (parent) this.buildingUpgradeNode.setSiblingIndex(parent.children.length - 1);
     this.buildingUpgradeNode.active = true;
     this.refreshBuildingUpgrade();
   }
