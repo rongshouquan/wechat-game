@@ -45,7 +45,6 @@
 - `设计决策记录-v0.1.md` — 早期决策日志（过程留痕；与根文件冲突以根文件为准）。
 - `设计可视化-v0.1.md` + `设计可视化.html` — v1.0 设计的 Mermaid 图（直观看系统联动 / 找漏洞）。
 - `第二块-数值设计/`：`节奏表-B1`、`轻量B2`、`建筑数值-6b3`。
-- `prototype/` — C1a 纯 TS 逻辑核心（已被 `game/` 超越，留作历史参考）。
 
 ## Git
 仓库根 `F:\Claude Code`（remote `rongshouquan/wechat-game`）；同目录无关内嵌仓库 `untangle`（**勿动**，已 .gitignore）。里程碑 commit、干净节点 push（本地 == origin/main）。
