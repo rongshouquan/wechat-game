@@ -66,6 +66,11 @@ import {
   createDefaultS7GachaState,
   normalizeS7GachaState,
 } from '../core/s7/S7GachaState';
+import {
+  S7SalvageState,
+  createDefaultS7Salvage,
+  normalizeS7Salvage,
+} from '../core/s7/S7SalvageState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -83,8 +88,9 @@ import {
  * v11（阶段一 A·阵容/编队）：playerState 增加 squad(拥有 星舰/驾驶员/星核 + 编队)；旧档加载补默认空(无拥有/空编队，加性迁移)。
  * v12（阶段一 G2·邮件系统）：playerState 增加 mailbox(邮件列表+序号)；旧档加载补默认空邮箱(加性迁移，无需重置)。
  * v13（阶段一 C·抽卡三池）：playerState 增加 gacha(三池保底计数 + 专属池兑换进度/已领/期号)；旧档加载补默认空(加性迁移，无需重置)。
+ * v14（阶段一 D·信标打捞）：playerState 增加 salvage(进行中打捞任务 + 今日广告加速次数)；旧档加载补默认空(加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 13;
+export const S7_CURRENT_SAVE_VERSION = 14;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -138,6 +144,8 @@ export interface S7PlayerState {
   mailbox: S7MailboxState;
   /** 抽卡三池（阶段一 C）：三池保底计数 + 专属池兑换进度，形状由 core/s7/S7GachaState 拥有。 */
   gacha: S7GachaState;
+  /** 信标打捞（阶段一 D）：进行中打捞任务 + 今日广告加速次数，形状由 core/s7/S7SalvageState 拥有。 */
+  salvage: S7SalvageState;
 }
 
 export interface S7SaveData {
@@ -170,6 +178,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     squad: createDefaultS7Squad(),
     mailbox: createDefaultS7Mailbox(),
     gacha: createDefaultS7GachaState(),
+    salvage: createDefaultS7Salvage(),
   };
 }
 
@@ -222,6 +231,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     squad: normalizeS7Squad(src.squad),
     mailbox: normalizeS7Mailbox(src.mailbox),
     gacha: normalizeS7GachaState(src.gacha),
+    salvage: normalizeS7Salvage(src.salvage),
   };
 }
 
@@ -326,6 +336,8 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       mailbox: normalizeS7Mailbox(data.playerState?.mailbox),
       // 阶段一C：补 gacha（抽卡三池状态）——显式列全，勿漏（6b-2 教训）。
       gacha: normalizeS7GachaState(data.playerState?.gacha),
+      // 阶段一D：补 salvage（信标打捞状态）。
+      salvage: normalizeS7Salvage(data.playerState?.salvage),
     },
     lastOnlineTime: now,
   };
