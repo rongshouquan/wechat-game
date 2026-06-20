@@ -67,11 +67,18 @@ import { DEFAULT_S7_SALVAGE_CONFIG, S7BeaconTier, BEACON_RESOURCE, S7SalvageRewa
 import {
   startSalvage, collectSalvage, salvageAdSpeedup, salvageRemainingMs, isSalvageDone, salvageTeamLimit,
 } from '../../core/s7/S7SalvageService';
-import { addExclusiveShards } from '../../core/s7/S7ExclusiveShardInventory';
+import { addExclusiveShards, getExclusiveShardCount } from '../../core/s7/S7ExclusiveShardInventory';
 import { addChest } from '../../core/s7/S7ChestInventory';
 import { createDefaultS7GachaState } from '../../core/s7/S7GachaState';
 import { createDefaultS7Salvage } from '../../core/s7/S7SalvageState';
 import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
+// 升阶/升星（step1 引擎已单测）：船坞升阶 + 训练舱升星 + 背包通用碎片转换 + 开槽/战力接入。
+import {
+  createDefaultS7UnitTierState, getShipTier, getPilotStar, shipTierName,
+  shipPluginSlotCap, shipCoreSlotOpen, SHIP_TIER_MAX, PILOT_STAR_MAX,
+} from '../../core/s7/S7UnitTierState';
+import { DEFAULT_S7_ASCEND_CONFIG, shipTierPowerPct, pilotStarPowerPct } from '../../core/s7/S7AscendConfig';
+import { ascendShip, starupPilot, convertUniversalToExclusive } from '../../core/s7/S7AscendService';
 // E 商人小站（step1 引擎已单测）：主界面「商人小站」进商店。
 import { DEFAULT_S7_MERCHANT_CONFIG, S7ShopItem } from '../../core/s7/S7MerchantConfig';
 import {
@@ -265,6 +272,22 @@ export class S7DemoController extends Component {
   private habitatInfoLabel: Label | null = null;
   private galleryNode: Node | null = null;
   private galleryInfoLabel: Label | null = null;
+  // 单位管理面板（船坞单舰 / 训练舱驾驶员共用：详情 + 升级/升阶升星/装配·预留属性&技能详情）
+  private unitManageNode: Node | null = null;
+  private unitManageKind: 'ship' | 'pilot' = 'ship';
+  private unitManageId = '';
+  private unitManageInfoLabel: Label | null = null;
+  private unitManageResultLabel: Label | null = null;
+  private unitManageAscendLabel: Label | null = null; // 升阶/升星 按钮文字
+  private unitManageEquipBtn: Node | null = null;      // 装配按钮(仅星舰显示)
+  // 背包·通用碎片转换（点使用→选专属单位→选数量→转换·Ron 2026-06-21）
+  private backpackNode: Node | null = null;
+  private backpackKind: 'ship' | 'pilot' = 'ship';
+  private backpackTargetId = '';
+  private backpackAmount = 1;
+  private backpackInfoLabel: Label | null = null;
+  private backpackListNode: Node | null = null;
+  private backpackAmountLabel: Label | null = null;
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -382,6 +405,11 @@ export class S7DemoController extends Component {
         if ((r.starOre ?? 0) < 100000) r.starOre = 100000;
         if ((r.hullAlloy ?? 0) < 100000) r.hullAlloy = 100000;
         if ((r.pilotToken ?? 0) < 5000) r.pilotToken = 5000;
+        // 升阶升星 DEV-TEMP：发通用舰/员碎片(测背包转换) + 给各 seed 单位一笔专属碎片(测升阶/升星)。
+        if ((r.shipBlueprint ?? 0) < 300) r.shipBlueprint = 300;
+        if ((r.pilotShardUniversal ?? 0) < 300) r.pilotShardUniversal = 300;
+        for (const s of S7_DEMO_SEED_SHIPS) addExclusiveShards(this.playerState.exclusiveShards, s, 200);
+        for (const p of S7_DEMO_SEED_PILOTS) addExclusiveShards(this.playerState.exclusiveShards, p, 200);
       }
     }
     // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
@@ -469,6 +497,8 @@ export class S7DemoController extends Component {
     this.buildUnitTrainPanel('pilot', W, H); // J-step2 训练舱（驾驶员升级）
     this.buildInfoBuildingPanel('habitat', W, H); // J-step3 居住舱（人口中枢）
     this.buildInfoBuildingPanel('gallery', W, H); // J-step3 星核展厅（收藏）
+    this.buildUnitManagePanel(W, H); // 升阶升星 step2 单位管理面板
+    this.buildBackpackPanel(W, H); // 升阶升星 step2 背包·通用碎片转换
   }
 
   // ===== 星港主界面 hub =====
@@ -505,7 +535,7 @@ export class S7DemoController extends Component {
     this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
-    this.makeHubEntry('背包', '即将开放', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.hubToast('背包·即将开放'));
+    this.makeHubEntry('背包', '碎片转换', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.openBackpack());
     this.makeHubEntry('邮件', '即将开放', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.hubToast('邮件·即将开放'));
     this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
 
@@ -1579,10 +1609,13 @@ export class S7DemoController extends Component {
       lineup = built;
     }
     const nodeId = this.session.currentNodeId;
-    // J：把建筑全队加成（研究塔+星核展厅）附到每艘上阵舰，喂进战斗。
-    const bonus = this.teamBonusBlocks();
+    // J：全队加成（研究塔+星核展厅）+ 每舰升阶/升星加成，都附到上阵舰喂进战斗。
+    const team = this.teamBonusBlocks();
     const battleLineup = (lineup && lineup.ok)
-      ? (bonus.length > 0 ? lineup.lineup.map((u) => ({ ...u, extraBlocks: [...(u.extraBlocks ?? []), ...bonus] })) : lineup.lineup)
+      ? lineup.lineup.map((u) => {
+        const extra = [...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId)];
+        return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
+      })
       : undefined;
     let outcome: S7PlayNodeOutcome;
     try {
@@ -1601,6 +1634,20 @@ export class S7DemoController extends Component {
     this.pendingWon = outcome.won;
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
+  }
+
+  /** J 升阶升星：某上阵舰的"阶级+驾驶员星级"加成 → 该舰 maxHp/attack 的 pct 块（让升阶升星真进战斗）。 */
+  private unitAscendBlocks(shipId: string, pilotId?: string): S7EffectBlock[] {
+    if (!this.playerState) return [];
+    const t = this.playerState.unitTiers;
+    const pct = shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, getShipTier(t, shipId))
+      + (pilotId ? pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, getPilotStar(t, pilotId)) : 0);
+    if (pct <= 0) return [];
+    const frac = pct / 100;
+    return [
+      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: frac, source: 'unit_ascend' },
+      { kind: 'modifier', stat: 'attack', op: 'pct', value: frac, source: 'unit_ascend' },
+    ];
   }
 
   /** J：建筑全队加成（研究塔伤害 + 星核展厅收藏加成）→ 战斗积木(maxHp+attack 各一条 pct)。无加成→空。 */
@@ -1636,7 +1683,7 @@ export class S7DemoController extends Component {
   /** 刷新战前备战：信息行(节点/战力/敌情概要) + 敌情预览色块 + 9 格编队 + 选中船详情。 */
   private refreshPrebattle(): void {
     if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
-    const r = buildPrebattleView(this.runtime, this.session.progress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined);
+    const r = buildPrebattleView(this.runtime, this.session.progress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
     const g = this.prebattleGfx;
     const W = this.viewW;
     const band = getS7UsableBand();
@@ -1870,7 +1917,7 @@ export class S7DemoController extends Component {
   /** 单舰战力（占位·与备战总战力同口径·上阵列表排序/显示用）。 */
   private shipPower(shipId: string): number {
     if (!this.squad) return 0;
-    return shipPowerOf(this.growthBands, this.squad, shipId, this.playerState?.unitLevels, this.pluginInventory ?? undefined);
+    return shipPowerOf(this.growthBands, this.squad, shipId, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
   }
 
   // ===== B 块 单舰装配面板（驾驶员 + 插件分三类 + 星核，统称"装备"；点装备→详情弹窗→装/卸/移动）=====
@@ -2061,12 +2108,31 @@ export class S7DemoController extends Component {
     const tagZh = S7_SLOT_TAG_NAMES[this.pluginSlotMap.get(inst.pluginId) ?? 'weapon'] ?? '?';
     return `插件 ${inst.pluginId}（${tagZh}槽·${S7_QUALITY_NAMES[inst.quality] ?? inst.quality}）`;
   }
-  private doEquip(ref: S7EquipRef, shipId: string) {
-    if (!this.squad) return { ok: false as const, code: 'not_owned_ship' as const };
+  private doEquip(ref: S7EquipRef, shipId: string): { ok: true } | { ok: false; code: string } {
+    if (!this.squad) return { ok: false, code: 'not_owned_ship' };
     if (ref.kind === 'pilot') return equipPilot(this.squad, shipId, ref.id);
-    if (ref.kind === 'core') return equipCore(this.squad, shipId, ref.id);
-    if (!this.pluginInventory) return { ok: false as const, code: 'not_owned_plugin' as const };
+    // J 升阶开槽 gating：星核槽 S 阶才开；插件槽数按阶级 C=1/B=2/A=3。
+    const tier = this.playerState ? getShipTier(this.playerState.unitTiers, shipId) : 0;
+    if (ref.kind === 'core') {
+      if (!shipCoreSlotOpen(tier)) return { ok: false, code: 'core_locked' };
+      return equipCore(this.squad, shipId, ref.id);
+    }
+    if (!this.pluginInventory) return { ok: false, code: 'not_owned_plugin' };
+    if (this.pluginEquipExceedsTier(shipId, ref.id, tier)) return { ok: false, code: 'slot_locked' };
     return equipPlugin(this.squad, this.pluginInventory, shipId, ref.id, this.pluginSlotOf);
+  }
+
+  /** 装这件插件会不会超过该阶插件槽上限（已在本舰 / 替换同类槽 → 不增不超；否则看是否已达 cap）。 */
+  private pluginEquipExceedsTier(shipId: string, instanceId: string, tier: number): boolean {
+    if (!this.pluginInventory) return false;
+    const cap = shipPluginSlotCap(tier);
+    const ids = this.squad?.shipLoadouts[shipId]?.pluginInstanceIds ?? [];
+    if (ids.includes(instanceId)) return false; // 已在本舰·不增
+    const inst = findOwnedPlugin(this.pluginInventory, instanceId);
+    const slotTag = inst ? this.pluginSlotMap.get(inst.pluginId) : undefined;
+    const sameType = ids.some((id) => { const o = findOwnedPlugin(this.pluginInventory!, id); return !!o && this.pluginSlotMap.get(o.pluginId) === slotTag; });
+    if (sameType) return false; // 替换同类槽·不增
+    return ids.length >= cap; // 会新增 → 达上限即超
   }
   private doUnequip(ref: S7EquipRef, shipId: string): void {
     if (!this.squad) return;
@@ -2105,19 +2171,23 @@ export class S7DemoController extends Component {
     const ship = this.prebattleSelShip;
     if (!this.squad || !ship) return;
     const sq = this.squad;
+    // J 升阶开槽 gating：按阶级算插件槽上限 + 星核槽是否开。
+    const tier = this.playerState ? getShipTier(this.playerState.unitTiers, ship) : 0;
+    const slotCap = shipPluginSlotCap(tier);
     // 驾驶员
     if (!sq.shipLoadouts[ship]?.pilotId) {
       const free = sq.ownedPilots.find((p) => !findPilotShip(sq, p));
       if (free) equipPilot(sq, ship, free);
     }
-    // 星核
-    if (!sq.shipLoadouts[ship]?.coreId) {
+    // 星核（仅 S 阶起开槽）
+    if (shipCoreSlotOpen(tier) && !sq.shipLoadouts[ship]?.coreId) {
       const free = Object.keys(sq.ownedCores).find((cid) => !findCoreShip(sq, cid));
       if (free) equipCore(sq, ship, free);
     }
-    // 插件三槽：空槽填该槽空闲插件里品质(战力)最高的。
+    // 插件：空槽填该槽空闲插件里品质(战力)最高的·但总数不超过阶级槽上限。
     if (this.pluginInventory) {
       for (const tag of ['weapon', 'skill', 'tactical'] as S7PluginSlot[]) {
+        if ((sq.shipLoadouts[ship]?.pluginInstanceIds.length ?? 0) >= slotCap) break; // 到阶级上限停
         if (this.equippedInSlotType(ship, tag)) continue; // 本舰该槽已有
         const best = this.pluginInventory.plugins
           .filter((p) => this.pluginSlotMap.get(p.pluginId) === tag && !findPluginShip(sq, p.instanceId))
@@ -2194,6 +2264,8 @@ export class S7DemoController extends Component {
       dup_plugin: '同名插件已装',
       too_many_plugins: '插件已满 3 个',
       not_owned_core: '没有这颗星核',
+      slot_locked: '插件槽不够——升阶星舰解锁更多槽',
+      core_locked: '星核槽未开——星舰升到 S 阶解锁',
     };
     return map[code] ?? code;
   }
@@ -2407,14 +2479,10 @@ export class S7DemoController extends Component {
     if (units.length === 0) this.mkPanelLabel(listNode, '（还没有拥有的单位）', 24, new Color(150, 160, 175), 0, y);
     for (const uid of units) {
       const lv = kind === 'ship' ? getShipLevel(this.playerState.unitLevels, uid) : getPilotLevel(this.playerState.unitLevels, uid);
-      const atCap = lv >= cap;
-      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  Lv.${lv}${atCap ? '（满）' : ''}`, 24, atCap ? new Color(200, 180, 140) : new Color(225, 225, 235), -this.viewW * 0.30, y);
+      const tierStr = kind === 'ship' ? `${shipTierName(getShipTier(this.playerState.unitTiers, uid))}阶` : `${getPilotStar(this.playerState.unitTiers, uid)}★`;
+      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  ${tierStr}·Lv.${lv}`, 24, new Color(225, 225, 235), -this.viewW * 0.20, y);
       const id = uid;
-      if (kind === 'ship') {
-        // 船坞：装配入口（跳已做好的单舰装配界面·驾驶员/插件/星核）。
-        this.addBtn(listNode, '装配', 120, 56, new Color(70, 130, 160, 255), this.viewW * 0.10, y, () => { this.prebattleSelShip = id; this.openLoadout(); }, 24);
-      }
-      this.addBtn(listNode, '升级', 120, 56, atCap ? new Color(70, 75, 90, 255) : new Color(70, 150, 110, 255), this.viewW * 0.34, y, () => this.onUpgradeUnit(kind, id), 24);
+      this.addBtn(listNode, '管理', 150, 56, new Color(80, 130, 160, 255), this.viewW * 0.34, y, () => this.openUnitManage(kind, id), 26);
       y -= 62;
     }
   }
@@ -2487,6 +2555,172 @@ export class S7DemoController extends Component {
     return this.runtime?.getById<{ name: string }>('core_config', coreId)?.name ?? coreId;
   }
 
+  // ===== 升阶升星 step2：单位管理面板（详情 + 升级/升阶升星/装配·预留属性&技能详情）=====
+
+  /** 搭单位管理浮层（船坞单舰 / 训练舱驾驶员共用）。 */
+  private buildUnitManagePanel(W: number, H: number): void {
+    const panel = new Node('S7UnitManage'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(18, 24, 34, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.unitManageNode = panel;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    this.unitManageInfoLabel = this.mkPanelLabel(panel, '', 26, new Color(222, 230, 245), 0, topY * 0.18);
+    this.unitManageResultLabel = this.mkPanelLabel(panel, '', 24, new Color(180, 230, 200), 0, botY + 200);
+    // 动作：升级 / 升阶或升星 / 装配(仅舰) / 返回。
+    this.addBtn(panel, '升级', 200, 80, new Color(70, 150, 110, 255), -W * 0.30, botY + 110, () => this.onUpgradeUnit(this.unitManageKind, this.unitManageId), 28);
+    this.unitManageAscendLabel = this.addBtn(panel, '升阶', 200, 80, new Color(150, 110, 180, 255), -W * 0.06, botY + 110, () => this.onAscendUnit(this.unitManageKind, this.unitManageId), 28);
+    this.unitManageEquipBtn = this.addBtn(panel, '装配', 200, 80, new Color(70, 130, 160, 255), W * 0.18, botY + 110, () => { this.prebattleSelShip = this.unitManageId; this.openLoadout(); }, 28).node.parent;
+    this.addBtn(panel, '返回', 200, 80, new Color(120, 90, 160, 255), W * 0.34, botY + 36, () => { panel.active = false; }, 28);
+  }
+
+  private openUnitManage(kind: 'ship' | 'pilot', unitId: string): void {
+    if (!this.unitManageNode) return;
+    this.unitManageKind = kind;
+    this.unitManageId = unitId;
+    const parent = this.unitManageNode.parent;
+    if (parent) this.unitManageNode.setSiblingIndex(parent.children.length - 1); // 置顶(盖在船坞/训练舱之上)
+    this.unitManageNode.active = true;
+    if (this.unitManageResultLabel) this.unitManageResultLabel.string = '';
+    this.refreshUnitManage();
+  }
+
+  /** 刷新管理面板：阶级/星级·等级·槽位·战力·加成 + 属性/技能详情(预留)。 */
+  private refreshUnitManage(): void {
+    if (!this.playerState || !this.buildings || !this.unitManageInfoLabel) return;
+    const kind = this.unitManageKind, uid = this.unitManageId;
+    const name = this.unitName(kind, uid);
+    if (this.unitManageAscendLabel) this.unitManageAscendLabel.string = kind === 'ship' ? '升阶' : '升星';
+    if (this.unitManageEquipBtn) this.unitManageEquipBtn.active = kind === 'ship';
+    if (kind === 'ship') {
+      const lv = getShipLevel(this.playerState.unitLevels, uid);
+      const tier = getShipTier(this.playerState.unitTiers, uid);
+      const cap = shipLevelCap(getBuildingLevel(this.buildings, 'bld_dock'));
+      const haveShard = getExclusiveShardCount(this.playerState.exclusiveShards, uid);
+      const nextCost = tier < SHIP_TIER_MAX ? DEFAULT_S7_ASCEND_CONFIG.shipTierStepCost[tier].exclusiveShards : 0;
+      const power = this.shipPower(uid);
+      this.unitManageInfoLabel.string =
+        `${name}\n阶级 ${shipTierName(tier)}阶（战力+${shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, tier)}%）\n` +
+        `${tier < SHIP_TIER_MAX ? `升阶需 ${nextCost} 专属碎片（有 ${haveShard}）` : '已满阶 SS'}\n` +
+        `等级 Lv.${lv}/${cap}（升级花星矿/合金）\n插件槽 ${shipPluginSlotCap(tier)}　星核槽 ${shipCoreSlotOpen(tier) ? '已开' : '未开(S阶解锁)'}\n战力 ${power}\n` +
+        `— 属性详情（待接入）—\n— 技能详情（待接入）—`;
+    } else {
+      const lv = getPilotLevel(this.playerState.unitLevels, uid);
+      const star = getPilotStar(this.playerState.unitTiers, uid);
+      const cap = driverLevelCap(getBuildingLevel(this.buildings, 'bld_pilot_training_bay'));
+      const haveShard = getExclusiveShardCount(this.playerState.exclusiveShards, uid);
+      const nextCost = star < PILOT_STAR_MAX ? DEFAULT_S7_ASCEND_CONFIG.pilotStarStepCost[star - 1].exclusiveShards : 0;
+      this.unitManageInfoLabel.string =
+        `${name}\n星级 ${star}★（战力+${pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, star)}%）\n` +
+        `${star < PILOT_STAR_MAX ? `升星需 ${nextCost} 专属碎片（有 ${haveShard}）` : '已满星 5★'}\n` +
+        `等级 Lv.${lv}/${cap}（升级花驾驶记录）\n` +
+        `— 驾驶能力详情（待接入）—\n— 驾驶天赋详情（待接入）—`;
+    }
+  }
+
+  // ===== 背包·通用碎片转换（通用→指定单位专属·占位 1:1）=====
+
+  /** 搭背包转换浮层：通用碎片余量 + 舰/员切页 + 可转单位列表(选) + 数量(−/+/最大) + 转换 + 返回。 */
+  private buildBackpackPanel(W: number, H: number): void {
+    const panel = new Node('S7Backpack'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(22, 22, 30, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.backpackNode = panel;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    this.mkPanelLabel(panel, '背包 · 通用碎片转换', 38, new Color(210, 220, 240), -W * 0.16, topY - 30);
+    this.backpackInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(220, 228, 245), 0, topY - 96);
+    this.addBtn(panel, '转舰专属', 220, 70, new Color(80, 130, 200, 255), -W * 0.20, topY - 160, () => { this.backpackKind = 'ship'; this.backpackTargetId = ''; this.backpackAmount = 1; this.refreshBackpack(); }, 26);
+    this.addBtn(panel, '转员专属', 220, 70, new Color(110, 140, 90, 255), W * 0.20, topY - 160, () => { this.backpackKind = 'pilot'; this.backpackTargetId = ''; this.backpackAmount = 1; this.refreshBackpack(); }, 26);
+    const list = new Node('bpList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.backpackListNode = list;
+    // 数量行 + 转换。
+    this.addBtn(panel, '−', 80, 70, new Color(90, 95, 110, 255), -W * 0.30, botY + 150, () => this.changeBackpackAmount(-1), 34);
+    this.backpackAmountLabel = this.mkPanelLabel(panel, '1', 30, new Color(255, 235, 160), -W * 0.16, botY + 150);
+    this.addBtn(panel, '+', 80, 70, new Color(90, 95, 110, 255), -W * 0.02, botY + 150, () => this.changeBackpackAmount(1), 34);
+    this.addBtn(panel, '最大', 100, 70, new Color(90, 95, 110, 255), W * 0.14, botY + 150, () => this.changeBackpackAmount(0), 26);
+    this.addBtn(panel, '转换', 160, 70, new Color(70, 150, 110, 255), W * 0.34, botY + 150, () => this.onBackpackConvert(), 28);
+    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), 0, botY + 50, () => { panel.active = false; }, 28);
+  }
+
+  private openBackpack(): void {
+    if (!this.backpackNode) return;
+    this.backpackKind = 'ship'; this.backpackTargetId = ''; this.backpackAmount = 1;
+    this.backpackNode.active = true;
+    this.refreshBackpack();
+  }
+
+  /** 当前 kind 的通用碎片余量。 */
+  private backpackUniversalHave(): number {
+    const r = this.session?.resources as Record<string, number> | undefined;
+    if (!r) return 0;
+    return Math.floor((this.backpackKind === 'ship' ? r.shipBlueprint : r.pilotShardUniversal) ?? 0);
+  }
+
+  private changeBackpackAmount(delta: number): void {
+    const max = Math.max(1, this.backpackUniversalHave());
+    if (delta === 0) this.backpackAmount = max; // 最大
+    else this.backpackAmount = Math.max(1, Math.min(max, this.backpackAmount + delta));
+    if (this.backpackAmountLabel) this.backpackAmountLabel.string = String(this.backpackAmount);
+  }
+
+  /** 刷新背包：余量/选中 + 重建可转单位列表（拥有的舰/员）。 */
+  private refreshBackpack(): void {
+    if (!this.playerState || !this.squad || !this.backpackListNode) return;
+    const have = this.backpackUniversalHave();
+    const kindName = this.backpackKind === 'ship' ? '通用舰碎片' : '通用员碎片';
+    const selName = this.backpackTargetId ? this.unitName(this.backpackKind, this.backpackTargetId) : '（点下方选单位）';
+    if (this.backpackInfoLabel) this.backpackInfoLabel.string = `${kindName} 余 ${have}　→ 选中：${selName}\n点单位选目标 → 选数量 → 转换（1 通用 = 1 专属）`;
+    if (this.backpackAmount > Math.max(1, have)) this.backpackAmount = Math.max(1, have);
+    if (this.backpackAmountLabel) this.backpackAmountLabel.string = String(this.backpackAmount);
+    this.backpackListNode.removeAllChildren();
+    const units = this.backpackKind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
+    let y = getS7UsableBand().usableTopY - 230;
+    let x = -this.viewW * 0.28;
+    for (const uid of units) {
+      const sel = uid === this.backpackTargetId;
+      const have2 = getExclusiveShardCount(this.playerState.exclusiveShards, uid);
+      this.addBtn(this.backpackListNode, `${this.unitName(this.backpackKind, uid)}\n专属${have2}`, 200, 70, sel ? new Color(90, 150, 220, 255) : new Color(48, 56, 76, 255), x, y, () => { this.backpackTargetId = uid; this.refreshBackpack(); }, 22);
+      x += this.viewW * 0.28;
+      if (x > this.viewW * 0.28) { x = -this.viewW * 0.28; y -= 80; }
+    }
+  }
+
+  private onBackpackConvert(): void {
+    if (!this.playerState || !this.session) return;
+    if (!this.backpackTargetId) { if (this.backpackInfoLabel) this.backpackInfoLabel.string = '先点一个单位作转换目标'; return; }
+    const r = convertUniversalToExclusive(this.session.resources as Record<string, number>, this.playerState.exclusiveShards, this.backpackKind, this.backpackTargetId, this.backpackAmount);
+    if (this.backpackInfoLabel && !r.ok) this.backpackInfoLabel.string = r.reason === 'insufficient' ? '通用碎片不够' : '数量不对';
+    if (r.ok) { this.backpackAmount = 1; }
+    this.persist();
+    this.refresh();
+    this.refreshBackpack();
+  }
+
+  /** 升阶(星舰)/升星(驾驶员)：扣专属碎片·提阶级/星级。 */
+  private onAscendUnit(kind: 'ship' | 'pilot', unitId: string): void {
+    if (!this.playerState) return;
+    const rl = this.unitManageResultLabel;
+    if (kind === 'ship') {
+      const r = ascendShip(this.playerState.unitTiers, this.playerState.exclusiveShards, DEFAULT_S7_ASCEND_CONFIG, unitId);
+      if (rl) rl.string = r.ok ? `升阶到 ${shipTierName(r.toTier)} 阶！插件槽 ${r.pluginSlots}${r.coreSlot ? '·星核槽已开' : ''}`
+        : r.reason === 'max_tier' ? '已满阶 SS' : r.reason === 'insufficient' ? `专属碎片不够（需 ${r.needExclusive}·去抽卡攒或背包转换）` : '暂不可升阶';
+    } else {
+      const r = starupPilot(this.playerState.unitTiers, this.playerState.exclusiveShards, DEFAULT_S7_ASCEND_CONFIG, unitId);
+      if (rl) rl.string = r.ok ? `升星到 ${r.toStar}★！` : r.reason === 'max_tier' ? '已满星 5★' : r.reason === 'insufficient' ? `专属碎片不够（需 ${r.needExclusive}）` : '暂不可升星';
+    }
+    this.persist();
+    this.refresh();
+    this.refreshUnitManage();
+    this.refreshUnitTrain(kind);
+  }
+
   /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
   private onReset(): void {
     if (!this.session || !this.playerState || this.playing) return;
@@ -2507,6 +2741,7 @@ export class S7DemoController extends Component {
     this.playerState.gacha = createDefaultS7GachaState();
     this.playerState.salvage = createDefaultS7Salvage();
     this.playerState.merchant = createDefaultS7Merchant();
+    this.playerState.unitTiers = createDefaultS7UnitTierState();
     // B 块：插件库存也就地清空（会话持有引用，不能整体替换）→ ensureDemoSquadSeeded 重发时实例号从 pi1 起复现。
     if (this.pluginInventory) {
       this.pluginInventory.plugins = [];

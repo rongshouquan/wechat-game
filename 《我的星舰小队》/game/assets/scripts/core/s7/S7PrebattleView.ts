@@ -22,6 +22,8 @@ import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
 import { unitPowerAtLevel } from './S7UnitGrowth';
 import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 import { S7PluginQuality } from './S7PluginEffects';
+import { S7UnitTierState, getShipTier, getPilotStar } from './S7UnitTierState';
+import { DEFAULT_S7_ASCEND_CONFIG, shipTierPowerPct, pilotStarPowerPct } from './S7AscendConfig';
 
 // 装配对战力的贡献（占位·方向值·精确公式留第二块）。Ron 2026-06-20 拍板：插件「与」星核「与」驾驶员都计入战力
 //（星核计入=有意覆盖 v1.0 §6"质变不计战力"——见进度日志/记忆）。星舰 1 级成长战力≈120，故此处量级取得可感知。
@@ -40,12 +42,18 @@ export function shipPowerOf(
   shipId: string,
   unitLevels?: S7UnitLevelState,
   inventory?: S7PluginInventoryState,
+  tierState?: S7UnitTierState,
 ): number {
   const lv = unitLevels ? getShipLevel(unitLevels, shipId) : 1;
-  let p = unitPowerAtLevel(growthBands, 'ship', lv);
+  // 升阶升星块：星舰阶级抬成长战力、驾驶员星级抬驾驶员战力（占位·tierState 给了才计）。
+  const tierMul = tierState ? 1 + shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, getShipTier(tierState, shipId)) / 100 : 1;
+  let p = unitPowerAtLevel(growthBands, 'ship', lv) * tierMul;
   const lo = squad.shipLoadouts[shipId];
   if (lo) {
-    if (lo.pilotId) p += PILOT_POWER;
+    if (lo.pilotId) {
+      const starMul = tierState ? 1 + pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, getPilotStar(tierState, lo.pilotId)) / 100 : 1;
+      p += PILOT_POWER * starMul;
+    }
     if (lo.coreId) p += CORE_POWER;
     if (inventory) {
       for (const id of lo.pluginInstanceIds) {
@@ -92,6 +100,7 @@ export function buildPrebattleView(
   squad: S7SquadState,
   unitLevels?: S7UnitLevelState,
   inventory?: S7PluginInventoryState,
+  tierState?: S7UnitTierState,
 ): S7PrebattleViewResult {
   const ctxResult = S7BattleEntry.fromRuntime(runtime).resolveCurrentContext(progress);
   if (!ctxResult.ok) return { ok: false, error: ctxResult.error };
@@ -127,7 +136,7 @@ export function buildPrebattleView(
   const growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
   let playerPower = 0;
   for (const slot of squad.formation) {
-    playerPower += shipPowerOf(growthBands, squad, slot.shipId, unitLevels, inventory);
+    playerPower += shipPowerOf(growthBands, squad, slot.shipId, unitLevels, inventory, tierState);
   }
 
   return {
