@@ -42,6 +42,10 @@ import {
   salvageTeamCount, researchTeamBonusPct, merchantShopSlots,
 } from '../../core/s7/S7BuildingEffects';
 import { getS7UsableBand } from '../S7UiLayout';
+import {
+  S7SquadState, grantShip, grantPilot, assignSlot, clearSlot,
+} from '../../core/s7/S7Squad';
+import { buildPrebattleView, S7PrebattleView } from '../../core/s7/S7PrebattleView';
 
 const { ccclass } = _decorator;
 
@@ -50,6 +54,15 @@ const S7_DEMO_DEFAULT_BUILDINGS = [
   'bld_dock', 'bld_pilot_training_bay', 'bld_habitat', 'bld_supply_station',
   'bld_salvage_port', 'bld_merchant_station', 'bld_research_tower',
 ];
+/** A-step2 demo 开局发货（DEV-TEMP·正式获取靠后面抽卡/发奖块）：默认拥有的船/驾驶员 + 默认编队。 */
+const S7_DEMO_SEED_SHIPS = ['shp01', 'shp02', 'shp03', 'shp04', 'shp05'];
+const S7_DEMO_SEED_PILOTS = ['pil01', 'pil02', 'pil03', 'pil04', 'pil05'];
+const S7_DEMO_SEED_FORMATION: { slotRef: string; shipId: string; pilotId: string }[] = [
+  { slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01' },
+  { slotRef: 'p1c2', shipId: 'shp02', pilotId: 'pil02' },
+  { slotRef: 'p2c2', shipId: 'shp03', pilotId: 'pil03' },
+];
+
 /** 建筑中文名（仅显示用）。 */
 const S7_BUILDING_NAMES: Record<string, string> = {
   bld_dock: '船坞',
@@ -99,6 +112,7 @@ export class S7DemoController extends Component {
   private pendingResult: { text: string; color: Color } | null = null;
 
   // ===== C 养成接入（离线产出 + 建筑升级）=====
+  private runtime: S7ConfigRuntime | null = null;
   private model: S7MainlineModel | null = null;
   private buildings: S7BuildingState | null = null;
   private population: S7PopulationState | null = null;
@@ -110,9 +124,20 @@ export class S7DemoController extends Component {
   private baseRowLabels: Label[] = [];
   private baseCloseBtn: Node | null = null;
 
+  // ===== A-step2 战前备战界面 =====
+  private squad: S7SquadState | null = null;
+  private prebattleNode: Node | null = null;
+  private prebattleGfx: Graphics | null = null;     // 画底板 + 敌情预览 + 编队格高亮
+  private prebattleInfoLabel: Label | null = null;  // 节点名 + 我方VS推荐战力 + 敌情概要
+  private prebattleDetailLabel: Label | null = null; // 选中船详情(驾驶员/插件/星核占位)
+  private prebattleCellLabels: Label[] = [];        // 9 格文字(与 SLOTS 平行)
+  /** 当前选中的编队格(p{r}c{c})；null=未选。 */
+  private prebattleSelSlot: string | null = null;
+
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
     this.adapter = adapter;
+    this.runtime = runtime;
     const model = S7MainlineModel.fromRuntime(runtime);
     this.model = model;
     this.upgradeCostRows = runtime.getAll<S7UpgradeCostParam>('upgrade_cost_param');
@@ -129,12 +154,16 @@ export class S7DemoController extends Component {
     const loaded = loadS7Save(adapter, now);
     this.playerState = loaded.data.playerState;
     this.saveVersion = loaded.data.saveVersion;
+    // A-step2：拿阵容引用 + demo 开局发货(默认拥有/默认编队)，再把 squad 喂会话(出战用玩家编队)。
+    this.squad = this.playerState.squad;
+    this.ensureDemoSquadSeeded();
     this.session = new S7RunSession(
       this.playerState.resources,
       this.playerState.mainlineProgress,
       runtime,
       model,
       this.playerState.unitLevels,
+      this.playerState.squad,
     );
 
     // C 养成接入：拿建筑/人口引用、确保默认建筑已解锁、按"上次在线→现在"算离线收益（待领取）。
@@ -164,6 +193,27 @@ export class S7DemoController extends Component {
     }
   }
 
+  /** DEV-TEMP·开局发货：空阵容时给默认拥有的船/员 + 默认编队，保证一进来就能编队出战。
+   *  ⚠️ 正式获取系统(抽卡/关卡发奖/打捞)接好后删本方法。 */
+  private ensureDemoSquadSeeded(): void {
+    if (!this.squad || this.squad.ownedShips.length > 0) return; // 仅对全新空阵容发货
+    for (const s of S7_DEMO_SEED_SHIPS) grantShip(this.squad, s);
+    for (const p of S7_DEMO_SEED_PILOTS) grantPilot(this.squad, p);
+    for (const f of S7_DEMO_SEED_FORMATION) assignSlot(this.squad, f.slotRef, f.shipId, f.pilotId);
+  }
+
+  /** 该格当前已配在编队里的某船? 返回编队槽(找不到 null)。 */
+  private slotOf(slotRef: string) {
+    return this.squad ? this.squad.formation.find((s) => s.slotRef === slotRef) ?? null : null;
+  }
+
+  /** 第一个未被编队占用的拥有驾驶员(给"放船自动配员"用)；都占用则用第一个拥有员。 */
+  private firstFreePilot(): string | null {
+    if (!this.squad || this.squad.ownedPilots.length === 0) return null;
+    const used = new Set(this.squad.formation.map((s) => s.pilotId).filter((x): x is string => !!x));
+    return this.squad.ownedPilots.find((p) => !used.has(p)) ?? this.squad.ownedPilots[0];
+  }
+
   // ===== UI 搭建（程序化色块）=====
 
   private buildUi(): void {
@@ -191,8 +241,8 @@ export class S7DemoController extends Component {
     // 状态行：星矿/合金/当前节点 + 旗舰等级。
     this.statusLabel = this.makeLabel('', 26, new Color(230, 240, 255), 0, H * 0.13);
 
-    // 「出战」按钮（蓝色块）。
-    this.makeButton('出战', 280, 92, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.onSortie());
+    // 「出战」按钮（蓝色块）：A-step2 改为先进"战前备战界面"（编队/敌情/战力），再在那儿确认出战。
+    this.makeButton('出战', 280, 92, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.openPrebattle());
 
     // 「升级旗舰」（绿）+「基地」（橙）并排：升旗舰=战力养成；基地=建筑养成（开建筑面板）。
     this.makeButton('升级旗舰', 230, 84, new Color(60, 170, 110, 255), -122, -H * 0.14, () => this.onUpgradeFlagship());
@@ -221,6 +271,86 @@ export class S7DemoController extends Component {
     this.skipBtn.active = false;
 
     this.buildBasePanel(W, H);
+    this.buildPrebattlePanel(W, H);
+  }
+
+  /** 搭"战前备战"叠加层（默认隐藏；点主界面出战时弹）。结构搭一次，内容由 refreshPrebattle 填。
+   *  布局照 Ron mockup：标题/节点+敌情预览(上) → 我方VS推荐战力(中) → 3×3编队+选中船详情(下) → 返回星港/出战(底)。 */
+  private buildPrebattlePanel(W: number, H: number): void {
+    const band = getS7UsableBand();
+    const topY = band.usableTopY;
+    const botY = band.usableBottomY;
+    const panel = new Node('S7Prebattle');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    const put = panel.addComponent(UITransform);
+    put.setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸，防点穿到主界面按钮
+    panel.active = false;
+    this.prebattleNode = panel;
+    this.prebattleGfx = g;
+
+    const mk = (text: string, size: number, color: Color, x: number, y: number): Label => {
+      const n = new Node('pbl');
+      n.layer = this.node.layer;
+      panel.addChild(n);
+      n.setPosition(x, y, 0);
+      const l = n.addComponent(Label);
+      l.fontSize = size; l.lineHeight = Math.round(size * 1.3); l.color = color; l.string = text;
+      return l;
+    };
+    const mkBtn = (text: string, w: number, h: number, color: Color, x: number, y: number, onTap: () => void): void => {
+      const n = new Node('pbBtn');
+      n.layer = this.node.layer;
+      panel.addChild(n);
+      n.setPosition(x, y, 0);
+      const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
+      const bg = n.addComponent(Graphics); bg.fillColor = color; bg.roundRect(-w / 2, -h / 2, w, h, 12); bg.fill();
+      const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
+      const l = ln.addComponent(Label); l.fontSize = 28; l.lineHeight = 36; l.color = new Color(255, 255, 255); l.string = text;
+      n.on(Node.EventType.TOUCH_END, onTap, this);
+    };
+
+    // 标题 + 信息行（节点/战力/敌情概要）。
+    mk('★ 战前备战 ★', 34, new Color(255, 230, 120), 0, topY - 28);
+    this.prebattleInfoLabel = mk('', 22, new Color(210, 225, 250), 0, topY - 70);
+
+    // 3×3 编队格：中心略偏下，格边长 ~W*0.17，间距 W*0.19。9 格点击选中→下方选船/选员放入。
+    const cell = W * 0.17;
+    const gap = W * 0.195;
+    const gridCx = -W * 0.16;          // 编队格整体偏左，右侧留给"选中船详情"
+    const gridCy = -H * 0.04;
+    this.prebattleCellLabels = [];
+    for (let r = 0; r < 3; r += 1) {
+      for (let c = 0; c < 3; c += 1) {
+        const slotRef = `p${r}c${c}`;
+        const x = gridCx + (c - 1) * gap;
+        const y = gridCy - (r - 1) * gap; // r 越大越靠下
+        const cn = new Node(`pbCell_${slotRef}`);
+        cn.layer = this.node.layer; panel.addChild(cn); cn.setPosition(x, y, 0);
+        const ut = cn.addComponent(UITransform); ut.setContentSize(cell, cell);
+        cn.on(Node.EventType.TOUCH_END, () => this.onSelectPrebattleSlot(slotRef), this);
+        const ln = new Node('t'); ln.layer = this.node.layer; cn.addChild(ln);
+        const l = ln.addComponent(Label); l.fontSize = 18; l.lineHeight = 22; l.color = new Color(230, 240, 255); l.string = '';
+        this.prebattleCellLabels.push(l);
+      }
+    }
+
+    // 选中船详情（右侧）。
+    this.prebattleDetailLabel = mk('', 20, new Color(220, 230, 250), W * 0.26, gridCy + gap * 0.3);
+
+    // 拥有的船 / 驾驶员（点选中格后，点这里放入）。
+    mk('拥有星舰（点格后点这里放入）', 18, new Color(170, 185, 210), 0, botY + H * 0.20);
+    S7_DEMO_SEED_SHIPS.forEach((s, i) => mkBtn(s, W * 0.16, 52, new Color(60, 110, 170, 255), (i - 2) * W * 0.18, botY + H * 0.155, () => this.onPrebattlePickShip(s)));
+    mk('拥有驾驶员', 18, new Color(170, 185, 210), 0, botY + H * 0.115);
+    S7_DEMO_SEED_PILOTS.forEach((p, i) => mkBtn(p, W * 0.16, 52, new Color(120, 90, 170, 255), (i - 2) * W * 0.18, botY + H * 0.07, () => this.onPrebattlePickPilot(p)));
+
+    // 底部三键：下场(清当前格) / 返回星港 / 出战。
+    mkBtn('下场', 150, 60, new Color(120, 70, 70, 255), -W * 0.32, botY + 44, () => this.onPrebattleBench());
+    mkBtn('返回星港', 220, 70, new Color(120, 90, 160, 255), -W * 0.05, botY + 44, () => this.closePrebattle());
+    mkBtn('出战', 240, 76, new Color(220, 150, 50, 255), W * 0.28, botY + 44, () => this.onConfirmSortie());
   }
 
   /** 搭"基地建筑"面板叠加层（默认隐藏）：底板 + 标题 + 7 行(点行=升该建筑) + 关闭。行文案在 refreshBasePanel 填。 */
@@ -325,11 +455,12 @@ export class S7DemoController extends Component {
   // ===== 交互 =====
 
   /**
-   * 点「出战」：打当前节点（会话内部完成发奖+推进）→ 落盘 → 播色块回放 → 播完显示结果。
-   * 无遭遇节点显示「暂无关卡」。回放期间禁止再次出战/升级/重置（playing 守门）。
+   * 战前备战层「出战」确认：关战前备战层 → 打当前节点（会话用玩家编队·内部发奖+推进）→ 落盘 → 播回放 → 显示结果。
+   * 无遭遇节点显示「暂无关卡」。回放期间守门。
    */
-  private onSortie(): void {
+  private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
+    this.closePrebattle(); // 收起战前备战层，露出战斗演出
     const nodeId = this.session.currentNodeId;
     let outcome: S7PlayNodeOutcome;
     try {
@@ -345,6 +476,134 @@ export class S7DemoController extends Component {
     this.persist();
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
+  }
+
+  // ===== A-step2 战前备战界面交互 =====
+
+  /** 打开战前备战层（回放期间禁用）：刷新内容后显示。 */
+  private openPrebattle(): void {
+    if (this.playing || !this.prebattleNode) return;
+    this.prebattleSelSlot = null;
+    this.refreshPrebattle();
+    this.prebattleNode.active = true;
+  }
+
+  private closePrebattle(): void {
+    if (this.prebattleNode) this.prebattleNode.active = false;
+  }
+
+  /** 刷新战前备战：信息行(节点/战力/敌情概要) + 敌情预览色块 + 9 格编队 + 选中船详情。 */
+  private refreshPrebattle(): void {
+    if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
+    const r = buildPrebattleView(this.runtime, this.session.progress, this.squad, this.playerState?.unitLevels);
+    const g = this.prebattleGfx;
+    const W = this.viewW;
+    const band = getS7UsableBand();
+    g.clear();
+    // 底板
+    g.fillColor = new Color(12, 16, 28, 250);
+    g.rect(-W / 2, -this.viewH / 2, W, this.viewH);
+    g.fill();
+
+    if (!r.ok) {
+      this.prebattleInfoLabel.string = '该节点非战斗节点';
+    } else {
+      const v = r.view;
+      const stage = v.stageType === 'boss' ? 'Boss' : v.stageType === 'elite' ? '精英' : '普通';
+      const enemyBrief = v.hasEncounter ? `敌${v.enemyCount}${v.hasBoss ? '·含Boss' : ''}` : '暂无遭遇';
+      const trend = v.playerPower >= v.recommendedPower ? '↑' : '↓';
+      this.prebattleInfoLabel.string =
+        `节点 ${v.nodeId}（${stage}）   敌情预览：${enemyBrief}\n我方战力 ${v.playerPower} ${trend}   VS   推荐战力 ${v.recommendedPower}`;
+      // 敌情预览色块：按敌人站位 r{er}c{ec} 摆到上半区(占位待美术)。
+      this.drawEnemyPreview(g, v, band);
+    }
+
+    // 9 格编队内容 + 选中高亮（在 gfx 上画格框）。
+    const cell = W * 0.17;
+    const gap = W * 0.195;
+    const gridCx = -W * 0.16;
+    const gridCy = -this.viewH * 0.04;
+    for (let r2 = 0; r2 < 3; r2 += 1) {
+      for (let c = 0; c < 3; c += 1) {
+        const slotRef = `p${r2}c${c}`;
+        const x = gridCx + (c - 1) * gap;
+        const y = gridCy - (r2 - 1) * gap;
+        const slot = this.slotOf(slotRef);
+        const selected = this.prebattleSelSlot === slotRef;
+        g.fillColor = slot ? new Color(60, 110, 170, 255) : new Color(34, 42, 60, 255);
+        g.rect(x - cell / 2, y - cell / 2, cell, cell);
+        g.fill();
+        if (selected) {
+          g.strokeColor = new Color(255, 235, 130, 255);
+          g.lineWidth = 4;
+          g.rect(x - cell / 2, y - cell / 2, cell, cell);
+          g.stroke();
+        }
+        const idx = r2 * 3 + c;
+        const lbl = this.prebattleCellLabels[idx];
+        if (lbl) lbl.string = slot ? `${slot.shipId}\n${slot.pilotId ?? '缺员'}` : '空';
+      }
+    }
+
+    // 选中船详情。
+    if (this.prebattleDetailLabel) {
+      const sel = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot) : null;
+      this.prebattleDetailLabel.string = sel
+        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${sel.pilotId ?? '缺员'}\n插件 ▢▢▢(占位)\n星核 ▢(占位)`
+        : (this.prebattleSelSlot ? `选中 ${this.prebattleSelSlot}\n（空·点下方放船）` : '点一个格选中');
+    }
+  }
+
+  /** 敌情预览：按敌人站位把色块摆到上半区（红=普通敌·紫=Boss）。占位，美术阶段换皮。 */
+  private drawEnemyPreview(g: Graphics, v: S7PrebattleView, band: { usableTopY: number }): void {
+    const W = this.viewW;
+    const left = -W * 0.42;
+    const span = W * 0.84;
+    const topBandTop = band.usableTopY - this.viewH * 0.09;
+    const rowGap = this.viewH * 0.045;
+    for (const e of v.enemies) {
+      const m = /^r(\d)c(\d)$/.exec(e.slotRef);
+      if (!m) continue;
+      const er = Number(m[1]);
+      const ec = Number(m[2]);
+      const x = left + (ec / 6) * span;
+      const y = topBandTop - er * rowGap;
+      const sz = e.isBoss ? 30 : 16;
+      g.fillColor = e.isBoss ? new Color(200, 90, 205, 255) : new Color(230, 110, 80, 255);
+      g.rect(x - sz / 2, y - sz / 2, sz, sz);
+      g.fill();
+    }
+  }
+
+  private onSelectPrebattleSlot(slotRef: string): void {
+    this.prebattleSelSlot = slotRef;
+    this.refreshPrebattle();
+  }
+
+  /** 点拥有的船：放进当前选中格（自动配一个空闲驾驶员）；未选格则忽略。 */
+  private onPrebattlePickShip(shipId: string): void {
+    if (!this.squad || !this.prebattleSelSlot) return;
+    assignSlot(this.squad, this.prebattleSelSlot, shipId, this.firstFreePilot());
+    this.persist();
+    this.refreshPrebattle();
+  }
+
+  /** 点拥有的驾驶员：配给当前选中格的船（该格须已有船）。 */
+  private onPrebattlePickPilot(pilotId: string): void {
+    if (!this.squad || !this.prebattleSelSlot) return;
+    const slot = this.slotOf(this.prebattleSelSlot);
+    if (!slot) return; // 空格先放船
+    slot.pilotId = pilotId;
+    this.persist();
+    this.refreshPrebattle();
+  }
+
+  /** 下场：清空当前选中格。 */
+  private onPrebattleBench(): void {
+    if (!this.squad || !this.prebattleSelSlot) return;
+    clearSlot(this.squad, this.prebattleSelSlot);
+    this.persist();
+    this.refreshPrebattle();
   }
 
   /** 组装"上一战结果"文案（胜/重复挑战/败），回放结束后显示。 */
@@ -546,6 +805,16 @@ export class S7DemoController extends Component {
     this.population = this.playerState.population;
     this.ensureDefaultBuildingsUnlocked();
     this.offlinePending = null;
+    // A-step2：阵容就地清空+重新发货（会话持有 squad 引用，不能整体替换→必须原地改）。
+    if (this.squad) {
+      this.squad.ownedShips = [];
+      this.squad.ownedPilots = [];
+      this.squad.ownedCores = {};
+      this.squad.formation = [];
+      this.ensureDemoSquadSeeded();
+    }
+    this.prebattleSelSlot = null;
+    this.closePrebattle();
     this.closeBase();
     this.setResult('已重置：回到 n001、资源清零、等级归 1、建筑回 1 级', new Color(180, 200, 230));
     this.persist();
