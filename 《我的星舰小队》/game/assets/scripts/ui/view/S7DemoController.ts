@@ -9,7 +9,7 @@
  * 只接 S7 存档域（S7SaveService 独立 key），不动流程版 AppContext/存档；不接广告/服务器/支付。
  * 本组件是 cc 表现层，逻辑全部委托给 core/s7 纯 TS 服务（已 Node 单测）。
  */
-import { _decorator, Component, Node, Label, Color, Graphics, UITransform, Vec3, EventTouch } from 'cc';
+import { _decorator, Component, Node, Label, Color, Graphics, UITransform, EventTouch } from 'cc';
 import { SaveStorageAdapter } from '../../save/SaveStorageAdapter';
 import {
   S7_CURRENT_SAVE_VERSION,
@@ -562,7 +562,9 @@ export class S7DemoController extends Component {
         cn.layer = this.node.layer; ui.addChild(cn); cn.setPosition(p.x, p.y, 0);
         const ut = cn.addComponent(UITransform); ut.setContentSize(cell, cell);
         // 触摸结束：松手位置在别的格 = 拖动换位/移动；同格 = 点击进上阵界面。
+        // ⚠️ 在格内松手触发 TOUCH_END、拖到格外松手触发 TOUCH_CANCEL——两者都要听，否则拖动(必落在别格)永远收不到事件。
         cn.on(Node.EventType.TOUCH_END, (e: EventTouch) => this.onCellTouchEnd(slotRef, e), this);
+        cn.on(Node.EventType.TOUCH_CANCEL, (e: EventTouch) => this.onCellTouchEnd(slotRef, e), this);
         const ln = new Node('t'); ln.layer = this.node.layer; cn.addChild(ln);
         const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 36; l.color = new Color(230, 240, 255); l.string = '';
         this.prebattleCellLabels.push(l);
@@ -820,27 +822,30 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** 找屏幕局部坐标落在哪个九宫格格子(超出所有格返回 null)。 */
+  /** 找居中局部坐标最近的九宫格格子(就近吸附·容错)；落点离最近格太远(不在九宫格区)则返回 null。 */
   private cellAtLocal(x: number, y: number): string | null {
-    const cell = this.fieldCell;
+    let best: string | null = null;
+    let bestD = Infinity;
     for (let r = 0; r < 3; r += 1) {
       for (let c = 0; c < 3; c += 1) {
         const p = this.fieldPlayerPos(r, c);
-        if (Math.abs(x - p.x) <= cell / 2 && Math.abs(y - p.y) <= cell / 2) return `p${r}c${c}`;
+        const d = (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
+        if (d < bestD) { bestD = d; best = `p${r}c${c}`; }
       }
     }
-    return null;
+    const reach = this.viewW * 0.22; // 容错半径(约一个格距)
+    return best && bestD <= reach * reach ? best : null;
   }
 
-  /** 格子触摸结束：松手落点在别的格 → 拖动(有船则 移动/互换)；落点同格/格外 → 点击进上阵界面。 */
+  /** 格子触摸结束：松手落点在别的格 → 拖动(有船则 移动/互换)；落点同格/格外 → 点击进上阵界面。
+   *  坐标换算不依赖 convertToNodeSpaceAR：UI 设计坐标(原点左下) → 居中坐标(与 fieldPlayerPos 同空间)。 */
   private onCellTouchEnd(startSlot: string, e: EventTouch): void {
-    let target = startSlot;
-    const ut = this.prebattleNode ? this.prebattleNode.getComponent(UITransform) : null;
-    if (ut) {
-      const loc = e.getUILocation();
-      const local = ut.convertToNodeSpaceAR(new Vec3(loc.x, loc.y, 0));
-      target = this.cellAtLocal(local.x, local.y) ?? startSlot;
-    }
+    const loc = e.getUILocation();
+    const lx = loc.x - this.viewW / 2;
+    const ly = loc.y - this.viewH / 2;
+    const target = this.cellAtLocal(lx, ly) ?? startSlot;
+    // DEV-TEMP（拖动落点排查·验收后删）：若仍拖不动，请把这行日志的数字读给我定位坐标。
+    console.log(`[S7拖动] ui=(${Math.round(loc.x)},${Math.round(loc.y)}) local=(${Math.round(lx)},${Math.round(ly)}) start=${startSlot} target=${target}`);
     if (this.squad && target !== startSlot && this.slotOf(startSlot)) {
       moveOrSwapFormationSlot(this.squad, startSlot, target); // 拖动：有船→移动/互换
       this.persist();
