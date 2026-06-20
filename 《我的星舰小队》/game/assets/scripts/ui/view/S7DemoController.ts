@@ -22,8 +22,8 @@ import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot, S7ShipConfig, S7PilotConfig } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
-import { getShipLevel } from '../../core/s7/S7UnitLevelState';
-import { upgradeShipOneLevel } from '../../core/s7/S7UnitUpgradeService';
+import { getShipLevel, getPilotLevel } from '../../core/s7/S7UnitLevelState';
+import { upgradeShipOneLevel, upgradePilotOneLevel } from '../../core/s7/S7UnitUpgradeService';
 import { unitPowerAtLevel } from '../../core/s7/S7UnitGrowth';
 import { buildS7BattlePlayback, S7BattlePlayback, S7PlaybackFrame } from '../../core/s7/S7BattlePlayback';
 import {
@@ -125,6 +125,7 @@ const S7_BUILDING_NAMES: Record<string, string> = {
   bld_salvage_port: '打捞港',
   bld_merchant_station: '商人小站',
   bld_research_tower: '研究塔',
+  bld_rsv_core_gallery: '星核展厅',
 };
 
 /** 固定开发种子：同节点同阵容可复现（早期节点默认 3 舰确定性胜）。 */
@@ -249,6 +250,16 @@ export class S7DemoController extends Component {
   private buUpInfoLabel: Label | null = null;
   private buUpBtn: Node | null = null;           // 升级按钮（满级/买不起→灰）
   private hubBuildingTracks: { id: string; label: Label }[] = []; // hub 建筑入口副标签(显等级/可升↑)
+
+  // ===== J-step2 船坞(星舰升级)/训练舱(驾驶员升级) 养成界面 =====
+  private dockNode: Node | null = null;
+  private dockListNode: Node | null = null;
+  private dockInfoLabel: Label | null = null;
+  private dockResultLabel: Label | null = null;
+  private trainingNode: Node | null = null;
+  private trainingListNode: Node | null = null;
+  private trainingInfoLabel: Label | null = null;
+  private trainingResultLabel: Label | null = null;
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -362,8 +373,10 @@ export class S7DemoController extends Component {
         if ((r.beaconEpic ?? 0) < 3) r.beaconEpic = 3;
         // E DEV-TEMP：给一笔星贝，方便一进来就能在商人小站买东西（正式星贝来自出战/回收）。
         if ((r.starCargo ?? 0) < 50000) r.starCargo = 50000;
-        // J DEV-TEMP：给一笔星矿，方便测建筑升级（升级花星矿·正式靠出战/离线/回收攒）。
+        // J DEV-TEMP：给星矿/合金/驾驶记录，方便测建筑升级 + 船坞(星舰升级·花矿/合金)/训练舱(驾驶员升级·花驾驶记录)。
         if ((r.starOre ?? 0) < 100000) r.starOre = 100000;
+        if ((r.hullAlloy ?? 0) < 100000) r.hullAlloy = 100000;
+        if ((r.pilotToken ?? 0) < 5000) r.pilotToken = 5000;
       }
     }
     // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
@@ -447,6 +460,8 @@ export class S7DemoController extends Component {
     this.buildSalvagePanel(W, H); // D 打捞界面（打捞港进）
     this.buildMerchantPanel(W, H); // E 商人小站界面（商人小站进）
     this.buildBuildingUpgradePanel(W, H); // J 建筑升级弹框（各建筑共用）
+    this.buildUnitTrainPanel('ship', W, H); // J-step2 船坞（星舰升级）
+    this.buildUnitTrainPanel('pilot', W, H); // J-step2 训练舱（驾驶员升级）
   }
 
   // ===== 星港主界面 hub =====
@@ -473,13 +488,14 @@ export class S7DemoController extends Component {
     const gy0 = topY - 360;
     const gap = 150;
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
-    this.makeHubEntry('船坞', '即将开放', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.hubToast('船坞·即将开放'));
+    this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
     this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
     this.makeHubEntry('居住舱', '升级', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openBuildingUpgrade('bld_habitat'), 'bld_habitat');
     this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
     this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
     this.makeHubEntry('研究塔', '升级', new Color(90, 110, 150, 255), rx, gy0 - gap * 2, ew, eh, () => this.openBuildingUpgrade('bld_research_tower'), 'bld_research_tower');
-    this.makeHubEntry('星核展厅', '升级', new Color(120, 100, 150, 255), 0, gy0 - gap * 3, ew, eh, () => this.openBuildingUpgrade('bld_rsv_core_gallery'), 'bld_rsv_core_gallery');
+    this.makeHubEntry('星核展厅', '升级', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openBuildingUpgrade('bld_rsv_core_gallery'), 'bld_rsv_core_gallery');
+    this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
     this.makeHubEntry('背包', '即将开放', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.hubToast('背包·即将开放'));
@@ -489,11 +505,10 @@ export class S7DemoController extends Component {
     // —— 中央临时提示（默认空）——
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
 
-    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；离线收益领取也并在此带出金额）——
-    this.makeButton('升级旗舰', 180, 60, new Color(60, 150, 100, 255), -W * 0.30, botY + 56, () => this.onUpgradeFlagship());
-    this.offlineBtn = this.makeButton('领离线', 180, 60, new Color(205, 165, 60, 255), 0, botY + 56, () => this.onClaimOffline());
+    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处只留 离线/重置）——
+    this.offlineBtn = this.makeButton('领离线', 200, 60, new Color(205, 165, 60, 255), -W * 0.22, botY + 56, () => this.onClaimOffline());
     this.offlineBtn.active = false;
-    this.makeButton('重置存档', 180, 60, new Color(120, 70, 70, 255), W * 0.30, botY + 56, () => this.onReset());
+    this.makeButton('重置存档', 200, 60, new Color(120, 70, 70, 255), W * 0.22, botY + 56, () => this.onReset());
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
     this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
@@ -2333,29 +2348,74 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** 点「升级旗舰」：花星矿+合金把旗舰升 1 级（升级服务）→ 出战更强 → 刷新 + 落盘。 */
-  private onUpgradeFlagship(): void {
-    if (!this.session || !this.playerState || this.playing) return;
-    const r = upgradeShipOneLevel(
-      this.playerState.unitLevels,
-      this.session.resources,
-      this.upgradeCostRows,
-      S7_DEMO_FLAGSHIP_ID,
-    );
-    if (r.ok) {
-      this.setResult(
-        `旗舰升到 Lv.${r.toLevel}！花 ${r.spent.starOre}星矿+${r.spent.hullAlloy}合金 → 出战更强`,
-        new Color(150, 235, 180),
-      );
-    } else if (r.reason === 'max_level') {
-      this.setResult('旗舰已满级（Lv.40）', new Color(220, 210, 140));
-    } else if (r.reason === 'insufficient' && r.needed) {
-      this.setResult(`资源不够：升级需 ${r.needed.starOre}星矿+${r.needed.hullAlloy}合金（先出战攒资源）`, new Color(235, 150, 150));
+  // ===== J-step2 船坞(星舰升级) / 训练舱(驾驶员升级) 养成界面 =====
+
+  /** 搭船坞/训练舱共用的养成浮层（列表 + 各行升级 + 建筑升级入口 + 返回）。kind 区分星舰/驾驶员。 */
+  private buildUnitTrainPanel(kind: 'ship' | 'pilot', W: number, H: number): Node {
+    const panel = new Node(kind === 'ship' ? 'S7Dock' : 'S7Training'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(16, 22, 34, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    const bid = kind === 'ship' ? 'bld_dock' : 'bld_pilot_training_bay';
+    this.mkPanelLabel(panel, kind === 'ship' ? '船坞 · 星舰升级' : '训练舱 · 驾驶员升级', 38, new Color(150, 210, 240), -W * 0.22, topY - 30);
+    const info = this.mkPanelLabel(panel, '', 24, new Color(200, 220, 240), 0, topY - 92);
+    const list = new Node('utList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    const result = this.mkPanelLabel(panel, kind === 'ship' ? '选星舰升级(花星矿/合金/舰碎片·船坞等级封顶)' : '选驾驶员升级(花驾驶记录·训练舱等级封顶)', 22, new Color(180, 230, 200), 0, botY + 120);
+    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => { panel.active = false; }, 28);
+    this.addBtn(panel, kind === 'ship' ? '升级船坞' : '升级训练舱', 260, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade(bid), 26);
+    if (kind === 'ship') { this.dockNode = panel; this.dockListNode = list; this.dockInfoLabel = info; this.dockResultLabel = result; }
+    else { this.trainingNode = panel; this.trainingListNode = list; this.trainingInfoLabel = info; this.trainingResultLabel = result; }
+    return panel;
+  }
+
+  private openDock(): void { if (this.dockNode) { this.dockNode.active = true; this.refreshUnitTrain('ship'); } }
+  private openTraining(): void { if (this.trainingNode) { this.trainingNode.active = true; this.refreshUnitTrain('pilot'); } }
+
+  /** 刷新船坞/训练舱：建筑等级与等级上限 + 重建拥有单位列表(名/等级/升级键)。 */
+  private refreshUnitTrain(kind: 'ship' | 'pilot'): void {
+    if (!this.playerState || !this.session || !this.buildings || !this.squad) return;
+    const listNode = kind === 'ship' ? this.dockListNode : this.trainingListNode;
+    const infoLabel = kind === 'ship' ? this.dockInfoLabel : this.trainingInfoLabel;
+    if (!listNode) return;
+    const bLv = getBuildingLevel(this.buildings, kind === 'ship' ? 'bld_dock' : 'bld_pilot_training_bay');
+    const cap = kind === 'ship' ? shipLevelCap(bLv) : driverLevelCap(bLv);
+    if (infoLabel) infoLabel.string = kind === 'ship' ? `船坞 Lv.${bLv} · 星舰等级上限 ${cap}` : `训练舱 Lv.${bLv} · 驾驶员等级上限 ${cap}`;
+    listNode.removeAllChildren();
+    const units = kind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
+    let y = getS7UsableBand().usableTopY - 170;
+    if (units.length === 0) this.mkPanelLabel(listNode, '（还没有拥有的单位）', 24, new Color(150, 160, 175), 0, y);
+    for (const uid of units) {
+      const lv = kind === 'ship' ? getShipLevel(this.playerState.unitLevels, uid) : getPilotLevel(this.playerState.unitLevels, uid);
+      const atCap = lv >= cap;
+      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  Lv.${lv}${atCap ? '（已达上限）' : ''}`, 26, atCap ? new Color(200, 180, 140) : new Color(225, 225, 235), -this.viewW * 0.18, y);
+      const id = uid;
+      this.addBtn(listNode, '升级', 130, 56, atCap ? new Color(70, 75, 90, 255) : new Color(70, 150, 110, 255), this.viewW * 0.34, y, () => this.onUpgradeUnit(kind, id), 26);
+      y -= 62;
+    }
+  }
+
+  /** 升一个星舰/驾驶员：受建筑等级封顶；扣费/封顶/资源不足分别提示。 */
+  private onUpgradeUnit(kind: 'ship' | 'pilot', unitId: string): void {
+    if (!this.session || !this.playerState || !this.buildings) return;
+    const resultLabel = kind === 'ship' ? this.dockResultLabel : this.trainingResultLabel;
+    const bLv = getBuildingLevel(this.buildings, kind === 'ship' ? 'bld_dock' : 'bld_pilot_training_bay');
+    const name = this.unitName(kind, unitId);
+    if (kind === 'ship') {
+      const r = upgradeShipOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, shipLevelCap(bLv));
+      if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spent.starOre}星矿+${r.spent.hullAlloy}合金${r.spent.shipBlueprint ? `+${r.spent.shipBlueprint}舰碎片` : ''}`
+        : r.reason === 'cap_reached' ? `已达船坞上限（升船坞解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '资源不够（出战/回收攒）' : '暂无成本配置';
     } else {
-      this.setResult('暂无该等级的升级成本配置', new Color(200, 200, 200));
+      const r = upgradePilotOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, driverLevelCap(bLv));
+      if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spentPilotToken}驾驶记录`
+        : r.reason === 'cap_reached' ? `已达训练舱上限（升训练舱解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '驾驶记录不够' : '暂无成本配置';
     }
     this.persist();
     this.refresh();
+    this.refreshUnitTrain(kind);
   }
 
   /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
