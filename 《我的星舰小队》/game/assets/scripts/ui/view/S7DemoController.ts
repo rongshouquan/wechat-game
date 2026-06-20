@@ -43,7 +43,7 @@ import {
 } from '../../core/s7/S7BuildingEffects';
 import { getS7UsableBand } from '../S7UiLayout';
 import {
-  S7SquadState, grantShip, grantPilot, assignSlot, setSlotPilot, clearSlot,
+  S7SquadState, grantShip, grantPilot, assignSlot, setSlotPilot, clearSlot, buildSquadLineup,
 } from '../../core/s7/S7Squad';
 import { buildPrebattleView, S7PrebattleView } from '../../core/s7/S7PrebattleView';
 
@@ -136,6 +136,11 @@ export class S7DemoController extends Component {
   /** 选择关卡浮层 + 有遭遇可玩的节点 id（init 算）。 */
   private levelSelectNode: Node | null = null;
   private encounterNodeIds: string[] = [];
+  /** 本场战斗是否胜（finishPlayback 据此路由：胜→下一关备战 / 败→失败弹窗）。 */
+  private pendingWon = false;
+  /** 失败弹窗叠加层 + 失败原因文案。 */
+  private defeatNode: Node | null = null;
+  private defeatMsgLabel: Label | null = null;
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
@@ -242,28 +247,28 @@ export class S7DemoController extends Component {
     // 顶部标题：G0 UI 地基——锚到安全区下沿（避开刘海/胶囊菜单按钮），不再用满屏比例硬摆。
     // 这是"所有 S7 界面顶部内容都锚安全区"的范例；A-step2 编队界面等照此摆。
     const topY = getS7UsableBand().usableTopY;
-    this.makeLabel('《我的星舰小队》S7 最小循环演示', 30, new Color(255, 230, 120), 0, topY - 26);
-    this.makeLabel('（色块原型 · 点出战推进主线）', 20, new Color(170, 180, 200), 0, topY - 64);
+    this.makeLabel('《我的星舰小队》S7 演示', 42, new Color(255, 230, 120), 0, topY - 36);
+    this.makeLabel('（色块原型 · 点出战推进主线）', 26, new Color(170, 180, 200), 0, topY - 86);
 
     // 状态行：星矿/合金/当前节点 + 旗舰等级。
-    this.statusLabel = this.makeLabel('', 26, new Color(230, 240, 255), 0, H * 0.13);
+    this.statusLabel = this.makeLabel('', 34, new Color(230, 240, 255), 0, H * 0.14);
 
     // 「出战」按钮（蓝色块）：A-step2 改为先进"战前备战界面"（编队/敌情/战力），再在那儿确认出战。
-    this.makeButton('出战', 280, 92, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.openPrebattle());
+    this.makeButton('出战', 400, 120, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.openPrebattle());
 
     // 「升级旗舰」（绿）+「基地」（橙）并排：升旗舰=战力养成；基地=建筑养成（开建筑面板）。
-    this.makeButton('升级旗舰', 230, 84, new Color(60, 170, 110, 255), -122, -H * 0.14, () => this.onUpgradeFlagship());
-    this.makeButton('基地', 230, 84, new Color(200, 140, 60, 255), 122, -H * 0.14, () => this.openBase());
+    this.makeButton('升级旗舰', 310, 104, new Color(60, 170, 110, 255), -166, -H * 0.15, () => this.onUpgradeFlagship());
+    this.makeButton('基地', 310, 104, new Color(200, 140, 60, 255), 166, -H * 0.15, () => this.openBase());
 
     // 「领取离线收益」按钮（金色·仅有未领收益时显示）：贴合"随用随停、回来有收获"。金额在结果行显示。
-    this.offlineBtn = this.makeButton('领取离线收益', 440, 70, new Color(210, 170, 60, 255), 0, H * 0.205, () => this.onClaimOffline());
+    this.offlineBtn = this.makeButton('领取离线收益', 500, 92, new Color(210, 170, 60, 255), 0, H * 0.215, () => this.onClaimOffline());
     this.offlineBtn.active = false;
 
     // 上一战 / 升级结果（多行）。
-    this.resultLabel = this.makeLabel('点「出战」开始', 23, new Color(180, 230, 180), 0, -H * 0.26);
+    this.resultLabel = this.makeLabel('点「出战」开始', 30, new Color(180, 230, 180), 0, -H * 0.27);
 
     // 「重置存档」小按钮（演示用：回到 n001、清零资源与等级，便于反复验证）。
-    this.makeButton('重置存档', 170, 60, new Color(120, 70, 70, 255), 0, -H * 0.37, () => this.onReset());
+    this.makeButton('重置存档', 220, 78, new Color(120, 70, 70, 255), 0, -H * 0.37, () => this.onReset());
 
     // B2 战斗回放叠加层（默认隐藏；出战时弹出、播完隐藏）。挂在最后→盖在按钮之上。
     const stage = new Node('S7BattleStage');
@@ -280,6 +285,61 @@ export class S7DemoController extends Component {
     this.buildBasePanel(W, H);
     this.buildPrebattlePanel(W, H);
     this.buildLevelSelectPanel(W, H);
+    this.buildDefeatPanel(W, H);
+  }
+
+  /** 失败弹窗（居中对话框 + 半屏遮罩）：v1.0 §4.5——战斗失败给"返回星港 / 再次挑战"两键。 */
+  private buildDefeatPanel(W: number, H: number): void {
+    const panel = new Node('S7Defeat');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 170);
+    dim.rect(-W / 2, -H / 2, W, H);
+    dim.fill();
+    // 居中对话框
+    const dw = W * 0.78;
+    const dh = H * 0.30;
+    dim.fillColor = new Color(28, 22, 34, 255);
+    dim.roundRect(-dw / 2, -dh / 2, dw, dh, 18);
+    dim.fill();
+    const put = panel.addComponent(UITransform);
+    put.setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.defeatNode = panel;
+
+    const titleN = new Node('t'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, dh * 0.28, 0);
+    const tl = titleN.addComponent(Label); tl.fontSize = 40; tl.lineHeight = 48; tl.color = new Color(255, 150, 150); tl.string = '战斗失败';
+    const msgN = new Node('m'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, dh * 0.02, 0);
+    const ml = msgN.addComponent(Label); ml.fontSize = 26; ml.lineHeight = 34; ml.color = new Color(220, 220, 230); ml.string = '';
+    this.defeatMsgLabel = ml;
+
+    const mkB = (t: string, w: number, h: number, c: Color, x: number, y: number, tap: () => void): void => {
+      const n = new Node('db'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+      const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
+      const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 12); bg.fill();
+      const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
+      const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 38; l.color = new Color(255, 255, 255); l.string = t;
+      n.on(Node.EventType.TOUCH_END, tap, this);
+    };
+    mkB('返回星港', 240, 84, new Color(120, 90, 160, 255), -W * 0.20, -dh * 0.28, () => this.closeDefeat());
+    mkB('再次挑战', 240, 84, new Color(225, 150, 45, 255), W * 0.20, -dh * 0.28, () => this.onRetry());
+  }
+
+  private openDefeat(): void {
+    if (!this.defeatNode) return;
+    if (this.defeatMsgLabel && this.pendingResult) this.defeatMsgLabel.string = this.pendingResult.text;
+    this.defeatNode.active = true;
+  }
+  private closeDefeat(): void {
+    if (this.defeatNode) this.defeatNode.active = false; // 回基地主界面
+  }
+  /** 再次挑战：关弹窗 → 回本关战前备战界面（败局未推进，当前节点不变）。 */
+  private onRetry(): void {
+    this.closeDefeat();
+    this.openPrebattle();
   }
 
   /** 选择关卡浮层（graybox 跳关工具）：列有遭遇的可玩节点，点了把进度设到该关→回备战界面。
@@ -309,18 +369,18 @@ export class S7DemoController extends Component {
       const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
       const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 10); bg.fill();
       const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
-      const l = ln.addComponent(Label); l.fontSize = 24; l.lineHeight = 30; l.color = new Color(255, 255, 255); l.string = t;
+      const l = ln.addComponent(Label); l.fontSize = 32; l.lineHeight = 40; l.color = new Color(255, 255, 255); l.string = t;
       n.on(Node.EventType.TOUCH_END, tap, this);
     };
 
-    mkL('选择关卡（灰盒跳关·点了去打那一关）', 26, new Color(255, 230, 120), 0, band.usableTopY - 40);
+    mkL('选择关卡（灰盒跳关·点了去打那一关）', 34, new Color(255, 230, 120), 0, band.usableTopY - 50);
     // 节点按钮：每行 3 个，居中铺开。
     const perRow = 3;
-    const bw = W * 0.26;
-    const bh = 64;
-    const gx = W * 0.30;
-    const gy = 96;
-    const top = band.usableTopY - 130;
+    const bw = W * 0.28;
+    const bh = 86;
+    const gx = W * 0.31;
+    const gy = 112;
+    const top = band.usableTopY - 160;
     this.encounterNodeIds.forEach((nodeId, i) => {
       const r = Math.floor(i / perRow);
       const c = i % perRow;
@@ -366,19 +426,19 @@ export class S7DemoController extends Component {
       const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
       const bg = n.addComponent(Graphics); bg.fillColor = color; bg.roundRect(-w / 2, -h / 2, w, h, 12); bg.fill();
       const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
-      const l = ln.addComponent(Label); l.fontSize = 28; l.lineHeight = 36; l.color = new Color(255, 255, 255); l.string = text;
+      const l = ln.addComponent(Label); l.fontSize = 34; l.lineHeight = 42; l.color = new Color(255, 255, 255); l.string = text;
       n.on(Node.EventType.TOUCH_END, onTap, this);
     };
 
-    // 标题 + 信息行（节点/战力/敌情概要）。
-    mk('★ 战前备战 ★', 34, new Color(255, 230, 120), 0, topY - 28);
-    this.prebattleInfoLabel = mk('', 22, new Color(210, 225, 250), 0, topY - 70);
+    // 标题 + 信息行（节点/战力/敌情概要）——放大做清晰。
+    mk('★ 战前备战 ★', 48, new Color(255, 230, 120), 0, topY - 40);
+    this.prebattleInfoLabel = mk('', 30, new Color(210, 225, 250), 0, topY - 100);
 
-    // 3×3 编队格：中心略偏下，格边长 ~W*0.17，间距 W*0.19。9 格点击选中→下方选船/选员放入。
-    const cell = W * 0.17;
-    const gap = W * 0.195;
-    const gridCx = -W * 0.16;          // 编队格整体偏左，右侧留给"选中船详情"
-    const gridCy = -H * 0.04;
+    // 3×3 编队格：上移填补中部空白、格更大、字更大。9 格点击选中→下方选船/选员放入。
+    const cell = W * 0.19;
+    const gap = W * 0.21;
+    const gridCx = -W * 0.14;          // 编队格整体偏左，右侧留给"选中船详情"
+    const gridCy = H * 0.05;
     this.prebattleCellLabels = [];
     for (let r = 0; r < 3; r += 1) {
       for (let c = 0; c < 3; c += 1) {
@@ -390,25 +450,25 @@ export class S7DemoController extends Component {
         const ut = cn.addComponent(UITransform); ut.setContentSize(cell, cell);
         cn.on(Node.EventType.TOUCH_END, () => this.onSelectPrebattleSlot(slotRef), this);
         const ln = new Node('t'); ln.layer = this.node.layer; cn.addChild(ln);
-        const l = ln.addComponent(Label); l.fontSize = 18; l.lineHeight = 22; l.color = new Color(230, 240, 255); l.string = '';
+        const l = ln.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = new Color(230, 240, 255); l.string = '';
         this.prebattleCellLabels.push(l);
       }
     }
 
-    // 选中船详情（右侧）+「下场」小键（清当前选中格）。
-    this.prebattleDetailLabel = mk('', 20, new Color(220, 230, 250), W * 0.26, gridCy + gap * 0.5);
-    mkBtn('下场', 130, 50, new Color(120, 70, 70, 255), W * 0.26, gridCy - gap * 0.9, () => this.onPrebattleBench());
+    // 选中船详情（右侧）+「下场」键（清当前选中格）。
+    this.prebattleDetailLabel = mk('', 26, new Color(220, 230, 250), W * 0.28, gridCy + gap * 0.6);
+    mkBtn('下场', 160, 64, new Color(120, 70, 70, 255), W * 0.28, gridCy - gap, () => this.onPrebattleBench());
 
-    // 拥有的船 / 驾驶员（点选中格后，点这里放入）。
-    mk('拥有星舰（点格后点这里放入）', 18, new Color(170, 185, 210), 0, botY + H * 0.20);
-    S7_DEMO_SEED_SHIPS.forEach((s, i) => mkBtn(s, W * 0.16, 52, new Color(60, 110, 170, 255), (i - 2) * W * 0.18, botY + H * 0.155, () => this.onPrebattlePickShip(s)));
-    mk('拥有驾驶员', 18, new Color(170, 185, 210), 0, botY + H * 0.115);
-    S7_DEMO_SEED_PILOTS.forEach((p, i) => mkBtn(p, W * 0.16, 52, new Color(120, 90, 170, 255), (i - 2) * W * 0.18, botY + H * 0.07, () => this.onPrebattlePickPilot(p)));
+    // 拥有的船 / 驾驶员（点选中格后，点这里放入）——按钮/字放大。
+    mk('拥有星舰（点格后点这里放入）', 26, new Color(170, 185, 210), 0, botY + H * 0.205);
+    S7_DEMO_SEED_SHIPS.forEach((s, i) => mkBtn(s, W * 0.175, 76, new Color(60, 110, 170, 255), (i - 2) * W * 0.185, botY + H * 0.16, () => this.onPrebattlePickShip(s)));
+    mk('拥有驾驶员', 26, new Color(170, 185, 210), 0, botY + H * 0.12);
+    S7_DEMO_SEED_PILOTS.forEach((p, i) => mkBtn(p, W * 0.175, 76, new Color(120, 90, 170, 255), (i - 2) * W * 0.185, botY + H * 0.075, () => this.onPrebattlePickPilot(p)));
 
-    // 底部三键（照 Ron 图）：选择关卡(左) / 返回星港(中·回基地) / 开始战斗(右·大)。
-    mkBtn('选择关卡', 200, 66, new Color(70, 130, 180, 255), -W * 0.32, botY + 46, () => this.openLevelSelect());
-    mkBtn('返回星港', 200, 66, new Color(120, 90, 160, 255), 0, botY + 46, () => this.closePrebattle());
-    mkBtn('🚀 开始战斗', 290, 90, new Color(225, 150, 45, 255), W * 0.30, botY + 46, () => this.onConfirmSortie());
+    // 底部三键（照 Ron 图）：选择关卡(左) / 返回星港(中·回基地) / 开始战斗(右·明显更大)。
+    mkBtn('选择关卡', 230, 84, new Color(70, 130, 180, 255), -W * 0.32, botY + 54, () => this.openLevelSelect());
+    mkBtn('返回星港', 230, 84, new Color(120, 90, 160, 255), 0, botY + 54, () => this.closePrebattle());
+    mkBtn('🚀 开始战斗', 340, 112, new Color(225, 150, 45, 255), W * 0.29, botY + 54, () => this.onConfirmSortie());
   }
 
   /** 搭"基地建筑"面板叠加层（默认隐藏）：底板 + 标题 + 7 行(点行=升该建筑) + 关闭。行文案在 refreshBasePanel 填。 */
@@ -502,8 +562,8 @@ export class S7DemoController extends Component {
     labelNode.layer = this.node.layer;
     node.addChild(labelNode);
     const label = labelNode.addComponent(Label);
-    label.fontSize = 30;
-    label.lineHeight = 40;
+    label.fontSize = 38;
+    label.lineHeight = 48;
     label.color = new Color(255, 255, 255);
     label.string = text;
     node.on(Node.EventType.TOUCH_END, onTap, this);
@@ -518,6 +578,20 @@ export class S7DemoController extends Component {
    */
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
+    // #2 出战前校验编队（v1.0 §4.4 空船不能上阵）：有船缺驾驶员/没上阵 → 拦下并提示，不开打。
+    if (this.squad) {
+      const built = buildSquadLineup(this.squad, this.playerState?.unitLevels);
+      if (!built.ok && this.prebattleInfoLabel) {
+        const msg = built.code === 'no_pilot' ? '有星舰缺驾驶员——请给每艘上阵星舰配上驾驶员再出战'
+          : built.code === 'empty' ? '请先上阵至少 1 艘星舰'
+          : built.code === 'dup_pilot' ? '同一驾驶员只能驾一艘船'
+          : `编队不合法（${built.code}）`;
+        this.prebattleInfoLabel.string = `⚠ ${msg}`;
+        this.prebattleInfoLabel.color = new Color(240, 180, 120);
+        return;
+      }
+      if (!built.ok) return;
+    }
     const nodeId = this.session.currentNodeId;
     let outcome: S7PlayNodeOutcome;
     try {
@@ -531,9 +605,10 @@ export class S7DemoController extends Component {
       }
       return; // 不关备战层、不落盘
     }
-    // 有遭遇：收起备战层 → 落盘 → 播战斗演出（结果按住、播完再亮）。
+    // 有遭遇：收起备战层 → 落盘 → 播战斗演出（结果按住、播完再亮 + 据胜负路由）。
     this.closePrebattle();
     this.persist();
+    this.pendingWon = outcome.won;
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
   }
@@ -578,11 +653,11 @@ export class S7DemoController extends Component {
       this.drawEnemyPreview(g, v, band);
     }
 
-    // 9 格编队内容 + 选中高亮（在 gfx 上画格框）。
-    const cell = W * 0.17;
-    const gap = W * 0.195;
-    const gridCx = -W * 0.16;
-    const gridCy = -this.viewH * 0.04;
+    // 9 格编队内容 + 选中高亮（在 gfx 上画格框）。坐标须与 buildPrebattlePanel 一致！
+    const cell = W * 0.19;
+    const gap = W * 0.21;
+    const gridCx = -W * 0.14;
+    const gridCy = this.viewH * 0.05;
     for (let r2 = 0; r2 < 3; r2 += 1) {
       for (let c = 0; c < 3; c += 1) {
         const slotRef = `p${r2}c${c}`;
@@ -617,10 +692,10 @@ export class S7DemoController extends Component {
   /** 敌情预览：按敌人站位把色块摆到上半区（红=普通敌·紫=Boss）。占位，美术阶段换皮。 */
   private drawEnemyPreview(g: Graphics, v: S7PrebattleView, band: { usableTopY: number }): void {
     const W = this.viewW;
-    const left = -W * 0.42;
-    const span = W * 0.84;
-    const topBandTop = band.usableTopY - this.viewH * 0.09;
-    const rowGap = this.viewH * 0.045;
+    const left = -W * 0.40;
+    const span = W * 0.80;
+    const topBandTop = band.usableTopY - this.viewH * 0.15; // 避开放大的标题+信息行
+    const rowGap = this.viewH * 0.05;
     for (const e of v.enemies) {
       const m = /^r(\d)c(\d)$/.exec(e.slotRef);
       if (!m) continue;
@@ -628,7 +703,7 @@ export class S7DemoController extends Component {
       const ec = Number(m[2]);
       const x = left + (ec / 6) * span;
       const y = topBandTop - er * rowGap;
-      const sz = e.isBoss ? 30 : 16;
+      const sz = e.isBoss ? 42 : 26;
       g.fillColor = e.isBoss ? new Color(200, 90, 205, 255) : new Color(230, 110, 80, 255);
       g.rect(x - sz / 2, y - sz / 2, sz, sz);
       g.fill();
@@ -755,6 +830,9 @@ export class S7DemoController extends Component {
     if (this.skipBtn) this.skipBtn.active = false;
     if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
     this.refresh();
+    // #3 胜负路由：胜→直接进下一关战前备战；败→弹失败窗(返回星港/再次挑战)。
+    if (this.pendingWon) this.openPrebattle();
+    else this.openDefeat();
   }
 
   /** 预算各单位的战场局部坐标：敌方在上半区（前列 col 小→靠中间），我方在下半区（前列 col 大→靠中间）。 */
