@@ -11,6 +11,7 @@ import {
   grantCore,
   assignSlot,
   buildSquadLineup,
+  findPluginShip,
   S7SquadState,
 } from '../assets/scripts/core/s7/S7Squad';
 import {
@@ -70,47 +71,42 @@ describe('S7ShipLoadout · 插件装/卸（按船）', () => {
     expect(lo(s, 'shp01').pluginInstanceIds).toEqual([a.instanceId]);
   });
 
-  it('同名插件本船已装第二个实例 → dup_plugin（优先于同槽），状态不变', () => {
+  it('同槽已有插件，装另一件空闲同槽插件 → 直接替换（成功·旧的被替下回空闲）', () => {
+    const s = squad2();
+    const inv = createDefaultS7PluginInventory();
+    const a = addOwnedPlugin(inv, 'plg02', 'fine');  // weapon
+    const b = addOwnedPlugin(inv, 'plg09', 'fine');  // 另一个 weapon
+    equipPlugin(s, inv, 'shp01', a.instanceId, resolver);
+    expect(equipPlugin(s, inv, 'shp01', b.instanceId, resolver)).toEqual({ ok: true }); // 不报错·直接替换
+    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([b.instanceId]); // a 被替下
+    expect(findPluginShip(s, a.instanceId)).toBeNull(); // a 回空闲
+  });
+
+  it('同名插件另一实例同槽 → 替换（不会同名共存）', () => {
     const s = squad2();
     const inv = createDefaultS7PluginInventory();
     const a = addOwnedPlugin(inv, 'plg02', 'fine');
-    const b = addOwnedPlugin(inv, 'plg02', 'superior');
+    const b = addOwnedPlugin(inv, 'plg02', 'superior'); // 同 pluginId
     equipPlugin(s, inv, 'shp01', a.instanceId, resolver);
-    expect(equipPlugin(s, inv, 'shp01', b.instanceId, resolver)).toEqual({ ok: false, code: 'dup_plugin' });
-    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([a.instanceId]);
+    equipPlugin(s, inv, 'shp01', b.instanceId, resolver);
+    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([b.instanceId]); // 只剩 b·同名不共存
   });
 
-  it('同类槽已占（不同武器插件）→ slot_type_occupied，不改状态', () => {
-    const s = squad2();
-    const inv = createDefaultS7PluginInventory();
-    const a = addOwnedPlugin(inv, 'plg02', 'fine');
-    const b = addOwnedPlugin(inv, 'plg09', 'fine');
-    equipPlugin(s, inv, 'shp01', a.instanceId, resolver);
-    expect(equipPlugin(s, inv, 'shp01', b.instanceId, resolver)).toEqual({ ok: false, code: 'slot_type_occupied' });
-    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([a.instanceId]);
-  });
-
-  it('三槽各装一件（武器/技能/战术）→ 都成功、共存', () => {
+  it('三槽各装一件（武器/技能/战术）→ 都成功、共存；再换其一只替换该槽', () => {
     const s = squad2();
     const inv = createDefaultS7PluginInventory();
     const w = addOwnedPlugin(inv, 'plg02', 'fine');
     const k = addOwnedPlugin(inv, 'plg07', 'fine');
     const t = addOwnedPlugin(inv, 'plg01', 'fine');
-    expect(equipPlugin(s, inv, 'shp01', w.instanceId, resolver).ok).toBe(true);
-    expect(equipPlugin(s, inv, 'shp01', k.instanceId, resolver).ok).toBe(true);
-    expect(equipPlugin(s, inv, 'shp01', t.instanceId, resolver).ok).toBe(true);
+    equipPlugin(s, inv, 'shp01', w.instanceId, resolver);
+    equipPlugin(s, inv, 'shp01', k.instanceId, resolver);
+    equipPlugin(s, inv, 'shp01', t.instanceId, resolver);
     expect(lo(s, 'shp01').pluginInstanceIds).toEqual([w.instanceId, k.instanceId, t.instanceId]);
-  });
-
-  it('防脏档兜底：船已有3件(含重复武器槽) 再装第4件不同槽 → too_many_plugins', () => {
-    const s = squad2();
-    const inv = createDefaultS7PluginInventory();
-    const w1 = addOwnedPlugin(inv, 'plg02', 'fine');
+    // 换武器槽：只替换 w，技能/战术不动，插件数仍 ≤3。
     const w2 = addOwnedPlugin(inv, 'plg09', 'fine');
-    const k = addOwnedPlugin(inv, 'plg07', 'fine');
-    const t = addOwnedPlugin(inv, 'plg01', 'fine');
-    s.shipLoadouts.shp01 = { pilotId: null, coreId: null, pluginInstanceIds: [w1.instanceId, w2.instanceId, k.instanceId] }; // 直接构造脏档
-    expect(equipPlugin(s, inv, 'shp01', t.instanceId, resolver)).toEqual({ ok: false, code: 'too_many_plugins' });
+    equipPlugin(s, inv, 'shp01', w2.instanceId, resolver);
+    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([k.instanceId, t.instanceId, w2.instanceId]);
+    expect(lo(s, 'shp01').pluginInstanceIds.length).toBeLessThanOrEqual(3);
   });
 
   it('单实例独占：装到第二艘船 → 自动从第一艘卸下', () => {
@@ -123,15 +119,17 @@ describe('S7ShipLoadout · 插件装/卸（按船）', () => {
     expect(lo(s, 'shp02').pluginInstanceIds).toEqual([a.instanceId]); // 装到新船
   });
 
-  it('先校验后改（原子性）：装失败不会把实例从原船误卸', () => {
+  it('装来自别船的同槽插件 → 移过来 + 替换本舰同槽占位（原船该插件没了·本舰被替的回空闲）', () => {
     const s = squad2();
     const inv = createDefaultS7PluginInventory();
     const x = addOwnedPlugin(inv, 'plg02', 'fine'); // weapon → shp01
     const y = addOwnedPlugin(inv, 'plg09', 'fine'); // weapon → shp02 占武器槽
     equipPlugin(s, inv, 'shp01', x.instanceId, resolver);
     equipPlugin(s, inv, 'shp02', y.instanceId, resolver);
-    expect(equipPlugin(s, inv, 'shp02', x.instanceId, resolver)).toEqual({ ok: false, code: 'slot_type_occupied' });
-    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([x.instanceId]); // 没被误卸
+    expect(equipPlugin(s, inv, 'shp02', x.instanceId, resolver)).toEqual({ ok: true }); // x 移到 shp02
+    expect(lo(s, 'shp01').pluginInstanceIds).toEqual([]);            // 原船 x 没了
+    expect(lo(s, 'shp02').pluginInstanceIds).toEqual([x.instanceId]); // shp02 武器槽换成 x
+    expect(findPluginShip(s, y.instanceId)).toBeNull();              // 被替的 y 回空闲
   });
 
   it('卸插件：not_owned_ship / 幂等', () => {

@@ -83,6 +83,8 @@ const S7_DEMO_SEED_CORES = ['core07', 'core01', 'core02'];
 const S7_SLOT_TAG_NAMES: Record<S7PluginSlot, string> = { weapon: '武器', skill: '技能', tactical: '战术' };
 /** 品质中文（仅显示用）。 */
 const S7_QUALITY_NAMES: Record<string, string> = { fine: '精良', superior: '优秀', legendary: '传奇' };
+/** 品质排序权重（越大越靠前）。插件用；驾驶员/星核暂无品质等级→0。 */
+const S7_QUALITY_RANK: Record<string, number> = { legendary: 3, superior: 2, fine: 1 };
 
 /** 装备（统称：驾驶员/插件/星核）的引用：kind + id（pilotId / 插件 instanceId / coreId）。 */
 type S7EquipKind = 'pilot' | 'plugin' | 'core';
@@ -936,15 +938,15 @@ export class S7DemoController extends Component {
     panel.on(Node.EventType.TOUCH_END, () => {}, this);
     panel.active = false; this.loadoutNode = panel;
 
-    const titleN = new Node('loTitle'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, band.usableTopY - 44, 0);
-    this.loadoutTitleLabel = titleN.addComponent(Label); this.loadoutTitleLabel.fontSize = 34; this.loadoutTitleLabel.lineHeight = 42; this.loadoutTitleLabel.color = new Color(255, 230, 120);
-    const msgN = new Node('loMsg'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, band.usableTopY - 88, 0);
-    this.loadoutMsgLabel = msgN.addComponent(Label); this.loadoutMsgLabel.fontSize = 22; this.loadoutMsgLabel.lineHeight = 28; this.loadoutMsgLabel.color = new Color(190, 205, 230);
+    const titleN = new Node('loTitle'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, band.usableTopY - 46, 0);
+    this.loadoutTitleLabel = titleN.addComponent(Label); this.loadoutTitleLabel.fontSize = 42; this.loadoutTitleLabel.lineHeight = 50; this.loadoutTitleLabel.color = new Color(255, 230, 120);
+    const msgN = new Node('loMsg'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, band.usableTopY - 98, 0);
+    this.loadoutMsgLabel = msgN.addComponent(Label); this.loadoutMsgLabel.fontSize = 24; this.loadoutMsgLabel.lineHeight = 30; this.loadoutMsgLabel.color = new Color(190, 205, 230);
 
     const listN = new Node('loList'); listN.layer = this.node.layer; panel.addChild(listN); listN.setPosition(0, 0, 0);
     this.loadoutListNode = listN;
 
-    this.addBtn(panel, '关闭', 220, 70, new Color(120, 90, 160, 255), 0, band.usableBottomY + 48, () => this.closeLoadout());
+    this.addBtn(panel, '关闭', 260, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 32);
 
     this.buildEquipDetailPopup(W, H);
     this.buildEquipConfirmPopup(W, H);
@@ -958,12 +960,12 @@ export class S7DemoController extends Component {
     g.fillColor = new Color(18, 24, 40, 255); g.roundRect(-W * 0.42, -H * 0.15, W * 0.84, H * 0.30, 16); g.fill();
     panel.on(Node.EventType.TOUCH_END, () => {}, this);
     panel.active = false; this.equipDetailNode = panel;
-    const tN = new Node('t'); tN.layer = this.node.layer; panel.addChild(tN); tN.setPosition(0, H * 0.10, 0);
-    this.equipDetailTitle = tN.addComponent(Label); this.equipDetailTitle.fontSize = 32; this.equipDetailTitle.lineHeight = 40; this.equipDetailTitle.color = new Color(255, 230, 120);
+    const tN = new Node('t'); tN.layer = this.node.layer; panel.addChild(tN); tN.setPosition(0, H * 0.105, 0);
+    this.equipDetailTitle = tN.addComponent(Label); this.equipDetailTitle.fontSize = 38; this.equipDetailTitle.lineHeight = 46; this.equipDetailTitle.color = new Color(255, 230, 120);
     const iN = new Node('i'); iN.layer = this.node.layer; panel.addChild(iN); iN.setPosition(0, 0, 0);
-    this.equipDetailInfo = iN.addComponent(Label); this.equipDetailInfo.fontSize = 24; this.equipDetailInfo.lineHeight = 32; this.equipDetailInfo.color = new Color(215, 225, 245);
-    this.addBtn(panel, '取消', 200, 72, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.11, () => this.closeEquipDetail());
-    this.equipDetailActionLabel = this.addBtn(panel, '装备', 200, 72, new Color(70, 140, 110, 255), W * 0.20, -H * 0.11, () => this.onEquipDetailAction());
+    this.equipDetailInfo = iN.addComponent(Label); this.equipDetailInfo.fontSize = 28; this.equipDetailInfo.lineHeight = 38; this.equipDetailInfo.color = new Color(215, 225, 245);
+    this.addBtn(panel, '取消', 240, 84, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.11, () => this.closeEquipDetail(), 32);
+    this.equipDetailActionLabel = this.addBtn(panel, '装备', 240, 84, new Color(70, 140, 110, 255), W * 0.20, -H * 0.11, () => this.onEquipDetailAction(), 32);
   }
 
   /** 移动确认弹窗（装备已在别船时二次确认）：文案 + 取消(左) + 确认(右)。 */
@@ -974,10 +976,10 @@ export class S7DemoController extends Component {
     g.fillColor = new Color(22, 18, 30, 255); g.roundRect(-W * 0.42, -H * 0.13, W * 0.84, H * 0.26, 16); g.fill();
     panel.on(Node.EventType.TOUCH_END, () => {}, this);
     panel.active = false; this.equipConfirmNode = panel;
-    const cN = new Node('c'); cN.layer = this.node.layer; panel.addChild(cN); cN.setPosition(0, H * 0.04, 0);
-    this.equipConfirmLabel = cN.addComponent(Label); this.equipConfirmLabel.fontSize = 26; this.equipConfirmLabel.lineHeight = 36; this.equipConfirmLabel.color = new Color(230, 220, 245);
-    this.addBtn(panel, '取消', 200, 72, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.09, () => this.closeEquipConfirm());
-    this.addBtn(panel, '确认', 200, 72, new Color(200, 140, 60, 255), W * 0.20, -H * 0.09, () => this.onEquipConfirmMove());
+    const cN = new Node('c'); cN.layer = this.node.layer; panel.addChild(cN); cN.setPosition(0, H * 0.045, 0);
+    this.equipConfirmLabel = cN.addComponent(Label); this.equipConfirmLabel.fontSize = 28; this.equipConfirmLabel.lineHeight = 38; this.equipConfirmLabel.color = new Color(230, 220, 245);
+    this.addBtn(panel, '取消', 240, 84, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.09, () => this.closeEquipConfirm(), 32);
+    this.addBtn(panel, '确认', 240, 84, new Color(200, 140, 60, 255), W * 0.20, -H * 0.09, () => this.onEquipConfirmMove(), 32);
   }
 
   /** 开装配面板：须先选中一艘星舰（在场或不在场均可，装配按船记忆）。 */
@@ -1000,7 +1002,7 @@ export class S7DemoController extends Component {
     if (this.loadoutMsgLabel) { this.loadoutMsgLabel.string = text; this.loadoutMsgLabel.color = color; }
   }
 
-  /** 刷新装配列表：三段（驾驶员 / 插件按武器·技能·战术 / 星核），每个装备标"装在哪艘船"。重建列表节点。 */
+  /** 刷新装配列表：三段（驾驶员 / 插件按武器·技能·战术 / 星核），每段内"已装备靠前 + 品质高靠前"，每项标"装在哪艘船"。重建列表节点。 */
   private refreshLoadout(): void {
     const ship = this.prebattleSelShip;
     if (!ship || !this.squad || !this.loadoutListNode) { this.closeLoadout(); return; }
@@ -1009,39 +1011,50 @@ export class S7DemoController extends Component {
     list.removeAllChildren();
     const W = this.viewW;
     const band = getS7UsableBand();
-    const w = W * 0.30, h = 60, gx = W * 0.315;
-    let y = band.usableTopY - 132;
+    const w = W * 0.305, h = 72, gx = W * 0.32;
+    let y = band.usableTopY - 150;
 
-    const header = (txt: string): void => {
+    const header = (txt: string, color = new Color(255, 220, 140)): void => {
       const n = new Node('h'); n.layer = this.node.layer; list.addChild(n); n.setPosition(-W * 0.40, y, 0);
-      const l = n.addComponent(Label); l.fontSize = 24; l.lineHeight = 30; l.color = new Color(255, 220, 140); l.string = txt;
-      y -= 34;
+      const l = n.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = color; l.string = txt;
+      y -= 40;
     };
-    const placeItems = (items: { ref: S7EquipRef; top: string }[]): void => {
-      items.forEach((it, i) => {
+    // 已装备(任意船)靠前；其内 品质/等级(sortKey)越高越靠前。
+    const placeItems = (items: { ref: S7EquipRef; top: string; sortKey?: number }[]): void => {
+      const sorted = items.slice().sort((a, b) => {
+        const ea = this.equipShipOf(a.ref) ? 1 : 0;
+        const eb = this.equipShipOf(b.ref) ? 1 : 0;
+        if (ea !== eb) return eb - ea;
+        return (b.sortKey ?? 0) - (a.sortKey ?? 0);
+      });
+      sorted.forEach((it, i) => {
         const c = i % 3; const r = Math.floor(i / 3);
         const x = (c - 1) * gx;
         const onShip = this.equipShipOf(it.ref);
         const marker = onShip === ship ? '★本舰' : onShip ? `▶${onShip}` : '未装';
         const col = onShip === ship ? new Color(55, 130, 95, 255) : onShip ? new Color(125, 100, 55, 255) : new Color(55, 95, 150, 255);
-        this.addBtn(list, `${it.top}\n${marker}`, w, h, col, x, y - r * (h + 10), () => this.openEquipDetail(it.ref), 21);
+        this.addBtn(list, `${it.top}\n${marker}`, w, h, col, x, y - r * (h + 12), () => this.openEquipDetail(it.ref), 24);
       });
-      y -= (Math.ceil(items.length / 3) || 1) * (h + 10) + 14;
+      y -= (Math.ceil(sorted.length / 3) || 1) * (h + 12) + 16;
     };
 
-    // ① 驾驶员
+    // ① 驾驶员（暂无品质/等级 → 仅"已装备靠前"）
     header('驾驶员');
     placeItems(this.squad.ownedPilots.map((id) => ({ ref: { kind: 'pilot' as const, id }, top: id })));
-    // ② 插件（按 武器/技能/战术 分）
-    header('插件（按 武器/技能/战术）');
+    // ② 插件（按 武器/技能/战术 分；每类内 品质越高越靠前）
+    header('插件（武器 / 技能 / 战术）');
     const plugins = this.pluginInventory ? this.pluginInventory.plugins : [];
     (['weapon', 'skill', 'tactical'] as S7PluginSlot[]).forEach((tag) => {
       const group = plugins.filter((p) => this.pluginSlotMap.get(p.pluginId) === tag);
-      header(`· ${S7_SLOT_TAG_NAMES[tag]}`);
-      if (group.length === 0) { y -= 6; return; }
-      placeItems(group.map((p) => ({ ref: { kind: 'plugin' as const, id: p.instanceId }, top: `${p.pluginId}·${S7_QUALITY_NAMES[p.quality] ?? p.quality}` })));
+      header(`· ${S7_SLOT_TAG_NAMES[tag]}`, new Color(170, 200, 235));
+      if (group.length === 0) { y -= 8; return; }
+      placeItems(group.map((p) => ({
+        ref: { kind: 'plugin' as const, id: p.instanceId },
+        top: `${p.pluginId}·${S7_QUALITY_NAMES[p.quality] ?? p.quality}`,
+        sortKey: S7_QUALITY_RANK[p.quality] ?? 0,
+      })));
     });
-    // ③ 星核
+    // ③ 星核（暂无品质/等级 → 仅"已装备靠前"）
     header('星核（现仅过载核心有效果）');
     placeItems(Object.keys(this.squad.ownedCores).map((coreId) => ({
       ref: { kind: 'core' as const, id: coreId },

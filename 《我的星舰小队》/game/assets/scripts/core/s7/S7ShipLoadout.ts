@@ -25,10 +25,8 @@ export type S7LoadoutErrorCode =
   | 'not_owned_pilot'    // 驾驶员未拥有
   | 'not_owned_plugin'   // 插件实例不在库存
   | 'unknown_plugin'     // 实例的 pluginId 在 plugin_config 查不到槽位
-  | 'slot_type_occupied' // 同类槽已被别的插件占（不堆叠）
-  | 'dup_plugin'         // 同名插件本船已装
-  | 'too_many_plugins'   // 本船插件已满 3
   | 'not_owned_core';    // 星核未拥有
+// 注：插件「同类槽不堆叠/同名不重复/≤3」现由 equipPlugin「直接替换同类槽」保证，不再以错误码拦截。
 
 export type S7LoadoutResult = { ok: true } | { ok: false; code: S7LoadoutErrorCode };
 
@@ -42,29 +40,13 @@ function ensureLoadout(squad: S7SquadState, shipId: string): S7Loadout {
   return l;
 }
 
-/** 解析某船已装插件实例的槽位类型（跳过库存/配置里查不到的，防脏档拖垮判定）。 */
-function equippedSlotInfo(
-  squad: S7SquadState,
-  shipId: string,
-  inv: S7PluginInventoryState,
-  pluginSlotOf: S7PluginSlotResolver,
-): { instanceId: string; pluginId: string; slotTag: S7PluginSlot }[] {
-  const out: { instanceId: string; pluginId: string; slotTag: S7PluginSlot }[] = [];
-  const l = squad.shipLoadouts[shipId];
-  if (!l) return out;
-  for (const id of l.pluginInstanceIds) {
-    const inst = findOwnedPlugin(inv, id);
-    if (!inst) continue;
-    const slotTag = pluginSlotOf(inst.pluginId);
-    if (!slotTag) continue;
-    out.push({ instanceId: id, pluginId: inst.pluginId, slotTag });
-  }
-  return out;
-}
-
 /**
- * 给某船装一个插件实例。先校验（拥有船/拥有插件/已知槽位/不堆叠/不重名/≤3），全过再改：
- * 把该实例从所有船卸下（单实例独占·含幂等重装），再装到目标船。
+ * 给某船装一个插件实例（v1.0 §5.3 一船每类槽位仅 1 件·不堆叠）。校验拥有船/拥有插件/已知槽位，全过再改：
+ *   ① 该实例从所有船卸下（单实例独占·含幂等重装）；
+ *   ② **直接替换**：把目标船上"同类槽位"的占位插件卸下（被替下的回到空闲）；
+ *   ③ 装到目标船。
+ * 注：因每类槽≤1，故插件数永远 ≤3、同名(同 pluginId 必同槽)自然不重复——无需 slot_type_occupied/dup/too_many 报错。
+ *   "已在别船"的二次确认是表现层(demo)的事，本层只管"装就替换"。
  */
 export function equipPlugin(
   squad: S7SquadState,
@@ -79,20 +61,20 @@ export function equipPlugin(
   const slotTag = pluginSlotOf(inst.pluginId);
   if (!slotTag) return { ok: false, code: 'unknown_plugin' };
 
-  // 目标船「除自身外」已装的插件（自身=幂等重装，不算冲突）。
-  // 校验顺序：先同名(dup_plugin，最具体)→ 再同槽(slot_type_occupied)→ 再满槽(too_many，防脏档兜底)。
-  // 注：同 pluginId 必同槽，若同槽先判会让 dup_plugin 永不可达，故 dup 在前。
-  const others = equippedSlotInfo(squad, shipId, inv, pluginSlotOf).filter((e) => e.instanceId !== instanceId);
-  if (others.some((e) => e.pluginId === inst.pluginId)) return { ok: false, code: 'dup_plugin' };
-  if (others.some((e) => e.slotTag === slotTag)) return { ok: false, code: 'slot_type_occupied' };
-  if (others.length >= S7_MAX_PLUGINS_PER_SHIP) return { ok: false, code: 'too_many_plugins' };
-
-  // 校验全过 → 改状态：先全局卸下该实例（独占·跨所有船），再装到目标船。
+  // ① 该实例从所有船卸下（独占·跨所有船·含从目标船自身去重）。
   for (const l of Object.values(squad.shipLoadouts)) {
     const i = l.pluginInstanceIds.indexOf(instanceId);
     if (i >= 0) l.pluginInstanceIds.splice(i, 1);
   }
-  ensureLoadout(squad, shipId).pluginInstanceIds.push(instanceId);
+  const target = ensureLoadout(squad, shipId);
+  // ② 替换：移除目标船上同类槽位的其它插件（被替下→空闲）。
+  target.pluginInstanceIds = target.pluginInstanceIds.filter((id) => {
+    const o = findOwnedPlugin(inv, id);
+    const tag = o ? pluginSlotOf(o.pluginId) : undefined;
+    return tag !== slotTag; // 同类槽的占位插件被替换掉；其余保留
+  });
+  // ③ 装上。
+  target.pluginInstanceIds.push(instanceId);
   return { ok: true };
 }
 
