@@ -4,10 +4,10 @@
 //   两条独立于「等级」(S7UnitLevelState·花合金/记录) 的养成线；本模块只管阶级/星级状态 + 开槽规则 + 默认/规范化。
 // 与配置解耦：不校验 unitId 是否存在。数值（每阶成本/战力涨幅）在 S7AscendConfig（v0.1 占位·第二块校准）。
 
-/** 星舰阶级（C→B→A·灰盒 3 阶；顶级 S/SS 长线留第二块）。0=C 起。 */
+/** 星舰阶级（C→B→A→S→SS·5 阶·Ron 2026-06-21）。0=C 起、4=SS 顶。 */
 export const SHIP_TIER_MIN = 0; // C
-export const SHIP_TIER_MAX = 2; // A
-export const SHIP_TIER_NAMES = ['C', 'B', 'A'] as const;
+export const SHIP_TIER_MAX = 4; // SS
+export const SHIP_TIER_NAMES = ['C', 'B', 'A', 'S', 'SS'] as const;
 /** 驾驶员星级 1★–5★。 */
 export const PILOT_STAR_MIN = 1;
 export const PILOT_STAR_MAX = 5;
@@ -69,13 +69,14 @@ export function shipTierName(tier: number): string {
   return SHIP_TIER_NAMES[Math.max(0, Math.min(SHIP_TIER_NAMES.length - 1, Math.floor(tier)))] ?? 'C';
 }
 
-// ===== 开槽规则（v1.0 §5.3/§6「升阶阶段性开槽」·真开槽 Ron 2026-06-21 拍板）=====
-/** 该阶级开放的插件槽数：C=1 / B=2 / A=3。 */
+// ===== 开槽规则（v1.0 §5.3/§6「升阶阶段性开槽」·真开槽 Ron 2026-06-21）=====
+/** 插件槽数（每艘最多 3·§5.3）：C=1 / B=2 / A=3 /（S·SS 维持 3）。 */
 export function shipPluginSlotCap(tier: number): number {
   const t = Math.max(SHIP_TIER_MIN, Math.min(SHIP_TIER_MAX, Math.floor(tier)));
-  return t + 1; // 0→1,1→2,2→3
+  return Math.min(t + 1, 3); // 0→1,1→2,2→3,3→3,4→3
 }
-/** 该阶级是否开放星核槽：A 阶(2)起开。 */
+/** 星核槽：S 阶(3)起开（Ron 2026-06-21·原 A 改 S）。 */
+export const SHIP_CORE_SLOT_TIER = 3; // S
 export function shipCoreSlotOpen(tier: number): boolean {
-  return Math.floor(tier) >= SHIP_TIER_MAX;
+  return Math.floor(tier) >= SHIP_CORE_SLOT_TIER;
 }
