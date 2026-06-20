@@ -203,6 +203,8 @@ export class S7DemoController extends Component {
   private gachaExchangeLabel: Label | null = null; // 专属池兑换进度
   private gachaClaimBtn: Node | null = null;       // 专属池「领兑换箱」按钮（有箱才显示）
   private gachaTabBtns: { pool: S7GachaPoolId; node: Node }[] = [];
+  private gachaSingleBtn: Node | null = null;      // 单抽按钮（券<1 变灰）
+  private gachaTenBtn: Node | null = null;         // 十连按钮（券<10 变灰）
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -491,12 +493,12 @@ export class S7DemoController extends Component {
     this.mkPanelLabel(panel, '星港补给站', 40, new Color(255, 232, 130), -W * 0.26, topY - 30);
     this.gachaTicketLabel = this.mkPanelLabel(panel, '补给券 0', 30, new Color(120, 200, 240), W * 0.26, topY - 30);
 
-    // 三池切页。
+    // 三池切页（左→中→右 = 招募补给 / 专属补给 / 舰船补给；专属居中高亮）。
     const tabY = topY - 110;
     this.gachaTabBtns = [];
-    this.mkGachaTab(panel, 'recruit', '招募池\n驾驶员', -W * 0.30, tabY);
-    this.mkGachaTab(panel, 'refit', '整备池\n星舰', 0, tabY);
-    this.mkGachaTab(panel, 'exclusive', '专属池\n星舰', W * 0.30, tabY);
+    this.mkGachaTab(panel, 'recruit', '招募补给\n驾驶员', -W * 0.30, tabY);
+    this.mkGachaTab(panel, 'exclusive', '专属补给\n限定专属', 0, tabY);
+    this.mkGachaTab(panel, 'refit', '舰船补给\n星舰', W * 0.30, tabY);
 
     // 当前池说明 + 保底进度（多行）。
     this.gachaInfoLabel = this.mkPanelLabel(panel, '', 28, new Color(220, 230, 245), 0, topY - 230);
@@ -509,9 +511,11 @@ export class S7DemoController extends Component {
     // 出货明细（多行·居中偏下）。
     this.gachaResultLabel = this.mkPanelLabel(panel, '点下方抽卡', 26, new Color(180, 230, 190), 0, -H * 0.04);
 
-    // 单抽 / 十连。
-    this.addBtn(panel, '单抽\n(1券)', 260, 110, new Color(70, 130, 200, 255), -W * 0.22, botY + 230, () => this.onGachaDraw(1), 32);
-    this.addBtn(panel, '十连\n(10券)', 260, 110, new Color(80, 160, 120, 255), W * 0.22, botY + 230, () => this.onGachaDraw(10), 32);
+    // 单抽 / 十连（券不足时变灰·点了没反应，见 refreshGacha + onGachaDraw 守门）。
+    const single = this.addBtn(panel, '单抽\n(1券)', 260, 110, new Color(70, 130, 200, 255), -W * 0.22, botY + 230, () => this.onGachaDraw(1), 32);
+    this.gachaSingleBtn = single.node.parent;
+    const ten = this.addBtn(panel, '十连\n(10券)', 260, 110, new Color(80, 160, 120, 255), W * 0.22, botY + 230, () => this.onGachaDraw(10), 32);
+    this.gachaTenBtn = ten.node.parent;
     // 赞助补给（看广告得券）。
     this.addBtn(panel, '赞助补给·看广告得补给券', 460, 80, new Color(200, 120, 70, 255), 0, botY + 120, () => this.onGachaSponsorAd(), 28);
     // 返回星港。
@@ -541,6 +545,12 @@ export class S7DemoController extends Component {
     g.clear();
     g.fillColor = selected ? new Color(90, 150, 220, 255) : new Color(48, 56, 76, 255);
     g.roundRect(-100, -46, 200, 92, 12); g.fill();
+  }
+  /** 重绘按钮底色（变灰=禁用·见十连/单抽券不足）。addBtn 圆角=10、抽卡键尺寸 260×110。 */
+  private paintBtn(node: Node | null, color: Color, w = 260, h = 110): void {
+    if (!node) return;
+    const g = node.getComponent(Graphics); if (!g) return;
+    g.clear(); g.fillColor = color; g.roundRect(-w / 2, -h / 2, w, h, 10); g.fill();
   }
 
   private openGacha(): void {
@@ -573,16 +583,23 @@ export class S7DemoController extends Component {
     let info = '';
     if (pool === 'exclusive') {
       const exId = currentExclusiveShipId(cfg, day);
-      info = `专属池（常驻全部非专属星舰）\n当期专属：${exId ? this.unitName('ship', exId) : '—'}（每${cfg.rotationDays}天轮换）`;
+      info = `专属补给（常驻全部非专属星舰）\n当期专属：${exId ? this.unitName('ship', exId) : '—'}（A级·每${cfg.rotationDays}天轮换）`;
     } else {
       const cats = pool === 'recruit' ? cfg.recruitCategories : cfg.refitCategories;
       const openIds = openCategoryIds(cfg, pool, day);
       const names = openIds.map((id) => cats.find((c) => c.categoryId === id)?.name ?? id).join('、');
-      const what = pool === 'recruit' ? '驾驶员' : '星舰';
-      info = `招募池（${what}·每天开2类·3天一轮）\n今日开放：${names}`;
+      info = pool === 'recruit'
+        ? `招募补给（驾驶员·每天开2类·3天一轮）\n今日开放：${names}`
+        : `舰船补给（星舰·每天开2类·3天一轮）\n今日开放：${names}`;
     }
     info += `\n阶级地板保底 ${gacha.pity[pool]}/${cfg.floorPityDraws}（满必出≥A/3★）`;
     if (this.gachaInfoLabel) this.gachaInfoLabel.string = info;
+
+    // 单抽/十连：券不足该档位 → 变灰（点了没反应·见 onGachaDraw 守门）。
+    const avail = Math.floor(this.session?.resources.supplyTicket ?? 0);
+    const grey = new Color(70, 75, 90, 255);
+    this.paintBtn(this.gachaSingleBtn, avail >= 1 ? new Color(70, 130, 200, 255) : grey);
+    this.paintBtn(this.gachaTenBtn, avail >= 10 ? new Color(80, 160, 120, 255) : grey);
 
     // 专属兑换进度 + 领箱按钮。
     if (pool === 'exclusive') {
@@ -603,7 +620,11 @@ export class S7DemoController extends Component {
   private onGachaDraw(count: number): void {
     if (!this.playerState || !this.session) return;
     const avail = Math.floor(this.session.resources.supplyTicket ?? 0);
-    if (avail <= 0) { if (this.gachaResultLabel) this.gachaResultLabel.string = '补给券不足！点「赞助补给」看广告得券'; return; }
+    // 必须够该档位整额（十连要满 10·单抽要满 1）——券不足时按钮已变灰，这里再守一道（点了没反应）。
+    if (avail < count) {
+      if (this.gachaResultLabel) this.gachaResultLabel.string = count >= 10 ? '补给券不足 10 张，无法十连' : '补给券不足！点「赞助补给」看广告得券';
+      return;
+    }
     const now = Date.now();
     const rng = new S7AutoBattleRng(`gacha_${this.gachaPool}_${now}_${avail}`);
     const r = drawGachaMany(
@@ -614,10 +635,8 @@ export class S7DemoController extends Component {
     // 出货明细。
     if (this.gachaResultLabel) {
       const lines = r.outcomes.map((o) => this.gachaOutcomeText(o));
-      let txt = r.outcomes.length > 1 ? `本次${r.outcomes.length}连：\n` : '';
-      txt += lines.join('\n');
-      if (r.ticketsSpent < count) txt += `\n（补给券只够抽${r.ticketsSpent}次）`;
-      this.gachaResultLabel.string = txt || '出货异常（配置空池？）';
+      const head = r.outcomes.length > 1 ? `本次${r.outcomes.length}连：\n` : '';
+      this.gachaResultLabel.string = (head + lines.join('\n')) || '出货异常（配置空池？）';
     }
     this.persist();
     this.refresh();      // 顶部货币栏（券变了）
@@ -626,13 +645,22 @@ export class S7DemoController extends Component {
 
   private gachaOutcomeText(o: S7GachaDrawOutcome): string {
     const name = this.unitName(o.unitKind, o.unitId);
+    const tag = this.gachaTierTag(o); // 阶级/星级/专属（#1+#2）
+    const head = o.isFloor ? '[保底]' : '';
     switch (o.result) {
-      case 'new_body': return `${name} 新到手!`;
-      case 'dup_shards': return `${name} 重复→碎片+${o.shardsGained}`;
-      case 'floor_body': return `[保底]${name} 新到手!(A级)`;
-      case 'floor_shards': return `[保底]${name} 已有→碎片+${o.shardsGained}`;
+      case 'new_body': return `${head}${name}[${tag}] 新到手!`;
+      case 'floor_body': return `${head}${name}[${tag}] 新到手!`;
+      case 'dup_shards': return `${head}${name}[${tag}] 重复→碎片+${o.shardsGained}`;
+      case 'floor_shards': return `${head}${name}[${tag}] 已有→碎片+${o.shardsGained}`;
       default: return name;
     }
+  }
+
+  /** 出货标签：专属舰恒「A级·专属」(§10.1·Ron 拍板)；保底=A级/3★；普通=C级/1★。 */
+  private gachaTierTag(o: S7GachaDrawOutcome): string {
+    if (o.isExclusive) return 'A级·专属';
+    if (o.unitKind === 'pilot') return o.isFloor ? '3★' : '1★';
+    return o.isFloor ? 'A级' : 'C级'; // 星舰阶级
   }
 
   /** 领专属池兑换箱（一次领光·×2叠领）：发当期专属本体 / 已有则溢出折碎片。 */
@@ -641,8 +669,8 @@ export class S7DemoController extends Component {
     const res = claimExchangeBox(this.playerState.gacha, this.squad!, this.playerState.exclusiveShards, DEFAULT_S7_GACHA_CONFIG, gachaDayIndex(Date.now()), true);
     if (this.gachaResultLabel) {
       if (!res.ok) this.gachaResultLabel.string = res.reason === 'no_box' ? '还没有可领的兑换箱' : '当期无专属';
-      else if (res.result === 'exclusive_body') this.gachaResultLabel.string = `兑换箱：${this.unitName('ship', res.exclusiveShipId)} 到手!${res.shardsGained > 0 ? ` +碎片${res.shardsGained}` : ''}`;
-      else this.gachaResultLabel.string = `兑换箱：已拥有→碎片+${res.shardsGained}`;
+      else if (res.result === 'exclusive_body') this.gachaResultLabel.string = `兑换箱：${this.unitName('ship', res.exclusiveShipId)}[A级·专属] 到手!${res.shardsGained > 0 ? ` +碎片${res.shardsGained}` : ''}`;
+      else this.gachaResultLabel.string = `兑换箱：[A级·专属]已拥有→碎片+${res.shardsGained}`;
     }
     this.persist();
     this.refreshGacha();

@@ -164,6 +164,8 @@ export interface S7GachaDrawOutcome {
   unitId: string;
   /** 是否为阶级地板保底命中的那一抽。 */
   isFloor: boolean;
+  /** 是否抽到「当期专属舰」（仅专属池可能为 true）。专属舰恒按 A 级处理（Ron 拍板·不出 C/B 专属·见 §10.1）。 */
+  isExclusive: boolean;
   result: S7GachaDrawResult;
   /** 折得的专属碎片数（发本体时为 0）。 */
   shardsGained: number;
@@ -231,7 +233,10 @@ export function drawGachaOnce(
   // ④ 专属池累加兑换进度。
   if (poolId === 'exclusive') state.exchangeProgress += 1;
 
-  return { poolId, unitKind: kind, unitId, isFloor, result, shardsGained, exchangeProgress: poolId === 'exclusive' ? state.exchangeProgress : 0 };
+  // 是否抽到当期专属舰（仅专属池）：专属舰恒 A 级（§10.1·Ron 拍板）。
+  const isExclusive = poolId === 'exclusive' && config.exclusiveShipIds.includes(unitId);
+
+  return { poolId, unitKind: kind, unitId, isFloor, isExclusive, result, shardsGained, exchangeProgress: poolId === 'exclusive' ? state.exchangeProgress : 0 };
 }
 
 /**

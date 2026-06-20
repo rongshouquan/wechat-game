@@ -221,6 +221,17 @@ describe('C-step1 · 专属池进度兑换箱', () => {
     expect(state.exchangeClaimed).toBe(2);
   });
 
+  it('isExclusive：专属池抽到当期专属舰=true；其它池/非专属舰=false（专属恒A级·§10.1）', () => {
+    // 专属池只含专属舰（清空整备类别→非专属舰为空）→ 必抽到专属。
+    const c = cfg({ refitCategories: [], exclusiveShipIds: ['shp10'] });
+    const o = drawGachaOnce(createDefaultS7GachaState(), createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), c, rng(), 'exclusive', 0)!;
+    expect(o.unitId).toBe('shp10');
+    expect(o.isExclusive).toBe(true);
+    // 整备池抽到的是普通舰 → 非专属。
+    const o2 = drawGachaOnce(createDefaultS7GachaState(), createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 0)!;
+    expect(o2.isExclusive).toBe(false);
+  });
+
   it('专属池每抽累加兑换进度', () => {
     const c = cfg({ exchangeThreshold: 100 });
     const state = createDefaultS7GachaState();
