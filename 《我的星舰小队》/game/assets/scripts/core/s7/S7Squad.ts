@@ -1,9 +1,10 @@
 // 阵容/编队（阶段一 A-step1，纯 TS，不依赖 cc）：v1.0 §4.4「战前编队：3×3 上阵 5 舰、每舰必配驾驶员、每舰记忆 loadout」。
 //
-// 本模块拥有两件事的状态形状 + 默认/规范化 + 操作/校验/转换：
+// 本模块拥有几件事的状态形状 + 默认/规范化 + 操作/校验/转换：
 //   ① 玩家"拥有"：星舰/驾驶员=拥有集合(本体单一，靠升阶/升星养)；星核=实例计数(coreId→拥有数)；插件实例库存另由 S7PluginInventory 管。
-//   ② 编队：≤5 个上阵位，每位 = 星舰 + 必配驾驶员 + 星核(coreId) + 插件实例(pluginInstanceIds)；装/卸由 S7ShipLoadout 操作（B 块·单舰深装）。
-//   ③ buildSquadLineup：把编队校验后转成 S7BattleEncounterAssembler 吃的出战阵容（注入星舰等级；给了库存则把插件实例解析成 {pluginId,quality} 喂战斗）。
+//   ② 编队：≤5 个上阵位，每位 = 星舰 + 必配驾驶员（位置 slotRef）。
+//   ③ 单舰装配 shipLoadouts（v1.0 §4.4「每舰记忆 loadout」）：星核 + 插件实例按 shipId 记忆，**与编队解耦** → 下场/换位都跟着船、不丢；装/卸由 S7ShipLoadout 操作（B 块）。
+//   ④ buildSquadLineup：把编队 + 各舰装配校验后转成 S7BattleEncounterAssembler 吃的出战阵容（注入星舰等级；给了库存则把插件实例解析成 {pluginId,quality} 喂战斗）。
 //
 // 边界：core 层自包含——只依赖同族 S7* + 中性结构；不 import save（由 S7SaveService 组合进 S7PlayerState）、不 import cc、可 Node/vitest 测。
 // 数值真源 B1 / 设计真源 v1.0。
@@ -17,29 +18,40 @@ export const S7_MAX_FORMATION_SLOTS = 5;
 /** 玩家阵位格 p0c0..p2c2。 */
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 
-/** 一个上阵位的配置。星核 coreId / 插件实例 pluginInstanceIds 由 S7ShipLoadout 装卸（B 块）。 */
+/** 一个上阵位的配置（只管"哪艘船 + 哪个驾驶员 + 在哪格"；装备见 shipLoadouts）。 */
 export interface S7FormationSlot {
   slotRef: string;
   shipId: string;
   /** 必配驾驶员；null = 该位缺驾驶员（v1.0 §4.4 空船不能上阵 → 校验会拦）。 */
   pilotId: string | null;
+}
+
+/** 单舰装配（v1.0 §4.4「每舰记忆 loadout」）：星核 + 插件实例，按船记忆、与编队解耦。 */
+export interface S7Loadout {
   /** 装备的星核 id（一船 1 核·§5.4）；null = 未装。 */
   coreId: string | null;
   /** 装备的插件「实例号」(S7PluginInventory 的 instanceId，非 pluginId)；经库存解析回 {pluginId,quality}。 */
   pluginInstanceIds: string[];
 }
 
-/** 阵容状态：拥有 roster + 编队。 */
+/** 阵容状态：拥有 roster + 编队 + 各舰装配。 */
 export interface S7SquadState {
   ownedShips: string[];
   ownedPilots: string[];
   /** coreId → 拥有数（星核是实例，可多个）。 */
   ownedCores: Record<string, number>;
   formation: S7FormationSlot[];
+  /** shipId → 该舰装配（星核/插件）。与编队解耦：船下场/换格，装配仍保留。 */
+  shipLoadouts: Record<string, S7Loadout>;
 }
 
 export function createDefaultS7Squad(): S7SquadState {
-  return { ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [] };
+  return { ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} };
+}
+
+/** 取某船装配（不存在返回 null·只读）。 */
+export function getShipLoadout(squad: S7SquadState, shipId: string): S7Loadout | null {
+  return squad.shipLoadouts[shipId] ?? null;
 }
 
 function normStrArray(raw: unknown): string[] {
@@ -63,9 +75,36 @@ function normCores(raw: unknown): Record<string, number> {
   return out;
 }
 
-/** 规范化阵容（防脏档/篡改）：拥有集合去重去空、星核计数取正整数、编队取合法且阵位不重复的 ≤5 行。 */
+/** 把一条原始数据规范成一份装配（coreId 取非空字符串否则 null、插件实例去重去空）。 */
+function normLoadout(raw: unknown): S7Loadout {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  return {
+    coreId: typeof o.coreId === 'string' && o.coreId.length > 0 ? o.coreId : null,
+    pluginInstanceIds: normStrArray(o.pluginInstanceIds),
+  };
+}
+/** 一份装配是否为空（无核无插件）——用于规范化时丢弃空壳、不污染 shipLoadouts。 */
+function loadoutIsEmpty(l: S7Loadout): boolean {
+  return l.coreId === null && l.pluginInstanceIds.length === 0;
+}
+
+/**
+ * 规范化阵容（防脏档/篡改）：拥有集合去重去空、星核计数取正整数、编队取合法且阵位不重复的 ≤5 行；
+ * 装配按 shipId 收（新结构 shipLoadouts），并**迁移旧存档**：旧档把 coreId/插件记在 formation 行上 → 搬进 shipLoadouts[shipId]。
+ */
 export function normalizeS7Squad(raw: unknown): S7SquadState {
   const src = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+
+  // 先收新结构 shipLoadouts（按 shipId）。
+  const shipLoadouts: Record<string, S7Loadout> = {};
+  if (src.shipLoadouts && typeof src.shipLoadouts === 'object' && !Array.isArray(src.shipLoadouts)) {
+    for (const [shipId, v] of Object.entries(src.shipLoadouts as Record<string, unknown>)) {
+      if (typeof shipId !== 'string' || shipId.length === 0) continue;
+      const l = normLoadout(v);
+      if (!loadoutIsEmpty(l)) shipLoadouts[shipId] = l;
+    }
+  }
+
   const formation: S7FormationSlot[] = [];
   const seenSlots = new Set<string>();
   const seenShips = new Set<string>();
@@ -83,9 +122,12 @@ export function normalizeS7Squad(raw: unknown): S7SquadState {
         slotRef,
         shipId,
         pilotId: typeof row.pilotId === 'string' && row.pilotId.length > 0 ? row.pilotId : null,
-        coreId: typeof row.coreId === 'string' && row.coreId.length > 0 ? row.coreId : null,
-        pluginInstanceIds: normStrArray(row.pluginInstanceIds),
       });
+      // 迁移旧档：装备曾记在 formation 行上 → 若 shipLoadouts 尚无该船，则搬过来（新结构优先、不覆盖）。
+      if (!shipLoadouts[shipId] && (row.coreId !== undefined || row.pluginInstanceIds !== undefined)) {
+        const l = normLoadout(row);
+        if (!loadoutIsEmpty(l)) shipLoadouts[shipId] = l;
+      }
     }
   }
   return {
@@ -93,6 +135,7 @@ export function normalizeS7Squad(raw: unknown): S7SquadState {
     ownedPilots: normStrArray(src.ownedPilots),
     ownedCores: normCores(src.ownedCores),
     formation,
+    shipLoadouts,
   };
 }
 
@@ -134,7 +177,7 @@ export function assignSlot(squad: S7SquadState, slotRef: string, shipId: string,
     for (const s of squad.formation) if (s.pilotId === pilotId) s.pilotId = null; // 驾驶员从别船自动卸下
   }
   if (squad.formation.length >= S7_MAX_FORMATION_SLOTS) return; // 满 5 位不再加
-  squad.formation.push({ slotRef, shipId, pilotId, coreId: null, pluginInstanceIds: [] });
+  squad.formation.push({ slotRef, shipId, pilotId }); // 装备不在此处置——按船记忆在 shipLoadouts，换格/上阵不影响
 }
 
 /**
@@ -200,16 +243,18 @@ export function buildSquadLineup(
     if (seenPilots.has(slot.pilotId)) return { ok: false, code: 'dup_pilot', message: `驾驶员 ${slot.pilotId} 同时上了多艘船（一员只能驾一船）` };
     seenPilots.add(slot.pilotId);
     if (!isPilotOwned(squad, slot.pilotId)) return { ok: false, code: 'not_owned_pilot', message: `未拥有驾驶员 ${slot.pilotId}` };
-    if (slot.coreId && coreOwnedCount(squad, slot.coreId) <= 0) {
-      return { ok: false, code: 'not_owned_core', message: `未拥有星核 ${slot.coreId}` };
+    // 装配（B 块）：按 shipId 取该舰记忆的星核/插件（与编队解耦）。
+    const loadout = squad.shipLoadouts[slot.shipId];
+    if (loadout?.coreId && coreOwnedCount(squad, loadout.coreId) <= 0) {
+      return { ok: false, code: 'not_owned_core', message: `未拥有星核 ${loadout.coreId}` };
     }
     const unit: S7BattleLineupUnitInput = { shipId: slot.shipId, slotRef: slot.slotRef, pilotId: slot.pilotId };
-    if (slot.coreId) unit.coreId = slot.coreId;
+    if (loadout?.coreId) unit.coreId = loadout.coreId;
     if (unitLevels) unit.shipLevel = getShipLevel(unitLevels, slot.shipId);
     // 插件（B 块）：给了库存才解析——实例号 → {pluginId,quality} 喂战斗（装配层再按配置缩放成效果积木）。
-    if (inventory && slot.pluginInstanceIds.length > 0) {
+    if (inventory && loadout && loadout.pluginInstanceIds.length > 0) {
       const plugins: S7BattleLineupPluginInput[] = [];
-      for (const instanceId of slot.pluginInstanceIds) {
+      for (const instanceId of loadout.pluginInstanceIds) {
         const inst = findOwnedPlugin(inventory, instanceId);
         if (!inst) {
           return { ok: false, code: 'not_owned_plugin', message: `编队里的插件实例 ${instanceId} 不在库存（已被回收/合成？请重新装配）` };

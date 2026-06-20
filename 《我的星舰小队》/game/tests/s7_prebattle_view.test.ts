@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
 import { S7ConfigTableName, S7_TABLE_FILES } from '../assets/scripts/config/s7/ConfigTypesS7';
-import { createDefaultS7Squad, grantShip, grantPilot, assignSlot } from '../assets/scripts/core/s7/S7Squad';
+import { createDefaultS7Squad, grantShip, grantPilot, grantCore, assignSlot } from '../assets/scripts/core/s7/S7Squad';
 import { buildPrebattleView } from '../assets/scripts/core/s7/S7PrebattleView';
+import { createDefaultS7PluginInventory, addOwnedPlugin } from '../assets/scripts/core/s7/S7PluginInventory';
 
 const S7_DIR = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7');
 function loadBundle(): Record<S7ConfigTableName, unknown[]> {
@@ -70,6 +71,19 @@ describe('A-step2a · buildPrebattleView', () => {
     if (!base.ok || !leveled.ok) return;
     expect(base.view.playerPower).toBeGreaterThan(0);
     expect(leveled.view.playerPower).toBeGreaterThan(base.view.playerPower); // 升级→战力涨
+  });
+
+  it('装配（插件 + 星核）抬高战力（Ron 拍板：两者均计入·占位值）', () => {
+    const bare = buildPrebattleView(runtime, at('n006'), squad2());
+    const inv = createDefaultS7PluginInventory();
+    const a = addOwnedPlugin(inv, 'plg02', 'legendary');
+    const s = squad2();
+    grantCore(s, 'core07', 1);
+    s.shipLoadouts.shp01 = { coreId: 'core07', pluginInstanceIds: [a.instanceId] };
+    const equipped = buildPrebattleView(runtime, at('n006'), s, undefined, inv);
+    expect(bare.ok && equipped.ok).toBe(true);
+    if (!bare.ok || !equipped.ok) return;
+    expect(equipped.view.playerPower).toBeGreaterThan(bare.view.playerPower); // 装了插件+核 → 战力更高
   });
 
   it('空编队：我方战力 0（仍可看敌情/推荐）', () => {

@@ -57,7 +57,7 @@ describe('s7 save - resource skeleton', () => {
       expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
     }); // 块7a/7b：默认空活动进度（含周期字段）
     expect(data.playerState.unitLevels).toEqual({ shipLevels: {}, pilotLevels: {} }); // C1b 升级变强：默认空(全1级)
-    expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [] }); // 阶段一A：默认空阵容
+    expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} }); // 阶段一A：默认空阵容
     expect(data.playerState.mailbox).toEqual({ mails: [], nextSeq: 1 }); // 阶段一G2：默认空邮箱
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
@@ -453,7 +453,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(r.data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [] }); // 新字段补默认空
+    expect(r.data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} }); // 新字段补默认空
     expect(r.data.playerState.unitLevels.shipLevels.shp01).toBe(8); // 旧字段保留
     expect(r.data.playerState.resources.starOre).toBe(4200);
     expect(r.data.playerState.mainlineProgress.currentNodeId).toBe('n006');
@@ -465,12 +465,14 @@ describe('s7 save - corruption / structure fallback', () => {
     data.playerState.squad.ownedShips = ['shp01', 'shp02'];
     data.playerState.squad.ownedPilots = ['pil01'];
     data.playerState.squad.ownedCores = { core01: 1 };
-    data.playerState.squad.formation = [{ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginInstanceIds: [] }];
+    data.playerState.squad.formation = [{ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01' }];
+    data.playerState.squad.shipLoadouts = { shp01: { coreId: 'core01', pluginInstanceIds: ['pi1'] } };
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
     expect(r.data.playerState.squad.ownedShips).toEqual(['shp01', 'shp02']);
     expect(r.data.playerState.squad.formation).toHaveLength(1);
     expect(r.data.playerState.squad.formation[0]).toMatchObject({ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01' });
+    expect(r.data.playerState.squad.shipLoadouts).toEqual({ shp01: { coreId: 'core01', pluginInstanceIds: ['pi1'] } }); // 装配往返不丢
   });
 
   it('迁移 v11 旧档到当前：补默认空邮箱 mailbox，保留旧字段（加性迁移，无需重置）', () => {

@@ -20,6 +20,13 @@ import { S7BattleEntry } from './S7BattleEntry';
 import { S7SquadState } from './S7Squad';
 import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
 import { unitPowerAtLevel } from './S7UnitGrowth';
+import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
+import { S7PluginQuality } from './S7PluginEffects';
+
+// 装配对战力的贡献（占位·方向值·精确公式留第二块）。Ron 2026-06-20 拍板：插件「与」星核都计入战力
+//（有意覆盖 v1.0 §6"星核质变不计战力"——见进度日志/记忆）。星舰 1 级成长战力≈120，故此处量级取得可感知。
+const PLUGIN_POWER_BY_QUALITY: Record<S7PluginQuality, number> = { fine: 50, superior: 80, legendary: 110 };
+const CORE_POWER = 150;
 
 /** 敌情预览里的一个敌人：战斗属性行 + 站位 + 是否 Boss。 */
 export interface S7PrebattleEnemy {
@@ -36,7 +43,7 @@ export interface S7PrebattleView {
   enemies: S7PrebattleEnemy[];
   enemyCount: number;
   hasBoss: boolean;
-  /** 我方战力（占位·待 B 块统一战力）：编队各舰成长战力之和（向下取整）。 */
+  /** 我方战力（占位·精确公式留第二块）：编队各舰 成长战力(按等级) + 装配战力(插件按品质 + 星核)之和（向下取整）。 */
   playerPower: number;
   /** 推荐战力（占位）：节点压力值（boss=recommend，普通/精英=min/max 中值）。 */
   recommendedPower: number;
@@ -55,6 +62,7 @@ export function buildPrebattleView(
   progress: S7MainlineProgressState,
   squad: S7SquadState,
   unitLevels?: S7UnitLevelState,
+  inventory?: S7PluginInventoryState,
 ): S7PrebattleViewResult {
   const ctxResult = S7BattleEntry.fromRuntime(runtime).resolveCurrentContext(progress);
   if (!ctxResult.ok) return { ok: false, error: ctxResult.error };
@@ -86,12 +94,23 @@ export function buildPrebattleView(
     }
   }
 
-  // 我方战力（占位）：编队各舰成长战力之和（unitLevels 给了按等级，否则 1 级）。
+  // 我方战力（占位）：编队各舰 成长战力(按等级) + 装配战力(插件按品质 + 星核·均计入，Ron 拍板)。
   const growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
   let playerPower = 0;
   for (const slot of squad.formation) {
     const lv = unitLevels ? getShipLevel(unitLevels, slot.shipId) : 1;
     playerPower += unitPowerAtLevel(growthBands, 'ship', lv);
+    // 装配：该舰记忆的星核 + 插件实例（按船取，与编队解耦）。
+    const loadout = squad.shipLoadouts[slot.shipId];
+    if (loadout) {
+      if (loadout.coreId) playerPower += CORE_POWER;
+      if (inventory) {
+        for (const id of loadout.pluginInstanceIds) {
+          const inst = findOwnedPlugin(inventory, id);
+          if (inst) playerPower += PLUGIN_POWER_BY_QUALITY[inst.quality] ?? 0;
+        }
+      }
+    }
   }
 
   return {
