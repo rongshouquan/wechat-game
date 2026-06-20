@@ -10,7 +10,6 @@ import { S7AutoBattleRng } from './S7AutoBattleRng';
 import { S7MerchantConfig, S7ShopItem, S7ShopOfferTemplate } from './S7MerchantConfig';
 import { S7MerchantState, S7ShopOffer, shopItemKey } from './S7MerchantState';
 import { S7BeaconTier, BEACON_RESOURCE } from './S7SalvageConfig';
-import { merchantDailyFreeRefresh } from './S7BuildingEffects';
 
 const DAY_MS = 86_400_000;
 
@@ -64,8 +63,8 @@ export function refreshMerchantToCycle(state: S7MerchantState, config: S7Merchan
   if (state.cycleKey === cycle && state.offers.length > 0) return false;
   generateMerchantStock(state, config, merchantLevel, rng);
   state.dailyBought = {};
-  state.freeRefreshUsed = 0;
-  state.adRefreshUsed = 0;
+  state.freeRefreshRemaining = config.refresh.freePerCycle; // 每周期重置为基础免费刷新次数
+  state.adRefreshRemaining = config.refresh.adPerCycle;
   state.cycleKey = cycle;
   return true;
 }
@@ -99,32 +98,36 @@ export function buyMerchantOffer(state: S7MerchantState, wallet: Record<string, 
 
 export type S7RefreshMode = 'free' | 'ad';
 export type S7RefreshResult =
-  | { ok: true; mode: S7RefreshMode; usedThisCycle: number; cap: number }
+  | { ok: true; mode: S7RefreshMode; remaining: number }
   | { ok: false; reason: 'cap_reached' };
 
 /**
- * 手动刷新货架（全新一茬店：重铺一批轮换货 + **同时清零购买次数**·Ron 2026-06-21）。
- *  - free：每周期 freePerCycle 次；ad：广告看完后调·每周期 adPerCycle 次。（付费刷新已去掉·Ron）
- *  - 防套利改靠**刷新次数上限**(每天免费 freePerCycle + 广告 adPerCycle 次)兜，不再靠购买次数跨刷新累计。
+ * 手动刷新货架（全新一茬店：重铺一批轮换货 + **同时清零购买次数**·Ron 2026-06-21）。消耗一次"剩余刷新次数"。
+ *  - free：剩余次数 = 每周期基础(freePerCycle) + 商人升级一次性赠送(见 grantMerchantFreeRefresh)；ad：每周期基础(adPerCycle)。（无付费刷新·Ron）
+ *  - 防套利：刷新次数本身有限 + 回收折损。
  */
 export function refreshMerchantShop(
   state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
 ): S7RefreshResult {
   if (mode === 'free') {
-    // 每日免费刷新上限 = 商人小站楼级（每升一级 +1·Ron）。
-    const freeCap = merchantDailyFreeRefresh(merchantLevel);
-    if (state.freeRefreshUsed >= freeCap) return { ok: false, reason: 'cap_reached' };
-    state.freeRefreshUsed += 1;
+    if (state.freeRefreshRemaining <= 0) return { ok: false, reason: 'cap_reached' };
+    state.freeRefreshRemaining -= 1;
     generateMerchantStock(state, config, merchantLevel, rng);
     state.dailyBought = {}; // 刷新连购买次数一起清（新一茬店·可重新买）
-    return { ok: true, mode, usedThisCycle: state.freeRefreshUsed, cap: freeCap };
+    return { ok: true, mode, remaining: state.freeRefreshRemaining };
   }
   // ad
-  if (state.adRefreshUsed >= config.refresh.adPerCycle) return { ok: false, reason: 'cap_reached' };
-  state.adRefreshUsed += 1;
+  if (state.adRefreshRemaining <= 0) return { ok: false, reason: 'cap_reached' };
+  state.adRefreshRemaining -= 1;
   generateMerchantStock(state, config, merchantLevel, rng);
   state.dailyBought = {}; // 同上
-  return { ok: true, mode, usedThisCycle: state.adRefreshUsed, cap: config.refresh.adPerCycle };
+  return { ok: true, mode, remaining: state.adRefreshRemaining };
+}
+
+/** 商人小站升级时调：当场 +n 次免费刷新（一次性·非永久抬上限·Ron 2026-06-21）。 */
+export function grantMerchantFreeRefresh(state: S7MerchantState, n = 1): void {
+  if (!Number.isInteger(n) || n <= 0) return;
+  state.freeRefreshRemaining += n;
 }
 
 // ===== 回收（卖→星贝·有折损）=====

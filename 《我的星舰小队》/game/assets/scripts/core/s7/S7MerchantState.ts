@@ -23,12 +23,14 @@ export interface S7MerchantState {
   dailyBought: Record<string, number>;
   /** 当前货架所属周期 key(=floor(now/天))；-1=未初始化。 */
   cycleKey: number;
-  freeRefreshUsed: number;
-  adRefreshUsed: number;
+  /** 剩余免费刷新次数（每周期重置为基础值；商人升级当场 +1·一次性·Ron 2026-06-21）。 */
+  freeRefreshRemaining: number;
+  /** 剩余广告刷新次数（每周期重置为基础值）。 */
+  adRefreshRemaining: number;
 }
 
 export function createDefaultS7Merchant(): S7MerchantState {
-  return { offers: [], dailyBought: {}, cycleKey: -1, freeRefreshUsed: 0, adRefreshUsed: 0 };
+  return { offers: [], dailyBought: {}, cycleKey: -1, freeRefreshRemaining: 0, adRefreshRemaining: 0 };
 }
 
 /** 商品在 dailyBought / 购买上限里的归并 key：资源用 resourceId，插件用 `plugin:<品质>`。 */
@@ -76,7 +78,7 @@ export function normalizeS7Merchant(raw: unknown): S7MerchantState {
     if (n > 0) out.dailyBought[k] = n;
   }
   out.cycleKey = typeof src.cycleKey === 'number' && Number.isInteger(src.cycleKey) ? src.cycleKey : -1;
-  out.freeRefreshUsed = nonNegInt(src.freeRefreshUsed);
-  out.adRefreshUsed = nonNegInt(src.adRefreshUsed);
+  out.freeRefreshRemaining = nonNegInt(src.freeRefreshRemaining);
+  out.adRefreshRemaining = nonNegInt(src.adRefreshRemaining);
   return out;
 }

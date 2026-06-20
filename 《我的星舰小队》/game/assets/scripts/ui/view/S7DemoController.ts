@@ -40,7 +40,7 @@ import { S7PopulationState, createDefaultS7Population } from '../../core/s7/S7Po
 import {
   shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
   salvageTeamCount, researchTeamBonusPct, merchantShopSlots, coreGalleryTeamBonusPct,
-  coreGalleryPerTypeBonusPct, merchantDailyFreeRefresh,
+  coreGalleryPerTypeBonusPct,
 } from '../../core/s7/S7BuildingEffects';
 import { S7EffectBlock } from '../../core/s7/S7BattleEffectBlock';
 import { getS7UsableBand } from '../S7UiLayout';
@@ -76,7 +76,7 @@ import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
 import { DEFAULT_S7_MERCHANT_CONFIG, S7ShopItem } from '../../core/s7/S7MerchantConfig';
 import {
   refreshMerchantToCycle, buyMerchantOffer, offerRemaining, refreshMerchantShop, S7RefreshMode,
-  recycleBeacon, recycleStarOre,
+  recycleBeacon, recycleStarOre, grantMerchantFreeRefresh,
 } from '../../core/s7/S7MerchantService';
 
 const { ccclass } = _decorator;
@@ -1039,10 +1039,9 @@ export class S7DemoController extends Component {
   private refreshMerchant(): void {
     if (!this.playerState || !this.session || !this.merchantListNode) return;
     const m = this.playerState.merchant;
-    const cfg = DEFAULT_S7_MERCHANT_CONFIG;
     const lv = this.merchantLevel();
     if (this.merchantStarLabel) {
-      this.merchantStarLabel.string = `星贝 ${Math.floor(this.session.resources.starCargo ?? 0)}　商人Lv.${lv}　刷新 免${m.freeRefreshUsed}/${cfg.refresh.freePerCycle} 告${m.adRefreshUsed}/${cfg.refresh.adPerCycle}`;
+      this.merchantStarLabel.string = `星贝 ${Math.floor(this.session.resources.starCargo ?? 0)}　商人Lv.${lv}　免费刷新次数剩余${m.freeRefreshRemaining}　广告刷新次数剩余${m.adRefreshRemaining}`;
     }
     this.merchantListNode.removeAllChildren();
     let y = getS7UsableBand().usableTopY - 200;
@@ -1120,7 +1119,7 @@ export class S7DemoController extends Component {
     const doRefresh = () => {
       const r = refreshMerchantShop(this.playerState!.merchant, DEFAULT_S7_MERCHANT_CONFIG, this.merchantLevel(), new S7AutoBattleRng(`mr_${mode}_${Date.now()}`), mode);
       if (this.merchantResultLabel) {
-        this.merchantResultLabel.string = r.ok ? `已刷新一批新货（${mode === 'free' ? '免费' : '广告'}·${r.usedThisCycle}/${r.cap}）` : '今日该刷新次数用尽';
+        this.merchantResultLabel.string = r.ok ? `已刷新一批新货（${mode === 'free' ? '免费' : '广告'}·剩余${r.remaining}）` : '刷新次数用尽';
       }
       this.persist();
       this.refreshMerchant();
@@ -1166,8 +1165,9 @@ export class S7DemoController extends Component {
     this.addModalDismiss(panel, () => this.closeBuildingUpgrade(), cw, ch, 0, 0);
     this.buUpTitleLabel = this.mkPanelLabel(panel, '', 40, new Color(255, 225, 140), 0, ch * 0.33);
     this.buUpInfoLabel = this.mkPanelLabel(panel, '', 26, new Color(225, 230, 245), 0, ch * 0.02);
-    this.buUpBtn = this.addBtn(panel, '升级', 240, 84, new Color(80, 160, 110, 255), -W * 0.17, -ch * 0.34, () => this.onBuildingUpgradeConfirm(), 32).node.parent;
-    this.addBtn(panel, '关闭', 200, 84, new Color(110, 90, 150, 255), W * 0.17, -ch * 0.34, () => this.closeBuildingUpgrade(), 30);
+    // 统一：左关闭 · 右升级（与战斗结果弹窗等一致：正向操作在右）。
+    this.addBtn(panel, '关闭', 200, 84, new Color(110, 90, 150, 255), -W * 0.17, -ch * 0.34, () => this.closeBuildingUpgrade(), 30);
+    this.buUpBtn = this.addBtn(panel, '升级', 240, 84, new Color(80, 160, 110, 255), W * 0.17, -ch * 0.34, () => this.onBuildingUpgradeConfirm(), 32).node.parent;
   }
 
   private openBuildingUpgrade(buildingId: string): void {
@@ -1203,7 +1203,8 @@ export class S7DemoController extends Component {
       if (this.buUpInfoLabel) this.buUpInfoLabel.string = r.code === 'max_level' ? '已满级' : r.code === 'insufficient_star_ore' ? '星矿不够（去出战/回收攒矿）' : '暂不可升级';
       return;
     }
-    // 升级不改当前货架（商人·Ron）；只刷等级/效果/红点。新格子/免费刷新等下次刷新或本就生效。
+    // 商人升级：当场 +1 次免费刷新（一次性·Ron）。升级不改当前货架；新格子等下次刷新生效。
+    if (id === 'bld_merchant_station' && this.playerState) grantMerchantFreeRefresh(this.playerState.merchant, 1);
     this.persist();
     this.refresh();           // 主界面货币 + hub 建筑等级/红点
     this.refreshBuildingUpgrade();
@@ -2488,7 +2489,7 @@ export class S7DemoController extends Component {
       case 'bld_research_tower': return `全队血攻+${researchTeamBonusPct(level)}%`;
       case 'bld_rsv_core_gallery': return `每种星核收藏+${coreGalleryPerTypeBonusPct(level).toFixed(1)}%(×收集种数·封顶10%)`;
       case 'bld_salvage_port': return `打捞队${salvageTeamCount(level)}`;
-      case 'bld_merchant_station': return `商店槽${merchantShopSlots(level)}·免费刷新${merchantDailyFreeRefresh(level)}/天`;
+      case 'bld_merchant_station': return `商店槽${merchantShopSlots(level)}·升级送1次免费刷新`;
       case 'bld_supply_station': return '抽卡出率(待接·J2)';
       default: return '';
     }

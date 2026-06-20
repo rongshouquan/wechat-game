@@ -81,14 +81,12 @@ export function supplyGachaTopRateBonusPct(supplyLevel: number): number {
   return clampLevel(supplyLevel) * 0.5;
 }
 
-// ===== 商人小站 merchant_station：商品槽位 + 每日免费刷新 =====
+// ===== 商人小站 merchant_station：商品槽位（轮换格数·E 块用 merchantStockSlots）=====
+// 注：每日免费刷新改为"固定基础 + 升级一次性赠送"(Ron 2026-06-21)，不再随楼级算每日上限——
+//     原 merchantDailyFreeRefresh 已删；基础次数在 S7MerchantConfig.refresh.freePerCycle，升级赠送见 grantMerchantFreeRefresh。
 /** 商品槽位数：lv1=2 → 每 2 级 +1，封顶 6。未解锁=0。 */
 export function merchantShopSlots(merchantLevel: number): number {
   const lv = clampLevel(merchantLevel);
   if (lv === 0) return 0;
   return Math.min(2 + Math.floor((lv - 1) / 2), 6);
-}
-/** 每日免费刷新次数 = 商人小站楼级（Ron 2026-06-21：每升一级 +1 次/天免费刷新·lv1→1…lv10→10）。未解锁=0。 */
-export function merchantDailyFreeRefresh(merchantLevel: number): number {
-  return clampLevel(merchantLevel);
 }

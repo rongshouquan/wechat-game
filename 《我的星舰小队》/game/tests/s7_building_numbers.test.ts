@@ -16,7 +16,6 @@ import {
   CORE_GALLERY_TOTAL_BONUS_CAP_PCT,
   supplyGachaTopRateBonusPct,
   merchantShopSlots,
-  merchantDailyFreeRefresh,
 } from '../assets/scripts/core/s7/S7BuildingEffects';
 
 describe('块6b-3 建筑升级成本 S7BuildingCost', () => {
@@ -113,10 +112,6 @@ describe('块6b-3 建筑各级效果 S7BuildingEffects', () => {
     expect(merchantShopSlots(1)).toBe(2);
     expect(merchantShopSlots(3)).toBe(3);
     expect(merchantShopSlots(10)).toBe(6);
-    // 每升一级 +1 次/天免费刷新（Ron 2026-06-21·原阶梯1/2/3 改）。
-    expect(merchantDailyFreeRefresh(0)).toBe(0);
-    expect(merchantDailyFreeRefresh(1)).toBe(1);
-    expect(merchantDailyFreeRefresh(5)).toBe(5);
-    expect(merchantDailyFreeRefresh(10)).toBe(10);
+    // 商人免费刷新改"固定基础+升级一次性赠送"(Ron 2026-06-21)·merchantDailyFreeRefresh 已删。
   });
 });
