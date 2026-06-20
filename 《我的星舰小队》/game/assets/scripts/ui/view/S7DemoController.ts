@@ -19,7 +19,7 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
-import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot } from '../../config/s7/ConfigTypesS7';
+import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot, S7ShipConfig, S7PilotConfig } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel } from '../../core/s7/S7UnitLevelState';
@@ -52,6 +52,14 @@ import { coreBlocks } from '../../core/s7/S7CoreEffects';
 import {
   S7PluginInventoryState, S7OwnedPlugin, addOwnedPlugin, findOwnedPlugin,
 } from '../../core/s7/S7PluginInventory';
+// C 抽卡三池（step1 引擎已单测）：主界面「星港补给站」进抽卡界面，本控制器只做表现层薄壳。
+import { DEFAULT_S7_GACHA_CONFIG, S7GachaPoolId } from '../../core/s7/S7GachaConfig';
+import {
+  gachaDayIndex, openCategoryIds, currentExclusiveShipId, refreshGachaToDay,
+  drawGachaMany, claimExchangeBox, availableExchangeBoxes, S7GachaDrawOutcome,
+} from '../../core/s7/S7GachaService';
+import { S7AdGateway, S7MockAdAdapter } from '../../core/s7/S7AdGateway';
+import { S7AutoBattleRng } from '../../core/s7/S7AutoBattleRng';
 
 const { ccclass } = _decorator;
 
@@ -177,6 +185,24 @@ export class S7DemoController extends Component {
   private pluginInventory: S7PluginInventoryState | null = null;
   /** pluginId → 槽位类型（武器/技能/战术），init 从 plugin_config 建。 */
   private pluginSlotMap: Map<string, S7PluginSlot> = new Map();
+
+  // ===== 星港主界面 hub（顶部货币栏 + 建筑入口 + 出战）=====
+  private hubOreLabel: Label | null = null;
+  private hubCargoLabel: Label | null = null;
+  private hubTicketLabel: Label | null = null;
+  /** 中央临时提示（"即将开放/未解锁"等·自动淡出）。 */
+  private hubToastLabel: Label | null = null;
+
+  // ===== C 抽卡界面（星港补给站·三池）=====
+  private adGateway: S7AdGateway | null = null;
+  private gachaNode: Node | null = null;
+  private gachaPool: S7GachaPoolId = 'recruit';
+  private gachaInfoLabel: Label | null = null;   // 当前池说明（今日开放类别 / 当期专属 + 保底进度）
+  private gachaTicketLabel: Label | null = null;  // 补给券余量
+  private gachaResultLabel: Label | null = null;  // 本次出货明细
+  private gachaExchangeLabel: Label | null = null; // 专属池兑换进度
+  private gachaClaimBtn: Node | null = null;       // 专属池「领兑换箱」按钮（有箱才显示）
+  private gachaTabBtns: { pool: S7GachaPoolId; node: Node }[] = [];
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -252,6 +278,9 @@ export class S7DemoController extends Component {
     );
     this.offlinePending = offline.hasGains ? offline : null;
 
+    // C 抽卡：赞助补给看广告得券——首发接 mock 适配器（确定性·阶段五换真 SDK，玩法零改）。
+    this.adGateway = new S7AdGateway(new S7MockAdAdapter());
+
     this.buildUi();
     this.refresh();
     // 上线即有离线收益：在结果行提示金额，引导点上方金色「领取」。
@@ -277,6 +306,8 @@ export class S7DemoController extends Component {
       for (const s of S7_DEMO_SEED_SHIPS) grantShip(this.squad, s);
       for (const p of S7_DEMO_SEED_PILOTS) grantPilot(this.squad, p);
       for (const f of S7_DEMO_SEED_FORMATION) assignSlot(this.squad, f.slotRef, f.shipId, f.pilotId);
+      // C DEV-TEMP：顺带发一批补给券，方便一进来就能抽十连演示（正式券来源=赞助补给/商人/活动）。
+      if (this.playerState && (this.playerState.resources.supplyTicket ?? 0) < 188) this.playerState.resources.supplyTicket = 188;
     }
     // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
     // 顺序固定 → 实例号 pi1.. 确定、重置后可复现。
@@ -345,31 +376,8 @@ export class S7DemoController extends Component {
     bg.fill();
     this.node.on(Node.EventType.TOUCH_END, () => {}, this); // 吞掉空白处触摸
 
-    // 顶部标题：G0 UI 地基——锚到安全区下沿（避开刘海/胶囊菜单按钮），不再用满屏比例硬摆。
-    // 这是"所有 S7 界面顶部内容都锚安全区"的范例；A-step2 编队界面等照此摆。
-    const topY = getS7UsableBand().usableTopY;
-    this.makeLabel('《我的星舰小队》S7 演示', 42, new Color(255, 230, 120), 0, topY - 36);
-    this.makeLabel('（色块原型 · 点出战推进主线）', 26, new Color(170, 180, 200), 0, topY - 86);
-
-    // 状态行：星矿/合金/当前节点 + 旗舰等级。
-    this.statusLabel = this.makeLabel('', 34, new Color(230, 240, 255), 0, H * 0.14);
-
-    // 「出战」按钮（蓝色块）：A-step2 改为先进"战前备战界面"（编队/敌情/战力），再在那儿确认出战。
-    this.makeButton('出战', 400, 120, new Color(60, 120, 220, 255), 0, -H * 0.02, () => this.openPrebattle());
-
-    // 「升级旗舰」（绿）+「基地」（橙）并排：升旗舰=战力养成；基地=建筑养成（开建筑面板）。
-    this.makeButton('升级旗舰', 310, 104, new Color(60, 170, 110, 255), -166, -H * 0.15, () => this.onUpgradeFlagship());
-    this.makeButton('基地', 310, 104, new Color(200, 140, 60, 255), 166, -H * 0.15, () => this.openBase());
-
-    // 「领取离线收益」按钮（金色·仅有未领收益时显示）：贴合"随用随停、回来有收获"。金额在结果行显示。
-    this.offlineBtn = this.makeButton('领取离线收益', 500, 92, new Color(210, 170, 60, 255), 0, H * 0.215, () => this.onClaimOffline());
-    this.offlineBtn.active = false;
-
-    // 上一战 / 升级结果（多行）。
-    this.resultLabel = this.makeLabel('点「出战」开始', 30, new Color(180, 230, 180), 0, -H * 0.27);
-
-    // 「重置存档」小按钮（演示用：回到 n001、清零资源与等级，便于反复验证）。
-    this.makeButton('重置存档', 220, 78, new Color(120, 70, 70, 255), 0, -H * 0.37, () => this.onReset());
+    // 星港主界面 hub（顶部货币栏 + 建筑入口岛 + 活动 + 背包/邮件 + 出战）。参照基地主界面图，灰盒版色块。
+    this.buildHubHome(W, H);
 
     // 战斗演出改为"就地在备战界面演"（无独立叠加层）：演出 gfx = prebattleGfx，跳过键 = prebattleSkipBtn（见 buildPrebattlePanel）。
     this.buildBasePanel(W, H);
@@ -378,6 +386,287 @@ export class S7DemoController extends Component {
     this.buildLoadoutPanel(W, H);
     this.buildLevelSelectPanel(W, H);
     this.buildResultPopup(W, H);
+    this.buildGachaPanel(W, H); // C 抽卡界面（星港补给站进）
+  }
+
+  // ===== 星港主界面 hub =====
+
+  /** 搭星港主界面（灰盒色块·参照基地主界面图的入口布局）：顶部货币栏 + 活动 + 7 建筑入口 + 背包/邮件 + 出战 + 小 DEV 工具行。 */
+  private buildHubHome(W: number, H: number): void {
+    const band = getS7UsableBand();
+    const topY = band.usableTopY; // 安全区下沿（避刘海/胶囊）
+    const botY = band.usableBottomY;
+
+    // —— 顶部：标题 + 货币栏（星矿/星贝/补给券·设计§10.5 主界面只常驻这 3 个）——
+    this.makeLabel('⭐ 星港', 48, new Color(255, 232, 120), -W * 0.34, topY - 34);
+    const cy = topY - 108;
+    this.hubOreLabel = this.makeHubChip('星矿', -W * 0.30, cy, new Color(150, 90, 210, 255));
+    this.hubCargoLabel = this.makeHubChip('星贝', 0, cy, new Color(210, 170, 60, 255));
+    this.hubTicketLabel = this.makeHubChip('补给券', W * 0.30, cy, new Color(70, 150, 200, 255));
+
+    // —— 活动（左右两枚·占位）——
+    const ay = topY - 210;
+    this.makeHubEntry('3天行动', '即将开放', new Color(90, 160, 120, 255), -W * 0.24, ay, 290, 88, () => this.hubToast('3天行动·即将开放'));
+    this.makeHubEntry('7天扩张', '即将开放', new Color(120, 110, 180, 255), W * 0.24, ay, 290, 88, () => this.hubToast('7天扩张·即将开放'));
+
+    // —— 7 建筑入口岛（2 列网格）——
+    const gy0 = topY - 360;
+    const gap = 150;
+    const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
+    this.makeHubEntry('船坞', '即将开放', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.hubToast('船坞·即将开放'));
+    this.makeHubEntry('打捞港', '即将开放', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.hubToast('打捞港·即将开放'));
+    this.makeHubEntry('居住舱', '即将开放', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.hubToast('居住舱·即将开放'));
+    this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
+    this.makeHubEntry('商人小站', '即将开放', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.hubToast('商人小站·即将开放'));
+    this.makeHubEntry('研究塔', '未解锁', new Color(70, 78, 96, 255), rx, gy0 - gap * 2, ew, eh, () => this.hubToast('研究塔·未解锁'));
+    this.makeHubEntry('星核展厅', '未解锁', new Color(70, 78, 96, 255), 0, gy0 - gap * 3, ew, eh, () => this.hubToast('星核展厅·未解锁'));
+
+    // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
+    this.makeHubEntry('背包', '即将开放', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.hubToast('背包·即将开放'));
+    this.makeHubEntry('邮件', '即将开放', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.hubToast('邮件·即将开放'));
+    this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
+
+    // —— 中央临时提示（默认空）——
+    this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
+
+    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；离线收益领取也并在此带出金额）——
+    this.makeButton('升级旗舰', 180, 60, new Color(60, 150, 100, 255), -W * 0.30, botY + 56, () => this.onUpgradeFlagship());
+    this.offlineBtn = this.makeButton('领离线', 180, 60, new Color(205, 165, 60, 255), 0, botY + 56, () => this.onClaimOffline());
+    this.offlineBtn.active = false;
+    this.makeButton('重置存档', 180, 60, new Color(120, 70, 70, 255), W * 0.30, botY + 56, () => this.onReset());
+    // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
+    this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
+    this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
+  }
+
+  /** 货币 chip：圆角底 + 「名 值」标签。返回值标签（refresh 更新数字）。 */
+  private makeHubChip(name: string, x: number, y: number, color: Color): Label {
+    const node = new Node('S7HubChip'); node.layer = this.node.layer; this.node.addChild(node); node.setPosition(x, y, 0);
+    const g = node.addComponent(Graphics);
+    g.fillColor = new Color(36, 42, 60, 235); g.roundRect(-110, -34, 220, 68, 16); g.fill();
+    g.fillColor = color; g.roundRect(-110, -34, 12, 68, 6); g.fill(); // 左侧色条区分币种
+    const lab = new Node('v'); lab.layer = this.node.layer; node.addChild(lab); lab.setPosition(8, 0, 0);
+    const l = lab.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = new Color(235, 240, 250); l.string = `${name}\n0`;
+    return l;
+  }
+
+  /** 建筑/活动入口块：圆角底 + 名 + 状态子标签 + 点击。 */
+  private makeHubEntry(name: string, sub: string, color: Color, x: number, y: number, w: number, h: number, onTap: () => void): Node {
+    const node = new Node('S7HubEntry'); node.layer = this.node.layer; this.node.addChild(node); node.setPosition(x, y, 0);
+    node.addComponent(UITransform).setContentSize(w, h);
+    const g = node.addComponent(Graphics);
+    g.fillColor = color; g.roundRect(-w / 2, -h / 2, w, h, 14); g.fill();
+    const nameN = new Node('n'); nameN.layer = this.node.layer; node.addChild(nameN); nameN.setPosition(0, h * 0.12, 0);
+    const nl = nameN.addComponent(Label); nl.fontSize = Math.min(36, Math.floor(h * 0.34)); nl.lineHeight = nl.fontSize + 6; nl.color = new Color(255, 255, 255); nl.string = name;
+    const subN = new Node('s'); subN.layer = this.node.layer; node.addChild(subN); subN.setPosition(0, -h * 0.26, 0);
+    const sl = subN.addComponent(Label); sl.fontSize = 22; sl.lineHeight = 26; sl.color = new Color(225, 235, 255, 200); sl.string = sub;
+    node.on(Node.EventType.TOUCH_END, onTap, this);
+    return node;
+  }
+
+  /** 中央临时提示：显示一行字、约 1.4 秒后自动清空。 */
+  private hubToast(text: string): void {
+    if (!this.hubToastLabel) return;
+    this.hubToastLabel.string = text;
+    this.unschedule(this.clearHubToast);
+    this.scheduleOnce(this.clearHubToast, 1.4);
+  }
+  private clearHubToast = (): void => { if (this.hubToastLabel) this.hubToastLabel.string = ''; };
+
+  // ===== C 抽卡界面（星港补给站·三池：招募/整备/专属）=====
+
+  /** 搭抽卡浮层（默认隐藏）：标题/补给券 + 三池切页 + 当前池说明+保底 + 专属兑换 + 出货明细 + 单抽/十连 + 赞助补给 + 返回。 */
+  private buildGachaPanel(W: number, H: number): void {
+    const panel = new Node('S7Gacha'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(16, 20, 32, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 满屏浮层吞触摸（用「返回」键关）
+    panel.active = false;
+    this.gachaNode = panel;
+
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+
+    this.mkPanelLabel(panel, '星港补给站', 40, new Color(255, 232, 130), -W * 0.26, topY - 30);
+    this.gachaTicketLabel = this.mkPanelLabel(panel, '补给券 0', 30, new Color(120, 200, 240), W * 0.26, topY - 30);
+
+    // 三池切页。
+    const tabY = topY - 110;
+    this.gachaTabBtns = [];
+    this.mkGachaTab(panel, 'recruit', '招募池\n驾驶员', -W * 0.30, tabY);
+    this.mkGachaTab(panel, 'refit', '整备池\n星舰', 0, tabY);
+    this.mkGachaTab(panel, 'exclusive', '专属池\n星舰', W * 0.30, tabY);
+
+    // 当前池说明 + 保底进度（多行）。
+    this.gachaInfoLabel = this.mkPanelLabel(panel, '', 28, new Color(220, 230, 245), 0, topY - 230);
+    // 专属池兑换进度 + 领箱按钮（仅专属池显示）。
+    this.gachaExchangeLabel = this.mkPanelLabel(panel, '', 26, new Color(255, 215, 140), 0, topY - 330);
+    const claim = this.addBtn(panel, '领兑换箱', 280, 80, new Color(220, 150, 60, 255), 0, topY - 400, () => this.onGachaClaim(), 30);
+    this.gachaClaimBtn = claim.node.parent; // addBtn 返回 Label，其父节点 = 按钮节点
+    if (this.gachaClaimBtn) this.gachaClaimBtn.active = false;
+
+    // 出货明细（多行·居中偏下）。
+    this.gachaResultLabel = this.mkPanelLabel(panel, '点下方抽卡', 26, new Color(180, 230, 190), 0, -H * 0.04);
+
+    // 单抽 / 十连。
+    this.addBtn(panel, '单抽\n(1券)', 260, 110, new Color(70, 130, 200, 255), -W * 0.22, botY + 230, () => this.onGachaDraw(1), 32);
+    this.addBtn(panel, '十连\n(10券)', 260, 110, new Color(80, 160, 120, 255), W * 0.22, botY + 230, () => this.onGachaDraw(10), 32);
+    // 赞助补给（看广告得券）。
+    this.addBtn(panel, '赞助补给·看广告得补给券', 460, 80, new Color(200, 120, 70, 255), 0, botY + 120, () => this.onGachaSponsorAd(), 28);
+    // 返回星港。
+    this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 36, () => this.closeGacha(), 30);
+  }
+
+  /** 在某浮层下加一个标签（随浮层显隐）。 */
+  private mkPanelLabel(parent: Node, text: string, fontSize: number, color: Color, x: number, y: number): Label {
+    const n = new Node('lab'); n.layer = this.node.layer; parent.addChild(n); n.setPosition(x, y, 0);
+    const l = n.addComponent(Label); l.fontSize = fontSize; l.lineHeight = Math.round(fontSize * 1.3); l.color = color; l.string = text;
+    return l;
+  }
+
+  /** 抽卡切页 tab（存 node+gfx 供高亮重绘）。 */
+  private mkGachaTab(parent: Node, pool: S7GachaPoolId, text: string, x: number, y: number): void {
+    const n = new Node('tab'); n.layer = this.node.layer; parent.addChild(n); n.setPosition(x, y, 0);
+    n.addComponent(UITransform).setContentSize(200, 92);
+    n.addComponent(Graphics);
+    const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
+    const l = ln.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = new Color(255, 255, 255); l.string = text;
+    n.on(Node.EventType.TOUCH_END, () => this.switchGachaPool(pool), this);
+    this.gachaTabBtns.push({ pool, node: n });
+    this.paintGachaTab(n, pool === this.gachaPool);
+  }
+  private paintGachaTab(n: Node, selected: boolean): void {
+    const g = n.getComponent(Graphics); if (!g) return;
+    g.clear();
+    g.fillColor = selected ? new Color(90, 150, 220, 255) : new Color(48, 56, 76, 255);
+    g.roundRect(-100, -46, 200, 92, 12); g.fill();
+  }
+
+  private openGacha(): void {
+    if (!this.gachaNode || !this.playerState) return;
+    // 进界面先刷新到当前日（专属轮换可能在离开期间发生→忘领满格走邮件补发·零头清零）。
+    refreshGachaToDay(this.playerState.gacha, this.playerState.mailbox, DEFAULT_S7_GACHA_CONFIG, gachaDayIndex(Date.now()), Date.now());
+    this.persist();
+    this.gachaNode.active = true;
+    this.gachaResultLabel && (this.gachaResultLabel.string = '点下方抽卡');
+    this.refreshGacha();
+  }
+  private closeGacha(): void { if (this.gachaNode) this.gachaNode.active = false; }
+
+  private switchGachaPool(pool: S7GachaPoolId): void {
+    this.gachaPool = pool;
+    for (const t of this.gachaTabBtns) this.paintGachaTab(t.node, t.pool === pool);
+    if (this.gachaResultLabel) this.gachaResultLabel.string = '点下方抽卡';
+    this.refreshGacha();
+  }
+
+  /** 刷新抽卡界面信息（当前池说明 + 保底进度 + 专属兑换 + 补给券）。 */
+  private refreshGacha(): void {
+    if (!this.playerState) return;
+    const cfg = DEFAULT_S7_GACHA_CONFIG;
+    const gacha = this.playerState.gacha;
+    const day = gachaDayIndex(Date.now());
+    const pool = this.gachaPool;
+    if (this.gachaTicketLabel) this.gachaTicketLabel.string = `补给券 ${Math.floor(this.session?.resources.supplyTicket ?? 0)}`;
+
+    let info = '';
+    if (pool === 'exclusive') {
+      const exId = currentExclusiveShipId(cfg, day);
+      info = `专属池（常驻全部非专属星舰）\n当期专属：${exId ? this.unitName('ship', exId) : '—'}（每${cfg.rotationDays}天轮换）`;
+    } else {
+      const cats = pool === 'recruit' ? cfg.recruitCategories : cfg.refitCategories;
+      const openIds = openCategoryIds(cfg, pool, day);
+      const names = openIds.map((id) => cats.find((c) => c.categoryId === id)?.name ?? id).join('、');
+      const what = pool === 'recruit' ? '驾驶员' : '星舰';
+      info = `招募池（${what}·每天开2类·3天一轮）\n今日开放：${names}`;
+    }
+    info += `\n阶级地板保底 ${gacha.pity[pool]}/${cfg.floorPityDraws}（满必出≥A/3★）`;
+    if (this.gachaInfoLabel) this.gachaInfoLabel.string = info;
+
+    // 专属兑换进度 + 领箱按钮。
+    if (pool === 'exclusive') {
+      const boxes = availableExchangeBoxes(gacha, cfg);
+      if (this.gachaExchangeLabel) this.gachaExchangeLabel.string = `兑换进度 ${gacha.exchangeProgress % cfg.exchangeThreshold}/${cfg.exchangeThreshold}（满兑当期专属A级）`;
+      if (this.gachaClaimBtn) {
+        this.gachaClaimBtn.active = boxes > 0;
+        const cl = this.gachaClaimBtn.getComponentInChildren(Label);
+        if (cl) cl.string = boxes > 1 ? `领兑换箱 ×${boxes}` : '领兑换箱';
+      }
+    } else {
+      if (this.gachaExchangeLabel) this.gachaExchangeLabel.string = '';
+      if (this.gachaClaimBtn) this.gachaClaimBtn.active = false;
+    }
+  }
+
+  /** 抽卡（count=1 单抽 / 10 十连）：消耗补给券、出货落 squad/碎片、刷新。 */
+  private onGachaDraw(count: number): void {
+    if (!this.playerState || !this.session) return;
+    const avail = Math.floor(this.session.resources.supplyTicket ?? 0);
+    if (avail <= 0) { if (this.gachaResultLabel) this.gachaResultLabel.string = '补给券不足！点「赞助补给」看广告得券'; return; }
+    const now = Date.now();
+    const rng = new S7AutoBattleRng(`gacha_${this.gachaPool}_${now}_${avail}`);
+    const r = drawGachaMany(
+      this.playerState.gacha, this.squad!, this.playerState.exclusiveShards, this.playerState.mailbox,
+      DEFAULT_S7_GACHA_CONFIG, rng, this.gachaPool, count, avail, gachaDayIndex(now), now,
+    );
+    this.session.resources.supplyTicket = avail - r.ticketsSpent; // 按实际消耗扣券
+    // 出货明细。
+    if (this.gachaResultLabel) {
+      const lines = r.outcomes.map((o) => this.gachaOutcomeText(o));
+      let txt = r.outcomes.length > 1 ? `本次${r.outcomes.length}连：\n` : '';
+      txt += lines.join('\n');
+      if (r.ticketsSpent < count) txt += `\n（补给券只够抽${r.ticketsSpent}次）`;
+      this.gachaResultLabel.string = txt || '出货异常（配置空池？）';
+    }
+    this.persist();
+    this.refresh();      // 顶部货币栏（券变了）
+    this.refreshGacha(); // 池说明/保底/兑换
+  }
+
+  private gachaOutcomeText(o: S7GachaDrawOutcome): string {
+    const name = this.unitName(o.unitKind, o.unitId);
+    switch (o.result) {
+      case 'new_body': return `${name} 新到手!`;
+      case 'dup_shards': return `${name} 重复→碎片+${o.shardsGained}`;
+      case 'floor_body': return `[保底]${name} 新到手!(A级)`;
+      case 'floor_shards': return `[保底]${name} 已有→碎片+${o.shardsGained}`;
+      default: return name;
+    }
+  }
+
+  /** 领专属池兑换箱（一次领光·×2叠领）：发当期专属本体 / 已有则溢出折碎片。 */
+  private onGachaClaim(): void {
+    if (!this.playerState) return;
+    const res = claimExchangeBox(this.playerState.gacha, this.squad!, this.playerState.exclusiveShards, DEFAULT_S7_GACHA_CONFIG, gachaDayIndex(Date.now()), true);
+    if (this.gachaResultLabel) {
+      if (!res.ok) this.gachaResultLabel.string = res.reason === 'no_box' ? '还没有可领的兑换箱' : '当期无专属';
+      else if (res.result === 'exclusive_body') this.gachaResultLabel.string = `兑换箱：${this.unitName('ship', res.exclusiveShipId)} 到手!${res.shardsGained > 0 ? ` +碎片${res.shardsGained}` : ''}`;
+      else this.gachaResultLabel.string = `兑换箱：已拥有→碎片+${res.shardsGained}`;
+    }
+    this.persist();
+    this.refreshGacha();
+  }
+
+  /** 赞助补给：看广告（mock）得补给券。首发无每日上限（数值/上限留第二块）。 */
+  private onGachaSponsorAd(): void {
+    if (!this.adGateway || !this.session) return;
+    const GRANT = 10; // v0.1 占位：每次赞助补给得 10 券（上限/数值第二块）
+    this.adGateway.show('sponsor_supply').then((res) => {
+      if (!res.ok) { if (this.gachaResultLabel) this.gachaResultLabel.string = '广告没看完，没得到补给券'; return; }
+      this.session!.resources.supplyTicket = Math.floor(this.session!.resources.supplyTicket ?? 0) + GRANT;
+      if (this.gachaResultLabel) this.gachaResultLabel.string = `赞助补给 +${GRANT} 补给券！`;
+      this.persist();
+      this.refresh();
+      this.refreshGacha();
+    }).catch(() => { if (this.gachaResultLabel) this.gachaResultLabel.string = '广告加载失败'; });
+  }
+
+  /** 单位 id → 中文名（取配置·缺失回退 id）。 */
+  private unitName(kind: 'ship' | 'pilot', id: string): string {
+    if (!this.runtime) return id;
+    if (kind === 'ship') return this.runtime.getById<S7ShipConfig>('ship_config', id)?.name ?? id;
+    return this.runtime.getById<S7PilotConfig>('pilot_config', id)?.name ?? id;
   }
 
   /** 战斗结果弹窗（胜/败统一·居中对话框+半屏遮罩）：v1.0 §4.5。背景遮罩半透明→保留刚结束的战斗画面。
@@ -1650,9 +1939,19 @@ export class S7DemoController extends Component {
     const effHp = Math.round(this.flagshipBaseHp * ratio);
     const effAtk = Math.round(this.flagshipBaseAtk * ratio);
     this.statusLabel.string =
-      `星矿 ${ore}    合金 ${alloy}\n当前节点 ${this.session.currentNodeId}    已通关 ${cleared}\n旗舰 ${S7_DEMO_FLAGSHIP_ID} Lv.${flagLv}  血${effHp} 攻${effAtk}`;
+      `[DEV] 合金 ${alloy} · 节点 ${this.session.currentNodeId} · 通关 ${cleared} · 旗舰Lv.${flagLv} 血${effHp}攻${effAtk}`;
+    // 顶部货币栏（星矿/星贝/补给券）。
+    if (this.hubOreLabel) this.hubOreLabel.string = `星矿\n${this.fmtNum(ore)}`;
+    if (this.hubCargoLabel) this.hubCargoLabel.string = `星贝\n${this.fmtNum(Math.floor(r.starCargo ?? 0))}`;
+    if (this.hubTicketLabel) this.hubTicketLabel.string = `补给券\n${this.fmtNum(Math.floor(r.supplyTicket ?? 0))}`;
     // C：有未领离线收益才显示金色「领取」按钮。
     if (this.offlineBtn) this.offlineBtn.active = this.offlinePending !== null;
+  }
+
+  /** 千分位格式化（避免 locale 差异·手写分组）。 */
+  private fmtNum(n: number): string {
+    const s = String(Math.max(0, Math.floor(n)));
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
   /** 把会话当前态写回 S7 存档域并落盘（独立 key，不动流程版存档）。 */
