@@ -103,6 +103,21 @@ describe('D-step1 · 收菜结算', () => {
     }
   });
 
+  it('插件每品质单次≤1：普通/稀有 24h 长趟也不会刷出多个同品质插件（Ron 反馈的回归守门）', () => {
+    const countQ = (rewards: ReturnType<typeof rollSalvageRewards>, q: string) =>
+      rewards.filter((x) => x.kind === 'plugin' && (x as any).quality === q).length;
+    for (let i = 0; i < 40; i += 1) {
+      // 普通 24h（多掷骰）→ 精良 ≤1
+      expect(countQ(rollSalvageRewards(DEFAULT_S7_SALVAGE_CONFIG, 'common', 24, new S7AutoBattleRng(`c${i}`)), 'fine')).toBeLessThanOrEqual(1);
+      // 稀有 24h → 优秀 ≤1
+      expect(countQ(rollSalvageRewards(DEFAULT_S7_SALVAGE_CONFIG, 'rare', 24, new S7AutoBattleRng(`r${i}`)), 'superior')).toBeLessThanOrEqual(1);
+      // 史诗 24h → 传奇 ≤1 且 优秀 ≤1（同档可各 1，但同品质不重复）
+      const epic = rollSalvageRewards(DEFAULT_S7_SALVAGE_CONFIG, 'epic', 24, new S7AutoBattleRng(`e${i}`));
+      expect(countQ(epic, 'legendary')).toBeLessThanOrEqual(1);
+      expect(countQ(epic, 'superior')).toBeLessThanOrEqual(1);
+    }
+  });
+
   it('单次≤1：居民/工人/货舱/传奇插件/完整星舰 一趟最多各 1（构造高权重必中验证去重）', () => {
     // 专门配一档：发现表只有 1 个 cap1 居民项 + 大量掷骰 → 应只出 1 个居民。
     const c = cfg({

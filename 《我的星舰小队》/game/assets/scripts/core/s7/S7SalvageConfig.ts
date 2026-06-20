@@ -56,6 +56,10 @@ export interface S7SalvageConfig {
 
 // ===== 默认配置（v0.1 占位探针·刻意好测/好演示·第二块校准）=====
 
+// 插件按档保留三品质（普通→精良 / 稀有→优秀 / 史诗→传奇+优秀·§10.2），
+// 但**每个品质单次打捞最多 1 个**（Ron 拍板 2026-06-20：避免长趟刷出多个同品质插件）——
+// 各插件发现项均 cap1，去重 key=`plugin:<品质>`，故同档可出"1传奇+1优秀"但同品质不重复。
+
 const R = (resourceId: string, amount: number): S7SalvageReward => ({ kind: 'resource', resourceId, amount });
 
 export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
@@ -71,7 +75,7 @@ export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
       guaranteedExtra: [],
       baseRolls: 1, perHourRolls: 0.3,
       discovery: [
-        { reward: { kind: 'plugin', quality: 'fine' }, weight: 30 },
+        { reward: { kind: 'plugin', quality: 'fine' }, weight: 30, cap1: true }, // 精良·单次≤1
         { reward: R('shipBlueprint', 3), weight: 25 },   // 另 1 种通用碎片（舰）
         { reward: R('pilotShardUniversal', 3), weight: 25 }, // 另 1 种通用碎片（员）
         { reward: R('supplyTicket', 2), weight: 20 },
@@ -87,7 +91,7 @@ export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
       guaranteedExtra: [R('coreFrag', 5)], // 稀有保底 1 份稀有干货（星核碎片/优秀插件随一→占位给星核碎片）
       baseRolls: 2, perHourRolls: 0.35,
       discovery: [
-        { reward: { kind: 'plugin', quality: 'superior' }, weight: 28 },
+        { reward: { kind: 'plugin', quality: 'superior' }, weight: 28, cap1: true }, // 优秀·单次≤1
         { reward: R('shipBlueprint', 6), weight: 22 },
         { reward: R('pilotShardUniversal', 6), weight: 22 },
         { reward: R('coreFrag', 6), weight: 18 },
@@ -104,8 +108,8 @@ export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
       guaranteedExtra: [R('coreFrag', 10), R('starGem', 5)], // 史诗保底：星核碎片小笔 + 星空宝石小笔
       baseRolls: 3, perHourRolls: 0.4,
       discovery: [
-        { reward: { kind: 'plugin', quality: 'legendary' }, weight: 14, cap1: true }, // 传奇仅史诗·单次≤1
-        { reward: { kind: 'plugin', quality: 'superior' }, weight: 20 },
+        { reward: { kind: 'plugin', quality: 'legendary' }, weight: 14, cap1: true }, // 传奇·单次≤1（仅史诗）
+        { reward: { kind: 'plugin', quality: 'superior' }, weight: 20, cap1: true }, // 优秀·单次≤1
         { reward: R('shipBlueprint', 12), weight: 18 },
         { reward: R('pilotShardUniversal', 12), weight: 18 },
         { reward: R('coreFrag', 12), weight: 16 },
