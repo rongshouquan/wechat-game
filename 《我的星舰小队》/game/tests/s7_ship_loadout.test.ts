@@ -22,6 +22,8 @@ import {
   unequipPlugin,
   equipCore,
   unequipCore,
+  equipPilot,
+  unequipPilot,
 } from '../assets/scripts/core/s7/S7ShipLoadout';
 import { S7PluginSlot } from '../assets/scripts/config/s7/ConfigTypesS7';
 import {
@@ -168,6 +170,33 @@ describe('S7ShipLoadout · 星核装/卸（按船）', () => {
     expect(unequipCore(s, 'shp01')).toEqual({ ok: true });
     expect(lo(s, 'shp01').coreId).toBeNull();
     expect(unequipCore(s, 'shp01')).toEqual({ ok: true });
+  });
+});
+
+describe('S7ShipLoadout · 驾驶员装/卸（按船·与插件/星核对称）', () => {
+  it('配驾驶员：not_owned_ship / not_owned_pilot / 成功', () => {
+    const s = squad2();
+    expect(equipPilot(s, 'shp99', 'pil01')).toEqual({ ok: false, code: 'not_owned_ship' });
+    expect(equipPilot(s, 'shp01', 'pilX')).toEqual({ ok: false, code: 'not_owned_pilot' });
+    expect(equipPilot(s, 'shp01', 'pil01')).toEqual({ ok: true });
+    expect(lo(s, 'shp01').pilotId).toBe('pil01');
+  });
+
+  it('一员只驾一船：配到第二艘 → 自动从第一艘卸下（§4.4）', () => {
+    const s = squad2();
+    equipPilot(s, 'shp01', 'pil01');
+    expect(equipPilot(s, 'shp02', 'pil01')).toEqual({ ok: true });
+    expect(lo(s, 'shp01').pilotId).toBeNull();
+    expect(lo(s, 'shp02').pilotId).toBe('pil01');
+  });
+
+  it('卸驾驶员：not_owned_ship / 置空 / 幂等', () => {
+    const s = squad2();
+    equipPilot(s, 'shp01', 'pil01');
+    expect(unequipPilot(s, 'shp99')).toEqual({ ok: false, code: 'not_owned_ship' });
+    expect(unequipPilot(s, 'shp01')).toEqual({ ok: true });
+    expect(lo(s, 'shp01').pilotId).toBeNull();
+    expect(unequipPilot(s, 'shp01')).toEqual({ ok: true });
   });
 });
 

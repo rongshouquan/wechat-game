@@ -10,7 +10,7 @@
 // 解耦：槽位类型(weapon/skill/tactical)是 plugin_config 的字段——core 层不读配置，由调用方注入 pluginSlotOf 解析器
 //   (pluginId → slotTag)，本模块只用它判"同类槽"。所有操作「先校验、后修改」：校验不过不改任何状态。
 
-import { S7SquadState, S7Loadout, coreOwnedCount, isShipOwned } from './S7Squad';
+import { S7SquadState, S7Loadout, coreOwnedCount, isShipOwned, isPilotOwned, setShipPilot } from './S7Squad';
 import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 import { S7PluginSlot } from '../../config/s7/ConfigTypesS7';
 
@@ -22,6 +22,7 @@ export type S7PluginSlotResolver = (pluginId: string) => S7PluginSlot | undefine
 
 export type S7LoadoutErrorCode =
   | 'not_owned_ship'     // 未拥有该船（不能装配）
+  | 'not_owned_pilot'    // 驾驶员未拥有
   | 'not_owned_plugin'   // 插件实例不在库存
   | 'unknown_plugin'     // 实例的 pluginId 在 plugin_config 查不到槽位
   | 'slot_type_occupied' // 同类槽已被别的插件占（不堆叠）
@@ -126,5 +127,24 @@ export function unequipCore(squad: S7SquadState, shipId: string): S7LoadoutResul
   if (!isShipOwned(squad, shipId)) return { ok: false, code: 'not_owned_ship' };
   const l = squad.shipLoadouts[shipId];
   if (l) l.coreId = null;
+  return { ok: true };
+}
+
+/**
+ * 给某船配驾驶员（统一装配口·与插件/星核对称）。校验拥有船+拥有员；
+ * 唯一性：一员只驾一船 → 配到本船时从别船自动卸下（setShipPilot 处理）。
+ */
+export function equipPilot(squad: S7SquadState, shipId: string, pilotId: string): S7LoadoutResult {
+  if (!isShipOwned(squad, shipId)) return { ok: false, code: 'not_owned_ship' };
+  if (!isPilotOwned(squad, pilotId)) return { ok: false, code: 'not_owned_pilot' };
+  setShipPilot(squad, shipId, pilotId);
+  return { ok: true };
+}
+
+/** 从某船卸下驾驶员（未拥有船 → not_owned_ship；否则置空·幂等）。 */
+export function unequipPilot(squad: S7SquadState, shipId: string): S7LoadoutResult {
+  if (!isShipOwned(squad, shipId)) return { ok: false, code: 'not_owned_ship' };
+  const l = squad.shipLoadouts[shipId];
+  if (l) l.pilotId = null;
   return { ok: true };
 }

@@ -14,6 +14,10 @@ import {
   buildSquadLineup,
   getShipLoadout,
   getShipPilot,
+  isShipDeployed,
+  findPilotShip,
+  findCoreShip,
+  findPluginShip,
   S7SquadState,
   S7_MAX_FORMATION_SLOTS,
 } from '../assets/scripts/core/s7/S7Squad';
@@ -156,6 +160,24 @@ describe('S7Squad · 拥有与编队操作', () => {
   it('normalize 非对象 → 默认空', () => {
     expect(normalizeS7Squad(null)).toEqual(createDefaultS7Squad());
     expect(normalizeS7Squad(42)).toEqual(createDefaultS7Squad());
+  });
+
+  it('isShipDeployed / findPilotShip / findCoreShip / findPluginShip：查装备装在哪艘船', () => {
+    const s = squadOf({
+      formation: [{ slotRef: 'p0c2', shipId: 'shp01' }],
+      shipLoadouts: {
+        shp01: { pilotId: 'pil01', coreId: 'core07', pluginInstanceIds: ['pi3'] },
+        shp02: { pilotId: 'pil02', coreId: null, pluginInstanceIds: [] }, // shp02 未上场但记忆着驾驶员
+      },
+    });
+    expect(isShipDeployed(s, 'shp01')).toBe(true);
+    expect(isShipDeployed(s, 'shp02')).toBe(false);
+    expect(findPilotShip(s, 'pil02')).toBe('shp02'); // 下场船也能查到
+    expect(findPilotShip(s, 'pilX')).toBeNull();
+    expect(findCoreShip(s, 'core07')).toBe('shp01');
+    expect(findCoreShip(s, 'coreX')).toBeNull();
+    expect(findPluginShip(s, 'pi3')).toBe('shp01');
+    expect(findPluginShip(s, 'pi999')).toBeNull();
   });
 });
 

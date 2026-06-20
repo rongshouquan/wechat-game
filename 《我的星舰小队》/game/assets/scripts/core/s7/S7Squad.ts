@@ -69,8 +69,9 @@ function ensureLoadout(squad: S7SquadState, shipId: string): S7Loadout {
   return l;
 }
 
-/** 给某船配驾驶员（唯一性：先把该驾驶员从别船卸下，再配到本船）。pilotId=null 仅卸下本船。 */
-function setShipPilot(squad: S7SquadState, shipId: string, pilotId: string | null): void {
+/** 给某船配驾驶员（唯一性：先把该驾驶员从别船卸下，再配到本船）。pilotId=null 仅卸下本船。
+ *  只动数据、不校验拥有（拥有校验在 S7ShipLoadout.equipPilot / buildSquadLineup）。 */
+export function setShipPilot(squad: S7SquadState, shipId: string, pilotId: string | null): void {
   if (pilotId) {
     for (const [sid, l] of Object.entries(squad.shipLoadouts)) {
       if (sid !== shipId && l.pilotId === pilotId) l.pilotId = null; // 一员只驾一船·从别船自动卸下
@@ -184,6 +185,26 @@ export function grantCore(squad: S7SquadState, coreId: string, n = 1): void {
 export const isShipOwned = (squad: S7SquadState, shipId: string): boolean => squad.ownedShips.includes(shipId);
 export const isPilotOwned = (squad: S7SquadState, pilotId: string): boolean => squad.ownedPilots.includes(pilotId);
 export const coreOwnedCount = (squad: S7SquadState, coreId: string): number => squad.ownedCores[coreId] ?? 0;
+
+/** 某星舰当前是否在编队里（上场）。 */
+export const isShipDeployed = (squad: S7SquadState, shipId: string): boolean => squad.formation.some((s) => s.shipId === shipId);
+
+// ===== "某装备当前装在哪艘船"查询（跟船记忆·装配界面用·没装返回 null）=====
+/** 某驾驶员配在哪艘船。 */
+export function findPilotShip(squad: S7SquadState, pilotId: string): string | null {
+  for (const [sid, l] of Object.entries(squad.shipLoadouts)) if (l.pilotId === pilotId) return sid;
+  return null;
+}
+/** 某星核装在哪艘船。 */
+export function findCoreShip(squad: S7SquadState, coreId: string): string | null {
+  for (const [sid, l] of Object.entries(squad.shipLoadouts)) if (l.coreId === coreId) return sid;
+  return null;
+}
+/** 某插件实例装在哪艘船。 */
+export function findPluginShip(squad: S7SquadState, instanceId: string): string | null {
+  for (const [sid, l] of Object.entries(squad.shipLoadouts)) if (l.pluginInstanceIds.includes(instanceId)) return sid;
+  return null;
+}
 
 // ===== 编队操作 =====
 
