@@ -12,7 +12,7 @@
   - **星港主界面 hub ✅(灰盒)**：参照基地主界面图——顶部货币栏(星矿/星贝/补给券·锚安全区)+ 7 建筑入口岛 + 3天/7天活动 + 背包/邮件 + **出战→最新关备战(真通)** + **星港补给站→抽卡界面(真通)**；其余入口点了弹"即将开放"/"未解锁"(后续块逐个填)。底部留小 DEV 行(升级旗舰/领离线/重置)。
   - **C 抽卡界面 step2 ✅(灰盒)**：三池切页(左→中→右=招募补给/专属补给/舰船补给·Ron 命名)+当前池说明(今日开放类别/当期专属)+保底进度 + 单抽/十连(扣补给券·**券不足该档变灰·点了不抽**)+出货标阶级/星级/专属(专属恒**A级·专属**·Ron 拍板§10.1) + 专属池兑换进度+领兑换箱(×2) + 赞助补给(看广告 mock 得券)；进/出刷新走轮换补发。
   - **D 信标打捞 ✅(灰盒·引擎+打捞港界面)**：引擎(`core/s7/S7Salvage*`)选档→占打捞队位(=打捞港等级)→选时长2/8/24h→真实时钟异步等→收菜结算(必得软货币+1种通用碎片随机其一+概率发现分层·随时长加掷骰·单次≤1·资源合并)+广告加速(按档减时·每日≤3/高级5·跨天重置)+经济护栏(无完整星核·完整星舰=C阶已有则折碎片15)；打捞港界面=选档+选时长+开打+任务列表(倒计时/收菜/看广告加速/DEV秒成)+收菜入账(资源/碎片/本体/插件/货舱/人口)。
-  - **E 商人小站 ✅(灰盒·引擎+界面)**：引擎(`core/s7/S7Merchant*`)上货(固定格信标×3/通用碎片×2/精良优秀插件/限量星核碎片/补给券·稀有格随商人等级1→3+lv门槛)+买(扣星贝/周期购买上限·跨刷新保留防套利)+刷新(免费/付费递增/广告·各周期上限)+每日自动刷新+回收(信标/溢出星矿→星贝·折损·插件复用`recyclePlugin`)；界面=刷新行+货架列表(名/价/剩余+买·买不起变灰)+回收区(星矿/信标/闲置插件)。**接通券/信标来源(喂抽卡/打捞)+插件回收。**
+  - **E 商人小站 ✅(灰盒·引擎+界面·Ron 2026-06-20 调整为轮换制)**：引擎(`core/s7/S7Merchant*`)**轮换制上货**(常驻补给券 + 轮换格随商人等级5→8·从池随机铺·刷新换一批·lv门槛如星空宝石lv3)+买(扣星贝/周期购买上限·跨刷新保留防套利)+刷新(免费+广告·**去付费**)+每日自动刷新+回收(信标/溢出星矿→星贝·折损·**随商人等级陆续解锁**:星矿lv2/信标lv4)；界面=刷新行(免费/广告)+货架列表(名/价/剩余+买·买不起变灰)+回收区(按等级解锁)+DEV升级键。**接通券/信标来源(喂抽卡/打捞)。** 顺修 onReset 漏重置 gacha/salvage/merchant 的 bug。
   - **93 套件 / 1011 测全绿、一路零回归；S7 存档 v15（C gacha·D salvage·E merchant·旧档 normalize 自动迁移·persist 显式列全防漏字段·迁移+往返测试守门）。** 新代码 `tsc` 零新增类型错(仅 2 既有建筑 resources 类型告警·与本次无关)。
 - **合规**：纯广告**不需版号**（已确认）；剩 软著/备案/隐私/防沉迷 常规项（Ron 走流程，尽早办）。
 
@@ -41,13 +41,14 @@
 - **DEV-TEMP（待删）**：① 开局发信标(普8/稀5/史3·在 `ensureDemoSquadSeeded`)；② 每个进行中任务的「秒成」按钮(真机不可能等 2-24h·仅供灰盒验收菜)。
 - **广告**：加速走 `S7AdGateway('salvage_speedup')` mock；赞助补给(抽卡)走 `sponsor_supply` mock。每日上限数值=第二块。
 
-### 📌 E 商人小站 交接要点（接手前必看）
-- **引擎 `core/s7/S7Merchant*`(纯 TS·可测)**：`refreshMerchantToCycle`(进店/加载时调·跨天重铺+清购买量/计数)、`buyMerchantOffer`(扣星贝+记购买量·返回 item 由应用侧 grant)、`refreshMerchantShop`(免费/付费/广告刷·各周期上限)、`recycleBeacon`/`recycleStarOre`(→星贝·折损)、`offerRemaining`/`rareSlotCount`。配置 `S7MerchantConfig` 全 v0.1 占位(定价/每日上限/稀有率/折损·第二块校准；现有 shop_param 等表留第二块迁)。
-- **稀有格数 = 商人小站(`bld_merchant_station`)等级**(`rareSlotCount`·lv1→1/lv4→2/lv7→3)；星空宝石 lv3 起才刷得出(`minMerchantLevel`)。demo 默认 lv1。
-- **防套利**：周期购买上限 `dailyBought` **跨手动/广告刷新保留**、只跨天重置；刷新次数各有周期上限；回收折损 + 零头留着；不可回收表(本引擎不提供本体/星核/碎片回收·只信标/星矿/插件)。
-- **买入入账在控制器 `applyShopItem`**：资源→钱包；插件→`addOwnedPlugin`(挑 pluginId·品质来自商品)。插件回收复用 `recyclePlugin`(回收第一个"未装备到任何船"的闲置插件)。
-- **DEV-TEMP（待删）**：开局发 50000 星贝(`ensureDemoSquadSeeded`·正式星贝来自出战/回收)。广告刷新走 `merchant_refresh` mock。
-- **补给券主来源已接通**：商人固定格每日上架补给券(占位 80 星贝/张·限 40/天)→ 喂抽卡；信标固定格 → 喂打捞。
+### 📌 E 商人小站 交接要点（接手前必看·轮换制）
+- **引擎 `core/s7/S7Merchant*`(纯 TS·可测)**：`refreshMerchantToCycle`(进店/加载时调·跨天重铺+清购买量/计数)、`generateMerchantStock`(常驻补给券+从轮换池随机铺 `merchantStockSlots(lv)` 格·无重复品类)、`buyMerchantOffer`(扣星贝+记购买量·返回 item 由应用侧 grant)、`refreshMerchantShop`(免费/广告刷·各周期上限·**无付费**)、`recycleBeacon`/`recycleStarOre`(→星贝·折损)、`offerRemaining`/`merchantStockSlots`。配置 `S7MerchantConfig` 全 v0.1 占位(定价/每日上限/轮换权重/折损/解锁等级·第二块校准；现有 shop_param 等表留第二块迁)。
+- **轮换制(Ron 拍板)**：补给券常驻(主来源·永远可买)；其余货从 `rollPool` 随机铺、**每次刷新换一批**(解决"刷新没变化")；轮换格数随商人小站(`bld_merchant_station`)等级 `merchantStockSlots`(lv1→5…lv7→8)；星空宝石等高端物 `minMerchantLevel` 门槛。demo 默认 lv1。
+- **回收随等级陆续解锁(Ron)**：溢出星矿 lv2 / 信标 lv4(`recycle.starOreUnlockLevel/beaconUnlockLevel`)；界面未到等级灰显"lvX解锁"。插件回收挪到背包(留后·`recyclePlugin` 引擎仍在)。
+- **防套利**：周期购买上限 `dailyBought` **跨手动/广告刷新保留**、只跨天重置；刷新次数各有周期上限；回收折损 + 零头留着。
+- **买入入账在控制器 `applyShopItem`**：资源→钱包；插件→`addOwnedPlugin`(挑 pluginId·品质来自商品)。
+- **DEV-TEMP（待删）**：开局发 50000 星贝(`ensureDemoSquadSeeded`)；商人界面「DEV:升商人小站」键(免费升级·验回收/格子解锁·正式靠建筑升级)。广告刷新走 `merchant_refresh` mock。
+- **⚠️ onReset 修复**：原 reset 漏了 gacha/salvage/merchant→刷新次数/保底/打捞任务残留；现已一并重置(见 `onReset`)。
 
 ### 📌 B 块收尾交接要点（接手前必看）
 - **装配/编队模型（已稳定）**：`squad.shipLoadouts[shipId] = {pilotId, coreId, pluginInstanceIds}`——驾驶员/星核/插件**都按船记忆**，与编队(formation: 只 {slotRef,shipId})解耦；下场/换格/拖动都跟船。装/卸/交换走 `core/s7/S7ShipLoadout.ts`（equipPilot/Plugin/Core·均"来自别船→两船互换"、空闲→替换）。

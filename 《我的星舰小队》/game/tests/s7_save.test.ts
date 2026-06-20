@@ -606,7 +606,7 @@ describe('s7 save - corruption / structure fallback', () => {
     const r = loadS7Save(adapter, NOW + 5);
     expect(r.migrated).toBe(true);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(r.data.playerState.merchant).toEqual({ offers: [], dailyBought: {}, cycleKey: -1, freeRefreshUsed: 0, paidRefreshUsed: 0, adRefreshUsed: 0 }); // 新字段补默认空
+    expect(r.data.playerState.merchant).toEqual({ offers: [], dailyBought: {}, cycleKey: -1, freeRefreshUsed: 0, adRefreshUsed: 0 }); // 新字段补默认空
     expect(r.data.playerState.resources.starCargo).toBe(5000); // 旧字段保留
   });
 
@@ -616,7 +616,7 @@ describe('s7 save - corruption / structure fallback', () => {
     data.playerState.merchant = {
       offers: [{ offerId: 'o0', item: { kind: 'resource', resourceId: 'beaconCommon', amount: 1 }, price: 200, purchaseLimit: 5, rare: false }],
       dailyBought: { 'res:beaconCommon': 2 },
-      cycleKey: 321, freeRefreshUsed: 1, paidRefreshUsed: 2, adRefreshUsed: 0,
+      cycleKey: 321, freeRefreshUsed: 1, adRefreshUsed: 0,
     };
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
@@ -624,7 +624,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.merchant.offers[0]).toMatchObject({ offerId: 'o0', price: 200, purchaseLimit: 5 });
     expect(r.data.playerState.merchant.dailyBought).toEqual({ 'res:beaconCommon': 2 });
     expect(r.data.playerState.merchant.cycleKey).toBe(321);
-    expect(r.data.playerState.merchant.paidRefreshUsed).toBe(2);
+    expect(r.data.playerState.merchant.freeRefreshUsed).toBe(1);
   });
 
   it('round-trips mainlineProgress through persist + load', () => {

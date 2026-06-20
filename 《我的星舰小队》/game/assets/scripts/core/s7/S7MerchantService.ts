@@ -18,36 +18,40 @@ export function merchantDayKey(now: number): number {
   return Math.floor(now / DAY_MS);
 }
 
-/** 稀有格数（随商人小站等级 1→3·§10.3）。lv1→1、lv4→2、lv7→3（占位门槛）。 */
-export function rareSlotCount(merchantLevel: number): number {
+/** 轮换格数（随商人小站等级增多·§10.3"更多次/更多格"）。lv1→5、每 2 级 +1、封顶 8（占位）。 */
+export function merchantStockSlots(merchantLevel: number): number {
   if (merchantLevel <= 0) return 0;
-  return Math.max(1, Math.min(3, 1 + Math.floor((merchantLevel - 1) / 3)));
+  return Math.min(8, 5 + Math.floor((merchantLevel - 1) / 2));
 }
 
-/** 加权取一个稀有模板（candidates 非空）。 */
-function pickWeightedRare(cands: S7ShopOfferTemplate[], rng: S7AutoBattleRng): S7ShopOfferTemplate {
+/** 加权取一个模板（candidates 非空）。 */
+function pickWeighted(cands: S7ShopOfferTemplate[], rng: S7AutoBattleRng): S7ShopOfferTemplate {
   const total = cands.reduce((s, t) => s + Math.max(0, t.rareWeight ?? 1), 0);
   let x = rng.next() * total;
   for (const t of cands) { x -= Math.max(0, t.rareWeight ?? 1); if (x < 0) return t; }
   return cands[cands.length - 1];
 }
 
-/** 生成一批货架（固定格全上 + 稀有格按等级抽·稀有格内不重复品类）。就地写 state.offers。 */
+/**
+ * 生成一批货架（轮换制）：常驻格(补给券)全上 + 从轮换池随机铺 merchantStockSlots(等级) 格（同批不重复品类·受 minMerchantLevel 门槛）。
+ * 就地写 state.offers。每次刷新调用 → 货架肉眼可见换一批。
+ */
 export function generateMerchantStock(state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng): void {
   const offers: S7ShopOffer[] = [];
   let n = 0;
-  for (const t of config.fixedOffers) {
-    offers.push({ offerId: `o${n}`, item: t.item, price: t.price, purchaseLimit: t.purchaseLimit, rare: false });
+  for (const t of config.alwaysOffers) {
+    offers.push({ offerId: `o${n}`, item: t.item, price: t.price, purchaseLimit: t.purchaseLimit, rare: t.rare === true });
     n += 1;
   }
-  const slots = rareSlotCount(merchantLevel);
+  const slots = merchantStockSlots(merchantLevel);
   const usedKeys = new Set<string>();
+  for (const t of config.alwaysOffers) usedKeys.add(shopItemKey(t.item)); // 常驻品类不再轮换重复
   for (let i = 0; i < slots; i += 1) {
-    const cands = config.rarePool.filter((t) => merchantLevel >= (t.minMerchantLevel ?? 1) && !usedKeys.has(shopItemKey(t.item)));
+    const cands = config.rollPool.filter((t) => merchantLevel >= (t.minMerchantLevel ?? 1) && !usedKeys.has(shopItemKey(t.item)));
     if (cands.length === 0) break;
-    const t = pickWeightedRare(cands, rng);
+    const t = pickWeighted(cands, rng);
     usedKeys.add(shopItemKey(t.item));
-    offers.push({ offerId: `o${n}`, item: t.item, price: t.price, purchaseLimit: t.purchaseLimit, rare: true });
+    offers.push({ offerId: `o${n}`, item: t.item, price: t.price, purchaseLimit: t.purchaseLimit, rare: t.rare === true });
     n += 1;
   }
   state.offers = offers;
@@ -60,7 +64,6 @@ export function refreshMerchantToCycle(state: S7MerchantState, config: S7Merchan
   generateMerchantStock(state, config, merchantLevel, rng);
   state.dailyBought = {};
   state.freeRefreshUsed = 0;
-  state.paidRefreshUsed = 0;
   state.adRefreshUsed = 0;
   state.cycleKey = cycle;
   return true;
@@ -93,39 +96,29 @@ export function buyMerchantOffer(state: S7MerchantState, wallet: Record<string, 
 
 // ===== 刷新（免费 / 付费 / 广告）=====
 
-export type S7RefreshMode = 'free' | 'paid' | 'ad';
+export type S7RefreshMode = 'free' | 'ad';
 export type S7RefreshResult =
-  | { ok: true; mode: S7RefreshMode; spent: number; usedThisCycle: number; cap: number }
-  | { ok: false; reason: 'cap_reached' | 'insufficient_starcargo' };
+  | { ok: true; mode: S7RefreshMode; usedThisCycle: number; cap: number }
+  | { ok: false; reason: 'cap_reached' };
 
 /**
- * 手动刷新货架（不清购买量·防套利：周期购买上限跨刷新保留）。
- *  - free：每周期 freePerCycle 次；paid：每周期 paidCapPerCycle 次·花星贝(递增序列)；ad：广告看完后调·每周期 adPerCycle 次。
+ * 手动刷新货架（重铺一批轮换货·不清购买量·防套利：周期购买上限跨刷新保留）。
+ *  - free：每周期 freePerCycle 次；ad：广告看完后调·每周期 adPerCycle 次。（付费刷新已去掉·Ron）
  */
 export function refreshMerchantShop(
-  state: S7MerchantState, wallet: Record<string, number>, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
+  state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
 ): S7RefreshResult {
   if (mode === 'free') {
     if (state.freeRefreshUsed >= config.refresh.freePerCycle) return { ok: false, reason: 'cap_reached' };
     state.freeRefreshUsed += 1;
     generateMerchantStock(state, config, merchantLevel, rng);
-    return { ok: true, mode, spent: 0, usedThisCycle: state.freeRefreshUsed, cap: config.refresh.freePerCycle };
+    return { ok: true, mode, usedThisCycle: state.freeRefreshUsed, cap: config.refresh.freePerCycle };
   }
-  if (mode === 'ad') {
-    if (state.adRefreshUsed >= config.refresh.adPerCycle) return { ok: false, reason: 'cap_reached' };
-    state.adRefreshUsed += 1;
-    generateMerchantStock(state, config, merchantLevel, rng);
-    return { ok: true, mode, spent: 0, usedThisCycle: state.adRefreshUsed, cap: config.refresh.adPerCycle };
-  }
-  // paid：花星贝（递增序列·按已付费次数取价，超出取末值）。
-  if (state.paidRefreshUsed >= config.refresh.paidCapPerCycle) return { ok: false, reason: 'cap_reached' };
-  const seq = config.refresh.paidCostSequence;
-  const cost = seq.length > 0 ? seq[Math.min(state.paidRefreshUsed, seq.length - 1)] : 0;
-  if ((wallet.starCargo ?? 0) < cost) return { ok: false, reason: 'insufficient_starcargo' };
-  wallet.starCargo = (wallet.starCargo ?? 0) - cost;
-  state.paidRefreshUsed += 1;
+  // ad
+  if (state.adRefreshUsed >= config.refresh.adPerCycle) return { ok: false, reason: 'cap_reached' };
+  state.adRefreshUsed += 1;
   generateMerchantStock(state, config, merchantLevel, rng);
-  return { ok: true, mode, spent: cost, usedThisCycle: state.paidRefreshUsed, cap: config.refresh.paidCapPerCycle };
+  return { ok: true, mode, usedThisCycle: state.adRefreshUsed, cap: config.refresh.adPerCycle };
 }
 
 // ===== 回收（卖→星贝·有折损）=====

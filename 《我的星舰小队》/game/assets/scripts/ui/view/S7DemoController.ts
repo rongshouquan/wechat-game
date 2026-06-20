@@ -67,13 +67,15 @@ import {
 } from '../../core/s7/S7SalvageService';
 import { addExclusiveShards } from '../../core/s7/S7ExclusiveShardInventory';
 import { addChest } from '../../core/s7/S7ChestInventory';
+import { createDefaultS7GachaState } from '../../core/s7/S7GachaState';
+import { createDefaultS7Salvage } from '../../core/s7/S7SalvageState';
+import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
 // E 商人小站（step1 引擎已单测）：主界面「商人小站」进商店。
 import { DEFAULT_S7_MERCHANT_CONFIG, S7ShopItem } from '../../core/s7/S7MerchantConfig';
 import {
   refreshMerchantToCycle, buyMerchantOffer, offerRemaining, refreshMerchantShop, S7RefreshMode,
-  recycleBeacon, recycleStarOre,
+  recycleBeacon, recycleStarOre, generateMerchantStock,
 } from '../../core/s7/S7MerchantService';
-import { recyclePlugin } from '../../core/s7/S7PluginRecycleService';
 
 const { ccclass } = _decorator;
 
@@ -235,6 +237,7 @@ export class S7DemoController extends Component {
   private merchantNode: Node | null = null;
   private merchantStarLabel: Label | null = null;  // 星贝余量 + 刷新次数
   private merchantListNode: Node | null = null;     // 货架 offer 列表容器（刷新重建）
+  private merchantSellNode: Node | null = null;      // 回收按钮容器（随等级解锁·刷新重建）
   private merchantResultLabel: Label | null = null;
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
@@ -984,23 +987,23 @@ export class S7DemoController extends Component {
     this.mkPanelLabel(panel, '商人小站', 40, new Color(230, 195, 120), -W * 0.30, topY - 30);
     this.merchantStarLabel = this.mkPanelLabel(panel, '星贝 0', 28, new Color(240, 210, 110), W * 0.24, topY - 30);
 
-    // 刷新行。
-    this.addBtn(panel, '免费刷新', 200, 70, new Color(80, 130, 90, 255), -W * 0.30, topY - 110, () => this.onMerchantRefresh('free'), 26);
-    this.addBtn(panel, '付费刷新', 200, 70, new Color(150, 120, 70, 255), 0, topY - 110, () => this.onMerchantRefresh('paid'), 26);
-    this.addBtn(panel, '广告刷新', 200, 70, new Color(180, 110, 70, 255), W * 0.30, topY - 110, () => this.onMerchantRefresh('ad'), 26);
+    // 刷新行（去付费·仅免费 + 广告）。
+    this.addBtn(panel, '免费刷新', 230, 70, new Color(80, 130, 90, 255), -W * 0.20, topY - 110, () => this.onMerchantRefresh('free'), 28);
+    this.addBtn(panel, '广告刷新', 230, 70, new Color(180, 110, 70, 255), W * 0.20, topY - 110, () => this.onMerchantRefresh('ad'), 28);
 
     // 货架列表容器。
     const list = new Node('mList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
     this.merchantListNode = list;
 
-    // 卖区。
+    // 卖区（回收按钮随商人等级解锁·refreshMerchant 重建）。
     this.mkPanelLabel(panel, '— 回收换星贝 —', 22, new Color(180, 160, 130), 0, botY + 210);
-    this.addBtn(panel, '回收100星矿', 220, 66, new Color(110, 95, 70, 255), -W * 0.30, botY + 150, () => this.onMerchantRecycleOre(100), 24);
-    this.addBtn(panel, '回收普通信标', 220, 66, new Color(110, 95, 70, 255), 0, botY + 150, () => this.onMerchantRecycleBeacon('common'), 24);
-    this.addBtn(panel, '回收闲置插件', 220, 66, new Color(110, 95, 70, 255), W * 0.30, botY + 150, () => this.onMerchantRecyclePlugin(), 24);
+    const sell = new Node('mSell'); sell.layer = this.node.layer; panel.addChild(sell); sell.setPosition(0, 0, 0);
+    this.merchantSellNode = sell;
 
     this.merchantResultLabel = this.mkPanelLabel(panel, '逛逛·买卖换星贝', 24, new Color(220, 210, 160), 0, botY + 100);
     this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), 0, botY + 40, () => this.closeMerchant(), 28);
+    // DEV-TEMP：升商人小站(免费·便于灰盒验"回收/格子随等级解锁")。正式版删（靠建筑升级）。
+    this.addBtn(panel, 'DEV:升商人小站', 240, 56, new Color(90, 80, 120, 255), W * 0.32, botY + 40, () => this.devUpgradeMerchant(), 22);
   }
 
   private merchantLevel(): number {
@@ -1018,13 +1021,14 @@ export class S7DemoController extends Component {
   }
   private closeMerchant(): void { if (this.merchantNode) this.merchantNode.active = false; }
 
-  /** 刷新商人界面：星贝/刷新次数 + 重建货架列表（名/价/剩余 + 买）。 */
+  /** 刷新商人界面：星贝/刷新次数 + 重建货架列表（名/价/剩余 + 买）+ 重建回收区（随等级解锁）。 */
   private refreshMerchant(): void {
     if (!this.playerState || !this.session || !this.merchantListNode) return;
     const m = this.playerState.merchant;
     const cfg = DEFAULT_S7_MERCHANT_CONFIG;
+    const lv = this.merchantLevel();
     if (this.merchantStarLabel) {
-      this.merchantStarLabel.string = `星贝 ${Math.floor(this.session.resources.starCargo ?? 0)}　刷新 免${m.freeRefreshUsed}/${cfg.refresh.freePerCycle} 付${m.paidRefreshUsed}/${cfg.refresh.paidCapPerCycle} 告${m.adRefreshUsed}/${cfg.refresh.adPerCycle}`;
+      this.merchantStarLabel.string = `星贝 ${Math.floor(this.session.resources.starCargo ?? 0)}　商人Lv.${lv}　刷新 免${m.freeRefreshUsed}/${cfg.refresh.freePerCycle} 告${m.adRefreshUsed}/${cfg.refresh.adPerCycle}`;
     }
     this.merchantListNode.removeAllChildren();
     let y = getS7UsableBand().usableTopY - 200;
@@ -1038,6 +1042,21 @@ export class S7DemoController extends Component {
       this.addBtn(this.merchantListNode, '买', 110, 56, canBuy ? new Color(70, 150, 110, 255) : new Color(70, 75, 90, 255), this.viewW * 0.38, y, () => this.onMerchantBuy(oid), 26);
       y -= 60;
     }
+    this.rebuildMerchantSell(lv);
+  }
+
+  /** 重建回收区按钮：回收星矿/信标随商人小站等级陆续解锁（未到等级→灰显"lvX解锁"）。 */
+  private rebuildMerchantSell(lv: number): void {
+    if (!this.merchantSellNode) return;
+    this.merchantSellNode.removeAllChildren();
+    const W = this.viewW, botY = getS7UsableBand().usableBottomY;
+    const rc = DEFAULT_S7_MERCHANT_CONFIG.recycle;
+    const mk = (label: string, x: number, unlockLv: number, onTap: () => void) => {
+      const open = lv >= unlockLv;
+      this.addBtn(this.merchantSellNode!, open ? label : `lv${unlockLv}解锁`, 230, 66, open ? new Color(110, 95, 70, 255) : new Color(70, 72, 84, 255), x, botY + 150, () => { if (open) onTap(); }, 24);
+    };
+    mk('回收100星矿', -W * 0.20, rc.starOreUnlockLevel, () => this.onMerchantRecycleOre(100));
+    mk('回收普通信标', W * 0.20, rc.beaconUnlockLevel, () => this.onMerchantRecycleBeacon('common'));
   }
 
   /** 商品 → 中文短名。 */
@@ -1085,13 +1104,11 @@ export class S7DemoController extends Component {
   private onMerchantRefresh(mode: S7RefreshMode): void {
     if (!this.playerState || !this.session) return;
     const doRefresh = () => {
-      const r = refreshMerchantShop(this.playerState!.merchant, this.session!.resources, DEFAULT_S7_MERCHANT_CONFIG, this.merchantLevel(), new S7AutoBattleRng(`mr_${mode}_${Date.now()}`), mode);
+      const r = refreshMerchantShop(this.playerState!.merchant, DEFAULT_S7_MERCHANT_CONFIG, this.merchantLevel(), new S7AutoBattleRng(`mr_${mode}_${Date.now()}`), mode);
       if (this.merchantResultLabel) {
-        this.merchantResultLabel.string = r.ok ? `已刷新（${mode === 'free' ? '免费' : mode === 'paid' ? `花${r.spent}星贝` : '广告'}·${r.usedThisCycle}/${r.cap}）`
-          : r.reason === 'cap_reached' ? '今日该刷新次数用尽' : '星贝不够';
+        this.merchantResultLabel.string = r.ok ? `已刷新一批新货（${mode === 'free' ? '免费' : '广告'}·${r.usedThisCycle}/${r.cap}）` : '今日该刷新次数用尽';
       }
       this.persist();
-      this.refresh();
       this.refreshMerchant();
     };
     if (mode === 'ad') {
@@ -1105,6 +1122,19 @@ export class S7DemoController extends Component {
     }
   }
 
+  /** DEV-TEMP：免费升商人小站 1 级（便于灰盒验"回收/格子随等级解锁"）。正式版删（靠建筑升级）。 */
+  private devUpgradeMerchant(): void {
+    if (!this.buildings) return;
+    const cur = getBuildingLevel(this.buildings, 'bld_merchant_station');
+    const lv = Math.min(10, cur + 1);
+    this.buildings.levels['bld_merchant_station'] = lv;
+    // 立即按新等级重铺货（DEV·便于看到格子变多/解锁；正常靠刷新或跨天）。
+    if (this.playerState) generateMerchantStock(this.playerState.merchant, DEFAULT_S7_MERCHANT_CONFIG, lv, new S7AutoBattleRng(`devmc_${Date.now()}`));
+    if (this.merchantResultLabel) this.merchantResultLabel.string = `[DEV] 商人小站 → Lv.${lv}`;
+    this.persist();
+    this.refreshMerchant();
+  }
+
   private onMerchantRecycleOre(amount: number): void {
     if (!this.session) return;
     const r = recycleStarOre(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, amount);
@@ -1116,16 +1146,6 @@ export class S7DemoController extends Component {
     if (!this.session) return;
     const r = recycleBeacon(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, tier, 1);
     if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收信标→星贝+${r.starCargoGained}` : '没有该档信标';
-    this.persist(); this.refresh(); this.refreshMerchant();
-  }
-
-  /** 回收第一个"未装备到任何船"的闲置插件实例 → 星贝。 */
-  private onMerchantRecyclePlugin(): void {
-    if (!this.playerState || !this.session || !this.pluginInventory || !this.squad) return;
-    const idle = this.pluginInventory.plugins.find((p) => findPluginShip(this.squad!, p.instanceId) === null);
-    if (!idle) { if (this.merchantResultLabel) this.merchantResultLabel.string = '没有闲置插件可回收'; return; }
-    const r = recyclePlugin(this.pluginInventory, this.session.resources, idle.instanceId);
-    if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收插件→星贝+${r.starbeiGained}` : '回收失败';
     this.persist(); this.refresh(); this.refreshMerchant();
   }
 
@@ -2268,6 +2288,10 @@ export class S7DemoController extends Component {
     this.population = this.playerState.population;
     this.ensureDefaultBuildingsUnlocked();
     this.offlinePending = null;
+    // C/D/E：抽卡/打捞/商人状态也归零（这几块后加·原 reset 漏了→刷新次数/保底/任务会残留）。
+    this.playerState.gacha = createDefaultS7GachaState();
+    this.playerState.salvage = createDefaultS7Salvage();
+    this.playerState.merchant = createDefaultS7Merchant();
     // B 块：插件库存也就地清空（会话持有引用，不能整体替换）→ ensureDemoSquadSeeded 重发时实例号从 pi1 起复现。
     if (this.pluginInventory) {
       this.pluginInventory.plugins = [];
