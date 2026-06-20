@@ -56,6 +56,11 @@ import {
   createDefaultS7Squad,
   normalizeS7Squad,
 } from '../core/s7/S7Squad';
+import {
+  S7MailboxState,
+  createDefaultS7Mailbox,
+  normalizeS7Mailbox,
+} from '../core/s7/S7Mailbox';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -71,8 +76,9 @@ import {
  * v9（块7b）：activityProgress 每活动增加 cycleStartTime(周期起算)+settlementCount(累计结算次数)；旧档补默认 0（加性迁移）。
  * v10（C1b 升级变强）：playerState 增加 unitLevels(星舰/驾驶员等级)；旧档加载补默认空(=全 1 级，加性迁移)。
  * v11（阶段一 A·阵容/编队）：playerState 增加 squad(拥有 星舰/驾驶员/星核 + 编队)；旧档加载补默认空(无拥有/空编队，加性迁移)。
+ * v12（阶段一 G2·邮件系统）：playerState 增加 mailbox(邮件列表+序号)；旧档加载补默认空邮箱(加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 11;
+export const S7_CURRENT_SAVE_VERSION = 12;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -122,6 +128,8 @@ export interface S7PlayerState {
   unitLevels: S7UnitLevelState;
   /** 阵容/编队（阶段一 A）：拥有 星舰/驾驶员/星核 + 编队，形状由 core/s7/S7Squad 拥有。 */
   squad: S7SquadState;
+  /** 邮件（阶段一 G2）：活动结算/抽卡补发/补偿的发放管道，形状由 core/s7/S7Mailbox 拥有。 */
+  mailbox: S7MailboxState;
 }
 
 export interface S7SaveData {
@@ -152,6 +160,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     activityProgress: createDefaultS7ActivityProgress(),
     unitLevels: createDefaultS7UnitLevelState(),
     squad: createDefaultS7Squad(),
+    mailbox: createDefaultS7Mailbox(),
   };
 }
 
@@ -202,6 +211,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     activityProgress: normalizeS7ActivityProgress(src.activityProgress),
     unitLevels: normalizeS7UnitLevelState(src.unitLevels),
     squad: normalizeS7Squad(src.squad),
+    mailbox: normalizeS7Mailbox(src.mailbox),
   };
 }
 
@@ -302,6 +312,8 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       unitLevels: normalizeS7UnitLevelState(data.playerState?.unitLevels),
       // 阶段一A：persist 须显式列全字段（6b-2 教训：漏列会落盘丢字段）——补 squad。
       squad: normalizeS7Squad(data.playerState?.squad),
+      // 阶段一G2：补 mailbox。
+      mailbox: normalizeS7Mailbox(data.playerState?.mailbox),
     },
     lastOnlineTime: now,
   };
