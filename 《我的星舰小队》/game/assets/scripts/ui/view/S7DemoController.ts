@@ -19,7 +19,7 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
-import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam } from '../../config/s7/ConfigTypesS7';
+import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel } from '../../core/s7/S7UnitLevelState';
@@ -43,9 +43,13 @@ import {
 } from '../../core/s7/S7BuildingEffects';
 import { getS7UsableBand } from '../S7UiLayout';
 import {
-  S7SquadState, grantShip, grantPilot, assignSlot, setSlotPilot, clearSlot, buildSquadLineup,
+  S7SquadState, grantShip, grantPilot, grantCore, assignSlot, setSlotPilot, clearSlot, buildSquadLineup,
 } from '../../core/s7/S7Squad';
 import { buildPrebattleView, S7PrebattleView } from '../../core/s7/S7PrebattleView';
+import { equipPlugin, unequipPlugin, equipCore, unequipCore } from '../../core/s7/S7ShipLoadout';
+import {
+  S7PluginInventoryState, S7OwnedPlugin, addOwnedPlugin, findOwnedPlugin,
+} from '../../core/s7/S7PluginInventory';
 
 const { ccclass } = _decorator;
 
@@ -62,6 +66,21 @@ const S7_DEMO_SEED_FORMATION: { slotRef: string; shipId: string; pilotId: string
   { slotRef: 'p1c2', shipId: 'shp02', pilotId: 'pil02' },
   { slotRef: 'p2c2', shipId: 'shp03', pilotId: 'pil03' },
 ];
+/** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
+const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | 'legendary' }[] = [
+  { pluginId: 'plg02', quality: 'legendary' }, // 武器
+  { pluginId: 'plg09', quality: 'fine' },      // 武器
+  { pluginId: 'plg07', quality: 'superior' },  // 技能
+  { pluginId: 'plg18', quality: 'fine' },      // 技能
+  { pluginId: 'plg01', quality: 'legendary' }, // 战术
+  { pluginId: 'plg03', quality: 'fine' },      // 战术
+];
+/** B 块 DEV-TEMP·开局发星核（待星核三渠道接好后删）：core07=过载核心(有真战斗质变)。 */
+const S7_DEMO_SEED_CORES = ['core07', 'core01', 'core02'];
+/** 插件槽位类型中文（仅显示用）。 */
+const S7_SLOT_TAG_NAMES: Record<S7PluginSlot, string> = { weapon: '武器', skill: '技能', tactical: '战术' };
+/** 品质中文（仅显示用）。 */
+const S7_QUALITY_NAMES: Record<string, string> = { fine: '精良', superior: '优秀', legendary: '传奇' };
 
 /** 建筑中文名（仅显示用）。 */
 const S7_BUILDING_NAMES: Record<string, string> = {
@@ -136,6 +155,16 @@ export class S7DemoController extends Component {
   /** 选择关卡浮层 + 有遭遇可玩的节点 id（init 算）。 */
   private levelSelectNode: Node | null = null;
   private encounterNodeIds: string[] = [];
+
+  // ===== B 块 单舰深装（插件×3槽 + 星核槽）=====
+  private pluginInventory: S7PluginInventoryState | null = null;
+  /** pluginId → 槽位类型（武器/技能/战术），init 从 plugin_config 建。 */
+  private pluginSlotMap: Map<string, S7PluginSlot> = new Map();
+  private loadoutNode: Node | null = null;
+  private loadoutTitleLabel: Label | null = null;
+  private loadoutMsgLabel: Label | null = null;
+  /** 4 个槽位行文字：[武器, 技能, 战术, 星核]。 */
+  private loadoutSlotLabels: Label[] = [];
   /** 本场战斗是否胜（finishPlayback 据此路由：胜→下一关备战 / 败→失败弹窗）。 */
   private pendingWon = false;
   /** 战斗结果弹窗（胜/败统一）：标题/文案/右键文字（胜=下一关·败=再次挑战）。弹出时背景保留刚结束的战斗画面。 */
@@ -170,6 +199,9 @@ export class S7DemoController extends Component {
     this.saveVersion = loaded.data.saveVersion;
     // A-step2：拿阵容引用 + demo 开局发货(默认拥有/默认编队)，再把 squad 喂会话(出战用玩家编队)。
     this.squad = this.playerState.squad;
+    // B 块：拿插件库存引用 + 建 pluginId→槽位 映射（装/卸判同类槽 + 显示用）。
+    this.pluginInventory = this.playerState.pluginInventory;
+    runtime.getAll<S7PluginConfig>('plugin_config').forEach((c) => this.pluginSlotMap.set(c.pluginId, c.slotTag));
     this.ensureDemoSquadSeeded();
     this.session = new S7RunSession(
       this.playerState.resources,
@@ -178,6 +210,7 @@ export class S7DemoController extends Component {
       model,
       this.playerState.unitLevels,
       this.playerState.squad,
+      this.playerState.pluginInventory, // B 块：编队里装的插件实例真进战斗
     );
 
     // C 养成接入：拿建筑/人口引用、确保默认建筑已解锁、按"上次在线→现在"算离线收益（待领取）。
@@ -210,10 +243,35 @@ export class S7DemoController extends Component {
   /** DEV-TEMP·开局发货：空阵容时给默认拥有的船/员 + 默认编队，保证一进来就能编队出战。
    *  ⚠️ 正式获取系统(抽卡/关卡发奖/打捞)接好后删本方法。 */
   private ensureDemoSquadSeeded(): void {
-    if (!this.squad || this.squad.ownedShips.length > 0) return; // 仅对全新空阵容发货
-    for (const s of S7_DEMO_SEED_SHIPS) grantShip(this.squad, s);
-    for (const p of S7_DEMO_SEED_PILOTS) grantPilot(this.squad, p);
-    for (const f of S7_DEMO_SEED_FORMATION) assignSlot(this.squad, f.slotRef, f.shipId, f.pilotId);
+    if (!this.squad) return;
+    // 船/员/编队：仅对全新空阵容发货。
+    if (this.squad.ownedShips.length === 0) {
+      for (const s of S7_DEMO_SEED_SHIPS) grantShip(this.squad, s);
+      for (const p of S7_DEMO_SEED_PILOTS) grantPilot(this.squad, p);
+      for (const f of S7_DEMO_SEED_FORMATION) assignSlot(this.squad, f.slotRef, f.shipId, f.pilotId);
+    }
+    // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
+    // 顺序固定 → 实例号 pi1.. 确定、重置后可复现。
+    if (Object.keys(this.squad.ownedCores).length === 0) {
+      for (const c of S7_DEMO_SEED_CORES) grantCore(this.squad, c, 1);
+    }
+    if (this.pluginInventory && this.pluginInventory.plugins.length === 0) {
+      for (const p of S7_DEMO_SEED_PLUGINS) addOwnedPlugin(this.pluginInventory, p.pluginId, p.quality);
+    }
+  }
+
+  /** B 块：pluginId → 槽位类型（plugin_config 派生；查不到返回 undefined）。给 S7ShipLoadout 注入。 */
+  private pluginSlotOf = (pluginId: string): S7PluginSlot | undefined => this.pluginSlotMap.get(pluginId);
+
+  /** 某编队槽里、某槽位类型 当前装的插件实例（找不到 null）。卸槽/显示用。 */
+  private equippedInSlotType(formationSlotRef: string, slotTag: S7PluginSlot): S7OwnedPlugin | null {
+    const fslot = this.slotOf(formationSlotRef);
+    if (!fslot || !this.pluginInventory) return null;
+    for (const id of fslot.pluginInstanceIds) {
+      const inst = findOwnedPlugin(this.pluginInventory, id);
+      if (inst && this.pluginSlotMap.get(inst.pluginId) === slotTag) return inst;
+    }
+    return null;
   }
 
   /** 该格当前已配在编队里的某船? 返回编队槽(找不到 null)。 */
@@ -286,6 +344,7 @@ export class S7DemoController extends Component {
 
     this.buildBasePanel(W, H);
     this.buildPrebattlePanel(W, H);
+    this.buildLoadoutPanel(W, H);
     this.buildLevelSelectPanel(W, H);
     this.buildResultPopup(W, H);
   }
@@ -475,9 +534,10 @@ export class S7DemoController extends Component {
       }
     }
 
-    // 选中船详情（右侧）+「下场」键（清当前选中格）。
+    // 选中船详情（右侧）+「深装」(开插件/星核装卸面板) +「下场」键（清当前选中格）。
     this.prebattleDetailLabel = mk('', 26, new Color(220, 230, 250), W * 0.28, gridCy + gap * 0.6);
-    mkBtn('下场', 160, 64, new Color(120, 70, 70, 255), W * 0.28, gridCy - gap, () => this.onPrebattleBench());
+    mkBtn('深装', 160, 64, new Color(70, 130, 110, 255), W * 0.16, gridCy - gap, () => this.openLoadout());
+    mkBtn('下场', 160, 64, new Color(120, 70, 70, 255), W * 0.40, gridCy - gap, () => this.onPrebattleBench());
 
     // 拥有的船 / 驾驶员（点选中格后，点这里放入）——按钮/字放大。
     mk('拥有星舰（点格后点这里放入）', 26, new Color(170, 185, 210), 0, botY + H * 0.205);
@@ -700,13 +760,27 @@ export class S7DemoController extends Component {
       }
     }
 
-    // 选中船详情。
+    // 选中船详情（B 块：插件×3槽 + 星核槽 真状态）。
     if (this.prebattleDetailLabel) {
       const sel = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot) : null;
       this.prebattleDetailLabel.string = sel
-        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${sel.pilotId ?? '缺员'}\n插件 ▢▢▢(占位)\n星核 ▢(占位)`
+        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${sel.pilotId ?? '缺员'}\n${this.loadoutSummaryText(this.prebattleSelSlot!)}\n（点「深装」装/卸插件·星核）`
         : (this.prebattleSelSlot ? `选中 ${this.prebattleSelSlot}\n（空·点下方放船）` : '点一个格选中');
     }
+  }
+
+  /** 选中船位的深装概要（3槽插件 + 星核），多行短文。 */
+  private loadoutSummaryText(formationSlotRef: string): string {
+    const slot = this.slotOf(formationSlotRef);
+    if (!slot) return '';
+    const tags: S7PluginSlot[] = ['weapon', 'skill', 'tactical'];
+    const lines = tags.map((t) => {
+      const inst = this.equippedInSlotType(formationSlotRef, t);
+      const v = inst ? `${inst.pluginId}·${S7_QUALITY_NAMES[inst.quality] ?? inst.quality}` : '空';
+      return `${S7_SLOT_TAG_NAMES[t]}槽 ${v}`;
+    });
+    lines.push(`星核 ${slot.coreId ?? '空'}`);
+    return lines.join('\n');
   }
 
   /** 敌情预览：按敌人站位把色块摆到上半区（红=普通敌·紫=Boss）。占位，美术阶段换皮。 */
@@ -759,6 +833,181 @@ export class S7DemoController extends Component {
     clearSlot(this.squad, this.prebattleSelSlot);
     this.persist();
     this.refreshPrebattle();
+  }
+
+  // ===== B 块 单舰深装面板（插件×3槽 + 星核槽 真装/卸）=====
+
+  /** 搭深装叠加层（默认隐藏）：标题 + 4 槽位行(点行=卸) + 拥有插件/星核按钮(点=装) + 关闭。
+   *  插件/星核按钮在 init 发货后建一次（实例号确定·重置后可复现，故按钮恒有效）。 */
+  private buildLoadoutPanel(W: number, H: number): void {
+    const band = getS7UsableBand();
+    const panel = new Node('S7Loadout');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(10, 14, 26, 252);
+    g.rect(-W / 2, -H / 2, W, H);
+    g.fill();
+    const put = panel.addComponent(UITransform);
+    put.setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸
+    panel.active = false;
+    this.loadoutNode = panel;
+
+    const mkL = (t: string, s: number, c: Color, x: number, y: number): Label => {
+      const n = new Node('lol'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+      const l = n.addComponent(Label); l.fontSize = s; l.lineHeight = Math.round(s * 1.3); l.color = c; l.string = t;
+      return l;
+    };
+    const mkB = (t: string, w: number, h: number, c: Color, x: number, y: number, tap: () => void): void => {
+      const n = new Node('lob'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+      const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
+      const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 10); bg.fill();
+      const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
+      const l = ln.addComponent(Label); l.fontSize = 24; l.lineHeight = 30; l.color = new Color(255, 255, 255); l.string = t;
+      n.on(Node.EventType.TOUCH_END, tap, this);
+    };
+
+    this.loadoutTitleLabel = mkL('', 36, new Color(255, 230, 120), 0, band.usableTopY - 50);
+    this.loadoutMsgLabel = mkL('点下方插件/星核装入；点上方槽位行卸下', 24, new Color(190, 205, 230), 0, band.usableTopY - 100);
+
+    // 4 槽位行（武器/技能/战术/星核）：点行 = 卸该槽。
+    const rowLabels = ['weapon', 'skill', 'tactical', 'core'];
+    this.loadoutSlotLabels = [];
+    const rowTop = band.usableTopY - 165;
+    const rowH = 60;
+    rowLabels.forEach((_tag, i) => {
+      const y = rowTop - i * (rowH + 8);
+      const row = new Node(`loSlot_${i}`); row.layer = this.node.layer; panel.addChild(row); row.setPosition(0, y, 0);
+      const rut = row.addComponent(UITransform); rut.setContentSize(W * 0.86, rowH);
+      const rg = row.addComponent(Graphics); rg.fillColor = new Color(30, 38, 56, 255);
+      rg.roundRect(-W * 0.43, -rowH / 2, W * 0.86, rowH, 8); rg.fill();
+      const ln = new Node('t'); ln.layer = this.node.layer; row.addChild(ln);
+      const l = ln.addComponent(Label); l.fontSize = 24; l.lineHeight = 30; l.color = new Color(230, 240, 255); l.string = '';
+      this.loadoutSlotLabels.push(l);
+      row.on(Node.EventType.TOUCH_END, () => this.onLoadoutUnequipSlot(i), this);
+    });
+
+    // 拥有插件（点装入对应槽）—— init 发货后建按钮。
+    let y = rowTop - 4 * (rowH + 8) - 30;
+    mkL('拥有插件（点装入·同类槽会拦/同名拦）', 24, new Color(170, 185, 210), 0, y);
+    y -= 44;
+    const plugins = this.pluginInventory ? this.pluginInventory.plugins : [];
+    const perRow = 3;
+    const bw = W * 0.29;
+    const bh = 74;
+    const gx = W * 0.31;
+    plugins.forEach((p, i) => {
+      const r = Math.floor(i / perRow);
+      const c = i % perRow;
+      const x = (c - (perRow - 1) / 2) * gx;
+      const tagZh = S7_SLOT_TAG_NAMES[this.pluginSlotMap.get(p.pluginId) ?? 'weapon'] ?? '?';
+      mkB(`${p.pluginId}\n${tagZh}·${S7_QUALITY_NAMES[p.quality] ?? p.quality}`, bw, bh, new Color(55, 95, 150, 255), x, y - r * (bh + 10), () => this.onLoadoutEquipPlugin(p.instanceId));
+    });
+    const pluginRows = Math.ceil(plugins.length / perRow);
+    y -= pluginRows * (bh + 10) + 24;
+
+    // 拥有星核（点装入星核槽）。
+    mkL('拥有星核（点装入星核槽）', 24, new Color(170, 185, 210), 0, y);
+    y -= 44;
+    const cores = this.squad ? Object.keys(this.squad.ownedCores) : [];
+    cores.forEach((coreId, i) => {
+      const r = Math.floor(i / perRow);
+      const c = i % perRow;
+      const x = (c - (perRow - 1) / 2) * gx;
+      mkB(coreId, bw, bh, new Color(120, 90, 60, 255), x, y - r * (bh + 10), () => this.onLoadoutEquipCore(coreId));
+    });
+
+    mkB('关闭', 220, 70, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLoadout());
+  }
+
+  /** 开深装面板：须当前选中一个有船的格。 */
+  private openLoadout(): void {
+    if (this.playing || !this.loadoutNode) return;
+    const sel = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot) : null;
+    if (!sel) {
+      if (this.prebattleInfoLabel) {
+        this.prebattleInfoLabel.string = '⚠ 先点一个有船的格，再点「深装」';
+        this.prebattleInfoLabel.color = new Color(240, 200, 120);
+      }
+      return;
+    }
+    this.refreshLoadout();
+    this.loadoutNode.active = true;
+  }
+
+  private closeLoadout(): void {
+    if (this.loadoutNode) this.loadoutNode.active = false;
+    this.refreshPrebattle(); // 回备战界面更新选中船详情
+  }
+
+  /** 刷新深装面板：标题(船) + 4 槽位行当前装备。 */
+  private refreshLoadout(): void {
+    const ref = this.prebattleSelSlot;
+    const slot = ref ? this.slotOf(ref) : null;
+    if (!slot) { this.closeLoadout(); return; }
+    if (this.loadoutTitleLabel) this.loadoutTitleLabel.string = `单舰深装 — ${slot.shipId}（${ref}）`;
+    const tags: S7PluginSlot[] = ['weapon', 'skill', 'tactical'];
+    tags.forEach((t, i) => {
+      const inst = this.equippedInSlotType(ref!, t);
+      const v = inst ? `${inst.pluginId}·${S7_QUALITY_NAMES[inst.quality] ?? inst.quality}（点卸下）` : '空';
+      if (this.loadoutSlotLabels[i]) this.loadoutSlotLabels[i].string = `${S7_SLOT_TAG_NAMES[t]}槽：${v}`;
+    });
+    if (this.loadoutSlotLabels[3]) this.loadoutSlotLabels[3].string = `星核槽：${slot.coreId ? `${slot.coreId}（点卸下）` : '空'}`;
+  }
+
+  private setLoadoutMsg(text: string, color: Color): void {
+    if (this.loadoutMsgLabel) { this.loadoutMsgLabel.string = text; this.loadoutMsgLabel.color = color; }
+  }
+
+  /** 装插件到当前选中船：成功/失败都给中文提示。 */
+  private onLoadoutEquipPlugin(instanceId: string): void {
+    if (!this.squad || !this.pluginInventory || !this.prebattleSelSlot) return;
+    const r = equipPlugin(this.squad, this.pluginInventory, this.prebattleSelSlot, instanceId, this.pluginSlotOf);
+    if (r.ok) this.setLoadoutMsg('已装上', new Color(160, 235, 160));
+    else this.setLoadoutMsg(this.zhLoadoutErr(r.code), new Color(235, 150, 150));
+    this.persist();
+    this.refreshLoadout();
+  }
+
+  /** 装星核到当前选中船。 */
+  private onLoadoutEquipCore(coreId: string): void {
+    if (!this.squad || !this.prebattleSelSlot) return;
+    const r = equipCore(this.squad, this.prebattleSelSlot, coreId);
+    if (r.ok) this.setLoadoutMsg('已装上星核', new Color(160, 235, 160));
+    else this.setLoadoutMsg(this.zhLoadoutErr(r.code), new Color(235, 150, 150));
+    this.persist();
+    this.refreshLoadout();
+  }
+
+  /** 点槽位行卸下（i: 0武器/1技能/2战术/3星核）。 */
+  private onLoadoutUnequipSlot(i: number): void {
+    if (!this.squad || !this.prebattleSelSlot) return;
+    if (i === 3) {
+      unequipCore(this.squad, this.prebattleSelSlot);
+    } else {
+      const tag: S7PluginSlot = i === 0 ? 'weapon' : i === 1 ? 'skill' : 'tactical';
+      const inst = this.equippedInSlotType(this.prebattleSelSlot, tag);
+      if (inst) unequipPlugin(this.squad, this.prebattleSelSlot, inst.instanceId);
+    }
+    this.setLoadoutMsg('已卸下', new Color(200, 210, 235));
+    this.persist();
+    this.refreshLoadout();
+  }
+
+  /** 深装错误码 → 中文（仅显示）。 */
+  private zhLoadoutErr(code: string): string {
+    const map: Record<string, string> = {
+      no_slot: '该格没船',
+      not_owned_plugin: '没有这个插件',
+      unknown_plugin: '插件槽位未知',
+      slot_type_occupied: '该类型槽已占（先卸下原件）',
+      dup_plugin: '同名插件已装',
+      too_many_plugins: '插件已满 3 个',
+      not_owned_core: '没有这颗星核',
+    };
+    return map[code] ?? code;
   }
 
   // ===== 选择关卡（graybox 跳关）=====
@@ -983,6 +1232,12 @@ export class S7DemoController extends Component {
     this.population = this.playerState.population;
     this.ensureDefaultBuildingsUnlocked();
     this.offlinePending = null;
+    // B 块：插件库存也就地清空（会话持有引用，不能整体替换）→ ensureDemoSquadSeeded 重发时实例号从 pi1 起复现。
+    if (this.pluginInventory) {
+      this.pluginInventory.plugins = [];
+      this.pluginInventory.nextInstanceSeq = 1;
+      this.pluginInventory.nextActionSeq = 0;
+    }
     // A-step2：阵容就地清空+重新发货（会话持有 squad 引用，不能整体替换→必须原地改）。
     if (this.squad) {
       this.squad.ownedShips = [];
@@ -992,6 +1247,7 @@ export class S7DemoController extends Component {
       this.ensureDemoSquadSeeded();
     }
     this.prebattleSelSlot = null;
+    this.closeLoadout();
     this.closePrebattle();
     this.closeBase();
     this.setResult('已重置：回到 n001、资源清零、等级归 1、建筑回 1 级', new Color(180, 200, 230));
