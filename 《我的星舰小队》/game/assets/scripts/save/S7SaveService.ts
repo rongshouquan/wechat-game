@@ -76,6 +76,11 @@ import {
   createDefaultS7Merchant,
   normalizeS7Merchant,
 } from '../core/s7/S7MerchantState';
+import {
+  S7UnitTierState,
+  createDefaultS7UnitTierState,
+  normalizeS7UnitTierState,
+} from '../core/s7/S7UnitTierState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -95,8 +100,9 @@ import {
  * v13（阶段一 C·抽卡三池）：playerState 增加 gacha(三池保底计数 + 专属池兑换进度/已领/期号)；旧档加载补默认空(加性迁移，无需重置)。
  * v14（阶段一 D·信标打捞）：playerState 增加 salvage(进行中打捞任务 + 今日广告加速次数)；旧档加载补默认空(加性迁移，无需重置)。
  * v15（阶段一 E·商人小站）：playerState 增加 merchant(当前货架 + 本周期购买量/刷新次数 + 周期标记)；旧档加载补默认空(加性迁移，无需重置)。
+ * v16（阶段一 J·升阶升星）：playerState 增加 unitTiers(星舰阶级 C/B/A + 驾驶员星级 1-5★)；旧档加载补默认(全 C 阶/1★，加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 15;
+export const S7_CURRENT_SAVE_VERSION = 16;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -154,6 +160,8 @@ export interface S7PlayerState {
   salvage: S7SalvageState;
   /** 商人小站（阶段一 E）：当前货架 + 本周期购买量/刷新次数，形状由 core/s7/S7MerchantState 拥有。 */
   merchant: S7MerchantState;
+  /** 单位阶级/星级（阶段一 J·升阶升星）：星舰阶级 + 驾驶员星级，形状由 core/s7/S7UnitTierState 拥有。 */
+  unitTiers: S7UnitTierState;
 }
 
 export interface S7SaveData {
@@ -188,6 +196,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     gacha: createDefaultS7GachaState(),
     salvage: createDefaultS7Salvage(),
     merchant: createDefaultS7Merchant(),
+    unitTiers: createDefaultS7UnitTierState(),
   };
 }
 
@@ -242,6 +251,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     gacha: normalizeS7GachaState(src.gacha),
     salvage: normalizeS7Salvage(src.salvage),
     merchant: normalizeS7Merchant(src.merchant),
+    unitTiers: normalizeS7UnitTierState(src.unitTiers),
   };
 }
 
@@ -350,6 +360,8 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       salvage: normalizeS7Salvage(data.playerState?.salvage),
       // 阶段一E：补 merchant（商人小站状态）。
       merchant: normalizeS7Merchant(data.playerState?.merchant),
+      // 阶段一J：补 unitTiers（星舰阶级/驾驶员星级）。
+      unitTiers: normalizeS7UnitTierState(data.playerState?.unitTiers),
     },
     lastOnlineTime: now,
   };
