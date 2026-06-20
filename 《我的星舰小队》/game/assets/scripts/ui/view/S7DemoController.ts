@@ -286,10 +286,18 @@ export class S7DemoController extends Component {
     return this.squad ? this.squad.formation.find((s) => s.slotRef === slotRef) ?? null : null;
   }
 
-  /** 第一个未被编队占用的拥有驾驶员(给"放船自动配员"用)；都占用则用第一个拥有员。 */
+  /** 某船当前驾驶员（跟船记忆·按 shipId 读 shipLoadouts）。 */
+  private pilotOf(shipId: string): string | null {
+    return this.squad ? this.squad.shipLoadouts[shipId]?.pilotId ?? null : null;
+  }
+
+  /** 第一个未被任何船占用的拥有驾驶员(给"放船自动配员"用)；都占用则用第一个拥有员。
+   *  "占用"= 已记忆在任意一艘船的装配里（含下场的船·一员只驾一船）。 */
   private firstFreePilot(): string | null {
     if (!this.squad || this.squad.ownedPilots.length === 0) return null;
-    const used = new Set(this.squad.formation.map((s) => s.pilotId).filter((x): x is string => !!x));
+    const used = new Set(
+      Object.values(this.squad.shipLoadouts).map((l) => l.pilotId).filter((x): x is string => !!x),
+    );
     return this.squad.ownedPilots.find((p) => !used.has(p)) ?? this.squad.ownedPilots[0];
   }
 
@@ -765,7 +773,7 @@ export class S7DemoController extends Component {
         }
         const idx = r2 * 3 + c;
         const lbl = this.prebattleCellLabels[idx];
-        if (lbl) lbl.string = slot ? `${slot.shipId}\n${slot.pilotId ?? '缺员'}` : '空';
+        if (lbl) lbl.string = slot ? `${slot.shipId}\n${this.pilotOf(slot.shipId) ?? '缺员'}` : '空';
       }
     }
 
@@ -773,7 +781,7 @@ export class S7DemoController extends Component {
     if (this.prebattleDetailLabel) {
       const sel = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot) : null;
       this.prebattleDetailLabel.string = sel
-        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${sel.pilotId ?? '缺员'}\n${this.loadoutSummaryText(sel.shipId)}\n（点「装配」装/卸插件·星核）`
+        ? `选中 ${this.prebattleSelSlot}\n星舰 ${sel.shipId}\n驾驶员 ${this.pilotOf(sel.shipId) ?? '缺员'}\n${this.loadoutSummaryText(sel.shipId)}\n（点「装配」装/卸插件·星核）`
         : (this.prebattleSelSlot ? `选中 ${this.prebattleSelSlot}\n（空·点下方放船）` : '点一个格选中');
     }
   }

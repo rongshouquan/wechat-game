@@ -2,8 +2,8 @@
 //
 // 本模块拥有几件事的状态形状 + 默认/规范化 + 操作/校验/转换：
 //   ① 玩家"拥有"：星舰/驾驶员=拥有集合(本体单一，靠升阶/升星养)；星核=实例计数(coreId→拥有数)；插件实例库存另由 S7PluginInventory 管。
-//   ② 编队：≤5 个上阵位，每位 = 星舰 + 必配驾驶员（位置 slotRef）。
-//   ③ 单舰装配 shipLoadouts（v1.0 §4.4「每舰记忆 loadout」）：星核 + 插件实例按 shipId 记忆，**与编队解耦** → 下场/换位都跟着船、不丢；装/卸由 S7ShipLoadout 操作（B 块）。
+//   ② 编队：≤5 个上阵位，每位 = 星舰在哪格（slotRef + shipId）。驾驶员不在格上、跟船记忆（见 ③）。
+//   ③ 单舰装配 shipLoadouts（v1.0 §4.4「每舰记忆 loadout」）：驾驶员 + 星核 + 插件实例按 shipId 记忆，**与编队解耦** → 下场/换位都跟着船、不丢；装/卸由 S7ShipLoadout（插件/星核）+ 本模块（驾驶员）操作。
 //   ④ buildSquadLineup：把编队 + 各舰装配校验后转成 S7BattleEncounterAssembler 吃的出战阵容（注入星舰等级；给了库存则把插件实例解析成 {pluginId,quality} 喂战斗）。
 //
 // 边界：core 层自包含——只依赖同族 S7* + 中性结构；不 import save（由 S7SaveService 组合进 S7PlayerState）、不 import cc、可 Node/vitest 测。
@@ -18,16 +18,16 @@ export const S7_MAX_FORMATION_SLOTS = 5;
 /** 玩家阵位格 p0c0..p2c2。 */
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 
-/** 一个上阵位的配置（只管"哪艘船 + 哪个驾驶员 + 在哪格"；装备见 shipLoadouts）。 */
+/** 一个上阵位的配置（只管"哪艘船在哪格"；驾驶员/装备都跟船记忆，见 shipLoadouts）。 */
 export interface S7FormationSlot {
   slotRef: string;
   shipId: string;
-  /** 必配驾驶员；null = 该位缺驾驶员（v1.0 §4.4 空船不能上阵 → 校验会拦）。 */
-  pilotId: string | null;
 }
 
-/** 单舰装配（v1.0 §4.4「每舰记忆 loadout」）：星核 + 插件实例，按船记忆、与编队解耦。 */
+/** 单舰装配（v1.0 §4.4「每舰记忆 loadout」）：驾驶员 + 星核 + 插件实例，按船记忆、与编队解耦。 */
 export interface S7Loadout {
+  /** 必配驾驶员（一员只驾一船·§4.4）；null = 缺驾驶员（buildSquadLineup 会拦"空船不能上阵"）。 */
+  pilotId: string | null;
   /** 装备的星核 id（一船 1 核·§5.4）；null = 未装。 */
   coreId: string | null;
   /** 装备的插件「实例号」(S7PluginInventory 的 instanceId，非 pluginId)；经库存解析回 {pluginId,quality}。 */
@@ -54,6 +54,31 @@ export function getShipLoadout(squad: S7SquadState, shipId: string): S7Loadout |
   return squad.shipLoadouts[shipId] ?? null;
 }
 
+/** 取某船当前驾驶员（跟船记忆·不存在返回 null）。 */
+export function getShipPilot(squad: S7SquadState, shipId: string): string | null {
+  return squad.shipLoadouts[shipId]?.pilotId ?? null;
+}
+
+/** 取/建某船装配（就地建空装配并返回）。 */
+function ensureLoadout(squad: S7SquadState, shipId: string): S7Loadout {
+  let l = squad.shipLoadouts[shipId];
+  if (!l) {
+    l = { pilotId: null, coreId: null, pluginInstanceIds: [] };
+    squad.shipLoadouts[shipId] = l;
+  }
+  return l;
+}
+
+/** 给某船配驾驶员（唯一性：先把该驾驶员从别船卸下，再配到本船）。pilotId=null 仅卸下本船。 */
+function setShipPilot(squad: S7SquadState, shipId: string, pilotId: string | null): void {
+  if (pilotId) {
+    for (const [sid, l] of Object.entries(squad.shipLoadouts)) {
+      if (sid !== shipId && l.pilotId === pilotId) l.pilotId = null; // 一员只驾一船·从别船自动卸下
+    }
+  }
+  ensureLoadout(squad, shipId).pilotId = pilotId;
+}
+
 function normStrArray(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
@@ -75,17 +100,18 @@ function normCores(raw: unknown): Record<string, number> {
   return out;
 }
 
-/** 把一条原始数据规范成一份装配（coreId 取非空字符串否则 null、插件实例去重去空）。 */
+/** 把一条原始数据规范成一份装配（驾驶员/星核取非空字符串否则 null、插件实例去重去空）。 */
 function normLoadout(raw: unknown): S7Loadout {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   return {
+    pilotId: typeof o.pilotId === 'string' && o.pilotId.length > 0 ? o.pilotId : null,
     coreId: typeof o.coreId === 'string' && o.coreId.length > 0 ? o.coreId : null,
     pluginInstanceIds: normStrArray(o.pluginInstanceIds),
   };
 }
-/** 一份装配是否为空（无核无插件）——用于规范化时丢弃空壳、不污染 shipLoadouts。 */
+/** 一份装配是否为空（无驾驶员无核无插件）——用于规范化时丢弃空壳、不污染 shipLoadouts。 */
 function loadoutIsEmpty(l: S7Loadout): boolean {
-  return l.coreId === null && l.pluginInstanceIds.length === 0;
+  return l.pilotId === null && l.coreId === null && l.pluginInstanceIds.length === 0;
 }
 
 /**
@@ -118,13 +144,9 @@ export function normalizeS7Squad(raw: unknown): S7SquadState {
       if (typeof shipId !== 'string' || shipId.length === 0 || seenShips.has(shipId)) continue; // 同船不占两位
       seenSlots.add(slotRef);
       seenShips.add(shipId);
-      formation.push({
-        slotRef,
-        shipId,
-        pilotId: typeof row.pilotId === 'string' && row.pilotId.length > 0 ? row.pilotId : null,
-      });
-      // 迁移旧档：装备曾记在 formation 行上 → 若 shipLoadouts 尚无该船，则搬过来（新结构优先、不覆盖）。
-      if (!shipLoadouts[shipId] && (row.coreId !== undefined || row.pluginInstanceIds !== undefined)) {
+      formation.push({ slotRef, shipId });
+      // 迁移旧档：驾驶员/装备曾记在 formation 行上 → 若 shipLoadouts 尚无该船，则搬过来（新结构优先、不覆盖）。
+      if (!shipLoadouts[shipId] && (row.pilotId !== undefined || row.coreId !== undefined || row.pluginInstanceIds !== undefined)) {
         const l = normLoadout(row);
         if (!loadoutIsEmpty(l)) shipLoadouts[shipId] = l;
       }
@@ -166,34 +188,30 @@ export const coreOwnedCount = (squad: S7SquadState, coreId: string): number => s
 // ===== 编队操作 =====
 
 /**
- * 把某拥有的星舰+驾驶员放到某阵位：移除该阵位旧配置 + 移除该船在别处的占位（同船只占一位），
- * 并把该驾驶员从别处卸下（v1.0 §4.4 实例制·同实例同时只装一船·跨船自动卸下），再写入。
- * 只动数据、不校验拥有（拥有/合法性在 buildSquadLineup 统一校验）；slotRef 非法则不动。
+ * 把某拥有的星舰放到某阵位：移除该阵位旧配置 + 移除该船在别处的占位（同船只占一位），再写入。
+ * 驾驶员跟船记忆（shipLoadouts）：本舰若已记忆驾驶员则保留（换格/重新上阵不丢）；否则用传入 pilotId 配上
+ * （唯一性：从别船自动卸下·§4.4）。只动数据、不校验拥有（拥有/合法性在 buildSquadLineup 统一校验）；slotRef 非法则不动。
  */
 export function assignSlot(squad: S7SquadState, slotRef: string, shipId: string, pilotId: string | null): void {
   if (!PLAYER_SLOT_PATTERN.test(slotRef)) return;
   squad.formation = squad.formation.filter((s) => s.slotRef !== slotRef && s.shipId !== shipId);
-  if (pilotId) {
-    for (const s of squad.formation) if (s.pilotId === pilotId) s.pilotId = null; // 驾驶员从别船自动卸下
-  }
   if (squad.formation.length >= S7_MAX_FORMATION_SLOTS) return; // 满 5 位不再加
-  squad.formation.push({ slotRef, shipId, pilotId }); // 装备不在此处置——按船记忆在 shipLoadouts，换格/上阵不影响
+  squad.formation.push({ slotRef, shipId });
+  // 驾驶员：本舰已记忆则保留；否则配上传入的（跟船记忆·唯一性）。
+  if (!getShipPilot(squad, shipId) && pilotId) setShipPilot(squad, shipId, pilotId);
 }
 
 /**
- * 给某阵位（须已有船）换驾驶员：把该驾驶员从别处卸下（自动卸下），再配到本位。
- * 目标位不存在则不动；pilotId 可为 null（卸下本位驾驶员）。
+ * 给某阵位（须已有船）换驾驶员：把该驾驶员从别船卸下（唯一性），再配给本位的船（跟船记忆）。
+ * 目标位不存在则不动；pilotId 可为 null（卸下本舰驾驶员）。
  */
 export function setSlotPilot(squad: S7SquadState, slotRef: string, pilotId: string | null): void {
   const target = squad.formation.find((s) => s.slotRef === slotRef);
   if (!target) return;
-  if (pilotId) {
-    for (const s of squad.formation) if (s !== target && s.pilotId === pilotId) s.pilotId = null; // 同员从别船卸下
-  }
-  target.pilotId = pilotId;
+  setShipPilot(squad, target.shipId, pilotId);
 }
 
-/** 清空某阵位。 */
+/** 清空某阵位（仅下场·驾驶员/装备仍按船记忆在 shipLoadouts 保留）。 */
 export function clearSlot(squad: S7SquadState, slotRef: string): void {
   squad.formation = squad.formation.filter((s) => s.slotRef !== slotRef);
 }
@@ -239,16 +257,17 @@ export function buildSquadLineup(
     if (seenShips.has(slot.shipId)) return { ok: false, code: 'dup_ship', message: `星舰 ${slot.shipId} 占了多个阵位` };
     seenShips.add(slot.shipId);
     if (!isShipOwned(squad, slot.shipId)) return { ok: false, code: 'not_owned_ship', message: `未拥有星舰 ${slot.shipId}` };
-    if (!slot.pilotId) return { ok: false, code: 'no_pilot', message: `${slot.slotRef} 缺驾驶员（空船不能上阵）` };
-    if (seenPilots.has(slot.pilotId)) return { ok: false, code: 'dup_pilot', message: `驾驶员 ${slot.pilotId} 同时上了多艘船（一员只能驾一船）` };
-    seenPilots.add(slot.pilotId);
-    if (!isPilotOwned(squad, slot.pilotId)) return { ok: false, code: 'not_owned_pilot', message: `未拥有驾驶员 ${slot.pilotId}` };
-    // 装配（B 块）：按 shipId 取该舰记忆的星核/插件（与编队解耦）。
+    // 驾驶员/装配（B 块）：按 shipId 取该舰记忆（与编队解耦）。
     const loadout = squad.shipLoadouts[slot.shipId];
+    const pilotId = loadout?.pilotId ?? null;
+    if (!pilotId) return { ok: false, code: 'no_pilot', message: `${slot.slotRef} 缺驾驶员（空船不能上阵）` };
+    if (seenPilots.has(pilotId)) return { ok: false, code: 'dup_pilot', message: `驾驶员 ${pilotId} 同时上了多艘船（一员只能驾一船）` };
+    seenPilots.add(pilotId);
+    if (!isPilotOwned(squad, pilotId)) return { ok: false, code: 'not_owned_pilot', message: `未拥有驾驶员 ${pilotId}` };
     if (loadout?.coreId && coreOwnedCount(squad, loadout.coreId) <= 0) {
       return { ok: false, code: 'not_owned_core', message: `未拥有星核 ${loadout.coreId}` };
     }
-    const unit: S7BattleLineupUnitInput = { shipId: slot.shipId, slotRef: slot.slotRef, pilotId: slot.pilotId };
+    const unit: S7BattleLineupUnitInput = { shipId: slot.shipId, slotRef: slot.slotRef, pilotId };
     if (loadout?.coreId) unit.coreId = loadout.coreId;
     if (unitLevels) unit.shipLevel = getShipLevel(unitLevels, slot.shipId);
     // 插件（B 块）：给了库存才解析——实例号 → {pluginId,quality} 喂战斗（装配层再按配置缩放成效果积木）。

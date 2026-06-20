@@ -35,7 +35,7 @@ export type S7LoadoutResult = { ok: true } | { ok: false; code: S7LoadoutErrorCo
 function ensureLoadout(squad: S7SquadState, shipId: string): S7Loadout {
   let l = squad.shipLoadouts[shipId];
   if (!l) {
-    l = { coreId: null, pluginInstanceIds: [] };
+    l = { pilotId: null, coreId: null, pluginInstanceIds: [] };
     squad.shipLoadouts[shipId] = l;
   }
   return l;

@@ -79,11 +79,25 @@ describe('A-step2a · buildPrebattleView', () => {
     const a = addOwnedPlugin(inv, 'plg02', 'legendary');
     const s = squad2();
     grantCore(s, 'core07', 1);
-    s.shipLoadouts.shp01 = { coreId: 'core07', pluginInstanceIds: [a.instanceId] };
+    s.shipLoadouts.shp01.coreId = 'core07'; // 就地改（保留 assignSlot 配的驾驶员）
+    s.shipLoadouts.shp01.pluginInstanceIds = [a.instanceId];
     const equipped = buildPrebattleView(runtime, at('n006'), s, undefined, inv);
     expect(bare.ok && equipped.ok).toBe(true);
     if (!bare.ok || !equipped.ok) return;
     expect(equipped.view.playerPower).toBeGreaterThan(bare.view.playerPower); // 装了插件+核 → 战力更高
+  });
+
+  it('驾驶员单独也计入战力（同船同级·只差驾驶员·占位）', () => {
+    const noPilot = createDefaultS7Squad();
+    grantShip(noPilot, 'shp01');
+    noPilot.formation = [{ slotRef: 'p0c2', shipId: 'shp01' }]; // 无 loadout = 无驾驶员
+    const withPilot = createDefaultS7Squad();
+    grantShip(withPilot, 'shp01'); grantPilot(withPilot, 'pil01');
+    assignSlot(withPilot, 'p0c2', 'shp01', 'pil01');
+    const a = buildPrebattleView(runtime, at('n006'), noPilot);
+    const b = buildPrebattleView(runtime, at('n006'), withPilot);
+    expect(a.ok && b.ok).toBe(true);
+    if (a.ok && b.ok) expect(b.view.playerPower).toBeGreaterThan(a.view.playerPower); // 配了驾驶员 → 战力更高
   });
 
   it('空编队：我方战力 0（仍可看敌情/推荐）', () => {

@@ -107,7 +107,7 @@ describe('S7ShipLoadout · 插件装/卸（按船）', () => {
     const w2 = addOwnedPlugin(inv, 'plg09', 'fine');
     const k = addOwnedPlugin(inv, 'plg07', 'fine');
     const t = addOwnedPlugin(inv, 'plg01', 'fine');
-    s.shipLoadouts.shp01 = { coreId: null, pluginInstanceIds: [w1.instanceId, w2.instanceId, k.instanceId] }; // 直接构造脏档
+    s.shipLoadouts.shp01 = { pilotId: null, coreId: null, pluginInstanceIds: [w1.instanceId, w2.instanceId, k.instanceId] }; // 直接构造脏档
     expect(equipPlugin(s, inv, 'shp01', t.instanceId, resolver)).toEqual({ ok: false, code: 'too_many_plugins' });
   });
 
