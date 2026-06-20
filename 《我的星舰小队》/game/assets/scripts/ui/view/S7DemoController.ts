@@ -844,8 +844,6 @@ export class S7DemoController extends Component {
     const lx = loc.x - this.viewW / 2;
     const ly = loc.y - this.viewH / 2;
     const target = this.cellAtLocal(lx, ly) ?? startSlot;
-    // DEV-TEMP（拖动落点排查·验收后删）：若仍拖不动，请把这行日志的数字读给我定位坐标。
-    console.log(`[S7拖动] ui=(${Math.round(loc.x)},${Math.round(loc.y)}) local=(${Math.round(lx)},${Math.round(ly)}) start=${startSlot} target=${target}`);
     if (this.squad && target !== startSlot && this.slotOf(startSlot)) {
       moveOrSwapFormationSlot(this.squad, startSlot, target); // 拖动：有船→移动/互换
       this.persist();
@@ -1039,7 +1037,7 @@ export class S7DemoController extends Component {
 
     // 底部：一键卸装(左) / 关闭(中) / 一键装配(右)。
     this.addBtn(panel, '一键卸装', 230, 84, new Color(125, 80, 80, 255), -W * 0.30, band.usableBottomY + 56, () => this.onLoadoutUnequipAll(), 30);
-    this.addBtn(panel, '关闭', 200, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 30);
+    this.addBtn(panel, '返回', 200, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 30);
     this.addBtn(panel, '一键装配', 230, 84, new Color(70, 140, 110, 255), W * 0.30, band.usableBottomY + 56, () => this.onLoadoutAutoEquip(), 30);
 
     this.buildEquipDetailPopup(W, H);
@@ -1101,7 +1099,8 @@ export class S7DemoController extends Component {
   private refreshLoadout(): void {
     const ship = this.prebattleSelShip;
     if (!ship || !this.squad || !this.loadoutListNode) { this.closeLoadout(); return; }
-    if (this.loadoutTitleLabel) this.loadoutTitleLabel.string = `装配 — ${ship}`;
+    // 顶部标题带实时战力（refreshLoadout 在每次装/卸后都调 → 随装备实时变）。
+    if (this.loadoutTitleLabel) this.loadoutTitleLabel.string = `装配 — ${ship}　战力 ${this.shipPower(ship)}`;
     const list = this.loadoutListNode;
     list.removeAllChildren();
     const W = this.viewW;
