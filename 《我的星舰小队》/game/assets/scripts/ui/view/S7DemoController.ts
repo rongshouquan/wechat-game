@@ -36,7 +36,7 @@ import {
   upgradeBuildingWithDiscount,
 } from '../../core/s7/S7BuildingUpgradeFlow';
 import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState, getBuildingLevel } from '../../core/s7/S7BuildingState';
-import { S7PopulationState, createDefaultS7Population } from '../../core/s7/S7Population';
+import { S7PopulationState, createDefaultS7Population, residentRateBonusPct, residentStorageExtensionHours, workerCostDiscountPct } from '../../core/s7/S7Population';
 import {
   shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
   salvageTeamCount, researchTeamBonusPct, merchantShopSlots, coreGalleryTeamBonusPct,
@@ -260,6 +260,11 @@ export class S7DemoController extends Component {
   private trainingListNode: Node | null = null;
   private trainingInfoLabel: Label | null = null;
   private trainingResultLabel: Label | null = null;
+  // 居住舱(人口中枢) / 星核展厅(收藏) 信息界面
+  private habitatNode: Node | null = null;
+  private habitatInfoLabel: Label | null = null;
+  private galleryNode: Node | null = null;
+  private galleryInfoLabel: Label | null = null;
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -462,6 +467,8 @@ export class S7DemoController extends Component {
     this.buildBuildingUpgradePanel(W, H); // J 建筑升级弹框（各建筑共用）
     this.buildUnitTrainPanel('ship', W, H); // J-step2 船坞（星舰升级）
     this.buildUnitTrainPanel('pilot', W, H); // J-step2 训练舱（驾驶员升级）
+    this.buildInfoBuildingPanel('habitat', W, H); // J-step3 居住舱（人口中枢）
+    this.buildInfoBuildingPanel('gallery', W, H); // J-step3 星核展厅（收藏）
   }
 
   // ===== 星港主界面 hub =====
@@ -490,11 +497,11 @@ export class S7DemoController extends Component {
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
     this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
     this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
-    this.makeHubEntry('居住舱', '升级', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openBuildingUpgrade('bld_habitat'), 'bld_habitat');
+    this.makeHubEntry('居住舱', '人口', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openHabitat(), 'bld_habitat');
     this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
     this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
     this.makeHubEntry('研究塔', '升级', new Color(90, 110, 150, 255), rx, gy0 - gap * 2, ew, eh, () => this.openBuildingUpgrade('bld_research_tower'), 'bld_research_tower');
-    this.makeHubEntry('星核展厅', '升级', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openBuildingUpgrade('bld_rsv_core_gallery'), 'bld_rsv_core_gallery');
+    this.makeHubEntry('星核展厅', '收藏', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openGallery(), 'bld_rsv_core_gallery');
     this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
@@ -1228,6 +1235,10 @@ export class S7DemoController extends Component {
     this.refreshBuildingUpgrade();
     if (this.merchantNode?.active) this.refreshMerchant();
     if (this.salvageNode?.active) this.refreshSalvage();
+    if (this.habitatNode?.active) this.refreshInfoBuilding('habitat');
+    if (this.galleryNode?.active) this.refreshInfoBuilding('gallery');
+    if (this.dockNode?.active) this.refreshUnitTrain('ship');
+    if (this.trainingNode?.active) this.refreshUnitTrain('pilot');
   }
 
   /** 战斗结果弹窗（胜/败统一·居中对话框+半屏遮罩）：v1.0 §4.5。背景遮罩半透明→保留刚结束的战斗画面。
@@ -1953,6 +1964,9 @@ export class S7DemoController extends Component {
     if (!this.prebattleSelShip) { this.setPrebattleInfo('⚠ 先在下方点选一艘星舰，再点「装配」'); return; }
     this.setLoadoutMsg('点任一装备 → 弹详情 → 装/卸；标记：★本舰 / ▶在别船 / 未装', new Color(190, 205, 230));
     this.refreshLoadout();
+    // 置顶：从船坞(后建浮层)进装配时，确保装配面板盖在最上面。
+    const parent = this.loadoutNode.parent;
+    if (parent) this.loadoutNode.setSiblingIndex(parent.children.length - 1);
     this.loadoutNode.active = true;
   }
 
@@ -2394,9 +2408,13 @@ export class S7DemoController extends Component {
     for (const uid of units) {
       const lv = kind === 'ship' ? getShipLevel(this.playerState.unitLevels, uid) : getPilotLevel(this.playerState.unitLevels, uid);
       const atCap = lv >= cap;
-      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  Lv.${lv}${atCap ? '（已达上限）' : ''}`, 26, atCap ? new Color(200, 180, 140) : new Color(225, 225, 235), -this.viewW * 0.18, y);
+      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  Lv.${lv}${atCap ? '（满）' : ''}`, 24, atCap ? new Color(200, 180, 140) : new Color(225, 225, 235), -this.viewW * 0.30, y);
       const id = uid;
-      this.addBtn(listNode, '升级', 130, 56, atCap ? new Color(70, 75, 90, 255) : new Color(70, 150, 110, 255), this.viewW * 0.34, y, () => this.onUpgradeUnit(kind, id), 26);
+      if (kind === 'ship') {
+        // 船坞：装配入口（跳已做好的单舰装配界面·驾驶员/插件/星核）。
+        this.addBtn(listNode, '装配', 120, 56, new Color(70, 130, 160, 255), this.viewW * 0.10, y, () => { this.prebattleSelShip = id; this.openLoadout(); }, 24);
+      }
+      this.addBtn(listNode, '升级', 120, 56, atCap ? new Color(70, 75, 90, 255) : new Color(70, 150, 110, 255), this.viewW * 0.34, y, () => this.onUpgradeUnit(kind, id), 24);
       y -= 62;
     }
   }
@@ -2419,6 +2437,54 @@ export class S7DemoController extends Component {
     this.persist();
     this.refresh();
     this.refreshUnitTrain(kind);
+  }
+
+  // ===== J-step3 居住舱(人口中枢) / 星核展厅(收藏) 信息界面 =====
+
+  /** 搭"信息+升级入口"建筑浮层（居住舱/星核展厅共用）：标题 + 信息(刷新) + 升级入口 + 返回。 */
+  private buildInfoBuildingPanel(kind: 'habitat' | 'gallery', W: number, H: number): void {
+    const panel = new Node(kind === 'habitat' ? 'S7Habitat' : 'S7Gallery'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(20, 22, 32, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    const bid = kind === 'habitat' ? 'bld_habitat' : 'bld_rsv_core_gallery';
+    this.mkPanelLabel(panel, kind === 'habitat' ? '居住舱 · 人口中枢' : '星核展厅 · 收藏', 38, new Color(200, 200, 240), -W * 0.20, topY - 30);
+    const info = this.mkPanelLabel(panel, '', 26, new Color(220, 228, 245), 0, topY * 0.2);
+    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => { panel.active = false; }, 28);
+    this.addBtn(panel, '升级', 240, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade(bid), 28);
+    if (kind === 'habitat') { this.habitatNode = panel; this.habitatInfoLabel = info; }
+    else { this.galleryNode = panel; this.galleryInfoLabel = info; }
+  }
+
+  private openHabitat(): void { if (this.habitatNode) { this.habitatNode.active = true; this.refreshInfoBuilding('habitat'); } }
+  private openGallery(): void { if (this.galleryNode) { this.galleryNode.active = true; this.refreshInfoBuilding('gallery'); } }
+
+  /** 刷新居住舱/星核展厅信息（进界面 + 升级后调）。 */
+  private refreshInfoBuilding(kind: 'habitat' | 'gallery'): void {
+    if (!this.buildings) return;
+    if (kind === 'habitat' && this.habitatInfoLabel) {
+      const lv = getBuildingLevel(this.buildings, 'bld_habitat');
+      const res = this.population?.residents ?? 0;
+      const wrk = this.population?.workers ?? 0;
+      this.habitatInfoLabel.string =
+        `居住舱 Lv.${lv}\n居民 ${res} 人　工人 ${wrk} 人\n\n离线储存上限 ${Math.round(offlineStorageHours(lv))}h（建筑）\n离线产率 +${Math.round(offlineRateBonusPct(lv))}%（建筑）\n居民加成：离线产率再 +${residentRateBonusPct(res)}% · 储存再 +${residentStorageExtensionHours(res)}h\n工人加成：建筑升级星矿 -${workerCostDiscountPct(wrk)}%`;
+    } else if (kind === 'gallery' && this.galleryInfoLabel && this.squad) {
+      const lv = getBuildingLevel(this.buildings, 'bld_rsv_core_gallery');
+      const ids = Object.keys(this.squad.ownedCores);
+      const distinct = ids.length;
+      const list = ids.length > 0 ? ids.map((c) => `${this.coreName(c)}×${this.squad!.ownedCores[c]}`).join('、') : '（暂无·星核靠扩张宝藏/合成/宝库获得）';
+      this.galleryInfoLabel.string =
+        `星核展厅 Lv.${lv}\n已收集星核 ${distinct} 种：\n${list}\n\n全队收藏加成 +${coreGalleryTeamBonusPct(lv, distinct).toFixed(1)}%（已接入战斗·种类越多越强·封顶10%）`;
+    }
+  }
+
+  /** 星核 id → 中文名（取配置·缺失回退 id）。 */
+  private coreName(coreId: string): string {
+    return this.runtime?.getById<{ name: string }>('core_config', coreId)?.name ?? coreId;
   }
 
   /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
