@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(14); // 阶段一D 信标打捞：v13→v14（salvage）
+    expect(data.saveVersion).toBe(15); // 阶段一E 商人小站：v14→v15（merchant）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -590,6 +590,43 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.salvage.adSpeedup).toEqual({ dayKey: 123, count: 2 });
   });
 
+  it('迁移 v14 旧档到当前：补默认空商人状态 merchant，保留旧字段（加性迁移，无需重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: 14,
+        lastOnlineTime: NOW,
+        playerState: {
+          resources: { starCargo: 5000 },
+          salvage: { missions: [], nextSeq: 1, adSpeedup: { dayKey: -1, count: 0 } },
+        },
+      }),
+    );
+    const r = loadS7Save(adapter, NOW + 5);
+    expect(r.migrated).toBe(true);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
+    expect(r.data.playerState.merchant).toEqual({ offers: [], dailyBought: {}, cycleKey: -1, freeRefreshUsed: 0, paidRefreshUsed: 0, adRefreshUsed: 0 }); // 新字段补默认空
+    expect(r.data.playerState.resources.starCargo).toBe(5000); // 旧字段保留
+  });
+
+  it('round-trips merchant through persist + load（防 persist 漏字段）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const data = createDefaultS7SaveData(NOW);
+    data.playerState.merchant = {
+      offers: [{ offerId: 'o0', item: { kind: 'resource', resourceId: 'beaconCommon', amount: 1 }, price: 200, purchaseLimit: 5, rare: false }],
+      dailyBought: { 'res:beaconCommon': 2 },
+      cycleKey: 321, freeRefreshUsed: 1, paidRefreshUsed: 2, adRefreshUsed: 0,
+    };
+    persistS7Save(adapter, data, NOW + 10);
+    const r = loadS7Save(adapter, NOW + 20);
+    expect(r.data.playerState.merchant.offers).toHaveLength(1);
+    expect(r.data.playerState.merchant.offers[0]).toMatchObject({ offerId: 'o0', price: 200, purchaseLimit: 5 });
+    expect(r.data.playerState.merchant.dailyBought).toEqual({ 'res:beaconCommon': 2 });
+    expect(r.data.playerState.merchant.cycleKey).toBe(321);
+    expect(r.data.playerState.merchant.paidRefreshUsed).toBe(2);
+  });
+
   it('round-trips mainlineProgress through persist + load', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
@@ -638,7 +675,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(14);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(15);
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）

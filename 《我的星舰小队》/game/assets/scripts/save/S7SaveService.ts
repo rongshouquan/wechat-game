@@ -71,6 +71,11 @@ import {
   createDefaultS7Salvage,
   normalizeS7Salvage,
 } from '../core/s7/S7SalvageState';
+import {
+  S7MerchantState,
+  createDefaultS7Merchant,
+  normalizeS7Merchant,
+} from '../core/s7/S7MerchantState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -89,8 +94,9 @@ import {
  * v12（阶段一 G2·邮件系统）：playerState 增加 mailbox(邮件列表+序号)；旧档加载补默认空邮箱(加性迁移，无需重置)。
  * v13（阶段一 C·抽卡三池）：playerState 增加 gacha(三池保底计数 + 专属池兑换进度/已领/期号)；旧档加载补默认空(加性迁移，无需重置)。
  * v14（阶段一 D·信标打捞）：playerState 增加 salvage(进行中打捞任务 + 今日广告加速次数)；旧档加载补默认空(加性迁移，无需重置)。
+ * v15（阶段一 E·商人小站）：playerState 增加 merchant(当前货架 + 本周期购买量/刷新次数 + 周期标记)；旧档加载补默认空(加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 14;
+export const S7_CURRENT_SAVE_VERSION = 15;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -146,6 +152,8 @@ export interface S7PlayerState {
   gacha: S7GachaState;
   /** 信标打捞（阶段一 D）：进行中打捞任务 + 今日广告加速次数，形状由 core/s7/S7SalvageState 拥有。 */
   salvage: S7SalvageState;
+  /** 商人小站（阶段一 E）：当前货架 + 本周期购买量/刷新次数，形状由 core/s7/S7MerchantState 拥有。 */
+  merchant: S7MerchantState;
 }
 
 export interface S7SaveData {
@@ -179,6 +187,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     mailbox: createDefaultS7Mailbox(),
     gacha: createDefaultS7GachaState(),
     salvage: createDefaultS7Salvage(),
+    merchant: createDefaultS7Merchant(),
   };
 }
 
@@ -232,6 +241,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     mailbox: normalizeS7Mailbox(src.mailbox),
     gacha: normalizeS7GachaState(src.gacha),
     salvage: normalizeS7Salvage(src.salvage),
+    merchant: normalizeS7Merchant(src.merchant),
   };
 }
 
@@ -338,6 +348,8 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       gacha: normalizeS7GachaState(data.playerState?.gacha),
       // 阶段一D：补 salvage（信标打捞状态）。
       salvage: normalizeS7Salvage(data.playerState?.salvage),
+      // 阶段一E：补 merchant（商人小站状态）。
+      merchant: normalizeS7Merchant(data.playerState?.merchant),
     },
     lastOnlineTime: now,
   };
