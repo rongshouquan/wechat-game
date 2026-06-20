@@ -30,6 +30,33 @@ const CORE_POWER = 150;
 // 驾驶员战力占位：现无升星系统（留后），先给配上驾驶员的船一档固定加成；升星后改为按星级缩放（第二块）。
 const PILOT_POWER = 100;
 
+/**
+ * 单舰战力（占位·精确公式留第二块）：成长战力(按等级) + 装配战力(驾驶员 + 星核 + 插件按品质)。
+ * 备战总战力按编队逐舰求和、上阵界面按此排序/显示——单一口径，避免重复。
+ */
+export function shipPowerOf(
+  growthBands: S7GrowthBandParam[],
+  squad: S7SquadState,
+  shipId: string,
+  unitLevels?: S7UnitLevelState,
+  inventory?: S7PluginInventoryState,
+): number {
+  const lv = unitLevels ? getShipLevel(unitLevels, shipId) : 1;
+  let p = unitPowerAtLevel(growthBands, 'ship', lv);
+  const lo = squad.shipLoadouts[shipId];
+  if (lo) {
+    if (lo.pilotId) p += PILOT_POWER;
+    if (lo.coreId) p += CORE_POWER;
+    if (inventory) {
+      for (const id of lo.pluginInstanceIds) {
+        const inst = findOwnedPlugin(inventory, id);
+        if (inst) p += PLUGIN_POWER_BY_QUALITY[inst.quality] ?? 0;
+      }
+    }
+  }
+  return Math.round(p);
+}
+
 /** 敌情预览里的一个敌人：战斗属性行 + 站位 + 是否 Boss。 */
 export interface S7PrebattleEnemy {
   unitStatRef: string;
@@ -96,24 +123,11 @@ export function buildPrebattleView(
     }
   }
 
-  // 我方战力（占位）：编队各舰 成长战力(按等级) + 装配战力(插件按品质 + 星核·均计入，Ron 拍板)。
+  // 我方战力（占位）：编队各舰 成长战力(按等级) + 装配战力(驾驶员 + 星核 + 插件按品质·均计入)，逐舰经 shipPowerOf。
   const growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
   let playerPower = 0;
   for (const slot of squad.formation) {
-    const lv = unitLevels ? getShipLevel(unitLevels, slot.shipId) : 1;
-    playerPower += unitPowerAtLevel(growthBands, 'ship', lv);
-    // 装配：该舰记忆的驾驶员 + 星核 + 插件实例（按船取，与编队解耦）。
-    const loadout = squad.shipLoadouts[slot.shipId];
-    if (loadout) {
-      if (loadout.pilotId) playerPower += PILOT_POWER;
-      if (loadout.coreId) playerPower += CORE_POWER;
-      if (inventory) {
-        for (const id of loadout.pluginInstanceIds) {
-          const inst = findOwnedPlugin(inventory, id);
-          if (inst) playerPower += PLUGIN_POWER_BY_QUALITY[inst.quality] ?? 0;
-        }
-      }
-    }
+    playerPower += shipPowerOf(growthBands, squad, slot.shipId, unitLevels, inventory);
   }
 
   return {
