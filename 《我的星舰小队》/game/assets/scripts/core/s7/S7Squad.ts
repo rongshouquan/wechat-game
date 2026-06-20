@@ -2,28 +2,31 @@
 //
 // 本模块拥有两件事的状态形状 + 默认/规范化 + 操作/校验/转换：
 //   ① 玩家"拥有"：星舰/驾驶员=拥有集合(本体单一，靠升阶/升星养)；星核=实例计数(coreId→拥有数)；插件实例库存另由 S7PluginInventory 管。
-//   ② 编队：≤5 个上阵位，每位 = 星舰 + 必配驾驶员（+ 星核/插件留"单舰深装"块接，本步默认空）。
-//   ③ buildSquadLineup：把编队校验后转成 S7BattleEncounterAssembler 吃的出战阵容（注入星舰等级）。
+//   ② 编队：≤5 个上阵位，每位 = 星舰 + 必配驾驶员 + 星核(coreId) + 插件实例(pluginInstanceIds)；装/卸由 S7ShipLoadout 操作（B 块·单舰深装）。
+//   ③ buildSquadLineup：把编队校验后转成 S7BattleEncounterAssembler 吃的出战阵容（注入星舰等级；给了库存则把插件实例解析成 {pluginId,quality} 喂战斗）。
 //
 // 边界：core 层自包含——只依赖同族 S7* + 中性结构；不 import save（由 S7SaveService 组合进 S7PlayerState）、不 import cc、可 Node/vitest 测。
 // 数值真源 B1 / 设计真源 v1.0。
 
-import { S7BattleLineupUnitInput } from './S7BattleEncounterAssembler';
+import { S7BattleLineupUnitInput, S7BattleLineupPluginInput } from './S7BattleEncounterAssembler';
 import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
+import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 
 /** 上阵位上限（v1.0 §4.1：3×3 九宫格、上阵 5 舰）。 */
 export const S7_MAX_FORMATION_SLOTS = 5;
 /** 玩家阵位格 p0c0..p2c2。 */
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 
-/** 一个上阵位的配置。星核/插件本步默认空（coreId=null / pluginIds=[]），留"单舰深装"块接。 */
+/** 一个上阵位的配置。星核 coreId / 插件实例 pluginInstanceIds 由 S7ShipLoadout 装卸（B 块）。 */
 export interface S7FormationSlot {
   slotRef: string;
   shipId: string;
   /** 必配驾驶员；null = 该位缺驾驶员（v1.0 §4.4 空船不能上阵 → 校验会拦）。 */
   pilotId: string | null;
+  /** 装备的星核 id（一船 1 核·§5.4）；null = 未装。 */
   coreId: string | null;
-  pluginIds: string[];
+  /** 装备的插件「实例号」(S7PluginInventory 的 instanceId，非 pluginId)；经库存解析回 {pluginId,quality}。 */
+  pluginInstanceIds: string[];
 }
 
 /** 阵容状态：拥有 roster + 编队。 */
@@ -81,7 +84,7 @@ export function normalizeS7Squad(raw: unknown): S7SquadState {
         shipId,
         pilotId: typeof row.pilotId === 'string' && row.pilotId.length > 0 ? row.pilotId : null,
         coreId: typeof row.coreId === 'string' && row.coreId.length > 0 ? row.coreId : null,
-        pluginIds: normStrArray(row.pluginIds),
+        pluginInstanceIds: normStrArray(row.pluginInstanceIds),
       });
     }
   }
@@ -131,7 +134,7 @@ export function assignSlot(squad: S7SquadState, slotRef: string, shipId: string,
     for (const s of squad.formation) if (s.pilotId === pilotId) s.pilotId = null; // 驾驶员从别船自动卸下
   }
   if (squad.formation.length >= S7_MAX_FORMATION_SLOTS) return; // 满 5 位不再加
-  squad.formation.push({ slotRef, shipId, pilotId, coreId: null, pluginIds: [] });
+  squad.formation.push({ slotRef, shipId, pilotId, coreId: null, pluginInstanceIds: [] });
 }
 
 /**
@@ -156,7 +159,7 @@ export function clearSlot(squad: S7SquadState, slotRef: string): void {
 
 export type S7SquadLineupErrorCode =
   | 'empty' | 'too_many' | 'bad_slot' | 'dup_slot' | 'dup_ship' | 'dup_pilot'
-  | 'not_owned_ship' | 'no_pilot' | 'not_owned_pilot' | 'not_owned_core';
+  | 'not_owned_ship' | 'no_pilot' | 'not_owned_pilot' | 'not_owned_core' | 'not_owned_plugin';
 
 export type S7SquadLineupResult =
   | { ok: true; lineup: S7BattleLineupUnitInput[] }
@@ -165,10 +168,17 @@ export type S7SquadLineupResult =
 /**
  * 把编队校验后转成战斗阵容（喂 S7BattleEncounterAssembler）。
  * 校验：非空 / ≤5 / 阵位合法且不重 / 同船不占两位 / 星舰与驾驶员必须拥有 / 每位必配驾驶员 / 星核(若装)必须拥有。
- * 通过则注入星舰等级（unitLevels 给了的话）。插件留"单舰深装"块（本步 pluginIds 为空、不解析）。
+ * 通过则注入星舰等级（unitLevels 给了的话）。
+ * 插件（B 块）：给了 inventory 才解析——把 slot.pluginInstanceIds 经库存查回 {pluginId,quality} 喂战斗；
+ *   实例在库存里查不到 → not_owned_plugin（早暴露编队与库存不同步）。不给 inventory = 不解析插件（保持老行为·零回归）。
+ *   注：插件「同槽不堆叠/同名不重复/≤3」由装配层(S7BattleEncounterAssembler)按 plugin_config 校验，装/卸时由 S7ShipLoadout 拦在前。
  * 任一不满足返回 ok:false（不抛错，调用方据 code 提示）。
  */
-export function buildSquadLineup(squad: S7SquadState, unitLevels?: S7UnitLevelState): S7SquadLineupResult {
+export function buildSquadLineup(
+  squad: S7SquadState,
+  unitLevels?: S7UnitLevelState,
+  inventory?: S7PluginInventoryState,
+): S7SquadLineupResult {
   const f = squad.formation;
   if (!Array.isArray(f) || f.length === 0) return { ok: false, code: 'empty', message: '编队为空，至少上阵 1 艘' };
   if (f.length > S7_MAX_FORMATION_SLOTS) return { ok: false, code: 'too_many', message: `上阵最多 ${S7_MAX_FORMATION_SLOTS} 艘` };
@@ -196,7 +206,18 @@ export function buildSquadLineup(squad: S7SquadState, unitLevels?: S7UnitLevelSt
     const unit: S7BattleLineupUnitInput = { shipId: slot.shipId, slotRef: slot.slotRef, pilotId: slot.pilotId };
     if (slot.coreId) unit.coreId = slot.coreId;
     if (unitLevels) unit.shipLevel = getShipLevel(unitLevels, slot.shipId);
-    // 插件：本步不解析 pluginIds（实例→{pluginId,quality} 留"单舰深装"块，届时经 S7PluginInventory 解析注入）。
+    // 插件（B 块）：给了库存才解析——实例号 → {pluginId,quality} 喂战斗（装配层再按配置缩放成效果积木）。
+    if (inventory && slot.pluginInstanceIds.length > 0) {
+      const plugins: S7BattleLineupPluginInput[] = [];
+      for (const instanceId of slot.pluginInstanceIds) {
+        const inst = findOwnedPlugin(inventory, instanceId);
+        if (!inst) {
+          return { ok: false, code: 'not_owned_plugin', message: `编队里的插件实例 ${instanceId} 不在库存（已被回收/合成？请重新装配）` };
+        }
+        plugins.push({ pluginId: inst.pluginId, quality: inst.quality });
+      }
+      if (plugins.length > 0) unit.plugins = plugins;
+    }
     lineup.push(unit);
   }
   return { ok: true, lineup };

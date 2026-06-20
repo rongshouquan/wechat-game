@@ -17,6 +17,7 @@ import { S7BattleLineupUnitInput } from './S7BattleEncounterAssembler';
 import { createS7DefaultDryRunLineup } from './S7DefaultBattleLineup';
 import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
 import { S7SquadState, buildSquadLineup } from './S7Squad';
+import { S7PluginInventoryState } from './S7PluginInventory';
 import {
   S7NodeSettlementResult,
   settleS7NodeVictory,
@@ -80,6 +81,8 @@ export class S7RunSession {
     private readonly unitLevels?: S7UnitLevelState,
     /** 玩家阵容/编队（阶段一A，可选）：给了且编队合法则默认出战用玩家编队（否则回退默认 3 舰）。 */
     private readonly squad?: S7SquadState,
+    /** 插件库存（B 块·单舰深装，可选）：给了则编队里装的插件实例被解析成战斗词条（真进战斗生效）。 */
+    private readonly pluginInventory?: S7PluginInventoryState,
   ) {}
 
   /** 当前待打节点。 */
@@ -93,7 +96,7 @@ export class S7RunSession {
    */
   private defaultLeveledLineup(): S7BattleLineupUnitInput[] {
     if (this.squad) {
-      const built = buildSquadLineup(this.squad, this.unitLevels);
+      const built = buildSquadLineup(this.squad, this.unitLevels, this.pluginInventory);
       if (built.ok) return built.lineup;
     }
     const base = createS7DefaultDryRunLineup();
