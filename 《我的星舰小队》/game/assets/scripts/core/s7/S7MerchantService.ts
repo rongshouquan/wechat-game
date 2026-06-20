@@ -10,6 +10,7 @@ import { S7AutoBattleRng } from './S7AutoBattleRng';
 import { S7MerchantConfig, S7ShopItem, S7ShopOfferTemplate } from './S7MerchantConfig';
 import { S7MerchantState, S7ShopOffer, shopItemKey } from './S7MerchantState';
 import { S7BeaconTier, BEACON_RESOURCE } from './S7SalvageConfig';
+import { merchantDailyFreeRefresh } from './S7BuildingEffects';
 
 const DAY_MS = 86_400_000;
 
@@ -110,11 +111,13 @@ export function refreshMerchantShop(
   state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
 ): S7RefreshResult {
   if (mode === 'free') {
-    if (state.freeRefreshUsed >= config.refresh.freePerCycle) return { ok: false, reason: 'cap_reached' };
+    // 每日免费刷新上限 = 商人小站楼级（每升一级 +1·Ron）。
+    const freeCap = merchantDailyFreeRefresh(merchantLevel);
+    if (state.freeRefreshUsed >= freeCap) return { ok: false, reason: 'cap_reached' };
     state.freeRefreshUsed += 1;
     generateMerchantStock(state, config, merchantLevel, rng);
     state.dailyBought = {}; // 刷新连购买次数一起清（新一茬店·可重新买）
-    return { ok: true, mode, usedThisCycle: state.freeRefreshUsed, cap: config.refresh.freePerCycle };
+    return { ok: true, mode, usedThisCycle: state.freeRefreshUsed, cap: freeCap };
   }
   // ad
   if (state.adRefreshUsed >= config.refresh.adPerCycle) return { ok: false, reason: 'cap_reached' };

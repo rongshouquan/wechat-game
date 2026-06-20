@@ -58,6 +58,8 @@ export interface S7BattleLineupUnitInput {
   shipLevel?: number;
   /** 驾驶员等级（C1b 升级变强）：缺省 1 级；当前 pilotGrowthBlocks 占位返回空（§5.2 驾驶员升级无原始属性）。 */
   pilotLevel?: number;
+  /** 全队加成积木（J 建筑剩余效果）：研究塔/星核展厅等"全队 %"由调用方算好、附在每个上阵单位上，组装时并入该舰效果积木。 */
+  extraBlocks?: S7EffectBlock[];
 }
 
 /** 组装请求：只读节点进度 + 运行种子 + 玩家阵容（稳定 shipId）。 */
@@ -273,6 +275,7 @@ export class S7BattleEncounterAssembler {
         ...(item.coreId ? coreBlocks(item.coreId) : []),
         ...(item.pilotId ? pilotBlocks(item.pilotId) : []),
         ...this.resolvePluginBlocks(item.plugins, pluginConfigs),
+        ...(item.extraBlocks ?? []), // J：全队加成（研究塔/星核展厅）并入
       ];
       playerUnits.push(
         blocks.length > 0

@@ -39,8 +39,10 @@ import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7Bui
 import { S7PopulationState, createDefaultS7Population } from '../../core/s7/S7Population';
 import {
   shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
-  salvageTeamCount, researchTeamBonusPct, merchantShopSlots,
+  salvageTeamCount, researchTeamBonusPct, merchantShopSlots, coreGalleryTeamBonusPct,
+  coreGalleryPerTypeBonusPct, merchantDailyFreeRefresh,
 } from '../../core/s7/S7BuildingEffects';
+import { S7EffectBlock } from '../../core/s7/S7BattleEffectBlock';
 import { getS7UsableBand } from '../S7UiLayout';
 import {
   S7SquadState, grantShip, grantPilot, grantCore, assignSlot, clearSlot, moveOrSwapFormationSlot, buildSquadLineup,
@@ -74,7 +76,7 @@ import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
 import { DEFAULT_S7_MERCHANT_CONFIG, S7ShopItem } from '../../core/s7/S7MerchantConfig';
 import {
   refreshMerchantToCycle, buyMerchantOffer, offerRemaining, refreshMerchantShop, S7RefreshMode,
-  recycleBeacon, recycleStarOre, generateMerchantStock,
+  recycleBeacon, recycleStarOre,
 } from '../../core/s7/S7MerchantService';
 
 const { ccclass } = _decorator;
@@ -82,7 +84,7 @@ const { ccclass } = _decorator;
 /** demo 默认解锁的 7 栋建筑（真实游戏靠主线/教程解锁；demo 开局直接开到 1 级，便于演示养成）。 */
 const S7_DEMO_DEFAULT_BUILDINGS = [
   'bld_dock', 'bld_pilot_training_bay', 'bld_habitat', 'bld_supply_station',
-  'bld_salvage_port', 'bld_merchant_station', 'bld_research_tower',
+  'bld_salvage_port', 'bld_merchant_station', 'bld_research_tower', 'bld_rsv_core_gallery',
 ];
 /** A-step2 demo 开局发货（DEV-TEMP·正式获取靠后面抽卡/发奖块）：默认拥有的船/驾驶员 + 默认编队。 */
 const S7_DEMO_SEED_SHIPS = ['shp01', 'shp02', 'shp03', 'shp04', 'shp05'];
@@ -239,6 +241,14 @@ export class S7DemoController extends Component {
   private merchantListNode: Node | null = null;     // 货架 offer 列表容器（刷新重建）
   private merchantSellNode: Node | null = null;      // 回收按钮容器（随等级解锁·刷新重建）
   private merchantResultLabel: Label | null = null;
+
+  // ===== J 建筑升级入口（弹框·各建筑共用 + 主界面等级/可升提示）=====
+  private buildingUpgradeNode: Node | null = null;
+  private buildingUpgradeTarget = '';
+  private buUpTitleLabel: Label | null = null;
+  private buUpInfoLabel: Label | null = null;
+  private buUpBtn: Node | null = null;           // 升级按钮（满级/买不起→灰）
+  private hubBuildingTracks: { id: string; label: Label }[] = []; // hub 建筑入口副标签(显等级/可升↑)
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -352,6 +362,8 @@ export class S7DemoController extends Component {
         if ((r.beaconEpic ?? 0) < 3) r.beaconEpic = 3;
         // E DEV-TEMP：给一笔星贝，方便一进来就能在商人小站买东西（正式星贝来自出战/回收）。
         if ((r.starCargo ?? 0) < 50000) r.starCargo = 50000;
+        // J DEV-TEMP：给一笔星矿，方便测建筑升级（升级花星矿·正式靠出战/离线/回收攒）。
+        if ((r.starOre ?? 0) < 100000) r.starOre = 100000;
       }
     }
     // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
@@ -434,6 +446,7 @@ export class S7DemoController extends Component {
     this.buildGachaPanel(W, H); // C 抽卡界面（星港补给站进）
     this.buildSalvagePanel(W, H); // D 打捞界面（打捞港进）
     this.buildMerchantPanel(W, H); // E 商人小站界面（商人小站进）
+    this.buildBuildingUpgradePanel(W, H); // J 建筑升级弹框（各建筑共用）
   }
 
   // ===== 星港主界面 hub =====
@@ -461,12 +474,12 @@ export class S7DemoController extends Component {
     const gap = 150;
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
     this.makeHubEntry('船坞', '即将开放', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.hubToast('船坞·即将开放'));
-    this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage());
-    this.makeHubEntry('居住舱', '即将开放', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.hubToast('居住舱·即将开放'));
+    this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
+    this.makeHubEntry('居住舱', '升级', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openBuildingUpgrade('bld_habitat'), 'bld_habitat');
     this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
-    this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant());
-    this.makeHubEntry('研究塔', '未解锁', new Color(70, 78, 96, 255), rx, gy0 - gap * 2, ew, eh, () => this.hubToast('研究塔·未解锁'));
-    this.makeHubEntry('星核展厅', '未解锁', new Color(70, 78, 96, 255), 0, gy0 - gap * 3, ew, eh, () => this.hubToast('星核展厅·未解锁'));
+    this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
+    this.makeHubEntry('研究塔', '升级', new Color(90, 110, 150, 255), rx, gy0 - gap * 2, ew, eh, () => this.openBuildingUpgrade('bld_research_tower'), 'bld_research_tower');
+    this.makeHubEntry('星核展厅', '升级', new Color(120, 100, 150, 255), 0, gy0 - gap * 3, ew, eh, () => this.openBuildingUpgrade('bld_rsv_core_gallery'), 'bld_rsv_core_gallery');
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
     this.makeHubEntry('背包', '即将开放', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.hubToast('背包·即将开放'));
@@ -497,8 +510,8 @@ export class S7DemoController extends Component {
     return l;
   }
 
-  /** 建筑/活动入口块：圆角底 + 名 + 状态子标签 + 点击。 */
-  private makeHubEntry(name: string, sub: string, color: Color, x: number, y: number, w: number, h: number, onTap: () => void): Node {
+  /** 建筑/活动入口块：圆角底 + 名 + 状态子标签 + 点击。trackBuildingId 给了则把副标签登记，refresh() 更新"Lv.X·可升↑"。 */
+  private makeHubEntry(name: string, sub: string, color: Color, x: number, y: number, w: number, h: number, onTap: () => void, trackBuildingId?: string): Node {
     const node = new Node('S7HubEntry'); node.layer = this.node.layer; this.node.addChild(node); node.setPosition(x, y, 0);
     node.addComponent(UITransform).setContentSize(w, h);
     const g = node.addComponent(Graphics);
@@ -508,6 +521,7 @@ export class S7DemoController extends Component {
     const subN = new Node('s'); subN.layer = this.node.layer; node.addChild(subN); subN.setPosition(0, -h * 0.26, 0);
     const sl = subN.addComponent(Label); sl.fontSize = 22; sl.lineHeight = 26; sl.color = new Color(225, 235, 255, 200); sl.string = sub;
     node.on(Node.EventType.TOUCH_END, onTap, this);
+    if (trackBuildingId) this.hubBuildingTracks.push({ id: trackBuildingId, label: sl });
     return node;
   }
 
@@ -792,7 +806,8 @@ export class S7DemoController extends Component {
     this.salvageListNode = list;
 
     this.salvageResultLabel = this.mkPanelLabel(panel, '选档+时长→开始打捞', 24, new Color(180, 230, 200), 0, botY + 130);
-    this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 44, () => this.closeSalvage(), 30);
+    this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => this.closeSalvage(), 30);
+    this.addBtn(panel, '升级打捞港', 260, 80, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade('bld_salvage_port'), 28);
   }
 
   /** 单选小按钮（选档/选时长用·存 node 供高亮）。 */
@@ -1001,9 +1016,8 @@ export class S7DemoController extends Component {
     this.merchantSellNode = sell;
 
     this.merchantResultLabel = this.mkPanelLabel(panel, '逛逛·买卖换星贝', 24, new Color(220, 210, 160), 0, botY + 100);
-    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), 0, botY + 40, () => this.closeMerchant(), 28);
-    // DEV-TEMP：升商人小站(免费·便于灰盒验"回收/格子随等级解锁")。正式版删（靠建筑升级）。
-    this.addBtn(panel, 'DEV:升商人小站', 240, 56, new Color(90, 80, 120, 255), W * 0.32, botY + 40, () => this.devUpgradeMerchant(), 22);
+    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 40, () => this.closeMerchant(), 28);
+    this.addBtn(panel, '升级商人小站', 260, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 40, () => this.openBuildingUpgrade('bld_merchant_station'), 26);
   }
 
   private merchantLevel(): number {
@@ -1122,18 +1136,6 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** DEV-TEMP：免费升商人小站 1 级（便于灰盒验"回收/格子随等级解锁"）。正式版删（靠建筑升级）。 */
-  private devUpgradeMerchant(): void {
-    if (!this.buildings) return;
-    const cur = getBuildingLevel(this.buildings, 'bld_merchant_station');
-    const lv = Math.min(10, cur + 1);
-    this.buildings.levels['bld_merchant_station'] = lv;
-    // 立即按新等级重铺货（DEV·便于看到格子变多/解锁；正常靠刷新或跨天）。
-    if (this.playerState) generateMerchantStock(this.playerState.merchant, DEFAULT_S7_MERCHANT_CONFIG, lv, new S7AutoBattleRng(`devmc_${Date.now()}`));
-    if (this.merchantResultLabel) this.merchantResultLabel.string = `[DEV] 商人小站 → Lv.${lv}`;
-    this.persist();
-    this.refreshMerchant();
-  }
 
   private onMerchantRecycleOre(amount: number): void {
     if (!this.session) return;
@@ -1147,6 +1149,66 @@ export class S7DemoController extends Component {
     const r = recycleBeacon(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, tier, 1);
     if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收信标→星贝+${r.starCargoGained}` : '没有该档信标';
     this.persist(); this.refresh(); this.refreshMerchant();
+  }
+
+  // ===== J 建筑升级弹框（各建筑共用：等级/当前→下一级效果/花星矿·工人折扣）=====
+
+  /** 搭建筑升级弹框（默认隐藏·居中卡片）。 */
+  private buildBuildingUpgradePanel(W: number, H: number): void {
+    const panel = new Node('S7BuildUpgrade'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(0, 0, 0, 170); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    const cw = W * 0.84, ch = H * 0.36;
+    g.fillColor = new Color(30, 30, 46, 255); g.roundRect(-cw / 2, -ch / 2, cw, ch, 18); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.active = false;
+    this.buildingUpgradeNode = panel;
+    this.addModalDismiss(panel, () => this.closeBuildingUpgrade(), cw, ch, 0, 0);
+    this.buUpTitleLabel = this.mkPanelLabel(panel, '', 40, new Color(255, 225, 140), 0, ch * 0.33);
+    this.buUpInfoLabel = this.mkPanelLabel(panel, '', 26, new Color(225, 230, 245), 0, ch * 0.02);
+    this.buUpBtn = this.addBtn(panel, '升级', 240, 84, new Color(80, 160, 110, 255), -W * 0.17, -ch * 0.34, () => this.onBuildingUpgradeConfirm(), 32).node.parent;
+    this.addBtn(panel, '关闭', 200, 84, new Color(110, 90, 150, 255), W * 0.17, -ch * 0.34, () => this.closeBuildingUpgrade(), 30);
+  }
+
+  private openBuildingUpgrade(buildingId: string): void {
+    if (!this.buildingUpgradeNode) return;
+    this.buildingUpgradeTarget = buildingId;
+    this.buildingUpgradeNode.active = true;
+    this.refreshBuildingUpgrade();
+  }
+  private closeBuildingUpgrade(): void { if (this.buildingUpgradeNode) this.buildingUpgradeNode.active = false; }
+
+  /** 刷新升级弹框内容：等级 + 当前→下一级效果 + 花费星矿(工人折后)；满级/买不起→按钮灰。 */
+  private refreshBuildingUpgrade(): void {
+    if (!this.buildings || !this.session || !this.population) return;
+    const id = this.buildingUpgradeTarget;
+    const v = buildBuildingUpgradeView([id], this.buildings, this.session.resources, this.population)[0];
+    if (this.buUpTitleLabel) this.buUpTitleLabel.string = S7_BUILDING_NAMES[id] ?? id;
+    const greyBtn = () => this.paintBtn(this.buUpBtn, new Color(70, 75, 90, 255), 240, 84);
+    if (!this.buUpInfoLabel) return;
+    if (v.atMax) {
+      this.buUpInfoLabel.string = `已满级 Lv.${v.level}\n效果：${this.effectSummary(id, v.level)}`;
+      greyBtn();
+    } else {
+      this.buUpInfoLabel.string = `Lv.${v.level} → Lv.${v.level + 1}\n现：${this.effectSummary(id, v.level)}\n升后：${this.effectSummary(id, v.level + 1)}\n花费：${v.discountedCost} 星矿`;
+      this.paintBtn(this.buUpBtn, v.canAfford ? new Color(80, 160, 110, 255) : new Color(70, 75, 90, 255), 240, 84);
+    }
+  }
+
+  private onBuildingUpgradeConfirm(): void {
+    if (!this.buildings || !this.session || !this.population) return;
+    const id = this.buildingUpgradeTarget;
+    const r = upgradeBuildingWithDiscount(this.buildings, this.session.resources, this.population, id);
+    if (!r.ok) {
+      if (this.buUpInfoLabel) this.buUpInfoLabel.string = r.code === 'max_level' ? '已满级' : r.code === 'insufficient_star_ore' ? '星矿不够（去出战/回收攒矿）' : '暂不可升级';
+      return;
+    }
+    // 升级不改当前货架（商人·Ron）；只刷等级/效果/红点。新格子/免费刷新等下次刷新或本就生效。
+    this.persist();
+    this.refresh();           // 主界面货币 + hub 建筑等级/红点
+    this.refreshBuildingUpgrade();
+    if (this.merchantNode?.active) this.refreshMerchant();
+    if (this.salvageNode?.active) this.refreshSalvage();
   }
 
   /** 战斗结果弹窗（胜/败统一·居中对话框+半屏遮罩）：v1.0 §4.5。背景遮罩半透明→保留刚结束的战斗画面。
@@ -1470,8 +1532,10 @@ export class S7DemoController extends Component {
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
     // #2 出战前校验编队（v1.0 §4.4 空船不能上阵）：有船缺驾驶员/没上阵 → 拦下并提示，不开打。
+    // 带插件库存校验(与会话内部一致)，built.lineup 即含插件——下面附上全队加成后直接喂战斗。
+    let lineup: ReturnType<typeof buildSquadLineup> | null = null;
     if (this.squad) {
-      const built = buildSquadLineup(this.squad, this.playerState?.unitLevels);
+      const built = buildSquadLineup(this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined);
       if (!built.ok && this.prebattleInfoLabel) {
         const msg = built.code === 'no_pilot' ? '有星舰缺驾驶员——请给每艘上阵星舰配上驾驶员再出战'
           : built.code === 'empty' ? '请先上阵至少 1 艘星舰'
@@ -1482,11 +1546,17 @@ export class S7DemoController extends Component {
         return;
       }
       if (!built.ok) return;
+      lineup = built;
     }
     const nodeId = this.session.currentNodeId;
+    // J：把建筑全队加成（研究塔+星核展厅）附到每艘上阵舰，喂进战斗。
+    const bonus = this.teamBonusBlocks();
+    const battleLineup = (lineup && lineup.ok)
+      ? (bonus.length > 0 ? lineup.lineup.map((u) => ({ ...u, extraBlocks: [...(u.extraBlocks ?? []), ...bonus] })) : lineup.lineup)
+      : undefined;
     let outcome: S7PlayNodeOutcome;
     try {
-      outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED);
+      outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED, battleLineup);
     } catch (err) {
       // 无遭遇节点（你已通到内容缺口·如 n008+）：不静默弹回基地——留在备战界面给明确提示，引导点「选择关卡」挑可玩关。
       console.warn('[S7DemoController] 该节点暂无战斗遭遇', nodeId, err);
@@ -1501,6 +1571,21 @@ export class S7DemoController extends Component {
     this.pendingWon = outcome.won;
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
+  }
+
+  /** J：建筑全队加成（研究塔伤害 + 星核展厅收藏加成）→ 战斗积木(maxHp+attack 各一条 pct)。无加成→空。 */
+  private teamBonusBlocks(): S7EffectBlock[] {
+    if (!this.buildings || !this.squad) return [];
+    const researchLv = getBuildingLevel(this.buildings, 'bld_research_tower');
+    const galleryLv = getBuildingLevel(this.buildings, 'bld_rsv_core_gallery');
+    const distinctCores = Object.keys(this.squad.ownedCores).length;
+    const pct = researchTeamBonusPct(researchLv) + coreGalleryTeamBonusPct(galleryLv, distinctCores); // 百分数
+    if (pct <= 0) return [];
+    const frac = pct / 100;
+    return [
+      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: frac, source: 'building_team_bonus' },
+      { kind: 'modifier', stat: 'attack', op: 'pct', value: frac, source: 'building_team_bonus' },
+    ];
   }
 
   // ===== A-step2 战前备战界面交互 =====
@@ -2400,10 +2485,11 @@ export class S7DemoController extends Component {
       case 'bld_habitat': return `离线${Math.round(offlineStorageHours(level))}h·产率+${Math.round(offlineRateBonusPct(level))}%`;
       case 'bld_dock': return `旗舰等级上限${shipLevelCap(level)}`;
       case 'bld_pilot_training_bay': return `驾驶员上限${driverLevelCap(level)}`;
-      case 'bld_research_tower': return `全队伤害+${researchTeamBonusPct(level)}%`;
+      case 'bld_research_tower': return `全队血攻+${researchTeamBonusPct(level)}%`;
+      case 'bld_rsv_core_gallery': return `每种星核收藏+${coreGalleryPerTypeBonusPct(level).toFixed(1)}%(×收集种数·封顶10%)`;
       case 'bld_salvage_port': return `打捞队${salvageTeamCount(level)}`;
-      case 'bld_merchant_station': return `商店槽${merchantShopSlots(level)}`;
-      case 'bld_supply_station': return '抽卡出率(预览)';
+      case 'bld_merchant_station': return `商店槽${merchantShopSlots(level)}·免费刷新${merchantDailyFreeRefresh(level)}/天`;
+      case 'bld_supply_station': return '抽卡出率(待接·J2)';
       default: return '';
     }
   }
@@ -2430,6 +2516,17 @@ export class S7DemoController extends Component {
     if (this.hubTicketLabel) this.hubTicketLabel.string = `补给券\n${this.fmtNum(Math.floor(r.supplyTicket ?? 0))}`;
     // C：有未领离线收益才显示金色「领取」按钮。
     if (this.offlineBtn) this.offlineBtn.active = this.offlinePending !== null;
+    // J：hub 建筑入口显等级 + 可升↑（买得起且未满级亮提示）。
+    if (this.hubBuildingTracks.length > 0 && this.buildings && this.population) {
+      const views = buildBuildingUpgradeView(this.hubBuildingTracks.map((t) => t.id), this.buildings, r, this.population);
+      const byId = new Map(views.map((v) => [v.buildingId, v]));
+      for (const t of this.hubBuildingTracks) {
+        const v = byId.get(t.id);
+        if (!v) continue;
+        t.label.string = v.atMax ? `Lv.${v.level} 满级` : v.canAfford ? `Lv.${v.level} 可升↑` : `Lv.${v.level}`;
+        t.label.color = v.canAfford && !v.atMax ? new Color(140, 235, 160) : new Color(225, 235, 255, 200);
+      }
+    }
   }
 
   /** 千分位格式化（避免 locale 差异·手写分组）。 */

@@ -88,11 +88,7 @@ export function merchantShopSlots(merchantLevel: number): number {
   if (lv === 0) return 0;
   return Math.min(2 + Math.floor((lv - 1) / 2), 6);
 }
-/** 每日免费刷新次数：lv1-5=1 → lv6-9=2 → lv10=3。未解锁=0。 */
+/** 每日免费刷新次数 = 商人小站楼级（Ron 2026-06-21：每升一级 +1 次/天免费刷新·lv1→1…lv10→10）。未解锁=0。 */
 export function merchantDailyFreeRefresh(merchantLevel: number): number {
-  const lv = clampLevel(merchantLevel);
-  if (lv === 0) return 0;
-  if (lv < 6) return 1;
-  if (lv < 10) return 2;
-  return 3;
+  return clampLevel(merchantLevel);
 }

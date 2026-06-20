@@ -72,6 +72,19 @@ describe('S7BattleEncounterAssembler - 装备星核解析为效果积木 (块3b)
     const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'core', lineup: [{ shipId: 'shp01', slotRef: 'p0c2' }] });
     expect(out.request.playerUnits[0].effectBlocks).toBeUndefined();
   });
+
+  it('J：lineup 带 extraBlocks(建筑全队加成) → 并入该单位 effectBlocks', async () => {
+    const asm = await assemblerOf(loadBundle());
+    const out = asm.assemble({
+      progress: progressAt('n001'), runSeed: 'team',
+      lineup: [{ shipId: 'shp01', slotRef: 'p0c2', extraBlocks: [
+        { kind: 'modifier', stat: 'maxHp', op: 'pct', value: 0.1, source: 'building_team_bonus' },
+        { kind: 'modifier', stat: 'attack', op: 'pct', value: 0.1, source: 'building_team_bonus' },
+      ] }],
+    });
+    const blocks = out.request.playerUnits[0].effectBlocks ?? [];
+    expect(blocks.filter((b) => b.kind === 'modifier' && (b as any).source === 'building_team_bonus')).toHaveLength(2);
+  });
 });
 
 describe('S7BattleEncounterAssembler - n001/n018/n075 组装 (#1,#3,#4)', () => {
