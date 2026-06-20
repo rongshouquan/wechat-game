@@ -41,6 +41,7 @@ import {
   shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
   salvageTeamCount, researchTeamBonusPct, merchantShopSlots,
 } from '../../core/s7/S7BuildingEffects';
+import { getS7UsableBand } from '../S7UiLayout';
 
 const { ccclass } = _decorator;
 
@@ -181,9 +182,11 @@ export class S7DemoController extends Component {
     bg.fill();
     this.node.on(Node.EventType.TOUCH_END, () => {}, this); // 吞掉空白处触摸
 
-    // 顶部标题（放在上半区、避开最顶刘海安全区）。
-    this.makeLabel('《我的星舰小队》S7 最小循环演示', 30, new Color(255, 230, 120), 0, H * 0.30);
-    this.makeLabel('（色块原型 · 点出战推进主线）', 20, new Color(170, 180, 200), 0, H * 0.30 - 40);
+    // 顶部标题：G0 UI 地基——锚到安全区下沿（避开刘海/胶囊菜单按钮），不再用满屏比例硬摆。
+    // 这是"所有 S7 界面顶部内容都锚安全区"的范例；A-step2 编队界面等照此摆。
+    const topY = getS7UsableBand().usableTopY;
+    this.makeLabel('《我的星舰小队》S7 最小循环演示', 30, new Color(255, 230, 120), 0, topY - 26);
+    this.makeLabel('（色块原型 · 点出战推进主线）', 20, new Color(170, 180, 200), 0, topY - 64);
 
     // 状态行：星矿/合金/当前节点 + 旗舰等级。
     this.statusLabel = this.makeLabel('', 26, new Color(230, 240, 255), 0, H * 0.13);
