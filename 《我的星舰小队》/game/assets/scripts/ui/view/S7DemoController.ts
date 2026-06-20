@@ -398,13 +398,9 @@ export class S7DemoController extends Component {
     dim.fill();
     const put = panel.addComponent(UITransform);
     put.setContentSize(W, H);
-    panel.on(Node.EventType.TOUCH_END, () => this.onResultGoHome(), this); // 点窗外空白 = 返回星港
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 结算弹窗：吞触摸·不点空白关(必须点按钮选择)
     panel.active = false;
     this.resultPopupNode = panel;
-    // 对话框卡片吸收触摸（点卡片内不触发"返回"）。
-    const card = new Node('rcard'); card.layer = this.node.layer; panel.addChild(card); card.setPosition(0, 0, 0);
-    const cut = card.addComponent(UITransform); cut.setContentSize(dw, dh);
-    card.on(Node.EventType.TOUCH_END, () => {}, this);
 
     const titleN = new Node('t'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, dh * 0.30, 0);
     this.resultTitleLabel = titleN.addComponent(Label);
@@ -481,7 +477,7 @@ export class S7DemoController extends Component {
     g.fill();
     const put = panel.addComponent(UITransform);
     put.setContentSize(W, H);
-    panel.on(Node.EventType.TOUCH_END, () => this.closeLevelSelect(), this); // 点空白 = 关闭
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 满屏浮层：吞触摸·不点空白关(用「关闭」键)
     panel.active = false;
     this.levelSelectNode = panel;
 
@@ -601,12 +597,11 @@ export class S7DemoController extends Component {
     g.fillColor = new Color(10, 14, 26, 248);
     g.roundRect(-W * 0.45, -H * 0.32, W * 0.9, H * 0.64, 14);
     g.fill();
-    const baseUt = panel.addComponent(UITransform); baseUt.setContentSize(W, H);
-    panel.on(Node.EventType.TOUCH_END, () => this.closeBase(), this); // 点卡片外空白 = 关闭
+    panel.addComponent(UITransform).setContentSize(W, H);
     panel.active = false;
     this.baseNode = panel;
-    const baseCard = new Node('baseCard'); baseCard.layer = this.node.layer; panel.addChild(baseCard); baseCard.setPosition(0, 0, 0);
-    const baseCardUt = baseCard.addComponent(UITransform); baseCardUt.setContentSize(W * 0.9, H * 0.64); baseCard.on(Node.EventType.TOUCH_END, () => {}, this);
+    // 点卡片外空白 = 关闭；卡片内不关（背板兄弟节点接管·正确处理冒泡）。
+    this.addModalDismiss(panel, () => this.closeBase(), W * 0.9, H * 0.64, 0, 0);
 
     const title = new Node('S7BaseTitle');
     title.layer = this.node.layer;
@@ -878,13 +873,9 @@ export class S7DemoController extends Component {
     const g = panel.addComponent(Graphics);
     g.fillColor = new Color(6, 9, 18, 120); g.rect(-W / 2, sheetTop, W, H / 2); g.fill();           // 上半淡遮罩
     g.fillColor = new Color(14, 18, 30, 255); g.roundRect(-W * 0.47, sheetBot, W * 0.94, sheetTop - sheetBot, 16); g.fill(); // 下半 sheet
-    panel.on(Node.EventType.TOUCH_END, () => this.closeBoarding(), this); // 点 sheet 外空白 = 返回
     panel.active = false; this.boardingNode = panel;
-
-    // sheet 区吸收触摸（点 sheet 内空白不返回）。
-    const card = new Node('bCard'); card.layer = this.node.layer; panel.addChild(card); card.setPosition(0, (sheetTop + sheetBot) / 2, 0);
-    const cut = card.addComponent(UITransform); cut.setContentSize(W * 0.94, sheetTop - sheetBot);
-    card.on(Node.EventType.TOUCH_END, () => {}, this);
+    // 点 sheet 外(上半)空白 = 返回；sheet 内不返回（背板兄弟节点接管·正确处理冒泡）。
+    this.addModalDismiss(panel, () => this.closeBoarding(), W * 0.94, sheetTop - sheetBot, 0, (sheetTop + sheetBot) / 2);
 
     // 标题
     const tN = new Node('bt'); tN.layer = this.node.layer; panel.addChild(tN); tN.setPosition(-W * 0.24, sheetTop - 40, 0);
@@ -963,6 +954,22 @@ export class S7DemoController extends Component {
 
   // ===== B 块 单舰装配面板（驾驶员 + 插件分三类 + 星核，统称"装备"；点装备→详情弹窗→装/卸/移动）=====
 
+  /**
+   * 给"卡片/半屏类"浮层加「点卡片外空白=关」。正确处理 Cocos 触摸冒泡：
+   *   - 全屏背板(兄弟节点·最底)接管关闭：点空白命中它 → onClose。
+   *   - 卡片区吸收节点(在背板之上)：点卡片内 → 命中它(空操作)，事件冒泡到 panel 根(无关闭)，不会触达背板。
+   *   - 内容(按钮/列表)随后 addChild → 在最上；其点击冒泡到 panel 根(无关闭)，也不触达背板（背板非其祖先）。
+   * ⚠️ 必须在「加内容之前」调用；且 panel 根不要再挂关闭监听。
+   */
+  private addModalDismiss(panel: Node, onClose: () => void, cardW: number, cardH: number, cardX = 0, cardY = 0): void {
+    const back = new Node('backdrop'); back.layer = this.node.layer; panel.addChild(back); back.setPosition(0, 0, 0);
+    const bu = back.addComponent(UITransform); bu.setContentSize(this.viewW, this.viewH);
+    back.on(Node.EventType.TOUCH_END, onClose, this);
+    const card = new Node('cardAbsorb'); card.layer = this.node.layer; panel.addChild(card); card.setPosition(cardX, cardY, 0);
+    const cu = card.addComponent(UITransform); cu.setContentSize(cardW, cardH);
+    card.on(Node.EventType.TOUCH_END, () => {}, this);
+  }
+
   /** 通用按钮：父节点 + 文字 + 尺寸/色/位置 + 回调，返回 Label（便于动态改字）。 */
   private addBtn(parent: Node, text: string, w: number, h: number, color: Color, x: number, y: number, onTap: () => void, fontSize = 28): Label {
     const n = new Node('btn'); n.layer = this.node.layer; parent.addChild(n); n.setPosition(x, y, 0);
@@ -980,7 +987,7 @@ export class S7DemoController extends Component {
     const panel = new Node('S7Loadout'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
     const g = panel.addComponent(Graphics); g.fillColor = new Color(10, 14, 26, 252); g.rect(-W / 2, -H / 2, W, H); g.fill();
     const put = panel.addComponent(UITransform); put.setContentSize(W, H);
-    panel.on(Node.EventType.TOUCH_END, () => this.closeLoadout(), this); // 点空白 = 关闭(回上阵界面)
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 满屏浮层：吞触摸·不点空白关(只用「关闭」键)
     panel.active = false; this.loadoutNode = panel;
 
     const titleN = new Node('loTitle'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, band.usableTopY - 46, 0);
@@ -1003,10 +1010,8 @@ export class S7DemoController extends Component {
     const ut = panel.addComponent(UITransform); ut.setContentSize(W, H);
     const g = panel.addComponent(Graphics); g.fillColor = new Color(6, 9, 18, 200); g.rect(-W / 2, -H / 2, W, H); g.fill(); // 半透明遮罩吞触摸
     g.fillColor = new Color(18, 24, 40, 255); g.roundRect(-W * 0.42, -H * 0.15, W * 0.84, H * 0.30, 16); g.fill();
-    panel.on(Node.EventType.TOUCH_END, () => this.closeEquipDetail(), this); // 点卡片外空白 = 取消
     panel.active = false; this.equipDetailNode = panel;
-    const cardN = new Node('card'); cardN.layer = this.node.layer; panel.addChild(cardN); cardN.setPosition(0, 0, 0);
-    const cardUt = cardN.addComponent(UITransform); cardUt.setContentSize(W * 0.84, H * 0.30); cardN.on(Node.EventType.TOUCH_END, () => {}, this);
+    this.addModalDismiss(panel, () => this.closeEquipDetail(), W * 0.84, H * 0.30, 0, 0); // 点卡片外 = 取消
     const tN = new Node('t'); tN.layer = this.node.layer; panel.addChild(tN); tN.setPosition(0, H * 0.105, 0);
     this.equipDetailTitle = tN.addComponent(Label); this.equipDetailTitle.fontSize = 38; this.equipDetailTitle.lineHeight = 46; this.equipDetailTitle.color = new Color(255, 230, 120);
     const iN = new Node('i'); iN.layer = this.node.layer; panel.addChild(iN); iN.setPosition(0, 0, 0);
@@ -1021,10 +1026,8 @@ export class S7DemoController extends Component {
     const ut = panel.addComponent(UITransform); ut.setContentSize(W, H);
     const g = panel.addComponent(Graphics); g.fillColor = new Color(6, 9, 18, 210); g.rect(-W / 2, -H / 2, W, H); g.fill();
     g.fillColor = new Color(22, 18, 30, 255); g.roundRect(-W * 0.42, -H * 0.13, W * 0.84, H * 0.26, 16); g.fill();
-    panel.on(Node.EventType.TOUCH_END, () => this.closeEquipConfirm(), this); // 点卡片外空白 = 取消
     panel.active = false; this.equipConfirmNode = panel;
-    const cardN = new Node('card'); cardN.layer = this.node.layer; panel.addChild(cardN); cardN.setPosition(0, 0, 0);
-    const cardUt = cardN.addComponent(UITransform); cardUt.setContentSize(W * 0.84, H * 0.26); cardN.on(Node.EventType.TOUCH_END, () => {}, this);
+    this.addModalDismiss(panel, () => this.closeEquipConfirm(), W * 0.84, H * 0.26, 0, 0); // 点卡片外 = 取消
     const cN = new Node('c'); cN.layer = this.node.layer; panel.addChild(cN); cN.setPosition(0, H * 0.045, 0);
     this.equipConfirmLabel = cN.addComponent(Label); this.equipConfirmLabel.fontSize = 28; this.equipConfirmLabel.lineHeight = 38; this.equipConfirmLabel.color = new Color(230, 220, 245);
     this.addBtn(panel, '取消', 240, 84, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.09, () => this.closeEquipConfirm(), 32);
@@ -1061,13 +1064,14 @@ export class S7DemoController extends Component {
     list.removeAllChildren();
     const W = this.viewW;
     const band = getS7UsableBand();
-    const w = W * 0.305, h = 72, gx = W * 0.32;
-    let y = band.usableTopY - 150;
+    // 调大 + 往下铺开（别堆顶部）：大格、大字、段间留白。
+    const w = W * 0.30, h = 90, gx = W * 0.315;
+    let y = band.usableTopY - 128;
 
-    const header = (txt: string, color = new Color(255, 220, 140)): void => {
+    const header = (txt: string, color = new Color(255, 220, 140), advance = 56): void => {
       const n = new Node('h'); n.layer = this.node.layer; list.addChild(n); n.setPosition(-W * 0.40, y, 0);
-      const l = n.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = color; l.string = txt;
-      y -= 40;
+      const l = n.addComponent(Label); l.fontSize = 30; l.lineHeight = 38; l.color = color; l.string = txt;
+      y -= advance;
     };
     // 排序：① 装在"本舰"的最前 → ② 装在(任意船)的次之 → ③ 战力(sortKey·插件=品质·越高越前)。
     const placeItems = (items: { ref: S7EquipRef; top: string; sortKey?: number }[]): void => {
@@ -1085,9 +1089,9 @@ export class S7DemoController extends Component {
         const onShip = this.equipShipOf(it.ref);
         const marker = onShip === ship ? '★本舰' : onShip ? `▶${onShip}` : '未装';
         const col = onShip === ship ? new Color(55, 130, 95, 255) : onShip ? new Color(125, 100, 55, 255) : new Color(55, 95, 150, 255);
-        this.addBtn(list, `${it.top}\n${marker}`, w, h, col, x, y - r * (h + 12), () => this.openEquipDetail(it.ref), 24);
+        this.addBtn(list, `${it.top}\n${marker}`, w, h, col, x, y - r * (h + 16), () => this.openEquipDetail(it.ref), 26);
       });
-      y -= (Math.ceil(sorted.length / 3) || 1) * (h + 12) + 16;
+      y -= (Math.ceil(sorted.length / 3) || 1) * (h + 16) + 22;
     };
 
     // ① 驾驶员（暂无品质/等级 → 仅"已装备靠前"）
@@ -1098,8 +1102,8 @@ export class S7DemoController extends Component {
     const plugins = this.pluginInventory ? this.pluginInventory.plugins : [];
     (['weapon', 'skill', 'tactical'] as S7PluginSlot[]).forEach((tag) => {
       const group = plugins.filter((p) => this.pluginSlotMap.get(p.pluginId) === tag);
-      header(`· ${S7_SLOT_TAG_NAMES[tag]}`, new Color(170, 200, 235));
-      if (group.length === 0) { y -= 8; return; }
+      header(`· ${S7_SLOT_TAG_NAMES[tag]}`, new Color(170, 200, 235), 50);
+      if (group.length === 0) { y -= 10; return; }
       placeItems(group.map((p) => ({
         ref: { kind: 'plugin' as const, id: p.instanceId },
         top: `${p.pluginId}·${S7_QUALITY_NAMES[p.quality] ?? p.quality}`,
