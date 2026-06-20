@@ -465,7 +465,7 @@ describe('s7 save - corruption / structure fallback', () => {
     data.playerState.squad.ownedShips = ['shp01', 'shp02'];
     data.playerState.squad.ownedPilots = ['pil01'];
     data.playerState.squad.ownedCores = { core01: 1 };
-    data.playerState.squad.formation = [{ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginIds: [] }];
+    data.playerState.squad.formation = [{ slotRef: 'p0c2', shipId: 'shp01', pilotId: 'pil01', coreId: null, pluginInstanceIds: [] }];
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
     expect(r.data.playerState.squad.ownedShips).toEqual(['shp01', 'shp02']);
