@@ -138,9 +138,11 @@ export class S7DemoController extends Component {
   private encounterNodeIds: string[] = [];
   /** 本场战斗是否胜（finishPlayback 据此路由：胜→下一关备战 / 败→失败弹窗）。 */
   private pendingWon = false;
-  /** 失败弹窗叠加层 + 失败原因文案。 */
-  private defeatNode: Node | null = null;
-  private defeatMsgLabel: Label | null = null;
+  /** 战斗结果弹窗（胜/败统一）：标题/文案/右键文字（胜=下一关·败=再次挑战）。弹出时背景保留刚结束的战斗画面。 */
+  private resultPopupNode: Node | null = null;
+  private resultTitleLabel: Label | null = null;
+  private resultMsgLabel: Label | null = null;
+  private resultRightLabel: Label | null = null;
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
@@ -285,60 +287,78 @@ export class S7DemoController extends Component {
     this.buildBasePanel(W, H);
     this.buildPrebattlePanel(W, H);
     this.buildLevelSelectPanel(W, H);
-    this.buildDefeatPanel(W, H);
+    this.buildResultPopup(W, H);
   }
 
-  /** 失败弹窗（居中对话框 + 半屏遮罩）：v1.0 §4.5——战斗失败给"返回星港 / 再次挑战"两键。 */
-  private buildDefeatPanel(W: number, H: number): void {
-    const panel = new Node('S7Defeat');
+  /** 战斗结果弹窗（胜/败统一·居中对话框+半屏遮罩）：v1.0 §4.5。背景遮罩半透明→保留刚结束的战斗画面。
+   *  左键恒「返回星港」；右键 胜=「下一关」/败=「再次挑战」（都→去当前节点战前备战，胜后当前已是下一关）。 */
+  private buildResultPopup(W: number, H: number): void {
+    const panel = new Node('S7Result');
     panel.layer = this.node.layer;
     this.node.addChild(panel);
     panel.setPosition(0, 0, 0);
     const dim = panel.addComponent(Graphics);
-    dim.fillColor = new Color(0, 0, 0, 170);
+    dim.fillColor = new Color(0, 0, 0, 160); // 半透明→透出背后战斗画面
     dim.rect(-W / 2, -H / 2, W, H);
     dim.fill();
-    // 居中对话框
-    const dw = W * 0.78;
-    const dh = H * 0.30;
-    dim.fillColor = new Color(28, 22, 34, 255);
-    dim.roundRect(-dw / 2, -dh / 2, dw, dh, 18);
+    const dw = W * 0.82;
+    const dh = H * 0.32;
+    dim.fillColor = new Color(28, 24, 40, 255);
+    dim.roundRect(-dw / 2, -dh / 2, dw, dh, 20);
     dim.fill();
     const put = panel.addComponent(UITransform);
     put.setContentSize(W, H);
     panel.on(Node.EventType.TOUCH_END, () => {}, this);
     panel.active = false;
-    this.defeatNode = panel;
+    this.resultPopupNode = panel;
 
-    const titleN = new Node('t'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, dh * 0.28, 0);
-    const tl = titleN.addComponent(Label); tl.fontSize = 40; tl.lineHeight = 48; tl.color = new Color(255, 150, 150); tl.string = '战斗失败';
+    const titleN = new Node('t'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, dh * 0.30, 0);
+    this.resultTitleLabel = titleN.addComponent(Label);
+    this.resultTitleLabel.fontSize = 50; this.resultTitleLabel.lineHeight = 60; this.resultTitleLabel.string = '';
     const msgN = new Node('m'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, dh * 0.02, 0);
-    const ml = msgN.addComponent(Label); ml.fontSize = 26; ml.lineHeight = 34; ml.color = new Color(220, 220, 230); ml.string = '';
-    this.defeatMsgLabel = ml;
+    this.resultMsgLabel = msgN.addComponent(Label);
+    this.resultMsgLabel.fontSize = 30; this.resultMsgLabel.lineHeight = 40; this.resultMsgLabel.color = new Color(225, 228, 240); this.resultMsgLabel.string = '';
 
-    const mkB = (t: string, w: number, h: number, c: Color, x: number, y: number, tap: () => void): void => {
-      const n = new Node('db'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+    const mkB = (w: number, h: number, c: Color, x: number, y: number, tap: () => void): Label => {
+      const n = new Node('rb'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
       const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
-      const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 12); bg.fill();
+      const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 14); bg.fill();
       const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
-      const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 38; l.color = new Color(255, 255, 255); l.string = t;
+      const l = ln.addComponent(Label); l.fontSize = 36; l.lineHeight = 44; l.color = new Color(255, 255, 255); l.string = '';
       n.on(Node.EventType.TOUCH_END, tap, this);
+      return l;
     };
-    mkB('返回星港', 240, 84, new Color(120, 90, 160, 255), -W * 0.20, -dh * 0.28, () => this.closeDefeat());
-    mkB('再次挑战', 240, 84, new Color(225, 150, 45, 255), W * 0.20, -dh * 0.28, () => this.onRetry());
+    const leftLbl = mkB(260, 92, new Color(120, 90, 160, 255), -W * 0.21, -dh * 0.30, () => this.onResultGoHome());
+    leftLbl.string = '返回星港';
+    this.resultRightLabel = mkB(260, 92, new Color(225, 150, 45, 255), W * 0.21, -dh * 0.30, () => this.onResultGoPrebattle());
   }
 
-  private openDefeat(): void {
-    if (!this.defeatNode) return;
-    if (this.defeatMsgLabel && this.pendingResult) this.defeatMsgLabel.string = this.pendingResult.text;
-    this.defeatNode.active = true;
+  /** 弹结果窗（背景保留战斗画面：不隐藏 stage、不切场景）。 */
+  private openResultPopup(won: boolean): void {
+    if (!this.resultPopupNode) return;
+    if (this.resultTitleLabel) {
+      this.resultTitleLabel.string = won ? '★ 战斗胜利 ★' : '战斗失败';
+      this.resultTitleLabel.color = won ? new Color(150, 235, 160) : new Color(255, 150, 150);
+    }
+    if (this.resultMsgLabel && this.pendingResult) this.resultMsgLabel.string = this.pendingResult.text;
+    if (this.resultRightLabel) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
+    this.resultPopupNode.active = true;
   }
-  private closeDefeat(): void {
-    if (this.defeatNode) this.defeatNode.active = false; // 回基地主界面
+
+  /** 收起战斗画面 + 结果窗（玩家选完才切场景）。 */
+  private dismissBattleScene(): void {
+    if (this.resultPopupNode) this.resultPopupNode.active = false;
+    if (this.stageNode) this.stageNode.active = false;
+    if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
+    this.refresh();
   }
-  /** 再次挑战：关弹窗 → 回本关战前备战界面（败局未推进，当前节点不变）。 */
-  private onRetry(): void {
-    this.closeDefeat();
+  /** 结果窗·返回星港：收战斗画面 → 回基地主界面。 */
+  private onResultGoHome(): void {
+    this.dismissBattleScene();
+  }
+  /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
+  private onResultGoPrebattle(): void {
+    this.dismissBattleScene();
     this.openPrebattle();
   }
 
@@ -430,15 +450,15 @@ export class S7DemoController extends Component {
       n.on(Node.EventType.TOUCH_END, onTap, this);
     };
 
-    // 标题 + 信息行（节点/战力/敌情概要）——放大做清晰。
-    mk('★ 战前备战 ★', 48, new Color(255, 230, 120), 0, topY - 40);
-    this.prebattleInfoLabel = mk('', 30, new Color(210, 225, 250), 0, topY - 100);
+    // 标题 + 信息行（节点/战力/敌情概要）——放大做清晰；上方大区留给敌情预览。
+    mk('★ 战前备战 ★', 54, new Color(255, 230, 120), 0, topY - 44);
+    this.prebattleInfoLabel = mk('', 32, new Color(210, 225, 250), 0, topY - 108);
 
-    // 3×3 编队格：上移填补中部空白、格更大、字更大。9 格点击选中→下方选船/选员放入。
-    const cell = W * 0.19;
-    const gap = W * 0.21;
-    const gridCx = -W * 0.14;          // 编队格整体偏左，右侧留给"选中船详情"
-    const gridCy = H * 0.05;
+    // 3×3 编队格：下移到下半区（上方大区留给敌情预览·照参考图）；格大、字大、但不撞下方"拥有"行。点格选中→下方选船/选员放入。
+    const cell = W * 0.17;
+    const gap = W * 0.19;
+    const gridCx = -W * 0.13;          // 编队格整体偏左，右侧留给"选中船详情"
+    const gridCy = -H * 0.10;
     this.prebattleCellLabels = [];
     for (let r = 0; r < 3; r += 1) {
       for (let c = 0; c < 3; c += 1) {
@@ -450,7 +470,7 @@ export class S7DemoController extends Component {
         const ut = cn.addComponent(UITransform); ut.setContentSize(cell, cell);
         cn.on(Node.EventType.TOUCH_END, () => this.onSelectPrebattleSlot(slotRef), this);
         const ln = new Node('t'); ln.layer = this.node.layer; cn.addChild(ln);
-        const l = ln.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = new Color(230, 240, 255); l.string = '';
+        const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 36; l.color = new Color(230, 240, 255); l.string = '';
         this.prebattleCellLabels.push(l);
       }
     }
@@ -654,10 +674,10 @@ export class S7DemoController extends Component {
     }
 
     // 9 格编队内容 + 选中高亮（在 gfx 上画格框）。坐标须与 buildPrebattlePanel 一致！
-    const cell = W * 0.19;
-    const gap = W * 0.21;
-    const gridCx = -W * 0.14;
-    const gridCy = this.viewH * 0.05;
+    const cell = W * 0.17;
+    const gap = W * 0.19;
+    const gridCx = -W * 0.13;
+    const gridCy = -this.viewH * 0.10;
     for (let r2 = 0; r2 < 3; r2 += 1) {
       for (let c = 0; c < 3; c += 1) {
         const slotRef = `p${r2}c${c}`;
@@ -694,8 +714,9 @@ export class S7DemoController extends Component {
     const W = this.viewW;
     const left = -W * 0.40;
     const span = W * 0.80;
-    const topBandTop = band.usableTopY - this.viewH * 0.15; // 避开放大的标题+信息行
-    const rowGap = this.viewH * 0.05;
+    // 敌情预览占上方大区（标题/信息行之下 → 编队格之上）。
+    const topBandTop = band.usableTopY - this.viewH * 0.14;
+    const rowGap = this.viewH * 0.04;
     for (const e of v.enemies) {
       const m = /^r(\d)c(\d)$/.exec(e.slotRef);
       if (!m) continue;
@@ -826,13 +847,9 @@ export class S7DemoController extends Component {
   /** 收尾：停播、隐藏叠加层与「跳过」、亮出结果文案、刷新状态行。 */
   private finishPlayback(): void {
     this.playing = false;
-    if (this.stageNode) this.stageNode.active = false;
     if (this.skipBtn) this.skipBtn.active = false;
-    if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
-    this.refresh();
-    // #3 胜负路由：胜→直接进下一关战前备战；败→弹失败窗(返回星港/再次挑战)。
-    if (this.pendingWon) this.openPrebattle();
-    else this.openDefeat();
+    // #3：弹结果窗时【背景保留刚结束的战斗画面】——不隐藏 stage、不刷主界面，等玩家选了再切场景。
+    this.openResultPopup(this.pendingWon);
   }
 
   /** 预算各单位的战场局部坐标：敌方在上半区（前列 col 小→靠中间），我方在下半区（前列 col 大→靠中间）。 */
