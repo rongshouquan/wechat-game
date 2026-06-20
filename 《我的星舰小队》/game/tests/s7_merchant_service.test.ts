@@ -107,8 +107,8 @@ describe('E-step1 · 买', () => {
   });
 });
 
-describe('E-step1 · 刷新（去付费·防套利：购买上限跨刷新保留）', () => {
-  it('免费刷新：每周期上限1·重铺货但不清购买量', () => {
+describe('E-step1 · 刷新（去付费·全新一茬店：货+购买次数一起刷·防套利靠刷新上限）', () => {
+  it('免费刷新：每周期上限1·重铺货 + 清零购买次数（可重新买·Ron）', () => {
     const c = ctrlCfg();
     const s = createDefaultS7Merchant();
     refreshMerchantToCycle(s, c, 1, rng(), T);
@@ -116,8 +116,8 @@ describe('E-step1 · 刷新（去付费·防套利：购买上限跨刷新保留
     buyMerchantOffer(s, { starCargo: 999 }, ticket.offerId, T);
     expect(s.dailyBought[shopItemKey(ticket.item)]).toBe(1);
     expect(refreshMerchantShop(s, c, 1, rng(), 'free')).toMatchObject({ ok: true, usedThisCycle: 1, cap: 1 });
-    expect(s.dailyBought[shopItemKey(ticket.item)]).toBe(1); // 不清购买量（防套利）
-    expect(refreshMerchantShop(s, c, 1, rng(), 'free')).toMatchObject({ ok: false, reason: 'cap_reached' });
+    expect(s.dailyBought).toEqual({}); // 刷新清零购买次数 → 全新一茬店可重新买
+    expect(refreshMerchantShop(s, c, 1, rng(), 'free')).toMatchObject({ ok: false, reason: 'cap_reached' }); // 防套利:刷新次数上限
   });
 
   it('广告刷新：每周期上限1', () => {

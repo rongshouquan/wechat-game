@@ -102,8 +102,9 @@ export type S7RefreshResult =
   | { ok: false; reason: 'cap_reached' };
 
 /**
- * 手动刷新货架（重铺一批轮换货·不清购买量·防套利：周期购买上限跨刷新保留）。
+ * 手动刷新货架（全新一茬店：重铺一批轮换货 + **同时清零购买次数**·Ron 2026-06-21）。
  *  - free：每周期 freePerCycle 次；ad：广告看完后调·每周期 adPerCycle 次。（付费刷新已去掉·Ron）
+ *  - 防套利改靠**刷新次数上限**(每天免费 freePerCycle + 广告 adPerCycle 次)兜，不再靠购买次数跨刷新累计。
  */
 export function refreshMerchantShop(
   state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
@@ -112,12 +113,14 @@ export function refreshMerchantShop(
     if (state.freeRefreshUsed >= config.refresh.freePerCycle) return { ok: false, reason: 'cap_reached' };
     state.freeRefreshUsed += 1;
     generateMerchantStock(state, config, merchantLevel, rng);
+    state.dailyBought = {}; // 刷新连购买次数一起清（新一茬店·可重新买）
     return { ok: true, mode, usedThisCycle: state.freeRefreshUsed, cap: config.refresh.freePerCycle };
   }
   // ad
   if (state.adRefreshUsed >= config.refresh.adPerCycle) return { ok: false, reason: 'cap_reached' };
   state.adRefreshUsed += 1;
   generateMerchantStock(state, config, merchantLevel, rng);
+  state.dailyBought = {}; // 同上
   return { ok: true, mode, usedThisCycle: state.adRefreshUsed, cap: config.refresh.adPerCycle };
 }
 

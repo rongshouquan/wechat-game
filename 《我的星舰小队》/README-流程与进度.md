@@ -45,7 +45,7 @@
 - **引擎 `core/s7/S7Merchant*`(纯 TS·可测)**：`refreshMerchantToCycle`(进店/加载时调·跨天重铺+清购买量/计数)、`generateMerchantStock`(常驻补给券+从轮换池随机铺 `merchantStockSlots(lv)` 格·无重复品类)、`buyMerchantOffer`(扣星贝+记购买量·返回 item 由应用侧 grant)、`refreshMerchantShop`(免费/广告刷·各周期上限·**无付费**)、`recycleBeacon`/`recycleStarOre`(→星贝·折损)、`offerRemaining`/`merchantStockSlots`。配置 `S7MerchantConfig` 全 v0.1 占位(定价/每日上限/轮换权重/折损/解锁等级·第二块校准；现有 shop_param 等表留第二块迁)。
 - **轮换制(Ron 拍板)**：补给券常驻(主来源·永远可买)；其余货从 `rollPool` 随机铺、**每次刷新换一批**(解决"刷新没变化")；轮换格数随商人小站(`bld_merchant_station`)等级 `merchantStockSlots`(lv1→5…lv7→8)；星空宝石等高端物 `minMerchantLevel` 门槛。demo 默认 lv1。
 - **回收随等级陆续解锁(Ron)**：溢出星矿 lv2 / 信标 lv4(`recycle.starOreUnlockLevel/beaconUnlockLevel`)；界面未到等级灰显"lvX解锁"。插件回收挪到背包(留后·`recyclePlugin` 引擎仍在)。
-- **防套利**：周期购买上限 `dailyBought` **跨手动/广告刷新保留**、只跨天重置；刷新次数各有周期上限；回收折损 + 零头留着。
+- **防套利**：刷新=全新一茬店，**货 + 购买次数一起刷新清零**(Ron 2026-06-21)；防套利改靠**刷新次数上限**(每天免费1+广告1)兜，不再靠购买次数跨刷新累计；另有回收折损。（注：补给券每日有效上限≈单批限量×(1+刷新次数)，第二块看是否要给券单独的"真·每日硬顶"。）
 - **买入入账在控制器 `applyShopItem`**：资源→钱包；插件→`addOwnedPlugin`(挑 pluginId·品质来自商品)。
 - **DEV-TEMP（待删）**：开局发 50000 星贝(`ensureDemoSquadSeeded`)；商人界面「DEV:升商人小站」键(免费升级·验回收/格子解锁·正式靠建筑升级)。广告刷新走 `merchant_refresh` mock。
 - **⚠️ onReset 修复**：原 reset 漏了 gacha/salvage/merchant→刷新次数/保底/打捞任务残留；现已一并重置(见 `onReset`)。
