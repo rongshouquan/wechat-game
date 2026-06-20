@@ -67,6 +67,13 @@ import {
 } from '../../core/s7/S7SalvageService';
 import { addExclusiveShards } from '../../core/s7/S7ExclusiveShardInventory';
 import { addChest } from '../../core/s7/S7ChestInventory';
+// E 商人小站（step1 引擎已单测）：主界面「商人小站」进商店。
+import { DEFAULT_S7_MERCHANT_CONFIG, S7ShopItem } from '../../core/s7/S7MerchantConfig';
+import {
+  refreshMerchantToCycle, buyMerchantOffer, offerRemaining, refreshMerchantShop, S7RefreshMode,
+  recycleBeacon, recycleStarOre,
+} from '../../core/s7/S7MerchantService';
+import { recyclePlugin } from '../../core/s7/S7PluginRecycleService';
 
 const { ccclass } = _decorator;
 
@@ -223,6 +230,12 @@ export class S7DemoController extends Component {
   private salvageTierBtns: { tier: S7BeaconTier; node: Node }[] = [];
   private salvageHourBtns: { hours: number; node: Node }[] = [];
   private salvageTicking = false;                   // 打捞界面开着时每秒刷新倒计时
+
+  // ===== E 商人小站界面 =====
+  private merchantNode: Node | null = null;
+  private merchantStarLabel: Label | null = null;  // 星贝余量 + 刷新次数
+  private merchantListNode: Node | null = null;     // 货架 offer 列表容器（刷新重建）
+  private merchantResultLabel: Label | null = null;
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -334,6 +347,8 @@ export class S7DemoController extends Component {
         if ((r.beaconCommon ?? 0) < 8) r.beaconCommon = 8;
         if ((r.beaconRare ?? 0) < 5) r.beaconRare = 5;
         if ((r.beaconEpic ?? 0) < 3) r.beaconEpic = 3;
+        // E DEV-TEMP：给一笔星贝，方便一进来就能在商人小站买东西（正式星贝来自出战/回收）。
+        if ((r.starCargo ?? 0) < 50000) r.starCargo = 50000;
       }
     }
     // B 块 DEV-TEMP：插件/星核「空就补发」（独立判定 → 已有 A 存档也能直接体验深装、无需重置）。
@@ -415,6 +430,7 @@ export class S7DemoController extends Component {
     this.buildResultPopup(W, H);
     this.buildGachaPanel(W, H); // C 抽卡界面（星港补给站进）
     this.buildSalvagePanel(W, H); // D 打捞界面（打捞港进）
+    this.buildMerchantPanel(W, H); // E 商人小站界面（商人小站进）
   }
 
   // ===== 星港主界面 hub =====
@@ -445,7 +461,7 @@ export class S7DemoController extends Component {
     this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage());
     this.makeHubEntry('居住舱', '即将开放', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.hubToast('居住舱·即将开放'));
     this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
-    this.makeHubEntry('商人小站', '即将开放', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.hubToast('商人小站·即将开放'));
+    this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant());
     this.makeHubEntry('研究塔', '未解锁', new Color(70, 78, 96, 255), rx, gy0 - gap * 2, ew, eh, () => this.hubToast('研究塔·未解锁'));
     this.makeHubEntry('星核展厅', '未解锁', new Color(70, 78, 96, 255), 0, gy0 - gap * 3, ew, eh, () => this.hubToast('星核展厅·未解锁'));
 
@@ -948,6 +964,169 @@ export class S7DemoController extends Component {
         else this.playerState.population.workers += rw.amount;
         return rw.pop === 'resident' ? `居民×${rw.amount}` : `工人×${rw.amount}`;
     }
+  }
+
+  // ===== E 商人小站界面 =====
+
+  /** 搭商人浮层（默认隐藏）：标题/星贝 + 刷新行(免费/付费/广告) + 货架列表(买) + 卖区(回收星矿/信标/闲置插件) + 返回。 */
+  private buildMerchantPanel(W: number, H: number): void {
+    const panel = new Node('S7Merchant'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(26, 20, 14, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.merchantNode = panel;
+
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+
+    this.mkPanelLabel(panel, '商人小站', 40, new Color(230, 195, 120), -W * 0.30, topY - 30);
+    this.merchantStarLabel = this.mkPanelLabel(panel, '星贝 0', 28, new Color(240, 210, 110), W * 0.24, topY - 30);
+
+    // 刷新行。
+    this.addBtn(panel, '免费刷新', 200, 70, new Color(80, 130, 90, 255), -W * 0.30, topY - 110, () => this.onMerchantRefresh('free'), 26);
+    this.addBtn(panel, '付费刷新', 200, 70, new Color(150, 120, 70, 255), 0, topY - 110, () => this.onMerchantRefresh('paid'), 26);
+    this.addBtn(panel, '广告刷新', 200, 70, new Color(180, 110, 70, 255), W * 0.30, topY - 110, () => this.onMerchantRefresh('ad'), 26);
+
+    // 货架列表容器。
+    const list = new Node('mList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.merchantListNode = list;
+
+    // 卖区。
+    this.mkPanelLabel(panel, '— 回收换星贝 —', 22, new Color(180, 160, 130), 0, botY + 210);
+    this.addBtn(panel, '回收100星矿', 220, 66, new Color(110, 95, 70, 255), -W * 0.30, botY + 150, () => this.onMerchantRecycleOre(100), 24);
+    this.addBtn(panel, '回收普通信标', 220, 66, new Color(110, 95, 70, 255), 0, botY + 150, () => this.onMerchantRecycleBeacon('common'), 24);
+    this.addBtn(panel, '回收闲置插件', 220, 66, new Color(110, 95, 70, 255), W * 0.30, botY + 150, () => this.onMerchantRecyclePlugin(), 24);
+
+    this.merchantResultLabel = this.mkPanelLabel(panel, '逛逛·买卖换星贝', 24, new Color(220, 210, 160), 0, botY + 100);
+    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), 0, botY + 40, () => this.closeMerchant(), 28);
+  }
+
+  private merchantLevel(): number {
+    return this.buildings ? getBuildingLevel(this.buildings, 'bld_merchant_station') : 0;
+  }
+
+  private openMerchant(): void {
+    if (!this.merchantNode || !this.playerState || !this.session) return;
+    // 进店先按当前日刷新货架（跨天自动重铺 + 清购买量/计数）。
+    refreshMerchantToCycle(this.playerState.merchant, DEFAULT_S7_MERCHANT_CONFIG, this.merchantLevel(), new S7AutoBattleRng(`mc_${Date.now()}`), Date.now());
+    this.persist();
+    this.merchantNode.active = true;
+    if (this.merchantResultLabel) this.merchantResultLabel.string = '逛逛·买卖换星贝';
+    this.refreshMerchant();
+  }
+  private closeMerchant(): void { if (this.merchantNode) this.merchantNode.active = false; }
+
+  /** 刷新商人界面：星贝/刷新次数 + 重建货架列表（名/价/剩余 + 买）。 */
+  private refreshMerchant(): void {
+    if (!this.playerState || !this.session || !this.merchantListNode) return;
+    const m = this.playerState.merchant;
+    const cfg = DEFAULT_S7_MERCHANT_CONFIG;
+    if (this.merchantStarLabel) {
+      this.merchantStarLabel.string = `星贝 ${Math.floor(this.session.resources.starCargo ?? 0)}　刷新 免${m.freeRefreshUsed}/${cfg.refresh.freePerCycle} 付${m.paidRefreshUsed}/${cfg.refresh.paidCapPerCycle} 告${m.adRefreshUsed}/${cfg.refresh.adPerCycle}`;
+    }
+    this.merchantListNode.removeAllChildren();
+    let y = getS7UsableBand().usableTopY - 200;
+    for (const offer of m.offers) {
+      const remain = offerRemaining(m, offer);
+      const nameStr = this.shopItemName(offer.item);
+      const tag = offer.rare ? '★稀有 ' : '';
+      this.mkPanelLabel(this.merchantListNode, `${tag}${nameStr}  ${offer.price}星贝  (剩${remain}/${offer.purchaseLimit})`, 24, remain > 0 ? new Color(225, 220, 200) : new Color(140, 140, 140), -this.viewW * 0.16, y);
+      const oid = offer.offerId;
+      const canBuy = remain > 0 && Math.floor(this.session.resources.starCargo ?? 0) >= offer.price;
+      this.addBtn(this.merchantListNode, '买', 110, 56, canBuy ? new Color(70, 150, 110, 255) : new Color(70, 75, 90, 255), this.viewW * 0.38, y, () => this.onMerchantBuy(oid), 26);
+      y -= 60;
+    }
+  }
+
+  /** 商品 → 中文短名。 */
+  private shopItemName(item: S7ShopItem): string {
+    if (item.kind === 'plugin') {
+      const q = item.quality === 'fine' ? '精良' : item.quality === 'superior' ? '优秀' : '传奇';
+      return `${q}插件`;
+    }
+    return `${this.zhRes(item.resourceId)}×${item.amount}`;
+  }
+
+  private onMerchantBuy(offerId: string): void {
+    if (!this.playerState || !this.session) return;
+    const r = buyMerchantOffer(this.playerState.merchant, this.session.resources, offerId, Date.now());
+    if (!r.ok) {
+      if (this.merchantResultLabel) this.merchantResultLabel.string = r.reason === 'insufficient_starcargo' ? '星贝不够' : r.reason === 'limit_reached' ? '今日已买够这件' : '该商品没了';
+      this.refreshMerchant();
+      return;
+    }
+    const got = this.applyShopItem(r.item);
+    if (this.merchantResultLabel) this.merchantResultLabel.string = `买到 ${got}（花 ${r.spent} 星贝）`;
+    this.persist();
+    this.refresh();
+    this.refreshMerchant();
+  }
+
+  /** 把买到的商品入账，返回中文短描述。 */
+  private applyShopItem(item: S7ShopItem): string {
+    if (!this.session) return '';
+    if (item.kind === 'resource') {
+      const res = this.session.resources as Record<string, number>;
+      if (res[item.resourceId] !== undefined) res[item.resourceId] += item.amount;
+      return `${this.zhRes(item.resourceId)}×${item.amount}`;
+    }
+    // plugin：挑一个 pluginId 入库（品质来自商品）。
+    if (this.pluginInventory) {
+      const ids = Array.from(this.pluginSlotMap.keys());
+      const pid = ids.length > 0 ? ids[this.pluginInventory.plugins.length % ids.length] : 'plg01';
+      addOwnedPlugin(this.pluginInventory, pid, item.quality);
+    }
+    const q = item.quality === 'fine' ? '精良' : item.quality === 'superior' ? '优秀' : '传奇';
+    return `${q}插件`;
+  }
+
+  private onMerchantRefresh(mode: S7RefreshMode): void {
+    if (!this.playerState || !this.session) return;
+    const doRefresh = () => {
+      const r = refreshMerchantShop(this.playerState!.merchant, this.session!.resources, DEFAULT_S7_MERCHANT_CONFIG, this.merchantLevel(), new S7AutoBattleRng(`mr_${mode}_${Date.now()}`), mode);
+      if (this.merchantResultLabel) {
+        this.merchantResultLabel.string = r.ok ? `已刷新（${mode === 'free' ? '免费' : mode === 'paid' ? `花${r.spent}星贝` : '广告'}·${r.usedThisCycle}/${r.cap}）`
+          : r.reason === 'cap_reached' ? '今日该刷新次数用尽' : '星贝不够';
+      }
+      this.persist();
+      this.refresh();
+      this.refreshMerchant();
+    };
+    if (mode === 'ad') {
+      if (!this.adGateway) return;
+      this.adGateway.show('merchant_refresh').then((ad) => {
+        if (!ad.ok) { if (this.merchantResultLabel) this.merchantResultLabel.string = '广告没看完，未刷新'; return; }
+        doRefresh();
+      }).catch(() => { if (this.merchantResultLabel) this.merchantResultLabel.string = '广告加载失败'; });
+    } else {
+      doRefresh();
+    }
+  }
+
+  private onMerchantRecycleOre(amount: number): void {
+    if (!this.session) return;
+    const r = recycleStarOre(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, amount);
+    if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收星矿→星贝+${r.starCargoGained}` : r.reason === 'insufficient' ? '星矿不够' : '量太少换不出星贝';
+    this.persist(); this.refresh(); this.refreshMerchant();
+  }
+
+  private onMerchantRecycleBeacon(tier: 'common' | 'rare' | 'epic'): void {
+    if (!this.session) return;
+    const r = recycleBeacon(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, tier, 1);
+    if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收信标→星贝+${r.starCargoGained}` : '没有该档信标';
+    this.persist(); this.refresh(); this.refreshMerchant();
+  }
+
+  /** 回收第一个"未装备到任何船"的闲置插件实例 → 星贝。 */
+  private onMerchantRecyclePlugin(): void {
+    if (!this.playerState || !this.session || !this.pluginInventory || !this.squad) return;
+    const idle = this.pluginInventory.plugins.find((p) => findPluginShip(this.squad!, p.instanceId) === null);
+    if (!idle) { if (this.merchantResultLabel) this.merchantResultLabel.string = '没有闲置插件可回收'; return; }
+    const r = recyclePlugin(this.pluginInventory, this.session.resources, idle.instanceId);
+    if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收插件→星贝+${r.starbeiGained}` : '回收失败';
+    this.persist(); this.refresh(); this.refreshMerchant();
   }
 
   /** 战斗结果弹窗（胜/败统一·居中对话框+半屏遮罩）：v1.0 §4.5。背景遮罩半透明→保留刚结束的战斗画面。

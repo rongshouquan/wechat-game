@@ -79,13 +79,13 @@ export type S7BuyResult =
  * 买一件（扣星贝 + 记购买量）。返回买到的 item 由应用侧入账（资源→钱包 / 插件→库存）。
  * 调用方传 starCargo 余额引用对象 {starCargo}（只读写这一项·避免引 save 层）；不够/超限/不存在→失败不扣。
  */
-export function buyMerchantOffer(state: S7MerchantState, wallet: { starCargo: number }, offerId: string, now: number): S7BuyResult {
+export function buyMerchantOffer(state: S7MerchantState, wallet: Record<string, number>, offerId: string, now: number): S7BuyResult {
   void now;
   const offer = state.offers.find((o) => o.offerId === offerId);
   if (!offer) return { ok: false, reason: 'not_found' };
   if (offerRemaining(state, offer) <= 0) return { ok: false, reason: 'limit_reached' };
-  if (wallet.starCargo < offer.price) return { ok: false, reason: 'insufficient_starcargo' };
-  wallet.starCargo -= offer.price;
+  if ((wallet.starCargo ?? 0) < offer.price) return { ok: false, reason: 'insufficient_starcargo' };
+  wallet.starCargo = (wallet.starCargo ?? 0) - offer.price;
   const key = shopItemKey(offer.item);
   state.dailyBought[key] = (state.dailyBought[key] ?? 0) + 1;
   return { ok: true, item: offer.item, spent: offer.price };
@@ -103,7 +103,7 @@ export type S7RefreshResult =
  *  - free：每周期 freePerCycle 次；paid：每周期 paidCapPerCycle 次·花星贝(递增序列)；ad：广告看完后调·每周期 adPerCycle 次。
  */
 export function refreshMerchantShop(
-  state: S7MerchantState, wallet: { starCargo: number }, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
+  state: S7MerchantState, wallet: Record<string, number>, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
 ): S7RefreshResult {
   if (mode === 'free') {
     if (state.freeRefreshUsed >= config.refresh.freePerCycle) return { ok: false, reason: 'cap_reached' };
@@ -121,8 +121,8 @@ export function refreshMerchantShop(
   if (state.paidRefreshUsed >= config.refresh.paidCapPerCycle) return { ok: false, reason: 'cap_reached' };
   const seq = config.refresh.paidCostSequence;
   const cost = seq.length > 0 ? seq[Math.min(state.paidRefreshUsed, seq.length - 1)] : 0;
-  if (wallet.starCargo < cost) return { ok: false, reason: 'insufficient_starcargo' };
-  wallet.starCargo -= cost;
+  if ((wallet.starCargo ?? 0) < cost) return { ok: false, reason: 'insufficient_starcargo' };
+  wallet.starCargo = (wallet.starCargo ?? 0) - cost;
   state.paidRefreshUsed += 1;
   generateMerchantStock(state, config, merchantLevel, rng);
   return { ok: true, mode, spent: cost, usedThisCycle: state.paidRefreshUsed, cap: config.refresh.paidCapPerCycle };
