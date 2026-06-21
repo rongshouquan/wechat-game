@@ -71,7 +71,7 @@ import { addExclusiveShards, getExclusiveShardCount } from '../../core/s7/S7Excl
 import { addChest, S7ChestType } from '../../core/s7/S7ChestInventory';
 // 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
 import {
-  S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail,
+  S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
 } from '../../core/s7/S7Mailbox';
 import { createDefaultS7GachaState } from '../../core/s7/S7GachaState';
 import { createDefaultS7Salvage } from '../../core/s7/S7SalvageState';
@@ -554,9 +554,10 @@ export class S7DemoController extends Component {
     // —— 中央临时提示（默认空）——
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
 
-    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处只留 离线/重置）——
+    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处只留 离线/重置/发测试邮件）——
     this.offlineBtn = this.makeButton('领离线', 200, 60, new Color(205, 165, 60, 255), -W * 0.22, botY + 56, () => this.onClaimOffline());
     this.offlineBtn.active = false;
+    this.makeButton('发测试邮件', 200, 60, new Color(80, 120, 160, 255), 0, botY + 56, () => this.devSendTestMail()); // DEV-TEMP·验 G2 邮件领取
     this.makeButton('重置存档', 200, 60, new Color(120, 70, 70, 255), W * 0.22, botY + 56, () => this.onReset());
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
@@ -2841,6 +2842,24 @@ export class S7DemoController extends Component {
         return `${this.unitName(rw.unitKind, rw.unitId)}碎片×15`;
       }
     }
+  }
+
+  /**
+   * DEV-TEMP·发一封混合奖励测试邮件（验 G2 邮件领取入账：软货币 / 专属碎片 / 宝箱 / 本体 四类各一）。正式版删。
+   * 本体用未拥有的 shp08 → 首次领发本体；再点一次「发测试邮件」并领取 → 此时已拥有 → 折 15 专属碎片（两条路径都可验）。
+   */
+  private devSendTestMail(): void {
+    if (!this.playerState) return;
+    const rewards: S7MailReward[] = [
+      { type: 'resource', resourceId: 'starOre', amount: 500 },     // 软货币→钱包
+      { type: 'resource', resourceId: 'exShard:shp01', amount: 20 }, // exShard:<id>→专属碎片库
+      { type: 'chest', chestId: 'starlightCargo', amount: 1 },       // 宝箱→宝箱库
+      { type: 'unit', unitKind: 'ship', unitId: 'shp08' },           // 本体→未拥有发本体/已拥有折15
+    ];
+    addMail(this.playerState.mailbox, { kind: 'dev_test', title: 'DEV 测试邮件', rewards, createdAt: Date.now() });
+    this.persist();
+    this.refresh();
+    this.setResult('已发 1 封测试邮件，去「邮件」领取', new Color(150, 200, 230));
   }
 
   /** 宝箱键→中文名（仅显示用）。 */
