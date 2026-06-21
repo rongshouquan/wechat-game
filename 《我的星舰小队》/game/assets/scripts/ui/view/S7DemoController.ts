@@ -19,7 +19,7 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
-import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot, S7ShipConfig, S7PilotConfig } from '../../config/s7/ConfigTypesS7';
+import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot, S7ShipConfig, S7PilotConfig, S7MainlineNodeConfig } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel, getPilotLevel } from '../../core/s7/S7UnitLevelState';
@@ -62,6 +62,11 @@ import {
 } from '../../core/s7/S7GachaService';
 import { S7AdGateway, S7MockAdAdapter } from '../../core/s7/S7AdGateway';
 import { S7AutoBattleRng } from '../../core/s7/S7AutoBattleRng';
+// 阶段一 F·关卡三选一发奖（首通限定·三档稀缺池·Boss大奖·看广告×2）。
+import { DEFAULT_S7_LEVEL_REWARD_CONFIG, S7LevelReward, S7LevelRewardStage } from '../../core/s7/S7LevelRewardConfig';
+import {
+  resolveLevelStage, firstBossNodeId, rollLevelChoices, resolveBossGrand, doubleLevelReward, S7UnitCandidates,
+} from '../../core/s7/S7LevelRewardService';
 // D 信标打捞（step1 引擎已单测）：主界面「打捞港」进打捞界面。
 import { DEFAULT_S7_SALVAGE_CONFIG, S7BeaconTier, BEACON_RESOURCE, S7SalvageReward } from '../../core/s7/S7SalvageConfig';
 import {
@@ -321,6 +326,21 @@ export class S7DemoController extends Component {
   private resultTitleLabel: Label | null = null;
   private resultMsgLabel: Label | null = null;
   private resultRightLabel: Label | null = null;
+  /** F·关卡三选一发奖浮层（首通胜利后盖在结果弹窗之上·必须选 1 个才离开）。 */
+  private levelRewardNode: Node | null = null;
+  private levelRewardTitleLabel: Label | null = null;
+  private levelRewardFixedLabel: Label | null = null;  // 固定软货币 + Boss 大奖行
+  private levelRewardListNode: Node | null = null;      // 三张选项卡容器
+  private levelRewardAdBtnNode: Node | null = null;     // 看广告×2 键（仅精英/Boss）
+  private levelRewardAdLabel: Label | null = null;
+  private levelRewardMsgLabel: Label | null = null;
+  /** 本次首通待发的三选一上下文（选完/入账后清空）。 */
+  private pendingLevelReward: {
+    nodeId: string; stage: S7LevelRewardStage; isBoss: boolean;
+    choices: S7LevelReward[]; bossGrand: S7LevelReward | null;
+    softGrants: { resourceId: string; amount: number }[]; // 固定软货币（已发一份·看广告×2 时再补一份）
+    showAdDouble: boolean; adDoubled: boolean;
+  } | null = null;
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
@@ -510,6 +530,7 @@ export class S7DemoController extends Component {
     this.buildUnitManagePanel(W, H); // 升阶升星 step2 单位管理面板
     this.buildBackpackPanel(W, H); // 升阶升星 step2 背包·通用碎片转换
     this.buildMailPanel(W, H); // 阶段一 G2 邮件界面（领取入账）
+    this.buildLevelRewardPanel(W, H); // 阶段一 F 关卡三选一发奖浮层（最后建 → 盖在结果弹窗之上）
   }
 
   // ===== 星港主界面 hub =====
@@ -1340,6 +1361,8 @@ export class S7DemoController extends Component {
     if (this.resultMsgLabel && this.pendingResult) this.resultMsgLabel.string = this.pendingResult.text;
     if (this.resultRightLabel) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
     this.resultPopupNode.active = true;
+    // F：首通胜利且该档有奖 → 在结果弹窗之上弹「三选一发奖」（必须选完才回到结果弹窗）。
+    if (won && this.pendingLevelReward) this.openLevelReward();
   }
 
   /** 收起就地战斗画面 + 结果窗（玩家选完才切场景）：复位备战 UI、隐藏备战面板、回主界面状态。 */
@@ -1644,6 +1667,7 @@ export class S7DemoController extends Component {
     }
     // 有遭遇：落盘 → 就地播战斗演出（不关备战层·隐藏UI在当前界面演·结果按住，播完再亮 + 据胜负路由）。
     this.persist();
+    this.captureLevelReward(nodeId, outcome); // F：首通胜利→抓取三选一上下文（结果弹窗弹出时再展示）
     this.pendingWon = outcome.won;
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
@@ -2860,6 +2884,192 @@ export class S7DemoController extends Component {
     this.persist();
     this.refresh();
     this.setResult('已发 1 封测试邮件，去「邮件」领取', new Color(150, 200, 230));
+  }
+
+  // ===== F·关卡三选一发奖（灰盒·首通限定·三档稀缺池·Boss大奖·看广告×2）=====
+
+  /** 搭三选一发奖浮层（默认隐藏）：标题 + 固定/大奖行 + 三张选项卡 + 看广告×2 + 结果行。无关闭键——必须选 1 个才离开。 */
+  private buildLevelRewardPanel(W: number, H: number): void {
+    const panel = new Node('S7LevelReward'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 205); dim.rect(-W / 2, -H / 2, W, H); dim.fill();
+    const dw = W * 0.92, dh = H * 0.52;
+    dim.fillColor = new Color(26, 30, 46, 255); dim.roundRect(-dw / 2, -dh / 2, dw, dh, 22); dim.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸·不点空白关（必须选 1 个）
+    panel.active = false;
+    this.levelRewardNode = panel;
+    this.levelRewardTitleLabel = this.mkPanelLabel(panel, '', 36, new Color(255, 225, 150), 0, dh * 0.40);
+    this.levelRewardFixedLabel = this.mkPanelLabel(panel, '', 24, new Color(200, 230, 200), 0, dh * 0.28);
+    const list = new Node('lvlRewardList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.levelRewardListNode = list;
+    // 看广告×2 键（仅精英/Boss·refresh 控显隐 + 已翻倍文案）。
+    const adNode = new Node('lvlRewardAd'); adNode.layer = this.node.layer; panel.addChild(adNode); adNode.setPosition(0, -dh * 0.30, 0);
+    adNode.addComponent(UITransform).setContentSize(300, 70);
+    const abg = adNode.addComponent(Graphics); abg.fillColor = new Color(60, 130, 90, 255); abg.roundRect(-150, -35, 300, 70, 14); abg.fill();
+    const al = new Node('t'); al.layer = this.node.layer; adNode.addChild(al);
+    this.levelRewardAdLabel = al.addComponent(Label); this.levelRewardAdLabel.fontSize = 28; this.levelRewardAdLabel.color = new Color(255, 255, 255); this.levelRewardAdLabel.string = '📺 看广告×2';
+    adNode.on(Node.EventType.TOUCH_END, () => this.onLevelRewardAdDouble(), this);
+    this.levelRewardAdBtnNode = adNode;
+    this.levelRewardMsgLabel = this.mkPanelLabel(panel, '', 22, new Color(180, 200, 230), 0, -dh * 0.42);
+  }
+
+  /** F：首通胜利→抓取三选一上下文（结果弹窗弹出时展示）。非首通/none档/无奖→不弹。 */
+  private captureLevelReward(nodeId: string, outcome: S7PlayNodeOutcome): void {
+    this.pendingLevelReward = null;
+    if (!outcome.won || !outcome.settlement || !outcome.settlement.ok || !this.runtime) return;
+    const node = this.runtime.getById<S7MainlineNodeConfig>('mainline_node_config', nodeId);
+    const stage = resolveLevelStage(node?.nodeTypeTag ?? '', DEFAULT_S7_LEVEL_REWARD_CONFIG);
+    if (stage === 'none') return;
+    const allNodes = this.runtime.getAll<S7MainlineNodeConfig>('mainline_node_config').map((n) => ({ nodeId: n.nodeId, nodeTypeTag: n.nodeTypeTag }));
+    const candidates: S7UnitCandidates = { // Ron 拍板：随机指定专属碎片从「全部单位」随机
+      ships: this.runtime.getAll<S7ShipConfig>('ship_config').map((c) => c.shipId),
+      pilots: this.runtime.getAll<S7PilotConfig>('pilot_config').map((c) => c.pilotId),
+    };
+    const rng = new S7AutoBattleRng(`levelreward:${nodeId}:${S7_DEMO_RUN_SEED}`);
+    const choices = rollLevelChoices(DEFAULT_S7_LEVEL_REWARD_CONFIG, stage, rng, candidates);
+    const isBoss = stage === 'boss';
+    const bossGrand = isBoss ? resolveBossGrand(DEFAULT_S7_LEVEL_REWARD_CONFIG, firstBossNodeId(allNodes) === nodeId) : null;
+    if (choices.length === 0) {
+      // 防御（现实中三档池都 ≥3 不会空）：无三选一可发 → 有 Boss 大奖就直接发、不弹空面板（避免无选项卡卡死）。
+      if (bossGrand) this.applyLevelReward(bossGrand);
+      return;
+    }
+    this.pendingLevelReward = {
+      nodeId, stage, isBoss, choices, bossGrand,
+      softGrants: outcome.settlement.grants.slice(),
+      showAdDouble: stage === 'elite' || stage === 'boss', adDoubled: false,
+    };
+  }
+
+  /** 展示三选一发奖浮层（置顶盖在结果弹窗之上）。 */
+  private openLevelReward(): void {
+    if (!this.levelRewardNode || !this.pendingLevelReward) return;
+    const parent = this.levelRewardNode.parent;
+    if (parent) this.levelRewardNode.setSiblingIndex(parent.children.length - 1); // 置顶
+    this.levelRewardNode.active = true;
+    if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '';
+    this.refreshLevelReward();
+  }
+
+  private stageName(stage: S7LevelRewardStage): string {
+    return stage === 'boss' ? 'Boss关' : stage === 'elite' ? '精英关' : '普通关';
+  }
+
+  /** 刷新发奖浮层：标题/固定行/Boss大奖行 + 重建三张选项卡 + 看广告×2 键状态。 */
+  private refreshLevelReward(): void {
+    const p = this.pendingLevelReward;
+    if (!p || !this.levelRewardListNode) return;
+    const x2 = p.adDoubled;
+    if (this.levelRewardTitleLabel) this.levelRewardTitleLabel.string = `🎁 ${p.nodeId} · ${this.stageName(p.stage)}首通奖励${x2 ? '（已×2）' : ''}`;
+    // 固定软货币 + Boss 大奖（恒发·非三选一）。
+    const fixedParts: string[] = [];
+    const soft = p.softGrants.map((g) => `${this.zhRes(g.resourceId)}×${x2 ? g.amount * 2 : g.amount}`).join(' ');
+    if (soft) fixedParts.push(`固定：${soft}`);
+    if (p.bossGrand) fixedParts.push(`必给：${this.levelRewardText(x2 ? doubleLevelReward(p.bossGrand) : p.bossGrand)}`);
+    if (this.levelRewardFixedLabel) this.levelRewardFixedLabel.string = fixedParts.join('　');
+    // 三张选项卡（点选→入账→离开）。
+    this.levelRewardListNode.removeAllChildren();
+    const n = p.choices.length;
+    const cardW = Math.min(this.viewW * 0.27, 230);
+    const gap = this.viewW * 0.30;
+    const startX = -((n - 1) * gap) / 2;
+    for (let i = 0; i < n; i++) {
+      const c = p.choices[i];
+      const x = startX + i * gap;
+      const card = new Node('lvlCard'); card.layer = this.node.layer; this.levelRewardListNode.addChild(card); card.setPosition(x, this.viewH * 0.02, 0);
+      card.addComponent(UITransform).setContentSize(cardW, 180);
+      const bg = card.addComponent(Graphics); bg.fillColor = new Color(48, 58, 84, 255); bg.roundRect(-cardW / 2, -90, cardW, 180, 14); bg.fill();
+      const shown = x2 ? doubleLevelReward(c) : c;
+      const tl = this.mkPanelLabel(card, this.levelRewardText(shown), 24, new Color(230, 236, 250), 0, 26);
+      tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(cardW - 16, 110);
+      this.addBtn(card, '选这个', cardW - 40, 56, new Color(225, 150, 45, 255), 0, -56, () => this.onPickLevelChoice(i), 24);
+    }
+    // 看广告×2 键（仅精英/Boss）。
+    if (this.levelRewardAdBtnNode) {
+      this.levelRewardAdBtnNode.active = p.showAdDouble;
+      if (this.levelRewardAdLabel) this.levelRewardAdLabel.string = x2 ? '✓ 已翻倍' : '📺 看广告×2';
+    }
+  }
+
+  /** 一笔关卡奖励的中文短描述。 */
+  private levelRewardText(r: S7LevelReward): string {
+    switch (r.kind) {
+      case 'resource': return `${this.zhRes(r.resourceId)}×${r.amount}`;
+      case 'exclusiveShard': return `${this.unitName(r.unitKind, r.unitId)}专属碎片×${r.amount}`;
+      case 'plugin': { const q = r.quality === 'fine' ? '精良' : r.quality === 'superior' ? '优秀' : '传奇'; return `${q}插件${r.count > 1 ? `×${r.count}` : ''}`; }
+      case 'chest': return `${this.chestName(r.chestId)}×${r.amount}`;
+      case 'core': return `${this.coreName(r.coreId)}[核]`;
+    }
+  }
+
+  /** 选定一个三选一选项：入账 选中项 + Boss大奖 + (×2时)再补一份固定软货币 → 清空 → 关浮层（露出结果弹窗）。 */
+  private onPickLevelChoice(index: number): void {
+    const p = this.pendingLevelReward;
+    if (!p || !this.playerState || !this.session) return;
+    const chosen = p.choices[index];
+    if (!chosen) return;
+    const x2 = p.adDoubled;
+    const texts: string[] = [];
+    texts.push(this.applyLevelReward(x2 ? doubleLevelReward(chosen) : chosen));
+    if (p.bossGrand) texts.push(this.applyLevelReward(x2 ? doubleLevelReward(p.bossGrand) : p.bossGrand));
+    if (x2) { // 看广告×2：固定软货币再补一份（playCurrentNode 已发过一份·唯一核不翻倍由 doubleLevelReward 保证）。
+      const res = this.session.resources as Record<string, number>;
+      for (const g of p.softGrants) if (res[g.resourceId] !== undefined) res[g.resourceId] += g.amount;
+      texts.push('固定×2');
+    }
+    this.pendingLevelReward = null;
+    if (this.levelRewardNode) this.levelRewardNode.active = false;
+    this.persist();
+    this.refresh();
+    this.setResult(`关卡奖励到手：${texts.filter((t) => t).join('、')}`, new Color(150, 220, 160));
+  }
+
+  /** 看广告×2（仅精英/Boss·一次）：mock 看完→标记翻倍→刷新展示（实际翻倍在 onPickLevelChoice 入账时算）。 */
+  private onLevelRewardAdDouble(): void {
+    const p = this.pendingLevelReward;
+    if (!p || !p.showAdDouble || p.adDoubled || !this.adGateway) return;
+    this.adGateway.show('clear_reward_double').then((res) => {
+      const cur = this.pendingLevelReward;
+      if (!cur || cur.adDoubled) return;
+      if (!res.ok) { if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '广告没看完，未翻倍'; return; }
+      cur.adDoubled = true;
+      if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '已看广告·本次奖励翻倍！';
+      this.refreshLevelReward();
+    }).catch(() => { if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '广告加载失败'; });
+  }
+
+  /** 把一笔关卡奖励入账（复用 applyMailReward/applySalvageReward 同款·返回中文短描述）。 */
+  private applyLevelReward(r: S7LevelReward): string {
+    if (!this.playerState || !this.session) return '';
+    switch (r.kind) {
+      case 'resource': {
+        const res = this.session.resources as Record<string, number>;
+        if (res[r.resourceId] === undefined) return ''; // 非钱包键护栏
+        res[r.resourceId] += r.amount;
+        return `${this.zhRes(r.resourceId)}×${r.amount}`;
+      }
+      case 'exclusiveShard':
+        addExclusiveShards(this.playerState.exclusiveShards, r.unitId, r.amount);
+        return `${this.unitName(r.unitKind, r.unitId)}碎片×${r.amount}`;
+      case 'plugin': {
+        if (this.pluginInventory) {
+          const ids = Array.from(this.pluginSlotMap.keys());
+          for (let k = 0; k < r.count; k += 1) {
+            const pid = ids.length > 0 ? ids[this.pluginInventory.plugins.length % ids.length] : 'plg01';
+            addOwnedPlugin(this.pluginInventory, pid, r.quality);
+          }
+        }
+        const q = r.quality === 'fine' ? '精良' : r.quality === 'superior' ? '优秀' : '传奇';
+        return `${q}插件${r.count > 1 ? `×${r.count}` : ''}`;
+      }
+      case 'chest':
+        addChest(this.playerState.chests, r.chestId, r.amount);
+        return `${this.chestName(r.chestId)}×${r.amount}`;
+      case 'core':
+        if (this.squad) grantCore(this.squad, r.coreId);
+        return `${this.coreName(r.coreId)}[核]`;
+    }
   }
 
   /** 宝箱键→中文名（仅显示用）。 */
