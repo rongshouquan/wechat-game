@@ -77,6 +77,12 @@ import { addChest, S7ChestType, S7_CHEST_TYPES, getChestCount, openChest } from 
 // 阶段一 H·宝箱开箱（星辉货舱：3选项·免费1·看广告再选1）。
 import { DEFAULT_S7_CHEST_REWARD_CONFIG, S7ChestReward } from '../../core/s7/S7ChestRewardConfig';
 import { rollChestOptions, chestPickLimits } from '../../core/s7/S7ChestRewardService';
+// 阶段一 G·活动接全（3天行动/7天扩张：进度喂入 + 周期tick结算 + 里程碑/完成/结算发奖）。
+import {
+  S7ActivityType, addActivityProgress, claimMilestone, claimCompletion, tickActivityCycles, activityCycleEndTime, getActivityProgress, S7_ACTIVITY_DURATION_SEC,
+} from '../../core/s7/S7ActivityProgress';
+import { DEFAULT_S7_ACTIVITY_CONFIG, S7ActivityReward, S7_ACTIVITY_ACTIONS } from '../../core/s7/S7ActivityConfig';
+import { listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementReward } from '../../core/s7/S7ActivityService';
 // 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
 import {
   S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
@@ -315,6 +321,13 @@ export class S7DemoController extends Component {
     chestId: S7ChestType; options: S7ChestReward[]; picked: boolean[];
     freeLeft: number; adLeft: number; adUnlocked: boolean; consumed: boolean;
   } | null = null;
+  // G-step2：活动界面（3天行动/7天扩张·进度条/里程碑领/完成领/倒计时）。
+  private activityNode: Node | null = null;
+  private activityTitleLabel: Label | null = null;
+  private activityInfoLabel: Label | null = null;
+  private activityListNode: Node | null = null;
+  private activityMsgLabel: Label | null = null;
+  private activityType: S7ActivityType = 'action3';
   // 邮件界面（阶段一 G2·从 hub「邮件」入口进；活动结算/抽卡轮换补发/补偿的领取管道）
   private mailNode: Node | null = null;
   private mailInfoLabel: Label | null = null;
@@ -415,6 +428,7 @@ export class S7DemoController extends Component {
     this.adGateway = new S7AdGateway(new S7MockAdAdapter());
 
     this.buildUi();
+    this.tickActivities(); // G：加载时滚动活动周期·到期结算宝藏走邮件（离线期间到期的也补发）
     this.refresh();
     // 上线即有离线收益：在结果行提示金额，引导点上方金色「领取」。
     if (this.offlinePending) {
@@ -550,6 +564,7 @@ export class S7DemoController extends Component {
     this.buildMailPanel(W, H); // 阶段一 G2 邮件界面（领取入账）
     this.buildLevelRewardPanel(W, H); // 阶段一 F 关卡三选一发奖浮层（最后建 → 盖在结果弹窗之上）
     this.buildChestOpenPanel(W, H); // 阶段一 H 星辉货舱开箱浮层（盖在背包之上）
+    this.buildActivityPanel(W, H); // 阶段一 G 活动界面（3天行动/7天扩张）
   }
 
   // ===== 星港主界面 hub =====
@@ -569,8 +584,8 @@ export class S7DemoController extends Component {
 
     // —— 活动（左右两枚·占位）——
     const ay = topY - 210;
-    this.makeHubEntry('3天行动', '即将开放', new Color(90, 160, 120, 255), -W * 0.24, ay, 290, 88, () => this.hubToast('3天行动·即将开放'));
-    this.makeHubEntry('7天扩张', '即将开放', new Color(120, 110, 180, 255), W * 0.24, ay, 290, 88, () => this.hubToast('7天扩张·即将开放'));
+    this.makeHubEntry('3天行动', '进度/领奖', new Color(90, 160, 120, 255), -W * 0.24, ay, 290, 88, () => this.openActivity('action3'));
+    this.makeHubEntry('7天扩张', '进度/领奖', new Color(120, 110, 180, 255), W * 0.24, ay, 290, 88, () => this.openActivity('expansion7'));
 
     // —— 7 建筑入口岛（2 列网格）——
     const gy0 = topY - 360;
@@ -804,6 +819,7 @@ export class S7DemoController extends Component {
       const head = r.outcomes.length > 1 ? `本次${r.outcomes.length}连：\n` : '';
       this.gachaResultLabel.string = (head + lines.join('\n')) || '出货异常（配置空池？）';
     }
+    if (r.outcomes.length > 0) this.feedActivity(S7_ACTIVITY_ACTIONS.gacha, r.outcomes.length); // G：抽卡喂活动进度(每抽)
     this.persist();
     this.refresh();      // 顶部货币栏（券变了）
     this.refreshGacha(); // 池说明/保底/兑换
@@ -1027,6 +1043,7 @@ export class S7DemoController extends Component {
     if (!res.ok) { if (this.salvageResultLabel) this.salvageResultLabel.string = res.reason === 'not_done' ? '还没打捞完' : '任务不存在'; return; }
     const texts = res.rewards.map((rw) => this.applySalvageReward(rw));
     if (this.salvageResultLabel) this.salvageResultLabel.string = `带回：${texts.filter(Boolean).join('、')}`;
+    this.feedActivity(S7_ACTIVITY_ACTIONS.salvage); // G：打捞收菜喂活动进度
     this.persist();
     this.refresh();
     this.refreshSalvage();
@@ -1686,7 +1703,8 @@ export class S7DemoController extends Component {
       }
       return; // 不关备战层、不落盘
     }
-    // 有遭遇：落盘 → 就地播战斗演出（不关备战层·隐藏UI在当前界面演·结果按住，播完再亮 + 据胜负路由）。
+    // 有遭遇：先喂活动进度(G·随落盘一起存) → 落盘 → 就地播战斗演出（不关备战层·结果按住，播完再亮 + 据胜负路由）。
+    if (outcome.won) this.feedActivity(S7_ACTIVITY_ACTIONS.nodeClear); // G：推关胜利喂活动进度
     this.persist();
     this.captureLevelReward(nodeId, outcome); // F：首通胜利→抓取三选一上下文（结果弹窗弹出时再展示）
     this.pendingWon = outcome.won;
@@ -2960,6 +2978,181 @@ export class S7DemoController extends Component {
       parts.push(`${this.zhRes(it.resourceId)}×${it.amount}`);
     }
     return `信标包(${parts.join(' ')})`;
+  }
+
+  // ===== G·活动接全（3天行动/7天扩张·进度喂入 + 周期tick结算 + 里程碑/完成/结算发奖）=====
+
+  /** 喂活动进度（两活动都累积·§10.5 自然累积）：某行为 → 按权重加进度。 */
+  private feedActivity(action: string, mult = 1): void {
+    if (!this.playerState) return;
+    const st = this.playerState.activityProgress;
+    for (const t of ['action3', 'expansion7'] as S7ActivityType[]) {
+      const w = progressWeightFor(DEFAULT_S7_ACTIVITY_CONFIG, t, action);
+      if (w > 0) addActivityProgress(st, t, w * mult);
+    }
+  }
+
+  /** 滚动活动周期到现在：到期且攒够 → 结算宝藏走邮件（行动/扩张宝藏·离线期间到期的也补发）。 */
+  private tickActivities(): void {
+    if (!this.playerState) return;
+    const events = tickActivityCycles(this.playerState.activityProgress, Date.now(), activityCycleConfig(DEFAULT_S7_ACTIVITY_CONFIG));
+    if (events.length === 0) return;
+    for (const ev of events) {
+      const reward = settlementReward(ev.type);
+      if (reward.kind !== 'chest') continue;
+      const title = ev.type === 'action3' ? '3天行动·结算宝藏' : '7天扩张·结算宝藏';
+      addMail(this.playerState.mailbox, {
+        kind: `activity_settlement_${ev.type}`, title,
+        rewards: [{ type: 'chest', chestId: reward.chestId, amount: reward.amount }],
+        createdAt: Date.now(),
+      });
+    }
+    this.persist();
+  }
+
+  /** 搭活动浮层（默认隐藏·3天/7天共用·openActivity 设 type）。 */
+  private buildActivityPanel(W: number, H: number): void {
+    const panel = new Node('S7Activity'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(20, 24, 34, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.activityNode = panel;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    this.activityTitleLabel = this.mkPanelLabel(panel, '', 38, new Color(210, 230, 210), 0, topY - 34);
+    this.activityInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(220, 228, 245), 0, topY - 100);
+    const list = new Node('actList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.activityListNode = list;
+    this.activityMsgLabel = this.mkPanelLabel(panel, '', 24, new Color(170, 220, 175), 0, botY + 130);
+    // DEV-TEMP（验活动链·真机不可能等3/7天/打15把攒满）：灌进度 + 强制周期结算。正式版删。
+    this.addBtn(panel, 'DEV:+50进度', 190, 58, new Color(90, 110, 140, 255), -W * 0.30, botY + 50, () => this.devAddActivityProgress(), 22);
+    this.addBtn(panel, 'DEV:秒结算', 190, 58, new Color(110, 90, 140, 255), -W * 0.05, botY + 50, () => this.devSettleActivity(), 22);
+    this.addBtn(panel, '返回', 180, 58, new Color(120, 90, 160, 255), W * 0.22, botY + 50, () => { panel.active = false; }, 26);
+  }
+
+  /** DEV-TEMP·给当前活动灌 50 进度（验里程碑/完成不必真打满）。正式版删。 */
+  private devAddActivityProgress(): void {
+    if (!this.playerState) return;
+    addActivityProgress(this.playerState.activityProgress, this.activityType, 50);
+    this.persist();
+    this.refreshActivity();
+    if (this.activityMsgLabel) this.activityMsgLabel.string = '[DEV] +50 进度';
+  }
+
+  /** DEV-TEMP·强制当前活动本周期立即到期（攒够则结算宝藏进邮箱）·验结算→邮件。正式版删。 */
+  private devSettleActivity(): void {
+    if (!this.playerState) return;
+    const st = this.playerState.activityProgress[this.activityType];
+    st.cycleStartTime = Date.now() - S7_ACTIVITY_DURATION_SEC[this.activityType] * 1000 - 1000; // 把周期起算推到一整周期前→立即到期
+    this.tickActivities();
+    this.refresh();
+    this.refreshActivity();
+    if (this.activityMsgLabel) this.activityMsgLabel.string = '[DEV] 已强制本周期到期·攒够完成阈值则结算宝藏进邮箱';
+  }
+
+  /** 打开活动界面（先滚周期结算·再展示该 type）。 */
+  private openActivity(type: S7ActivityType): void {
+    if (!this.activityNode) return;
+    this.tickActivities();
+    this.activityType = type;
+    this.activityNode.active = true;
+    if (this.activityMsgLabel) this.activityMsgLabel.string = '';
+    this.refreshActivity();
+    this.refresh(); // 邮件红点（结算宝藏可能刚进邮箱）
+  }
+
+  /** 剩余时间「Xd Yh」短描述。 */
+  private remainText(ms: number): string {
+    if (ms <= 0) return '本周期结算中';
+    const h = Math.floor(ms / 3_600_000);
+    const d = Math.floor(h / 24);
+    return d > 0 ? `剩 ${d}天${h % 24}时` : `剩 ${h}时`;
+  }
+
+  /** 刷新活动界面：标题/进度/倒计时 + 里程碑列表 + 完成行。 */
+  private refreshActivity(): void {
+    if (!this.playerState || !this.activityListNode) return;
+    const t = this.activityType;
+    const st = this.playerState.activityProgress;
+    const cfg = DEFAULT_S7_ACTIVITY_CONFIG;
+    const name = t === 'action3' ? '3天行动' : '7天扩张';
+    if (this.activityTitleLabel) this.activityTitleLabel.string = `🗓 ${name}`;
+    const prog = getActivityProgress(st, t);
+    const comp = completionView(st, t, cfg);
+    const endMs = activityCycleEndTime(st, t);
+    const remain = endMs > 0 ? this.remainText(endMs - Date.now()) : '本周期未起算';
+    if (this.activityInfoLabel) this.activityInfoLabel.string = `进度 ${Math.floor(prog)} / 完成 ${comp?.threshold ?? '—'}　${remain}\n（推关/打捞/抽卡 自然累积·结算宝藏走邮件）`;
+    this.activityListNode.removeAllChildren();
+    let y = getS7UsableBand().usableTopY - 180;
+    for (const m of listMilestones(st, t, cfg)) {
+      const row = this.makeActivityRow(`里程碑 ${m.threshold}：${m.rewards.map((r) => this.activityRewardText(r)).join(' ')}`, y);
+      if (m.claimed) this.mkPanelLabel(row, '已领', 22, new Color(120, 130, 150), this.viewW * 0.34, 0);
+      else if (m.claimable) this.addBtn(row, '领取', 130, 58, new Color(70, 150, 110, 255), this.viewW * 0.34, 0, () => this.onClaimActivityMilestone(m.id, m.threshold), 24);
+      else this.mkPanelLabel(row, '进度不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
+      y -= 96;
+    }
+    if (comp) {
+      const row = this.makeActivityRow(`完成 ${comp.threshold}：${comp.rewards.map((r) => this.activityRewardText(r)).join(' ')}`, y);
+      if (comp.claimed) this.mkPanelLabel(row, '已领', 22, new Color(120, 130, 150), this.viewW * 0.34, 0);
+      else if (comp.claimable) this.addBtn(row, '领取', 130, 58, new Color(225, 150, 45, 255), this.viewW * 0.34, 0, () => this.onClaimActivityCompletion(comp.threshold), 24);
+      else this.mkPanelLabel(row, '进度不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
+    }
+  }
+
+  /** 一行活动条（底板 + 描述标签）·返回行节点供加按钮。 */
+  private makeActivityRow(text: string, y: number): Node {
+    const row = new Node('actRow'); row.layer = this.node.layer; this.activityListNode!.addChild(row); row.setPosition(0, y, 0);
+    const bg = row.addComponent(Graphics); bg.fillColor = new Color(40, 46, 64, 255); bg.roundRect(-this.viewW * 0.44, -40, this.viewW * 0.88, 80, 10); bg.fill();
+    const tl = this.mkPanelLabel(row, text, 22, new Color(225, 232, 248), -this.viewW * 0.18, 0);
+    tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(this.viewW * 0.5, 72);
+    return row;
+  }
+
+  private onClaimActivityMilestone(id: string, threshold: number): void {
+    if (!this.playerState) return;
+    const st = this.playerState.activityProgress;
+    const m = listMilestones(st, this.activityType, DEFAULT_S7_ACTIVITY_CONFIG).find((x) => x.id === id);
+    if (!m || !claimMilestone(st, this.activityType, id, threshold)) { this.refreshActivity(); return; }
+    const texts = m.rewards.map((r) => this.applyActivityReward(r)).filter(Boolean);
+    if (this.activityMsgLabel) this.activityMsgLabel.string = `领取里程碑：${texts.join('、')}`;
+    this.persist(); this.refresh(); this.refreshActivity();
+  }
+
+  private onClaimActivityCompletion(threshold: number): void {
+    if (!this.playerState) return;
+    const st = this.playerState.activityProgress;
+    const cv = completionView(st, this.activityType, DEFAULT_S7_ACTIVITY_CONFIG);
+    if (!cv || !claimCompletion(st, this.activityType, threshold)) { this.refreshActivity(); return; }
+    const texts = cv.rewards.map((r) => this.applyActivityReward(r)).filter(Boolean);
+    if (this.activityMsgLabel) this.activityMsgLabel.string = `领取完成奖励：${texts.join('、')}`;
+    this.persist(); this.refresh(); this.refreshActivity();
+  }
+
+  /** 一笔活动奖励的中文短描述。 */
+  private activityRewardText(r: S7ActivityReward): string {
+    if (r.kind === 'resource') return `${this.zhRes(r.resourceId)}×${r.amount}`;
+    if (r.kind === 'chest') return `${this.chestName(r.chestId)}×${r.amount}`;
+    return r.pop === 'resident' ? `居民×${r.amount}` : `工人×${r.amount}`;
+  }
+
+  /** 把一笔活动奖励入账（resource→钱包护栏·chest→宝箱库·population→居民/工人）。 */
+  private applyActivityReward(r: S7ActivityReward): string {
+    if (!this.playerState || !this.session) return '';
+    if (r.kind === 'resource') {
+      const res = this.session.resources as Record<string, number>;
+      if (res[r.resourceId] === undefined) return '';
+      res[r.resourceId] += r.amount;
+      return `${this.zhRes(r.resourceId)}×${r.amount}`;
+    }
+    if (r.kind === 'chest') {
+      addChest(this.playerState.chests, r.chestId, r.amount);
+      return `${this.chestName(r.chestId)}×${r.amount}`;
+    }
+    if (r.pop === 'resident') this.playerState.population.residents += r.amount;
+    else this.playerState.population.workers += r.amount;
+    return r.pop === 'resident' ? `居民×${r.amount}` : `工人×${r.amount}`;
   }
 
   // ===== 邮件界面（阶段一 G2·领取入账 + 列表） =====
