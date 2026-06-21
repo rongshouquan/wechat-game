@@ -68,7 +68,11 @@ import {
   startSalvage, collectSalvage, salvageAdSpeedup, salvageRemainingMs, isSalvageDone, salvageTeamLimit,
 } from '../../core/s7/S7SalvageService';
 import { addExclusiveShards, getExclusiveShardCount } from '../../core/s7/S7ExclusiveShardInventory';
-import { addChest } from '../../core/s7/S7ChestInventory';
+import { addChest, S7ChestType } from '../../core/s7/S7ChestInventory';
+// 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
+import {
+  S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail,
+} from '../../core/s7/S7Mailbox';
 import { createDefaultS7GachaState } from '../../core/s7/S7GachaState';
 import { createDefaultS7Salvage } from '../../core/s7/S7SalvageState';
 import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
@@ -288,6 +292,12 @@ export class S7DemoController extends Component {
   private backpackInfoLabel: Label | null = null;
   private backpackListNode: Node | null = null;
   private backpackAmountLabel: Label | null = null;
+  // 邮件界面（阶段一 G2·从 hub「邮件」入口进；活动结算/抽卡轮换补发/补偿的领取管道）
+  private mailNode: Node | null = null;
+  private mailInfoLabel: Label | null = null;
+  private mailListNode: Node | null = null;
+  private mailResultLabel: Label | null = null;
+  private hubMailSubLabel: Label | null = null; // hub「邮件」入口副标签（refresh 显可领数/红点）
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
@@ -499,6 +509,7 @@ export class S7DemoController extends Component {
     this.buildInfoBuildingPanel('gallery', W, H); // J-step3 星核展厅（收藏）
     this.buildUnitManagePanel(W, H); // 升阶升星 step2 单位管理面板
     this.buildBackpackPanel(W, H); // 升阶升星 step2 背包·通用碎片转换
+    this.buildMailPanel(W, H); // 阶段一 G2 邮件界面（领取入账）
   }
 
   // ===== 星港主界面 hub =====
@@ -536,7 +547,8 @@ export class S7DemoController extends Component {
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
     this.makeHubEntry('背包', '碎片转换', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.openBackpack());
-    this.makeHubEntry('邮件', '即将开放', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.hubToast('邮件·即将开放'));
+    const mailEntry = this.makeHubEntry('邮件', '查看', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.openMail());
+    this.hubMailSubLabel = mailEntry.getChildByName('s')?.getComponent(Label) ?? null; // 副标签 refresh() 显可领数
     this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
 
     // —— 中央临时提示（默认空）——
@@ -2703,6 +2715,160 @@ export class S7DemoController extends Component {
     this.refreshBackpack();
   }
 
+  // ===== 邮件界面（阶段一 G2·领取入账 + 列表） =====
+
+  /** 搭邮件浮层（默认隐藏）：标题 + 计数 + 一键领取 + 邮件列表(每封 领取/已领/已过期) + 结果行 + 返回。 */
+  private buildMailPanel(W: number, H: number): void {
+    const panel = new Node('S7Mail'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(20, 22, 32, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.mailNode = panel;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    this.mkPanelLabel(panel, '📮 邮件', 40, new Color(210, 220, 240), -W * 0.32, topY - 30);
+    this.addBtn(panel, '一键领取', 200, 70, new Color(70, 150, 110, 255), W * 0.28, topY - 34, () => this.onClaimAllMail(), 28);
+    this.mailInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(220, 228, 245), 0, topY - 96);
+    const list = new Node('mailList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.mailListNode = list;
+    this.mailResultLabel = this.mkPanelLabel(panel, '', 26, new Color(170, 220, 175), 0, botY + 132);
+    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), 0, botY + 50, () => { panel.active = false; }, 28);
+  }
+
+  private openMail(): void {
+    if (!this.mailNode || !this.playerState) return;
+    pruneExpiredMail(this.playerState.mailbox, Date.now()); // 进邮箱先清「过期未领」
+    if (this.mailResultLabel) this.mailResultLabel.string = '';
+    this.mailNode.active = true;
+    this.persist();
+    this.refresh();
+    this.refreshMail();
+  }
+
+  /** 刷新邮件列表：计数 + 重建邮件行（最新在上·每封显标题/奖励/领取态）。 */
+  private refreshMail(): void {
+    if (!this.playerState || !this.mailListNode) return;
+    const now = Date.now();
+    const box = this.playerState.mailbox;
+    const claimable = claimableMailCount(box, now);
+    const unread = unreadMailCount(box);
+    if (this.mailInfoLabel) this.mailInfoLabel.string = `共 ${box.mails.length} 封 · 未读 ${unread} · 可领 ${claimable}`;
+    this.mailListNode.removeAllChildren();
+    // 最新在上；灰盒上限显示 7 封，超出提示。
+    const mails = box.mails.slice().reverse();
+    const MAX_ROWS = 7;
+    let y = getS7UsableBand().usableTopY - 168;
+    for (let i = 0; i < Math.min(mails.length, MAX_ROWS); i++) {
+      const m = mails[i];
+      const expired = m.expireAt !== null && now > m.expireAt;
+      const row = new Node('mailRow'); row.layer = this.node.layer; this.mailListNode.addChild(row); row.setPosition(0, y, 0);
+      const g = row.addComponent(Graphics);
+      g.fillColor = m.claimed ? new Color(36, 40, 52, 255) : new Color(46, 54, 74, 255);
+      g.roundRect(-this.viewW * 0.44, -36, this.viewW * 0.88, 72, 10); g.fill();
+      const txt = `${m.title || m.kind}　${this.mailRewardText(m.rewards)}`;
+      const tl = this.mkPanelLabel(row, txt, 22, m.claimed ? new Color(150, 158, 175) : new Color(225, 232, 248), -this.viewW * 0.18, 0);
+      tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(this.viewW * 0.52, 64);
+      if (m.claimed) this.mkPanelLabel(row, '已领', 24, new Color(120, 130, 150), this.viewW * 0.34, 0);
+      else if (expired) this.mkPanelLabel(row, '已过期', 22, new Color(180, 120, 120), this.viewW * 0.34, 0);
+      else this.addBtn(row, '领取', 140, 60, new Color(70, 150, 110, 255), this.viewW * 0.34, 0, () => this.onClaimMail(m.id), 26);
+      y -= 84;
+    }
+    if (mails.length > MAX_ROWS) this.mkPanelLabel(this.mailListNode, `… 还有 ${mails.length - MAX_ROWS} 封（先领前面的）`, 22, new Color(170, 180, 200), 0, y - 6);
+  }
+
+  /** 领取一封邮件：领取→按 type 入账→结果反馈。 */
+  private onClaimMail(id: string): void {
+    if (!this.playerState) return;
+    const res = claimMail(this.playerState.mailbox, id, Date.now());
+    if (!res.ok) {
+      if (this.mailResultLabel) this.mailResultLabel.string = res.reason === 'already_claimed' ? '这封已领过了' : res.reason === 'expired' ? '这封已过期' : '邮件不存在';
+      this.refreshMail();
+      return;
+    }
+    const texts = res.rewards.map((rw) => this.applyMailReward(rw)).filter((t) => t.length > 0);
+    if (this.mailResultLabel) this.mailResultLabel.string = texts.length > 0 ? `已领取：${texts.join('、')}` : '已领取（空邮件）';
+    this.persist();
+    this.refresh();
+    this.refreshMail();
+  }
+
+  /** 一键领取所有「未领且未过期」的邮件，奖励合并展示。 */
+  private onClaimAllMail(): void {
+    if (!this.playerState) return;
+    const now = Date.now();
+    const ids = this.playerState.mailbox.mails.filter((m) => !m.claimed && (m.expireAt === null || now <= m.expireAt)).map((m) => m.id);
+    if (ids.length === 0) { if (this.mailResultLabel) this.mailResultLabel.string = '没有可领取的邮件'; return; }
+    const texts: string[] = [];
+    for (const id of ids) {
+      const res = claimMail(this.playerState.mailbox, id, now);
+      if (res.ok) for (const rw of res.rewards) { const t = this.applyMailReward(rw); if (t) texts.push(t); }
+    }
+    if (this.mailResultLabel) this.mailResultLabel.string = `领取 ${ids.length} 封：${texts.join('、') || '（空）'}`;
+    this.persist();
+    this.refresh();
+    this.refreshMail();
+  }
+
+  /** 把一笔邮件奖励按 type 入账，返回中文短描述（与 applySalvageReward 同风格）。 */
+  private applyMailReward(rw: S7MailReward): string {
+    if (!this.playerState || !this.session || !this.squad) return '';
+    switch (rw.type) {
+      case 'resource': {
+        // exShard:<id> 约定（抽卡轮换补发）→ 进专属碎片库存（别进 13 键钱包）。
+        if (rw.resourceId.startsWith('exShard:')) {
+          const uid = rw.resourceId.slice('exShard:'.length);
+          addExclusiveShards(this.playerState.exclusiveShards, uid, rw.amount);
+          return `${this.unitNameAny(uid)}碎片×${rw.amount}`;
+        }
+        const res = this.session.resources as Record<string, number>;
+        if (res[rw.resourceId] === undefined) return ''; // 非钱包键护栏
+        res[rw.resourceId] += rw.amount;
+        return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
+      }
+      case 'chest':
+        addChest(this.playerState.chests, rw.chestId as S7ChestType, rw.amount);
+        return `${this.chestName(rw.chestId)}×${rw.amount}`;
+      case 'unit': {
+        // 本体：未拥有→发本体(C阶/1★起点)；已拥有→折 15 专属碎片（同抽卡重复折碎片口径）。
+        const owned = rw.unitKind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
+        if (!owned.includes(rw.unitId)) {
+          if (rw.unitKind === 'ship') grantShip(this.squad, rw.unitId); else grantPilot(this.squad, rw.unitId);
+          return `${this.unitName(rw.unitKind, rw.unitId)}[本体]`;
+        }
+        addExclusiveShards(this.playerState.exclusiveShards, rw.unitId, 15);
+        return `${this.unitName(rw.unitKind, rw.unitId)}碎片×15`;
+      }
+    }
+  }
+
+  /** 宝箱键→中文名（仅显示用）。 */
+  private chestName(id: string): string {
+    return id === 'starlightCargo' ? '星辉货舱' : id === 'actionTreasure' ? '行动宝藏' : id === 'expansionTreasure' ? '扩张宝藏' : id;
+  }
+
+  /** 不知舰/员时按 id 兜底取名（exShard 领取用·先试 ship_config 再 pilot_config）。 */
+  private unitNameAny(id: string): string {
+    if (!this.runtime) return id;
+    const s = this.runtime.getById<S7ShipConfig>('ship_config', id);
+    if (s?.name) return s.name;
+    return this.runtime.getById<S7PilotConfig>('pilot_config', id)?.name ?? id;
+  }
+
+  /** 一封邮件的奖励列表→中文短摘要（列表行用）。 */
+  private mailRewardText(rewards: S7MailReward[]): string {
+    if (rewards.length === 0) return '（无奖励）';
+    return rewards.map((rw) => {
+      if (rw.type === 'resource') {
+        if (rw.resourceId.startsWith('exShard:')) return `${this.unitNameAny(rw.resourceId.slice('exShard:'.length))}碎片×${rw.amount}`;
+        return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
+      }
+      if (rw.type === 'chest') return `${this.chestName(rw.chestId)}×${rw.amount}`;
+      return `${this.unitName(rw.unitKind, rw.unitId)}[本体]`;
+    }).join('、');
+  }
+
   /** 升阶(星舰)/升星(驾驶员)：扣专属碎片·提阶级/星级。 */
   private onAscendUnit(kind: 'ship' | 'pilot', unitId: string): void {
     if (!this.playerState) return;
@@ -2891,6 +3057,12 @@ export class S7DemoController extends Component {
         t.label.string = v.atMax ? `Lv.${v.level} 满级` : v.canAfford ? `Lv.${v.level} 可升↑` : `Lv.${v.level}`;
         t.label.color = v.canAfford && !v.atMax ? new Color(140, 235, 160) : new Color(225, 235, 255, 200);
       }
+    }
+    // hub「邮件」入口：可领数 > 0 显红绿提示。
+    if (this.hubMailSubLabel) {
+      const claimable = claimableMailCount(this.playerState.mailbox, Date.now());
+      this.hubMailSubLabel.string = claimable > 0 ? `领取×${claimable}` : '查看';
+      this.hubMailSubLabel.color = claimable > 0 ? new Color(140, 235, 160) : new Color(225, 235, 255, 200);
     }
   }
 
