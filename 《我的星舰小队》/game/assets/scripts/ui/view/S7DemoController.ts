@@ -86,6 +86,10 @@ import { listMilestones, completionView, progressWeightFor, activityCycleConfig,
 // 阶段一 I·星核三渠道 + 星空宝库。
 import { DEFAULT_S7_CORE_SOURCE_CONFIG } from '../../core/s7/S7CoreSourceConfig';
 import { synthesizeCore, rollExpansionChoices, vaultCoreViews, vaultShipViews } from '../../core/s7/S7CoreSourceService';
+// 阶段一 K·人口来源(主线救回)。
+import { DEFAULT_S7_POPULATION_SOURCE_CONFIG, resolveNodeRescue } from '../../core/s7/S7PopulationSourceConfig';
+// 阶段一 L·失败界面单位输出统计。
+import { summarizeS7BattleLog } from '../../core/s7/S7BattleLogSummary';
 // 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
 import {
   S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
@@ -184,6 +188,12 @@ export class S7DemoController extends Component {
   private stepClock = 0;
   /** 每帧停留秒数（在 startPlayback 按总帧数压到约 3 秒内）。 */
   private stepSec = 0.06;
+  // L：倍速 1/2/3x（回放提速）+ 入场仪式（开战我方从下方滑入）。
+  private playbackSpeed = 1;
+  private speedBtnLabel: Label | null = null;
+  private introClock = 0;
+  private introSec = 0;        // >0 = 入场进行中
+  private introYOffset = 0;    // 我方单位入场 y 偏移（负=在下方·滑到 0）
   private playing = false;
   /** 单位 unitId → 战场屏幕局部坐标 + 是否头目（块更大）。 */
   private posById = new Map<string, { x: number; y: number; boss: boolean }>();
@@ -213,6 +223,8 @@ export class S7DemoController extends Component {
   private prebattleUiNode: Node | null = null;
   /** 备战内嵌战斗的「跳过」键（挂在备战面板上，开战时显示）。 */
   private prebattleSkipBtn: Node | null = null;
+  /** L：倍速键（开战时与跳过同显隐）。 */
+  private prebattleSpeedBtn: Node | null = null;
   /** 当前选中的编队格(p{r}c{c})；null=未选。上场目标格。 */
   private prebattleSelSlot: string | null = null;
   /** 当前选中的星舰（上阵界面左侧列表/点在场格选中）；装配/上场/下场都针对它。 */
@@ -366,6 +378,8 @@ export class S7DemoController extends Component {
   private equipConfirmLabel: Label | null = null;
   /** 本场战斗是否胜（finishPlayback 据此路由：胜→下一关备战 / 败→失败弹窗）。 */
   private pendingWon = false;
+  /** K：本次首通主线救回的人口描述（拼进结果文案·无则空）。 */
+  private pendingRescueText = '';
   /** 战斗结果弹窗（胜/败统一）：标题/文案/右键文字（胜=下一关·败=再次挑战）。弹出时背景保留刚结束的战斗画面。 */
   private resultPopupNode: Node | null = null;
   private resultTitleLabel: Label | null = null;
@@ -1566,6 +1580,21 @@ export class S7DemoController extends Component {
     skip.on(Node.EventType.TOUCH_END, () => this.onSkip(), this);
     skip.active = false;
     this.prebattleSkipBtn = skip;
+    // L：倍速键（1x/2x/3x 循环·与跳过同显隐）。
+    const spd = new Node('pbSpeed'); spd.layer = this.node.layer; panel.addChild(spd); spd.setPosition(-W * 0.30, botY + 58, 0);
+    spd.addComponent(UITransform).setContentSize(160, 72);
+    const spbg = spd.addComponent(Graphics); spbg.fillColor = new Color(80, 110, 95, 255); spbg.roundRect(-80, -36, 160, 72, 12); spbg.fill();
+    const spl = new Node('t'); spl.layer = this.node.layer; spd.addChild(spl);
+    this.speedBtnLabel = spl.addComponent(Label); this.speedBtnLabel.fontSize = 30; this.speedBtnLabel.color = new Color(255, 255, 255); this.speedBtnLabel.string = '1x ▶';
+    spd.on(Node.EventType.TOUCH_END, () => this.onCycleSpeed(), this);
+    spd.active = false;
+    this.prebattleSpeedBtn = spd;
+  }
+
+  /** L：循环倍速 1x→2x→3x→1x（回放期间即时生效）。 */
+  private onCycleSpeed(): void {
+    this.playbackSpeed = this.playbackSpeed >= 3 ? 1 : this.playbackSpeed + 1;
+    if (this.speedBtnLabel) this.speedBtnLabel.string = `${this.playbackSpeed}x ▶`;
   }
 
   /** 搭"基地建筑"面板叠加层（默认隐藏）：底板 + 标题 + 7 行(点行=升该建筑) + 关闭。行文案在 refreshBasePanel 填。 */
@@ -1719,8 +1748,9 @@ export class S7DemoController extends Component {
       }
       return; // 不关备战层、不落盘
     }
-    // 有遭遇：先喂活动进度(G·随落盘一起存) → 落盘 → 就地播战斗演出（不关备战层·结果按住，播完再亮 + 据胜负路由）。
+    // 有遭遇：先喂活动进度(G) + 主线救回人口(K·都随落盘一起存) → 落盘 → 就地播战斗演出。
     if (outcome.won) this.feedActivity(S7_ACTIVITY_ACTIONS.nodeClear); // G：推关胜利喂活动进度
+    this.grantNodeRescuePop(nodeId, outcome); // K：首通主线救回 居民/工人
     this.persist();
     this.captureLevelReward(nodeId, outcome); // F：首通胜利→抓取三选一上下文（结果弹窗弹出时再展示）
     this.pendingWon = outcome.won;
@@ -2395,13 +2425,17 @@ export class S7DemoController extends Component {
     if (outcome.won && outcome.settlement && outcome.settlement.ok) {
       const grants = outcome.settlement.grants.map((g) => `+${g.amount}${this.zhRes(g.resourceId)}`).join(' ');
       const tail = outcome.settlement.finished ? '（已通关最终节点）' : `→ 推进到 ${outcome.settlement.nextNodeId}`;
-      return { text: `${nodeId} 胜！${hpTag} ${grants || '（无软货币）'} ${tail}`, color: new Color(160, 235, 160) };
+      const rescue = this.pendingRescueText ? `\n${this.pendingRescueText}` : ''; // K：主线救回人口
+      return { text: `${nodeId} 胜！${hpTag} ${grants || '（无软货币）'} ${tail}${rescue}`, color: new Color(160, 235, 160) };
     }
     if (outcome.won) {
       return { text: `${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, color: new Color(220, 210, 140) };
     }
+    // L 轻量失败界面：失败提示 + 单位输出统计（§4.5·不做复杂分析）。
+    const sum = summarizeS7BattleLog(outcome.battle.result);
+    const stats = sum.playerDamage.slice(0, 3).map((u) => `${this.unitName('ship', u.unitId)} ${Math.round(u.totalDamageDealt)}`).join('  ');
     return {
-      text: `${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n→ 先「升级旗舰」攒强了再来`,
+      text: `${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n输出 ${stats || '—'}\n→ 升级/调配后「再次挑战」`,
       color: new Color(235, 150, 150),
     };
   }
@@ -2417,20 +2451,35 @@ export class S7DemoController extends Component {
     // 总时长压到 ~2.8 秒内：每帧停留 = clamp(2.8/帧数, 0.03, 0.10)。
     this.stepSec = Math.max(0.03, Math.min(0.10, 2.8 / Math.max(1, pb.frames.length - 1)));
     this.computePositions(pb);
+    // L 入场仪式：开战我方从屏幕下方平行飞入（~0.5s·情绪价值·不影响数值）。
+    this.introSec = 0.5;
+    this.introClock = 0;
+    this.introYOffset = -this.viewH * 0.55;
     this.playing = true;
     if (this.prebattleUiNode) this.prebattleUiNode.active = false; // 无关 UI 滑出 → 当前界面变战场
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = true;
+    if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = true; // L 倍速键
     this.drawFrame(pb.frames[0]);
   }
 
   /** 每帧推进回放（cc 自动调用）。 */
   update(dt: number): void {
     if (!this.playing || !this.playback) return;
-    this.stepClock += dt;
     const frames = this.playback.frames;
-    while (this.stepClock >= this.stepSec && this.frameIdx < frames.length - 1) {
+    // L 入场仪式：先放我方滑入（不推进战斗帧），完成后再正常逐帧。
+    if (this.introSec > 0) {
+      this.introClock += dt;
+      const t = Math.min(1, this.introClock / this.introSec);
+      this.introYOffset = -this.viewH * 0.55 * (1 - t);
+      if (t >= 1) { this.introSec = 0; this.introYOffset = 0; }
+      this.drawFrame(frames[0]);
+      return;
+    }
+    this.stepClock += dt;
+    const effStep = this.stepSec / Math.max(1, this.playbackSpeed); // L 倍速：2x/3x 缩短每帧停留
+    while (this.stepClock >= effStep && this.frameIdx < frames.length - 1) {
       this.frameIdx += 1;
-      this.stepClock -= this.stepSec;
+      this.stepClock -= effStep;
     }
     this.drawFrame(frames[this.frameIdx]);
     if (this.frameIdx >= frames.length - 1) this.finishPlayback();
@@ -2439,15 +2488,18 @@ export class S7DemoController extends Component {
   /** 点「跳过」：直接跳到最后一帧并收尾。 */
   private onSkip(): void {
     if (!this.playing || !this.playback) return;
+    this.introSec = 0; this.introYOffset = 0; // L：跳过时结束入场（避免残留偏移）
     this.frameIdx = this.playback.frames.length - 1;
     this.drawFrame(this.playback.frames[this.frameIdx]);
     this.finishPlayback();
   }
 
-  /** 收尾：停播、隐藏「跳过」、弹结果窗（背景保留刚结束的就地战斗画面）。 */
+  /** 收尾：停播、隐藏「跳过/倍速」、弹结果窗（背景保留刚结束的就地战斗画面）。 */
   private finishPlayback(): void {
     this.playing = false;
+    this.introSec = 0; this.introYOffset = 0;
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = false;
+    if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = false;
     this.openResultPopup(this.pendingWon);
   }
 
@@ -2495,8 +2547,10 @@ export class S7DemoController extends Component {
     for (const u of this.playback.roster) {
       const s = frame.units[u.unitId];
       if (!s || !s.present) continue;
-      const p = this.posById.get(u.unitId);
-      if (!p) continue;
+      const base = this.posById.get(u.unitId);
+      if (!base) continue;
+      const yo = u.side === 'player' ? this.introYOffset : 0; // L 入场：我方滑入偏移
+      const p = { x: base.x, y: base.y + yo, boss: base.boss };
       const half = p.boss ? 34 : 20;
       if (!s.alive) {
         // 死亡：灰色小方块
@@ -3521,6 +3575,20 @@ export class S7DemoController extends Component {
     adNode.on(Node.EventType.TOUCH_END, () => this.onLevelRewardAdDouble(), this);
     this.levelRewardAdBtnNode = adNode;
     this.levelRewardMsgLabel = this.mkPanelLabel(panel, '', 22, new Color(180, 200, 230), 0, -dh * 0.42);
+  }
+
+  /** K：首通胜利→按配置救回 居民/工人（§7/§11·非首通不救回）。就地加人口、拼结果文案。 */
+  private grantNodeRescuePop(nodeId: string, outcome: S7PlayNodeOutcome): void {
+    this.pendingRescueText = '';
+    if (!this.playerState || !outcome.won || !outcome.settlement || !outcome.settlement.ok) return;
+    const g = resolveNodeRescue(DEFAULT_S7_POPULATION_SOURCE_CONFIG, nodeId);
+    if (!g) return;
+    this.playerState.population.residents += g.residents;
+    this.playerState.population.workers += g.workers;
+    const parts: string[] = [];
+    if (g.residents > 0) parts.push(`救回居民×${g.residents}`);
+    if (g.workers > 0) parts.push(`救回工人×${g.workers}`);
+    this.pendingRescueText = parts.join(' ');
   }
 
   /** F：首通胜利→抓取三选一上下文（结果弹窗弹出时展示）。非首通/none档/无奖→不弹。 */
