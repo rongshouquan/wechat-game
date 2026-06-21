@@ -83,6 +83,9 @@ import {
 } from '../../core/s7/S7ActivityProgress';
 import { DEFAULT_S7_ACTIVITY_CONFIG, S7ActivityReward, S7_ACTIVITY_ACTIONS } from '../../core/s7/S7ActivityConfig';
 import { listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementReward } from '../../core/s7/S7ActivityService';
+// 阶段一 I·星核三渠道 + 星空宝库。
+import { DEFAULT_S7_CORE_SOURCE_CONFIG } from '../../core/s7/S7CoreSourceConfig';
+import { synthesizeCore, rollExpansionChoices, vaultCoreViews, vaultShipViews } from '../../core/s7/S7CoreSourceService';
 // 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
 import {
   S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
@@ -328,6 +331,17 @@ export class S7DemoController extends Component {
   private activityListNode: Node | null = null;
   private activityMsgLabel: Label | null = null;
   private activityType: S7ActivityType = 'action3';
+  // I-step2：星空宝库（兑换星核/专属舰 + 碎片合成）+ 扩张宝藏开箱。
+  private vaultNode: Node | null = null;
+  private vaultInfoLabel: Label | null = null;
+  private vaultListNode: Node | null = null;
+  private vaultMsgLabel: Label | null = null;
+  private expOpenNode: Node | null = null;
+  private expOpenTitleLabel: Label | null = null;
+  private expOpenListNode: Node | null = null;
+  private expOpenMsgLabel: Label | null = null;
+  /** 当前扩张宝藏开箱状态。 */
+  private expOpen: { options: string[]; isFirstSelect: boolean; picked: boolean; consumed: boolean } | null = null;
   // 邮件界面（阶段一 G2·从 hub「邮件」入口进；活动结算/抽卡轮换补发/补偿的领取管道）
   private mailNode: Node | null = null;
   private mailInfoLabel: Label | null = null;
@@ -565,6 +579,8 @@ export class S7DemoController extends Component {
     this.buildLevelRewardPanel(W, H); // 阶段一 F 关卡三选一发奖浮层（最后建 → 盖在结果弹窗之上）
     this.buildChestOpenPanel(W, H); // 阶段一 H 星辉货舱开箱浮层（盖在背包之上）
     this.buildActivityPanel(W, H); // 阶段一 G 活动界面（3天行动/7天扩张）
+    this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
+    this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
   }
 
   // ===== 星港主界面 hub =====
@@ -2600,6 +2616,8 @@ export class S7DemoController extends Component {
     const info = this.mkPanelLabel(panel, '', 26, new Color(220, 228, 245), 0, topY * 0.2);
     this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => { panel.active = false; }, 28);
     this.addBtn(panel, '升级', 240, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade(bid), 28);
+    // 星核展厅 → 星空宝库入口（I·星核兑换/合成）。
+    if (kind === 'gallery') this.addBtn(panel, '🌌 星空宝库', 300, 72, new Color(120, 90, 170, 255), 0, botY + 134, () => this.openVault(), 28);
     if (kind === 'habitat') { this.habitatNode = panel; this.habitatInfoLabel = info; }
     else { this.galleryNode = panel; this.galleryInfoLabel = info; }
   }
@@ -2794,9 +2812,10 @@ export class S7DemoController extends Component {
       const row = new Node('bpChest'); row.layer = this.node.layer; this.backpackListNode.addChild(row); row.setPosition(0, y, 0);
       const bg = row.addComponent(Graphics); bg.fillColor = new Color(44, 40, 58, 255); bg.roundRect(-this.viewW * 0.40, -42, this.viewW * 0.80, 84, 12); bg.fill();
       this.mkPanelLabel(row, `${names[t]} ×${cnt}`, 28, new Color(232, 224, 245), -this.viewW * 0.22, 0);
-      const openable = t === 'starlightCargo'; // 行动/扩张宝藏开箱随 G/I 接
-      if (openable && cnt > 0) this.addBtn(row, '开箱', 150, 64, new Color(225, 150, 45, 255), this.viewW * 0.30, 0, () => this.openChestUI(t), 26);
-      else if (!openable) this.mkPanelLabel(row, '随活动开放', 22, new Color(150, 158, 178), this.viewW * 0.30, 0);
+      // 星辉货舱→H开箱；扩张宝藏→I开箱(星核·首次自选/之后三选一)；行动宝藏开箱留后(三选一·随后接)。
+      if (cnt > 0 && t === 'starlightCargo') this.addBtn(row, '开箱', 150, 64, new Color(225, 150, 45, 255), this.viewW * 0.30, 0, () => this.openChestUI(t), 26);
+      else if (cnt > 0 && t === 'expansionTreasure') this.addBtn(row, '开箱', 150, 64, new Color(150, 110, 200, 255), this.viewW * 0.30, 0, () => this.openExpOpenUI(), 26);
+      else if (t === 'actionTreasure') this.mkPanelLabel(row, '开箱随后接', 22, new Color(150, 158, 178), this.viewW * 0.30, 0);
       else this.mkPanelLabel(row, '暂无', 22, new Color(150, 158, 178), this.viewW * 0.30, 0);
       y -= 100;
     }
@@ -3153,6 +3172,181 @@ export class S7DemoController extends Component {
     if (r.pop === 'resident') this.playerState.population.residents += r.amount;
     else this.playerState.population.workers += r.amount;
     return r.pop === 'resident' ? `居民×${r.amount}` : `工人×${r.amount}`;
+  }
+
+  // ===== I·星空宝库（兑换星核/专属舰 + 碎片随机合成）+ 扩张宝藏开箱 =====
+
+  /** 搭星空宝库浮层（默认隐藏）：信息行 + 合成行 + 星核兑换 + 专属舰兑换 + 结果行 + 返回。 */
+  private buildVaultPanel(W: number, H: number): void {
+    const panel = new Node('S7Vault'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(18, 18, 30, 255); g.rect(-W / 2, -H / 2, W, H); g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.vaultNode = panel;
+    const band = getS7UsableBand();
+    const topY = band.usableTopY, botY = band.usableBottomY;
+    this.mkPanelLabel(panel, '🌌 星空宝库', 38, new Color(200, 190, 240), -W * 0.26, topY - 30);
+    this.vaultInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(220, 220, 245), 0, topY - 96);
+    const list = new Node('vaultList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.vaultListNode = list;
+    this.vaultMsgLabel = this.mkPanelLabel(panel, '', 24, new Color(180, 220, 200), 0, botY + 130);
+    this.addBtn(panel, '返回', 240, 76, new Color(120, 90, 160, 255), 0, botY + 50, () => { panel.active = false; }, 28);
+  }
+
+  private openVault(): void {
+    if (!this.vaultNode) return;
+    this.vaultNode.active = true;
+    if (this.vaultMsgLabel) this.vaultMsgLabel.string = '';
+    this.refreshVault();
+  }
+
+  /** 通用宝库行（底板 + 描述）·返回行节点供加按钮/标签。 */
+  private makeVaultRow(text: string, y: number, color: Color): Node {
+    const row = new Node('vaultRow'); row.layer = this.node.layer; this.vaultListNode!.addChild(row); row.setPosition(0, y, 0);
+    const bg = row.addComponent(Graphics); bg.fillColor = color; bg.roundRect(-this.viewW * 0.44, -34, this.viewW * 0.88, 68, 10); bg.fill();
+    const tl = this.mkPanelLabel(row, text, 22, new Color(228, 232, 248), -this.viewW * 0.20, 0);
+    tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(this.viewW * 0.46, 60);
+    return row;
+  }
+
+  private refreshVault(): void {
+    if (!this.session || !this.squad || !this.vaultListNode) return;
+    const cfg = DEFAULT_S7_CORE_SOURCE_CONFIG;
+    const res = this.session.resources as Record<string, number>;
+    const gem = Math.floor(res.starGem ?? 0);
+    const frag = Math.floor(res.coreFrag ?? 0);
+    if (this.vaultInfoLabel) this.vaultInfoLabel.string = `星空宝石 ${gem}　星核碎片 ${frag}\n（兑换=定向·一次性解锁；合成=碎片随机出 1 核）`;
+    this.vaultListNode.removeAllChildren();
+    let y = getS7UsableBand().usableTopY - 168;
+    // 碎片随机合成行。
+    const synthRow = this.makeVaultRow(`碎片随机合成 1 核（${cfg.synthesisCost} 碎片）`, y, new Color(46, 42, 64, 255));
+    if (frag >= cfg.synthesisCost) this.addBtn(synthRow, '合成', 130, 56, new Color(150, 110, 200, 255), this.viewW * 0.34, 0, () => this.onSynthesize(), 24);
+    else this.mkPanelLabel(synthRow, '碎片不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
+    y -= 80;
+    // 星核兑换。
+    const ownedCoreIds = Object.keys(this.squad.ownedCores).filter((id) => (this.squad!.ownedCores[id] ?? 0) > 0);
+    for (const v of vaultCoreViews(cfg, ownedCoreIds, gem)) {
+      const row = this.makeVaultRow(`${this.coreName(v.coreId)}${v.limited ? '[限定]' : ''}　${v.gemCost}宝石`, y, new Color(40, 44, 62, 255));
+      if (v.owned) this.mkPanelLabel(row, '已拥有', 22, new Color(120, 200, 140), this.viewW * 0.34, 0);
+      else if (v.affordable) this.addBtn(row, '兑换', 130, 56, new Color(90, 150, 110, 255), this.viewW * 0.34, 0, () => this.onRedeemCore(v.coreId, v.gemCost), 24);
+      else this.mkPanelLabel(row, '宝石不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
+      y -= 76;
+    }
+    // 专属舰兑换。
+    for (const v of vaultShipViews(cfg, this.squad.ownedShips, gem)) {
+      const row = this.makeVaultRow(`${this.unitName('ship', v.shipId)}[专属]　${v.gemCost}宝石`, y, new Color(44, 40, 60, 255));
+      if (v.owned) this.mkPanelLabel(row, '已拥有', 22, new Color(120, 200, 140), this.viewW * 0.34, 0);
+      else if (v.affordable) this.addBtn(row, '兑换', 130, 56, new Color(110, 130, 200, 255), this.viewW * 0.34, 0, () => this.onRedeemShip(v.shipId, v.gemCost), 24);
+      else this.mkPanelLabel(row, '宝石不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
+      y -= 76;
+    }
+  }
+
+  private onSynthesize(): void {
+    if (!this.session || !this.squad) return;
+    const res = this.session.resources as Record<string, number>;
+    const r = synthesizeCore(DEFAULT_S7_CORE_SOURCE_CONFIG, Math.floor(res.coreFrag ?? 0), new S7AutoBattleRng(`synth:${Date.now()}`));
+    if (!r.ok) { if (this.vaultMsgLabel) this.vaultMsgLabel.string = r.reason === 'insufficient' ? `星核碎片不够（需 ${DEFAULT_S7_CORE_SOURCE_CONFIG.synthesisCost}）` : '合成池为空'; return; }
+    res.coreFrag -= r.fragSpent;
+    grantCore(this.squad, r.coreId);
+    if (this.vaultMsgLabel) this.vaultMsgLabel.string = `合成出：${this.coreName(r.coreId)}！`;
+    this.persist(); this.refresh(); this.refreshVault();
+  }
+
+  private onRedeemCore(coreId: string, gemCost: number): void {
+    if (!this.session || !this.squad) return;
+    if ((this.squad.ownedCores[coreId] ?? 0) > 0) return; // 一次性·已拥有
+    const res = this.session.resources as Record<string, number>;
+    if ((res.starGem ?? 0) < gemCost) { if (this.vaultMsgLabel) this.vaultMsgLabel.string = '星空宝石不够'; return; }
+    res.starGem -= gemCost;
+    grantCore(this.squad, coreId);
+    if (this.vaultMsgLabel) this.vaultMsgLabel.string = `兑换：${this.coreName(coreId)}！`;
+    this.persist(); this.refresh(); this.refreshVault();
+  }
+
+  private onRedeemShip(shipId: string, gemCost: number): void {
+    if (!this.session || !this.squad) return;
+    if (this.squad.ownedShips.includes(shipId)) return;
+    const res = this.session.resources as Record<string, number>;
+    if ((res.starGem ?? 0) < gemCost) { if (this.vaultMsgLabel) this.vaultMsgLabel.string = '星空宝石不够'; return; }
+    res.starGem -= gemCost;
+    grantShip(this.squad, shipId);
+    if (this.vaultMsgLabel) this.vaultMsgLabel.string = `兑换专属舰：${this.unitName('ship', shipId)}！`;
+    this.persist(); this.refresh(); this.refreshVault();
+  }
+
+  /** 搭扩张宝藏开箱浮层（默认隐藏·盖在背包之上·首次全池自选/之后随机三选一）。 */
+  private buildExpOpenPanel(W: number, H: number): void {
+    const panel = new Node('S7ExpOpen'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 205); dim.rect(-W / 2, -H / 2, W, H); dim.fill();
+    const dw = W * 0.92, dh = H * 0.5;
+    dim.fillColor = new Color(28, 24, 44, 255); dim.roundRect(-dw / 2, -dh / 2, dw, dh, 22); dim.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.expOpenNode = panel;
+    this.expOpenTitleLabel = this.mkPanelLabel(panel, '', 34, new Color(210, 195, 245), 0, dh * 0.40);
+    this.expOpenMsgLabel = this.mkPanelLabel(panel, '', 24, new Color(210, 220, 240), 0, dh * 0.28);
+    const list = new Node('expOptList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.expOpenListNode = list;
+    this.addBtn(panel, '返回背包', 240, 76, new Color(120, 90, 160, 255), 0, -dh * 0.40, () => { panel.active = false; this.refreshBackpack(); }, 28);
+  }
+
+  /** 开扩张宝藏（有货→掷核选项·进开箱浮层·首次=全池自选/非首次=随机三选一·选那刻才扣箱）。 */
+  private openExpOpenUI(): void {
+    if (!this.playerState || !this.expOpenNode) return;
+    if (getChestCount(this.playerState.chests, 'expansionTreasure') < 1) return;
+    const isFirstSelect = this.playerState.expansionOpenedCount <= 0;
+    const options = rollExpansionChoices(DEFAULT_S7_CORE_SOURCE_CONFIG, isFirstSelect, new S7AutoBattleRng(`exp:${Date.now()}`));
+    if (options.length === 0) return;
+    this.expOpen = { options, isFirstSelect, picked: false, consumed: false };
+    const parent = this.expOpenNode.parent;
+    if (parent) this.expOpenNode.setSiblingIndex(parent.children.length - 1);
+    this.expOpenNode.active = true;
+    if (this.expOpenMsgLabel) this.expOpenMsgLabel.string = '';
+    this.refreshExpOpen();
+  }
+
+  private refreshExpOpen(): void {
+    const e = this.expOpen;
+    if (!e || !this.expOpenListNode) return;
+    if (this.expOpenTitleLabel) this.expOpenTitleLabel.string = e.isFirstSelect ? '🌠 扩张宝藏 · 首次全池自选' : '🌠 扩张宝藏 · 随机三选一';
+    if (this.expOpenMsgLabel && !this.expOpenMsgLabel.string) this.expOpenMsgLabel.string = e.picked ? '已选取' : '选一颗星核';
+    this.expOpenListNode.removeAllChildren();
+    const n = e.options.length;
+    const perRow = Math.min(n, 3);
+    const cardW = Math.min(this.viewW * 0.27, 210);
+    const gap = this.viewW * 0.30;
+    for (let i = 0; i < n; i += 1) {
+      const colu = i % perRow, rowi = Math.floor(i / perRow);
+      const rowCount = Math.min(perRow, n - rowi * perRow);
+      const startX = -((rowCount - 1) * gap) / 2;
+      const x = startX + colu * gap;
+      const y = this.viewH * 0.06 - rowi * 150;
+      const coreId = e.options[i];
+      const card = new Node('expCard'); card.layer = this.node.layer; this.expOpenListNode.addChild(card); card.setPosition(x, y, 0);
+      card.addComponent(UITransform).setContentSize(cardW, 130);
+      const bg = card.addComponent(Graphics); bg.fillColor = new Color(50, 46, 76, 255); bg.roundRect(-cardW / 2, -65, cardW, 130, 12); bg.fill();
+      const tl = this.mkPanelLabel(card, this.coreName(coreId), 22, new Color(228, 224, 248), 0, 20);
+      tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(cardW - 14, 70);
+      if (!e.picked) this.addBtn(card, '选这个', cardW - 34, 50, new Color(150, 110, 200, 255), 0, -40, () => this.onPickExpOption(coreId), 22);
+    }
+  }
+
+  /** 选取扩张宝藏的一颗核：扣箱(首选那刻)+expansionOpenedCount+1+grantCore→关浮层。 */
+  private onPickExpOption(coreId: string): void {
+    const e = this.expOpen;
+    if (!e || e.picked || !this.playerState || !this.squad) return;
+    if (!e.consumed) { if (!openChest(this.playerState.chests, 'expansionTreasure')) return; e.consumed = true; this.playerState.expansionOpenedCount += 1; }
+    e.picked = true;
+    grantCore(this.squad, coreId);
+    if (this.expOpenMsgLabel) this.expOpenMsgLabel.string = `获得星核：${this.coreName(coreId)}！`;
+    this.persist();
+    this.refresh();
+    this.refreshExpOpen();
   }
 
   // ===== 邮件界面（阶段一 G2·领取入账 + 列表） =====

@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(16); // 阶段一J 升阶升星：v15→v16（unitTiers）
+    expect(data.saveVersion).toBe(17); // 阶段一I 星核三渠道：v16→v17（expansionOpenedCount）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -157,6 +157,17 @@ describe('s7 save - independent storage domain', () => {
     const r = loadS7Save(adapter, NOW + 2000);
     expect(r.data.playerState.unitLevels.shipLevels).toEqual({ shp01: 8 });
     expect(r.data.playerState.unitLevels.pilotLevels).toEqual({ pil03: 5 });
+  });
+
+  it('round-trips expansionOpenedCount through persist + load（阶段一I·防 persist 漏字段）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const data = createDefaultS7SaveData(NOW);
+    expect(data.playerState.expansionOpenedCount).toBe(0); // 默认 0=首次全池自选
+    data.playerState.expansionOpenedCount = 3;
+    persistS7Save(adapter, data, NOW + 1000);
+
+    const r = loadS7Save(adapter, NOW + 2000);
+    expect(r.data.playerState.expansionOpenedCount).toBe(3); // 漏写会退回 0，此断言为防回归
   });
 
   it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
@@ -701,7 +712,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(16);
+    expect(S7_CURRENT_SAVE_VERSION).toBe(17);
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）
