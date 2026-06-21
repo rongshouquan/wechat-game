@@ -73,7 +73,10 @@ import {
   startSalvage, collectSalvage, salvageAdSpeedup, salvageRemainingMs, isSalvageDone, salvageTeamLimit,
 } from '../../core/s7/S7SalvageService';
 import { addExclusiveShards, getExclusiveShardCount } from '../../core/s7/S7ExclusiveShardInventory';
-import { addChest, S7ChestType } from '../../core/s7/S7ChestInventory';
+import { addChest, S7ChestType, S7_CHEST_TYPES, getChestCount, openChest } from '../../core/s7/S7ChestInventory';
+// 阶段一 H·宝箱开箱（星辉货舱：3选项·免费1·看广告再选1）。
+import { DEFAULT_S7_CHEST_REWARD_CONFIG, S7ChestReward } from '../../core/s7/S7ChestRewardConfig';
+import { rollChestOptions, chestPickLimits } from '../../core/s7/S7ChestRewardService';
 // 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
 import {
   S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
@@ -297,6 +300,21 @@ export class S7DemoController extends Component {
   private backpackInfoLabel: Label | null = null;
   private backpackListNode: Node | null = null;
   private backpackAmountLabel: Label | null = null;
+  // H-step2：背包三页签（资源总览 / 宝箱 / 碎片转换）。
+  private backpackTab: 'resource' | 'chest' | 'convert' = 'resource';
+  private backpackTitleLabel: Label | null = null;
+  private backpackConvertNode: Node | null = null; // 碎片转换专用控件组（仅 convert 页显）
+  // H-step2：星辉货舱开箱浮层（3 选项·免费选 1·看广告再选 1·盖在背包之上）。
+  private chestOpenNode: Node | null = null;
+  private chestOpenTitleLabel: Label | null = null;
+  private chestOpenListNode: Node | null = null;
+  private chestOpenAdBtnNode: Node | null = null;
+  private chestOpenMsgLabel: Label | null = null;
+  /** 当前开箱状态（开箱浮层用）。 */
+  private chestOpen: {
+    chestId: S7ChestType; options: S7ChestReward[]; picked: boolean[];
+    freeLeft: number; adLeft: number; adUnlocked: boolean; consumed: boolean;
+  } | null = null;
   // 邮件界面（阶段一 G2·从 hub「邮件」入口进；活动结算/抽卡轮换补发/补偿的领取管道）
   private mailNode: Node | null = null;
   private mailInfoLabel: Label | null = null;
@@ -531,6 +549,7 @@ export class S7DemoController extends Component {
     this.buildBackpackPanel(W, H); // 升阶升星 step2 背包·通用碎片转换
     this.buildMailPanel(W, H); // 阶段一 G2 邮件界面（领取入账）
     this.buildLevelRewardPanel(W, H); // 阶段一 F 关卡三选一发奖浮层（最后建 → 盖在结果弹窗之上）
+    this.buildChestOpenPanel(W, H); // 阶段一 H 星辉货舱开箱浮层（盖在背包之上）
   }
 
   // ===== 星港主界面 hub =====
@@ -544,9 +563,9 @@ export class S7DemoController extends Component {
     // —— 顶部：标题 + 货币栏（星矿/星贝/补给券·设计§10.5 主界面只常驻这 3 个）——
     this.makeLabel('⭐ 星港', 48, new Color(255, 232, 120), -W * 0.34, topY - 34);
     const cy = topY - 108;
-    this.hubOreLabel = this.makeHubChip('星矿', -W * 0.30, cy, new Color(150, 90, 210, 255));
-    this.hubCargoLabel = this.makeHubChip('星贝', 0, cy, new Color(210, 170, 60, 255));
-    this.hubTicketLabel = this.makeHubChip('补给券', W * 0.30, cy, new Color(70, 150, 200, 255));
+    this.hubOreLabel = this.makeHubChip('星矿', -W * 0.30, cy, new Color(150, 90, 210, 255), '星矿：建筑升级主货币·出战/离线产出（点建筑升级看花费）');
+    this.hubCargoLabel = this.makeHubChip('星贝', 0, cy, new Color(210, 170, 60, 255), '星贝：商人交易/回收货币·出战获得（去商人小站买卖）');
+    this.hubTicketLabel = this.makeHubChip('补给券', W * 0.30, cy, new Color(70, 150, 200, 255), '补给券：抽卡货币·商人每日供应/赞助补给/活动获得（去补给站抽卡）');
 
     // —— 活动（左右两枚·占位）——
     const ay = topY - 210;
@@ -567,7 +586,7 @@ export class S7DemoController extends Component {
     this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
-    this.makeHubEntry('背包', '碎片转换', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.openBackpack());
+    this.makeHubEntry('背包', '资源/宝箱', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.openBackpack());
     const mailEntry = this.makeHubEntry('邮件', '查看', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.openMail());
     this.hubMailSubLabel = mailEntry.getChildByName('s')?.getComponent(Label) ?? null; // 副标签 refresh() 显可领数
     this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
@@ -585,14 +604,16 @@ export class S7DemoController extends Component {
     this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
   }
 
-  /** 货币 chip：圆角底 + 「名 值」标签。返回值标签（refresh 更新数字）。 */
-  private makeHubChip(name: string, x: number, y: number, color: Color): Label {
+  /** 货币 chip：圆角底 + 「名 值」标签 + 点击看说明（§10.6 顶部货币栏上下文）。返回值标签（refresh 更新数字）。 */
+  private makeHubChip(name: string, x: number, y: number, color: Color, desc?: string): Label {
     const node = new Node('S7HubChip'); node.layer = this.node.layer; this.node.addChild(node); node.setPosition(x, y, 0);
+    node.addComponent(UITransform).setContentSize(220, 68);
     const g = node.addComponent(Graphics);
     g.fillColor = new Color(36, 42, 60, 235); g.roundRect(-110, -34, 220, 68, 16); g.fill();
     g.fillColor = color; g.roundRect(-110, -34, 12, 68, 6); g.fill(); // 左侧色条区分币种
     const lab = new Node('v'); lab.layer = this.node.layer; node.addChild(lab); lab.setPosition(8, 0, 0);
     const l = lab.addComponent(Label); l.fontSize = 26; l.lineHeight = 32; l.color = new Color(235, 240, 250); l.string = `${name}\n0`;
+    if (desc) node.on(Node.EventType.TOUCH_END, () => this.hubToast(desc), this);
     return l;
   }
 
@@ -2671,26 +2692,96 @@ export class S7DemoController extends Component {
     this.backpackNode = panel;
     const band = getS7UsableBand();
     const topY = band.usableTopY, botY = band.usableBottomY;
-    this.mkPanelLabel(panel, '背包 · 通用碎片转换', 38, new Color(210, 220, 240), -W * 0.16, topY - 30);
-    this.backpackInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(220, 228, 245), 0, topY - 96);
-    this.addBtn(panel, '转舰专属', 220, 70, new Color(80, 130, 200, 255), -W * 0.20, topY - 160, () => { this.backpackKind = 'ship'; this.backpackTargetId = ''; this.backpackAmount = 1; this.refreshBackpack(); }, 26);
-    this.addBtn(panel, '转员专属', 220, 70, new Color(110, 140, 90, 255), W * 0.20, topY - 160, () => { this.backpackKind = 'pilot'; this.backpackTargetId = ''; this.backpackAmount = 1; this.refreshBackpack(); }, 26);
+    this.backpackTitleLabel = this.mkPanelLabel(panel, '🎒 背包', 38, new Color(210, 220, 240), -W * 0.32, topY - 30);
+    // 三页签：资源总览 / 宝箱 / 碎片转换。
+    this.addBtn(panel, '资源', 180, 64, new Color(70, 110, 160, 255), -W * 0.28, topY - 96, () => this.setBackpackTab('resource'), 26);
+    this.addBtn(panel, '宝箱', 180, 64, new Color(150, 120, 70, 255), 0, topY - 96, () => this.setBackpackTab('chest'), 26);
+    this.addBtn(panel, '碎片转换', 180, 64, new Color(90, 140, 110, 255), W * 0.28, topY - 96, () => this.setBackpackTab('convert'), 26);
+    this.backpackInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(220, 228, 245), 0, topY - 158);
     const list = new Node('bpList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
     this.backpackListNode = list;
-    // 数量行 + 转换。
-    this.addBtn(panel, '−', 80, 70, new Color(90, 95, 110, 255), -W * 0.30, botY + 150, () => this.changeBackpackAmount(-1), 34);
-    this.backpackAmountLabel = this.mkPanelLabel(panel, '1', 30, new Color(255, 235, 160), -W * 0.16, botY + 150);
-    this.addBtn(panel, '+', 80, 70, new Color(90, 95, 110, 255), -W * 0.02, botY + 150, () => this.changeBackpackAmount(1), 34);
-    this.addBtn(panel, '最大', 100, 70, new Color(90, 95, 110, 255), W * 0.14, botY + 150, () => this.changeBackpackAmount(0), 26);
-    this.addBtn(panel, '转换', 160, 70, new Color(70, 150, 110, 255), W * 0.34, botY + 150, () => this.onBackpackConvert(), 28);
+    // 碎片转换专用控件组（仅 convert 页显）。
+    const cv = new Node('bpConvert'); cv.layer = this.node.layer; panel.addChild(cv); cv.setPosition(0, 0, 0);
+    this.backpackConvertNode = cv;
+    this.addBtn(cv, '转舰专属', 200, 64, new Color(80, 130, 200, 255), -W * 0.20, topY - 222, () => { this.backpackKind = 'ship'; this.backpackTargetId = ''; this.backpackAmount = 1; this.refreshBackpack(); }, 24);
+    this.addBtn(cv, '转员专属', 200, 64, new Color(110, 140, 90, 255), W * 0.20, topY - 222, () => { this.backpackKind = 'pilot'; this.backpackTargetId = ''; this.backpackAmount = 1; this.refreshBackpack(); }, 24);
+    this.addBtn(cv, '−', 80, 70, new Color(90, 95, 110, 255), -W * 0.30, botY + 150, () => this.changeBackpackAmount(-1), 34);
+    this.backpackAmountLabel = this.mkPanelLabel(cv, '1', 30, new Color(255, 235, 160), -W * 0.16, botY + 150);
+    this.addBtn(cv, '+', 80, 70, new Color(90, 95, 110, 255), -W * 0.02, botY + 150, () => this.changeBackpackAmount(1), 34);
+    this.addBtn(cv, '最大', 100, 70, new Color(90, 95, 110, 255), W * 0.14, botY + 150, () => this.changeBackpackAmount(0), 26);
+    this.addBtn(cv, '转换', 160, 70, new Color(70, 150, 110, 255), W * 0.34, botY + 150, () => this.onBackpackConvert(), 28);
     this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), 0, botY + 50, () => { panel.active = false; }, 28);
   }
 
   private openBackpack(): void {
     if (!this.backpackNode) return;
+    this.backpackTab = 'resource';
     this.backpackKind = 'ship'; this.backpackTargetId = ''; this.backpackAmount = 1;
     this.backpackNode.active = true;
     this.refreshBackpack();
+  }
+
+  private setBackpackTab(tab: 'resource' | 'chest' | 'convert'): void {
+    this.backpackTab = tab;
+    if (tab === 'convert') { this.backpackKind = 'ship'; this.backpackTargetId = ''; this.backpackAmount = 1; }
+    this.refreshBackpack();
+  }
+
+  /** 刷新背包：按页签分派（资源总览 / 宝箱 / 碎片转换）。 */
+  private refreshBackpack(): void {
+    if (!this.backpackListNode) return;
+    this.backpackListNode.removeAllChildren();
+    if (this.backpackConvertNode) this.backpackConvertNode.active = this.backpackTab === 'convert';
+    if (this.backpackTab === 'resource') { if (this.backpackTitleLabel) this.backpackTitleLabel.string = '🎒 背包 · 资源'; this.refreshBackpackResource(); }
+    else if (this.backpackTab === 'chest') { if (this.backpackTitleLabel) this.backpackTitleLabel.string = '🎒 背包 · 宝箱'; this.refreshBackpackChest(); }
+    else { if (this.backpackTitleLabel) this.backpackTitleLabel.string = '🎒 背包 · 碎片转换'; this.refreshBackpackConvert(); }
+  }
+
+  /** 资源页：列出所有背包可见资源（§10.6·软/流通货币除外·走货币栏）+ 各单位专属碎片（非零）+ 未装插件数。 */
+  private refreshBackpackResource(): void {
+    if (!this.session || !this.playerState || !this.backpackListNode) return;
+    const res = this.session.resources as Record<string, number>;
+    if (this.backpackInfoLabel) this.backpackInfoLabel.string = '攒着不过期·想用再用（软/流通货币星矿·合金·驾驶记录·星贝见顶部货币栏）';
+    // 背包资源键（§10.6 line 377）：补给券·信标三档·通用碎片·星核碎片·星空宝石。
+    const keys = ['supplyTicket', 'beaconCommon', 'beaconRare', 'beaconEpic', 'shipBlueprint', 'pilotShardUniversal', 'coreFrag', 'starGem'];
+    const cells: string[] = [];
+    for (const k of keys) cells.push(`${this.zhRes(k)} ${Math.floor(res[k] ?? 0)}`);
+    // 各单位专属碎片（非零）。
+    const ex = this.playerState.exclusiveShards;
+    const exIds = (ex && ex.shards ? Object.keys(ex.shards) : []).filter((id) => getExclusiveShardCount(ex, id) > 0);
+    for (const id of exIds) cells.push(`${this.unitNameAny(id)}专属 ${getExclusiveShardCount(ex, id)}`);
+    // 拥有插件数（库存总数·含已装·灰盒先显总数）。
+    const plugCount = this.pluginInventory ? this.pluginInventory.plugins.length : 0;
+    cells.push(`拥有插件 ${plugCount}`);
+    // 两列网格平铺。
+    let y = getS7UsableBand().usableTopY - 215;
+    let col = 0;
+    for (const c of cells) {
+      const x = col === 0 ? -this.viewW * 0.22 : this.viewW * 0.22;
+      const cell = new Node('bpRes'); cell.layer = this.node.layer; this.backpackListNode.addChild(cell); cell.setPosition(x, y, 0);
+      const bg = cell.addComponent(Graphics); bg.fillColor = new Color(40, 46, 64, 255); bg.roundRect(-this.viewW * 0.21, -28, this.viewW * 0.42, 56, 8); bg.fill();
+      this.mkPanelLabel(cell, c, 24, new Color(228, 234, 248), 0, 0);
+      col += 1; if (col >= 2) { col = 0; y -= 66; }
+    }
+  }
+
+  /** 宝箱页：列出三类宝箱数量；星辉货舱有货→「开箱」(→开箱浮层)；行动/扩张宝藏占位（随 G/I 接）。 */
+  private refreshBackpackChest(): void {
+    if (!this.playerState || !this.backpackListNode) return;
+    if (this.backpackInfoLabel) this.backpackInfoLabel.string = '宝箱攒着不过期·想开再开（星辉货舱=3选项免费选1·看广告再选1）';
+    const names: Record<S7ChestType, string> = { starlightCargo: '星辉货舱', actionTreasure: '行动宝藏', expansionTreasure: '扩张宝藏' };
+    let y = getS7UsableBand().usableTopY - 220;
+    for (const t of S7_CHEST_TYPES) {
+      const cnt = getChestCount(this.playerState.chests, t);
+      const row = new Node('bpChest'); row.layer = this.node.layer; this.backpackListNode.addChild(row); row.setPosition(0, y, 0);
+      const bg = row.addComponent(Graphics); bg.fillColor = new Color(44, 40, 58, 255); bg.roundRect(-this.viewW * 0.40, -42, this.viewW * 0.80, 84, 12); bg.fill();
+      this.mkPanelLabel(row, `${names[t]} ×${cnt}`, 28, new Color(232, 224, 245), -this.viewW * 0.22, 0);
+      const openable = t === 'starlightCargo'; // 行动/扩张宝藏开箱随 G/I 接
+      if (openable && cnt > 0) this.addBtn(row, '开箱', 150, 64, new Color(225, 150, 45, 255), this.viewW * 0.30, 0, () => this.openChestUI(t), 26);
+      else if (!openable) this.mkPanelLabel(row, '随活动开放', 22, new Color(150, 158, 178), this.viewW * 0.30, 0);
+      else this.mkPanelLabel(row, '暂无', 22, new Color(150, 158, 178), this.viewW * 0.30, 0);
+      y -= 100;
+    }
   }
 
   /** 当前 kind 的通用碎片余量。 */
@@ -2707,8 +2798,8 @@ export class S7DemoController extends Component {
     if (this.backpackAmountLabel) this.backpackAmountLabel.string = String(this.backpackAmount);
   }
 
-  /** 刷新背包：余量/选中 + 重建可转单位列表（拥有的舰/员）。 */
-  private refreshBackpack(): void {
+  /** 碎片转换页：余量/选中 + 重建可转单位列表（拥有的舰/员）。 */
+  private refreshBackpackConvert(): void {
     if (!this.playerState || !this.squad || !this.backpackListNode) return;
     const have = this.backpackUniversalHave();
     const kindName = this.backpackKind === 'ship' ? '通用舰碎片' : '通用员碎片';
@@ -2716,9 +2807,8 @@ export class S7DemoController extends Component {
     if (this.backpackInfoLabel) this.backpackInfoLabel.string = `${kindName} 余 ${have}　→ 选中：${selName}\n点单位选目标 → 选数量 → 转换（1 通用 = 1 专属）`;
     if (this.backpackAmount > Math.max(1, have)) this.backpackAmount = Math.max(1, have);
     if (this.backpackAmountLabel) this.backpackAmountLabel.string = String(this.backpackAmount);
-    this.backpackListNode.removeAllChildren();
     const units = this.backpackKind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
-    let y = getS7UsableBand().usableTopY - 230;
+    let y = getS7UsableBand().usableTopY - 300;
     let x = -this.viewW * 0.28;
     for (const uid of units) {
       const sel = uid === this.backpackTargetId;
@@ -2738,6 +2828,138 @@ export class S7DemoController extends Component {
     this.persist();
     this.refresh();
     this.refreshBackpack();
+  }
+
+  // ===== H·星辉货舱开箱（3 选项·免费选 1·看广告再选 1）=====
+
+  /** 搭开箱浮层（默认隐藏·盖在背包之上）：标题 + 信息行 + 3 选项卡 + 看广告再选键 + 返回。 */
+  private buildChestOpenPanel(W: number, H: number): void {
+    const panel = new Node('S7ChestOpen'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 205); dim.rect(-W / 2, -H / 2, W, H); dim.fill();
+    const dw = W * 0.92, dh = H * 0.5;
+    dim.fillColor = new Color(30, 26, 42, 255); dim.roundRect(-dw / 2, -dh / 2, dw, dh, 22); dim.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.chestOpenNode = panel;
+    this.chestOpenTitleLabel = this.mkPanelLabel(panel, '', 36, new Color(255, 222, 150), 0, dh * 0.40);
+    this.chestOpenMsgLabel = this.mkPanelLabel(panel, '', 24, new Color(210, 220, 240), 0, dh * 0.28);
+    const list = new Node('chestOptList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.chestOpenListNode = list;
+    // 看广告再选键（免费选完后显）。
+    const adNode = new Node('chestAd'); adNode.layer = this.node.layer; panel.addChild(adNode); adNode.setPosition(0, -dh * 0.28, 0);
+    adNode.addComponent(UITransform).setContentSize(340, 70);
+    const abg = adNode.addComponent(Graphics); abg.fillColor = new Color(60, 130, 90, 255); abg.roundRect(-170, -35, 340, 70, 14); abg.fill();
+    const al = new Node('t'); al.layer = this.node.layer; adNode.addChild(al);
+    const alab = al.addComponent(Label); alab.fontSize = 26; alab.color = new Color(255, 255, 255); alab.string = '📺 看广告再选 1 个';
+    adNode.on(Node.EventType.TOUCH_END, () => this.onChestOpenAd(), this);
+    this.chestOpenAdBtnNode = adNode;
+    this.addBtn(panel, '返回背包', 240, 76, new Color(120, 90, 160, 255), 0, -dh * 0.40, () => { panel.active = false; this.refreshBackpack(); }, 28);
+  }
+
+  /** 开一个宝箱：有货→掷 3 选项·进开箱浮层（箱子在「免费选 1」那一刻才扣库存·没选不亏）。 */
+  private openChestUI(chestId: S7ChestType): void {
+    if (!this.playerState || !this.chestOpenNode) return;
+    if (getChestCount(this.playerState.chests, chestId) < 1) return;
+    const rng = new S7AutoBattleRng(`chest:${chestId}:${Date.now()}`);
+    const options = rollChestOptions(DEFAULT_S7_CHEST_REWARD_CONFIG, chestId, rng);
+    if (options.length === 0) return;
+    const limits = chestPickLimits(DEFAULT_S7_CHEST_REWARD_CONFIG, chestId);
+    this.chestOpen = { chestId, options, picked: options.map(() => false), freeLeft: limits.free, adLeft: limits.ad, adUnlocked: false, consumed: false };
+    const parent = this.chestOpenNode.parent;
+    if (parent) this.chestOpenNode.setSiblingIndex(parent.children.length - 1); // 置顶（盖在背包之上）
+    this.chestOpenNode.active = true;
+    if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = '';
+    this.refreshChestOpen();
+  }
+
+  /** 刷新开箱浮层：标题/信息 + 重建选项卡 + 看广告再选键显隐。 */
+  private refreshChestOpen(): void {
+    const c = this.chestOpen;
+    if (!c || !this.chestOpenListNode) return;
+    const names: Record<S7ChestType, string> = { starlightCargo: '星辉货舱', actionTreasure: '行动宝藏', expansionTreasure: '扩张宝藏' };
+    if (this.chestOpenTitleLabel) this.chestOpenTitleLabel.string = `🎁 ${names[c.chestId]} 开箱`;
+    const info = c.freeLeft > 0 ? '免费选 1 个（看广告可再选 1 个）'
+      : c.adLeft > 0 ? (c.adUnlocked ? '广告已看·再选 1 个未选项' : '已选 1 个 · 看广告可再选 1 个')
+        : '已选完，返回背包';
+    if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = info; // 状态行（onPick 的「到手」在 refresh 之后再覆盖）
+    this.chestOpenListNode.removeAllChildren();
+    const n = c.options.length;
+    const cardW = Math.min(this.viewW * 0.27, 230);
+    const gap = this.viewW * 0.30;
+    const startX = -((n - 1) * gap) / 2;
+    for (let i = 0; i < n; i += 1) {
+      const x = startX + i * gap;
+      const card = new Node('chestCard'); card.layer = this.node.layer; this.chestOpenListNode.addChild(card); card.setPosition(x, this.viewH * 0.04, 0);
+      card.addComponent(UITransform).setContentSize(cardW, 170);
+      const bg = card.addComponent(Graphics); bg.fillColor = c.picked[i] ? new Color(40, 70, 50, 255) : new Color(52, 56, 78, 255); bg.roundRect(-cardW / 2, -85, cardW, 170, 14); bg.fill();
+      const tl = this.mkPanelLabel(card, this.chestRewardText(c.options[i]), 23, new Color(230, 236, 250), 0, 22);
+      tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(cardW - 16, 100);
+      if (c.picked[i]) this.mkPanelLabel(card, '✓ 已选', 24, new Color(150, 220, 160), 0, -54);
+      else this.addBtn(card, '选这个', cardW - 40, 54, new Color(225, 150, 45, 255), 0, -54, () => this.onPickChestOption(i), 24);
+    }
+    // 看广告再选键：免费已选完、还有广告名额、且未解锁时显示。
+    if (this.chestOpenAdBtnNode) this.chestOpenAdBtnNode.active = c.freeLeft === 0 && c.adLeft > 0 && !c.adUnlocked;
+  }
+
+  /** 选一个开箱选项：免费名额→扣箱+入账；广告名额(需先看广告解锁)→入账。 */
+  private onPickChestOption(index: number): void {
+    const c = this.chestOpen;
+    if (!c || !this.playerState || c.picked[index]) return;
+    if (c.freeLeft > 0) {
+      if (!c.consumed) { if (!openChest(this.playerState.chests, c.chestId)) return; c.consumed = true; } // 免费选那刻才扣箱
+      c.picked[index] = true; c.freeLeft -= 1;
+    } else if (c.adLeft > 0 && c.adUnlocked) {
+      c.picked[index] = true; c.adLeft -= 1; c.adUnlocked = false;
+    } else {
+      if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = '先点下方「看广告再选」解锁第 2 个';
+      return;
+    }
+    const text = this.applyChestReward(c.options[index]);
+    this.persist();
+    this.refresh();
+    this.refreshChestOpen(); // 先刷新（会写状态行）→ 再覆盖成「到手」结果，避免被状态行盖掉。
+    if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = `到手：${text}${c.adLeft > 0 && c.freeLeft === 0 ? '（看广告可再选 1 个）' : ''}`;
+  }
+
+  /** 看广告解锁第 2 个选择名额（mock）。 */
+  private onChestOpenAd(): void {
+    const c = this.chestOpen;
+    if (!c || !this.adGateway || c.freeLeft > 0 || c.adLeft <= 0 || c.adUnlocked) return;
+    this.adGateway.show('cargo_extra_pick').then((res) => {
+      const cur = this.chestOpen;
+      if (!cur || cur.freeLeft > 0 || cur.adLeft <= 0 || cur.adUnlocked) return;
+      if (!res.ok) { if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = '广告没看完，未解锁'; return; }
+      cur.adUnlocked = true;
+      if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = '已解锁·再选 1 个未选项';
+      this.refreshChestOpen();
+    }).catch(() => { if (this.chestOpenMsgLabel) this.chestOpenMsgLabel.string = '广告加载失败'; });
+  }
+
+  /** 开箱奖励的中文短描述。 */
+  private chestRewardText(r: S7ChestReward): string {
+    if (r.kind === 'resource') return `${this.zhRes(r.resourceId)}×${r.amount}`;
+    return `信标包\n${r.items.map((x) => `${this.zhRes(x.resourceId)}×${x.amount}`).join(' ')}`;
+  }
+
+  /** 把一笔开箱奖励入账（资源→钱包·有非钱包键护栏；信标包逐档加）。 */
+  private applyChestReward(r: S7ChestReward): string {
+    if (!this.session) return '';
+    const res = this.session.resources as Record<string, number>;
+    if (r.kind === 'resource') {
+      if (res[r.resourceId] === undefined) return '';
+      res[r.resourceId] += r.amount;
+      return `${this.zhRes(r.resourceId)}×${r.amount}`;
+    }
+    // beaconBundle
+    const parts: string[] = [];
+    for (const it of r.items) {
+      if (res[it.resourceId] === undefined) continue;
+      res[it.resourceId] += it.amount;
+      parts.push(`${this.zhRes(it.resourceId)}×${it.amount}`);
+    }
+    return `信标包(${parts.join(' ')})`;
   }
 
   // ===== 邮件界面（阶段一 G2·领取入账 + 列表） =====
@@ -3349,6 +3571,11 @@ export class S7DemoController extends Component {
       coreFrag: '星核碎片',
       shipBlueprint: '通用舰碎片',
       pilotShardUniversal: '通用员碎片',
+      starGem: '星空宝石',
+      fullCore: '完整星核',
+      beaconCommon: '普通信标',
+      beaconRare: '稀有信标',
+      beaconEpic: '史诗信标',
     };
     return map[resourceId] ?? resourceId;
   }
