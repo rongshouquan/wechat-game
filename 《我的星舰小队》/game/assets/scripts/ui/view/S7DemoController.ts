@@ -82,14 +82,14 @@ import {
   S7ActivityType, addActivityProgress, claimMilestone, claimCompletion, tickActivityCycles, activityCycleEndTime, getActivityProgress, S7_ACTIVITY_DURATION_SEC,
 } from '../../core/s7/S7ActivityProgress';
 import { DEFAULT_S7_ACTIVITY_CONFIG, S7ActivityReward, S7_ACTIVITY_ACTIONS } from '../../core/s7/S7ActivityConfig';
-import { listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementReward } from '../../core/s7/S7ActivityService';
+import { listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementBackfillRewards } from '../../core/s7/S7ActivityService';
 // 阶段一 I·星核三渠道 + 星空宝库。
 import { DEFAULT_S7_CORE_SOURCE_CONFIG } from '../../core/s7/S7CoreSourceConfig';
 import { synthesizeCore, rollExpansionChoices, vaultCoreViews, vaultShipViews } from '../../core/s7/S7CoreSourceService';
 // 阶段一 K·人口来源(主线救回)。
 import { DEFAULT_S7_POPULATION_SOURCE_CONFIG, resolveNodeRescue } from '../../core/s7/S7PopulationSourceConfig';
-// 阶段一 L·失败界面单位输出统计。
-import { summarizeS7BattleLog } from '../../core/s7/S7BattleLogSummary';
+// 阶段一 L·战斗伤害统计（胜负弹窗都可看·双方 top5）。
+import { summarizeS7BattleLog, S7BattleLogSummaryResult, S7BattleUnitDamageSummary } from '../../core/s7/S7BattleLogSummary';
 // 阶段一 G2·邮件领取地基：引擎(收件/领取/计数/过期清理)已就绪，本控制器接「领取→入账」应用侧 + 邮件界面。
 import {
   S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
@@ -380,6 +380,10 @@ export class S7DemoController extends Component {
   private pendingWon = false;
   /** K：本次首通主线救回的人口描述（拼进结果文案·无则空）。 */
   private pendingRescueText = '';
+  /** L：上一战伤害统计（胜负弹窗的「伤害统计」按钮用）。 */
+  private lastBattleSummary: S7BattleLogSummaryResult | null = null;
+  private battleStatsNode: Node | null = null;
+  private battleStatsListNode: Node | null = null;
   /** 战斗结果弹窗（胜/败统一）：标题/文案/右键文字（胜=下一关·败=再次挑战）。弹出时背景保留刚结束的战斗画面。 */
   private resultPopupNode: Node | null = null;
   private resultTitleLabel: Label | null = null;
@@ -595,6 +599,7 @@ export class S7DemoController extends Component {
     this.buildActivityPanel(W, H); // 阶段一 G 活动界面（3天行动/7天扩张）
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
+    this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
   }
 
   // ===== 星港主界面 hub =====
@@ -1411,6 +1416,8 @@ export class S7DemoController extends Component {
       n.on(Node.EventType.TOUCH_END, tap, this);
       return l;
     };
+    // L 反馈4：伤害统计键（胜负都有·点开看双方 top5）。
+    mkB(260, 64, new Color(90, 100, 130, 255), 0, -dh * 0.06, () => this.openBattleStats()).string = '📊 伤害统计';
     // 三键：选择关卡(左) / 返回星港(中) / 下一关·再次挑战(右)。
     const lvlLbl = mkB(220, 92, new Color(70, 130, 180, 255), -W * 0.30, -dh * 0.30, () => this.onResultGoLevelSelect());
     lvlLbl.string = '选择关卡';
@@ -2406,8 +2413,10 @@ export class S7DemoController extends Component {
     if (!this.session) return;
     const m = /^n(\d+)$/.exec(nodeId);
     const num = m ? parseInt(m[1], 10) : 1;
-    const cleared: string[] = [];
-    for (let i = 1; i < num; i += 1) cleared.push(`n${String(i).padStart(3, '0')}`);
+    // 灰盒跳关：只「填空缺」让目标关可达，**绝不抹掉真实已通关记录**（否则重打已通的关会被当首通又发奖·Ron 反馈1b）。
+    const gap: string[] = [];
+    for (let i = 1; i < num; i += 1) gap.push(`n${String(i).padStart(3, '0')}`);
+    const cleared = Array.from(new Set([...this.session.progress.clearedNodeIds, ...gap]));
     this.session.progress = { currentNodeId: nodeId, clearedNodeIds: cleared };
     this.persist();
     this.closeLevelSelect();
@@ -2416,8 +2425,9 @@ export class S7DemoController extends Component {
     this.refresh();
   }
 
-  /** 组装"上一战结果"文案（胜/重复挑战/败），回放结束后显示。 */
+  /** 组装"上一战结果"文案（胜/重复挑战/败），回放结束后显示。同时存本战伤害统计供「伤害统计」按钮用（L 反馈4）。 */
   private composeResultText(nodeId: string, outcome: S7PlayNodeOutcome): { text: string; color: Color } {
+    this.lastBattleSummary = summarizeS7BattleLog(outcome.battle.result); // L：胜负都存·供伤害统计浮层
     const players = outcome.battle.result.finalState.players;
     const totMax = players.reduce((s, u) => s + u.maxHp, 0);
     const totHp = players.reduce((s, u) => s + Math.max(0, u.hp), 0);
@@ -2431,13 +2441,63 @@ export class S7DemoController extends Component {
     if (outcome.won) {
       return { text: `${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, color: new Color(220, 210, 140) };
     }
-    // L 轻量失败界面：失败提示 + 单位输出统计（§4.5·不做复杂分析）。
-    const sum = summarizeS7BattleLog(outcome.battle.result);
-    const stats = sum.playerDamage.slice(0, 3).map((u) => `${this.unitName('ship', u.unitId)} ${Math.round(u.totalDamageDealt)}`).join('  ');
     return {
-      text: `${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n输出 ${stats || '—'}\n→ 升级/调配后「再次挑战」`,
+      text: `${nodeId} 败：${this.zhHint(outcome.battle.summary.hintCode)} ${hpTag}\n→ 升级/调配后「再次挑战」（可看「伤害统计」）`,
       color: new Color(235, 150, 150),
     };
+  }
+
+  // ===== L·伤害统计浮层（胜负弹窗都可看·双方各伤害最高 5 个单位）=====
+
+  /** 搭伤害统计浮层（默认隐藏·盖在结果弹窗之上）。 */
+  private buildBattleStatsPanel(W: number, H: number): void {
+    const panel = new Node('S7BattleStats'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 210); dim.rect(-W / 2, -H / 2, W, H); dim.fill();
+    const dw = W * 0.92, dh = H * 0.56;
+    dim.fillColor = new Color(24, 28, 40, 255); dim.roundRect(-dw / 2, -dh / 2, dw, dh, 20); dim.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+    panel.active = false;
+    this.battleStatsNode = panel;
+    this.mkPanelLabel(panel, '📊 伤害统计（双方各 Top5）', 34, new Color(220, 226, 245), 0, dh * 0.40);
+    const list = new Node('statsList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
+    this.battleStatsListNode = list;
+    this.addBtn(panel, '返回', 220, 72, new Color(120, 90, 160, 255), 0, -dh * 0.40, () => { panel.active = false; }, 28);
+  }
+
+  private openBattleStats(): void {
+    if (!this.battleStatsNode || !this.lastBattleSummary) return;
+    const parent = this.battleStatsNode.parent;
+    if (parent) this.battleStatsNode.setSiblingIndex(parent.children.length - 1); // 置顶(盖结果弹窗)
+    this.battleStatsNode.active = true;
+    this.refreshBattleStats();
+  }
+
+  /** 刷新伤害统计：我方(左) / 敌方(右) 各按伤害降序 top5。 */
+  private refreshBattleStats(): void {
+    const sum = this.lastBattleSummary;
+    if (!sum || !this.battleStatsListNode) return;
+    this.battleStatsListNode.removeAllChildren();
+    const topY = this.viewH * 0.18;
+    this.mkPanelLabel(this.battleStatsListNode, '— 我方 —', 26, new Color(140, 200, 255), -this.viewW * 0.22, topY);
+    this.mkPanelLabel(this.battleStatsListNode, '— 敌方 —', 26, new Color(255, 170, 130), this.viewW * 0.22, topY);
+    const row = (name: string, dmg: number, x: number, y: number, c: Color): void => {
+      this.mkPanelLabel(this.battleStatsListNode!, `${name}\n${Math.round(dmg)}`, 22, c, x, y);
+    };
+    const player = sum.playerDamage.slice(0, 5);
+    const enemy = sum.enemyDamage.slice(0, 5);
+    for (let i = 0; i < 5; i += 1) {
+      const y = topY - 70 - i * 78;
+      if (player[i]) row(`${this.unitName('ship', player[i].unitId)}`, player[i].totalDamageDealt, -this.viewW * 0.22, y, new Color(200, 224, 248));
+      if (enemy[i]) row(this.statsUnitName(enemy[i]), enemy[i].totalDamageDealt, this.viewW * 0.22, y, new Color(245, 214, 196));
+    }
+    if (player.length === 0 && enemy.length === 0) this.mkPanelLabel(this.battleStatsListNode, '（本战无伤害记录）', 24, new Color(160, 168, 188), 0, topY - 80);
+  }
+
+  /** 敌方单位显示名（灰盒·用敌情 statRef 兜底；正式名待内容铺量）。 */
+  private statsUnitName(u: S7BattleUnitDamageSummary): string {
+    return u.unitStatRef || u.unitId;
   }
 
   // ===== B2 回放驱动 =====
@@ -3031,7 +3091,7 @@ export class S7DemoController extends Component {
   /** 开箱奖励的中文短描述。 */
   private chestRewardText(r: S7ChestReward): string {
     if (r.kind === 'resource') return `${this.zhRes(r.resourceId)}×${r.amount}`;
-    return `信标包\n${r.items.map((x) => `${this.zhRes(x.resourceId)}×${x.amount}`).join(' ')}`;
+    return '信标包\n3~5个随机品质信标'; // 不剧透具体档位(Ron 反馈2)·领取入账时再显示实际所得
   }
 
   /** 把一笔开箱奖励入账（资源→钱包·有非钱包键护栏；信标包逐档加）。 */
@@ -3071,14 +3131,15 @@ export class S7DemoController extends Component {
     const events = tickActivityCycles(this.playerState.activityProgress, Date.now(), activityCycleConfig(DEFAULT_S7_ACTIVITY_CONFIG));
     if (events.length === 0) return;
     for (const ev of events) {
-      const reward = settlementReward(ev.type);
-      if (reward.kind !== 'chest') continue;
-      const title = ev.type === 'action3' ? '3天行动·结算宝藏' : '7天扩张·结算宝藏';
-      addMail(this.playerState.mailbox, {
-        kind: `activity_settlement_${ev.type}`, title,
-        rewards: [{ type: 'chest', chestId: reward.chestId, amount: reward.amount }],
-        createdAt: Date.now(),
-      });
+      // G 反馈3：结算邮件含 漏领里程碑 + 漏领完成 + 结算宝藏（不再只补结算宝藏）。
+      const rewards: S7MailReward[] = [];
+      for (const r of settlementBackfillRewards(ev, DEFAULT_S7_ACTIVITY_CONFIG)) {
+        if (r.kind === 'resource') rewards.push({ type: 'resource', resourceId: r.resourceId, amount: r.amount });
+        else if (r.kind === 'chest') rewards.push({ type: 'chest', chestId: r.chestId, amount: r.amount });
+        else rewards.push({ type: 'population', pop: r.pop, amount: r.amount });
+      }
+      const title = ev.type === 'action3' ? '3天行动·结算+漏领补发' : '7天扩张·结算+漏领补发';
+      addMail(this.playerState.mailbox, { kind: `activity_settlement_${ev.type}`, title, rewards, createdAt: Date.now() });
     }
     this.persist();
   }
@@ -3528,6 +3589,10 @@ export class S7DemoController extends Component {
         addExclusiveShards(this.playerState.exclusiveShards, rw.unitId, 15);
         return `${this.unitName(rw.unitKind, rw.unitId)}碎片×15`;
       }
+      case 'population':
+        if (rw.pop === 'resident') this.playerState.population.residents += rw.amount;
+        else this.playerState.population.workers += rw.amount;
+        return rw.pop === 'resident' ? `居民×${rw.amount}` : `工人×${rw.amount}`;
     }
   }
 
@@ -3598,6 +3663,11 @@ export class S7DemoController extends Component {
     const node = this.runtime.getById<S7MainlineNodeConfig>('mainline_node_config', nodeId);
     const stage = resolveLevelStage(node?.nodeTypeTag ?? '', DEFAULT_S7_LEVEL_REWARD_CONFIG);
     if (stage === 'none') return;
+    // 1a 首通固定补充软货币（驾驶记录+星贝·§8）：一次性发钱包 + 并入 softGrants（供显示 & 看广告×2 翻倍）。
+    const res = this.session?.resources as Record<string, number> | undefined;
+    const bonus = res ? DEFAULT_S7_LEVEL_REWARD_CONFIG.fixedSoftBonus.filter((b) => res[b.resourceId] !== undefined) : [];
+    for (const b of bonus) res![b.resourceId] += b.amount;
+    const softGrants = [...outcome.settlement.grants, ...bonus];
     const allNodes = this.runtime.getAll<S7MainlineNodeConfig>('mainline_node_config').map((n) => ({ nodeId: n.nodeId, nodeTypeTag: n.nodeTypeTag }));
     const candidates: S7UnitCandidates = { // Ron 拍板：随机指定专属碎片从「全部单位」随机
       ships: this.runtime.getAll<S7ShipConfig>('ship_config').map((c) => c.shipId),
@@ -3614,7 +3684,7 @@ export class S7DemoController extends Component {
     }
     this.pendingLevelReward = {
       nodeId, stage, isBoss, choices, bossGrand,
-      softGrants: outcome.settlement.grants.slice(),
+      softGrants,
       showAdDouble: stage === 'elite' || stage === 'boss', adDoubled: false,
     };
   }
@@ -3771,6 +3841,7 @@ export class S7DemoController extends Component {
         return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
       }
       if (rw.type === 'chest') return `${this.chestName(rw.chestId)}×${rw.amount}`;
+      if (rw.type === 'population') return rw.pop === 'resident' ? `居民×${rw.amount}` : `工人×${rw.amount}`;
       return `${this.unitName(rw.unitKind, rw.unitId)}[本体]`;
     }).join('、');
   }

@@ -35,6 +35,11 @@ export type S7LevelPoolEntry =
 export interface S7LevelRewardConfig {
   /** 三档稀缺池（三选一候选）。 */
   pools: Record<S7LevelPoolStage, S7LevelPoolEntry[]>;
+  /**
+   * 首通固定软货币补充（§8·首通限定）：旧节点 reward_param 只发了星矿+合金，
+   * 这里补 驾驶记录(pilotToken)+星贝(starCargo)，与 reward_param 的软货币一起构成「首通固定奖励」。占位·第二块校准。
+   */
+  fixedSoftBonus: { resourceId: string; amount: number }[];
   /** 一次三选一展示的选项数（§8 = 3）。 */
   choiceCount: number;
   /** Boss 必给大奖。 */
@@ -51,6 +56,11 @@ const EXS = (unitKind: 'ship' | 'pilot', amount: number, weight: number): S7Leve
 
 export const DEFAULT_S7_LEVEL_REWARD_CONFIG: S7LevelRewardConfig = {
   choiceCount: 3,
+  // 首通固定补充：驾驶记录 + 星贝（占位·与 reward_param 的星矿+合金合成 4 类固定软货币·第二块校准）。
+  fixedSoftBonus: [
+    { resourceId: 'pilotToken', amount: 20 },
+    { resourceId: 'starCargo', amount: 60 },
+  ],
   pools: {
     // §8 普通关池：精良插件 / 普通信标 / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片 / 补给券 / 星核碎片(少量)
     normal: [

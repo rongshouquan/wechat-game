@@ -9,7 +9,7 @@ import {
 } from '../assets/scripts/core/s7/S7ActivityProgress';
 import { DEFAULT_S7_ACTIVITY_CONFIG as CFG } from '../assets/scripts/core/s7/S7ActivityConfig';
 import {
-  listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementReward,
+  listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementReward, settlementBackfillRewards,
 } from '../assets/scripts/core/s7/S7ActivityService';
 
 describe('S7 活动 · 里程碑视图', () => {
@@ -97,6 +97,39 @@ describe('S7 活动 · 周期config + 结算', () => {
     const durMs = S7_ACTIVITY_DURATION_SEC.action3 * 1000;
     const events = tickActivityCycles(st, t0 + durMs + 1, cc);
     expect(events.filter((e) => e.type === 'action3').length).toBe(0);
+  });
+});
+
+describe('S7 活动 · 结算补发漏领 (反馈3)', () => {
+  it('结算邮件含 漏领里程碑 + 漏领完成 + 结算宝藏', () => {
+    const st = createDefaultS7ActivityProgress();
+    const cc = activityCycleConfig(CFG);
+    const t0 = 5_000_000;
+    tickActivityCycles(st, t0, cc); // 起算
+    addActivityProgress(st, 'action3', 150); // 攒满(过 m1/m2/m3 + 完成)
+    claimMilestone(st, 'action3', 'a3_m1', 30); // 只领 m1，m2/m3/完成 漏领
+    const durMs = S7_ACTIVITY_DURATION_SEC.action3 * 1000;
+    const ev = tickActivityCycles(st, t0 + durMs + 1, cc).find((e) => e.type === 'action3')!;
+    const rewards = settlementBackfillRewards(ev, CFG);
+    expect(rewards.some((r) => r.kind === 'chest' && r.chestId === 'starlightCargo')).toBe(true); // 完成奖励=星辉货舱(漏领补)
+    expect(rewards.some((r) => r.kind === 'chest' && r.chestId === 'actionTreasure')).toBe(true); // 结算宝藏(恒发)
+    expect(rewards.some((r) => r.kind === 'resource' && r.resourceId === 'shipBlueprint')).toBe(true); // m2 漏领补
+  });
+
+  it('全部已领 → 结算只发结算宝藏', () => {
+    const st = createDefaultS7ActivityProgress();
+    const cc = activityCycleConfig(CFG);
+    const t0 = 6_000_000;
+    tickActivityCycles(st, t0, cc);
+    addActivityProgress(st, 'action3', 150);
+    claimMilestone(st, 'action3', 'a3_m1', 30);
+    claimMilestone(st, 'action3', 'a3_m2', 60);
+    claimMilestone(st, 'action3', 'a3_m3', 100);
+    claimCompletion(st, 'action3', 150);
+    const durMs = S7_ACTIVITY_DURATION_SEC.action3 * 1000;
+    const ev = tickActivityCycles(st, t0 + durMs + 1, cc).find((e) => e.type === 'action3')!;
+    const rewards = settlementBackfillRewards(ev, CFG);
+    expect(rewards).toEqual([{ kind: 'chest', chestId: 'actionTreasure', amount: 1 }]); // 只结算宝藏
   });
 });
 

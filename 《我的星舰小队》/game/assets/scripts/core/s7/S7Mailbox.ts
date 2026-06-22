@@ -14,7 +14,8 @@
 export type S7MailReward =
   | { type: 'resource'; resourceId: string; amount: number }
   | { type: 'chest'; chestId: string; amount: number }
-  | { type: 'unit'; unitKind: 'ship' | 'pilot'; unitId: string };
+  | { type: 'unit'; unitKind: 'ship' | 'pilot'; unitId: string }
+  | { type: 'population'; pop: 'resident' | 'worker'; amount: number }; // G 活动补发：里程碑给的人口也能走邮件
 
 export interface S7Mail {
   id: string;
@@ -53,6 +54,9 @@ function normReward(raw: unknown): S7MailReward | null {
   }
   if (r.type === 'chest' && typeof r.chestId === 'string' && r.chestId.length > 0) {
     return { type: 'chest', chestId: r.chestId, amount };
+  }
+  if (r.type === 'population' && (r.pop === 'resident' || r.pop === 'worker')) {
+    return { type: 'population', pop: r.pop, amount };
   }
   return null;
 }

@@ -11,6 +11,7 @@ import {
   S7ActivityType,
   S7ActivityProgressState,
   S7ActivityCycleConfig,
+  S7ActivitySettlement,
   S7_ACTIVITY_TYPES,
   isMilestoneClaimed,
   canClaimMilestone,
@@ -86,4 +87,26 @@ export function activityCycleConfig(config: S7ActivityConfig): Record<S7Activity
 /** 一次结算发的宝藏（3天→行动宝藏 / 7天→扩张宝藏·走邮件→背包→开箱）。 */
 export function settlementReward(type: S7ActivityType): S7ActivityReward {
   return { kind: 'chest', chestId: settlementChestType(type), amount: 1 };
+}
+
+/**
+ * 结算邮件应发的全部奖励（G 反馈3·补发漏领）：
+ *   ① 该轮达标但**未领**的过程里程碑奖励 ② 完成奖励（达标且未领）③ 结算宝藏。
+ * 用结算快照(progressAtSettle/claimed*AtSettle)对照 config 算出漏领项，避免"周期到期玩家没领→只补结算宝藏"丢奖。
+ */
+export function settlementBackfillRewards(settlement: S7ActivitySettlement, config: S7ActivityConfig): S7ActivityReward[] {
+  const out: S7ActivityReward[] = [];
+  const def = config.activities[settlement.type];
+  if (def) {
+    for (const m of def.milestones) {
+      if (settlement.progressAtSettle >= m.threshold && !settlement.claimedMilestonesAtSettle.includes(m.id)) {
+        out.push(...m.rewards); // 漏领的过程里程碑
+      }
+    }
+    if (settlement.progressAtSettle >= def.completion.threshold && !settlement.completionClaimedAtSettle) {
+      out.push(...def.completion.rewards); // 漏领的完成奖励
+    }
+  }
+  out.push(settlementReward(settlement.type)); // 结算宝藏（恒发）
+  return out;
 }

@@ -160,10 +160,16 @@ export interface S7ActivityCycleConfig {
   completionThreshold: number;
 }
 
-/** 一次结算事件：哪种活动 + 本次结算后的累计结算序号（1=第 1 次，供 7 天扩张 1st/Nth 内容判定）。 */
+/** 一次结算事件：哪种活动 + 累计结算序号 + 结算时刻的进度/领取快照（供"补发漏领里程碑/完成"·G 反馈3）。 */
 export interface S7ActivitySettlement {
   type: S7ActivityType;
   settlementCount: number;
+  /** 结算时该轮进度（重置前·≥完成阈值）。 */
+  progressAtSettle: number;
+  /** 结算时已领的过程里程碑 id（重置前快照）——未在此列表的达标里程碑即"漏领待补发"。 */
+  claimedMilestonesAtSettle: string[];
+  /** 结算时完成奖励是否已领（重置前快照）——false 即"完成奖励漏领待补发"。 */
+  completionClaimedAtSettle: boolean;
 }
 
 /** 某活动当前周期结束时刻（ms）。未起算(cycleStartTime=0)返回 0。供 UI 倒计时。 */
@@ -204,10 +210,16 @@ export function tickActivityCycles(
     const threshold = config?.[type]?.completionThreshold;
     // 防御：时钟回退 / now < 周期开始 → while 不成立、原样不动。
     while (now >= st.cycleStartTime + durMs) {
-      // 该轮窗口已结束：达完成阈值才结算（未攒够即作废）。
+      // 该轮窗口已结束：达完成阈值才结算（未攒够即作废）。先快照领取态(重置前)，供补发漏领奖励。
       if (typeof threshold === 'number' && Number.isFinite(threshold) && st.progress >= threshold) {
         st.settlementCount += 1;
-        events.push({ type, settlementCount: st.settlementCount });
+        events.push({
+          type,
+          settlementCount: st.settlementCount,
+          progressAtSettle: st.progress,
+          claimedMilestonesAtSettle: st.claimedMilestones.slice(),
+          completionClaimedAtSettle: st.completionClaimed,
+        });
       }
       // 滚入下一轮：起点后移一个窗口，进度/里程碑/完成 全部重置。
       st.cycleStartTime += durMs;

@@ -5,12 +5,12 @@
 //
 // 规则（v1.0）：
 //   §5.3 一船 3 槽（武器/技能/战术）：同类槽不堆叠、同名插件一船不重复、单实例同时只装一船（装到别船自动卸下）。
-//   §5.4 一船最多 1 核、同名核一场只 1 个（同一 coreId 装到别船自动从原船卸下）。
+//   §5.4 一船最多 1 核；**同种核可多装·拥有 N 份可同时装 N 艘**（Ron 2026 改·原"一场只1个"作废）。
 //
 // 解耦：槽位类型(weapon/skill/tactical)是 plugin_config 的字段——core 层不读配置，由调用方注入 pluginSlotOf 解析器
 //   (pluginId → slotTag)，本模块只用它判"同类槽"。所有操作「先校验、后修改」：校验不过不改任何状态。
 
-import { S7SquadState, S7Loadout, coreOwnedCount, isShipOwned, isPilotOwned, findPilotShip, findCoreShip, findPluginShip } from './S7Squad';
+import { S7SquadState, S7Loadout, coreOwnedCount, isShipOwned, isPilotOwned, findPilotShip, findPluginShip } from './S7Squad';
 import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 import { S7PluginSlot } from '../../config/s7/ConfigTypesS7';
 
@@ -101,22 +101,25 @@ export function unequipPlugin(squad: S7SquadState, shipId: string, instanceId: s
 }
 
 /**
- * 给某船装一颗星核。先校验（拥有船/拥有核），全过再改：
- * 把同一 coreId 从别的船卸下（§5.4 同名核一场只 1 个），再装到目标船（一船 1 核·覆盖原核）。
+ * 给某船装一颗星核。先校验（拥有船/拥有核），全过再改：覆盖目标船原核装上（一船仍 1 核）。
+ * 同种核可多装（Ron 2026·§5.4 改）：**拥有 N 份可同时装 N 艘**——别船已用满拥有份数则拦（不再从别船卸下）。
  */
 export function equipCore(squad: S7SquadState, shipId: string, coreId: string): S7LoadoutResult {
   if (!isShipOwned(squad, shipId)) return { ok: false, code: 'not_owned_ship' };
-  if (coreOwnedCount(squad, coreId) <= 0) return { ok: false, code: 'not_owned_core' };
+  const ownedCount = coreOwnedCount(squad, coreId);
+  if (ownedCount <= 0) return { ok: false, code: 'not_owned_core' };
 
-  const fromShip = findCoreShip(squad, coreId);       // 源船（本舰/别船/null）
   const target = ensureLoadout(squad, shipId);
-  const occupant = target.coreId;                     // 目标船原核
+  if (target.coreId === coreId) return { ok: true }; // 已装该核·幂等
+  // 别船已装该核的船；份数没用满 → 直接占一份(多装)；份数用满 → 从其中一艘卸下挪过来(同时在场数 ≤ 拥有份数)。
+  const usingShips: string[] = [];
   for (const [sid, l] of Object.entries(squad.shipLoadouts)) {
-    if (sid !== shipId && l.coreId === coreId) l.coreId = null; // 同名核从别船卸下
+    if (sid !== shipId && l.coreId === coreId) usingShips.push(sid);
   }
-  target.coreId = coreId;
-  // 交换：来自别船 + 目标原有核 → 原核回填到源船。
-  if (fromShip && fromShip !== shipId && occupant) ensureLoadout(squad, fromShip).coreId = occupant;
+  if (usingShips.length >= ownedCount && usingShips.length > 0) {
+    squad.shipLoadouts[usingShips[0]].coreId = null; // 份数用满：从一艘别船卸下让位
+  }
+  target.coreId = coreId; // 装上（覆盖目标原核·原核回可用池）
   return { ok: true };
 }
 

@@ -1,5 +1,5 @@
 // B 块·单舰装配：S7ShipLoadout 装/卸 插件·星核（按 shipId·注入槽位解析器）+ 端到端「真进战斗生效」。
-// §5.3 一船3槽(武器/技能/战术)·同类不堆叠·同名不重复·单实例只装一船；§5.4 一船1核·同名核一场只1个。
+// §5.3 一船3槽(武器/技能/战术)·同类不堆叠·同名不重复·单实例只装一船；§5.4 一船1核·同种核可多装(拥有N份装N艘·Ron 2026)。
 // 装配按船记忆(squad.shipLoadouts·与编队解耦)。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -164,22 +164,31 @@ describe('S7ShipLoadout · 星核装/卸（按船）', () => {
     expect(lo(s, 'shp01').coreId).toBe('core01');
   });
 
-  it('同名核一场只1个：装到第二艘(空核位) → 自动从第一艘卸下（§5.4·无交换对象）', () => {
+  it('只拥有 1 份：装第二艘 → 份数用满·自动从第一艘挪走（同时在场数 ≤ 拥有份数·Ron 2026）', () => {
     const s = squad2();
     equipCore(s, 'shp01', 'core01');
     expect(equipCore(s, 'shp02', 'core01')).toEqual({ ok: true });
-    expect(lo(s, 'shp01').coreId).toBeNull(); // 从原船卸下
+    expect(lo(s, 'shp01').coreId).toBeNull(); // 份数用满→从原船挪走让位
     expect(lo(s, 'shp02').coreId).toBe('core01');
   });
 
-  it('两船各有核，把别船的核装到本舰 → 两核互换', () => {
+  it('拥有 2 份同种核 → 可同时装 2 艘（Ron 2026 改·不再"一场只1个")', () => {
+    const s = squad2();
+    grantCore(s, 'core01', 1); // 再拥有 1 份 → 共 2 份
+    expect(equipCore(s, 'shp01', 'core01')).toEqual({ ok: true });
+    expect(equipCore(s, 'shp02', 'core01')).toEqual({ ok: true }); // 份数没用满 → 直接多装
+    expect(lo(s, 'shp01').coreId).toBe('core01');
+    expect(lo(s, 'shp02').coreId).toBe('core01'); // 两艘同时在场
+  });
+
+  it('把别船的核装本舰 → 别船失去该核(挪过来)·本舰原核退回可用池(非互换·Ron 2026 改)', () => {
     const s = squad2();
     grantCore(s, 'core02', 1);
     equipCore(s, 'shp01', 'core01'); // shp01=core01
-    equipCore(s, 'shp02', 'core02'); // shp02=core02
+    equipCore(s, 'shp02', 'core02'); // shp02=core02（仅 1 份）
     expect(equipCore(s, 'shp01', 'core02')).toEqual({ ok: true }); // 把 shp02 的 core02 装到 shp01
     expect(lo(s, 'shp01').coreId).toBe('core02');
-    expect(lo(s, 'shp02').coreId).toBe('core01'); // shp02 拿到 shp01 的 core01（互换）
+    expect(lo(s, 'shp02').coreId).toBeNull(); // core02 份数用满→从 shp02 挪走；shp01 原 core01 退回可用池(非互换)
   });
 
   it('卸核：not_owned_ship / 置空 / 幂等', () => {

@@ -145,7 +145,7 @@ describe('块7b 活动周期/结算/跨期追赶 tickActivityCycles', () => {
     addActivityProgress(st, 'action3', 120); // ≥100 完成阈值
     claimMilestone(st, 'action3', 'm1', 50);
     const ev = tickActivityCycles(st, T0 + 3 * DAY + 1000, CFG); // 过 3 天窗口
-    expect(ev).toEqual([{ type: 'action3', settlementCount: 1 }]);
+    expect(ev).toMatchObject([{ type: 'action3', settlementCount: 1 }]); // 事件含结算快照(progressAtSettle 等)·此处只验类型/序号
     expect(st.action3.settlementCount).toBe(1);
     // 滚入下一轮：起点 +1 窗口、进度/里程碑/完成全重置
     expect(st.action3.cycleStartTime).toBe(T0 + 72 * 3600 * 1000);
@@ -172,7 +172,7 @@ describe('块7b 活动周期/结算/跨期追赶 tickActivityCycles', () => {
     // 离开 ~10 天（3天活动 → 跨 ~3 轮多）
     const ev = tickActivityCycles(st, T0 + 10 * DAY, CFG);
     // 只结算 1 次（离开当下那轮）；被略过的轮 progress 已重置=0、达不到阈值→作废
-    expect(ev).toEqual([{ type: 'action3', settlementCount: 1 }]);
+    expect(ev).toMatchObject([{ type: 'action3', settlementCount: 1 }]);
     expect(st.action3.settlementCount).toBe(1);
     // 落到当前进行中的窗口（now 在其内）
     expect(activityCycleEndTime(st, 'action3')).toBeGreaterThan(T0 + 10 * DAY);
@@ -186,11 +186,11 @@ describe('块7b 活动周期/结算/跨期追赶 tickActivityCycles', () => {
     // 第 1 轮攒够、到期结算
     addActivityProgress(st, 'expansion7', 350); // ≥300
     let ev = tickActivityCycles(st, T0 + 7 * DAY + 1000, CFG);
-    expect(ev).toEqual([{ type: 'expansion7', settlementCount: 1 }]);
+    expect(ev).toMatchObject([{ type: 'expansion7', settlementCount: 1 }]);
     // 第 2 轮再攒够、再到期结算
     addActivityProgress(st, 'expansion7', 400);
     ev = tickActivityCycles(st, T0 + 14 * DAY + 2000, CFG);
-    expect(ev).toEqual([{ type: 'expansion7', settlementCount: 2 }]);
+    expect(ev).toMatchObject([{ type: 'expansion7', settlementCount: 2 }]);
     expect(st.expansion7.settlementCount).toBe(2);
   });
 
