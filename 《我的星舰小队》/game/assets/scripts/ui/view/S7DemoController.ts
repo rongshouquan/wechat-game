@@ -394,6 +394,17 @@ export class S7DemoController extends Component {
   private resultTitleLabel: Label | null = null;
   private resultMsgLabel: Label | null = null;
   private resultRightLabel: Label | null = null;
+  /** M0·强引导遮罩（锁操作+高光+引导文字，M1-M3 复用）：满屏吞触摸 + 目标高光框 + 文字 + 「下一步」按钮。 */
+  private tutorialOverlayNode: Node | null = null;
+  private tutorialHighlightGfx: Graphics | null = null;
+  private tutorialTextLabel: Label | null = null;
+  private tutorialNextLabel: Label | null = null;
+  private tutorialNextHandler: (() => void) | null = null;
+  /** M0·弱引导首触短教程弹窗（M1-M3 复用）：文字 + 跳过/下一步。 */
+  private tutorialPopupNode: Node | null = null;
+  private tutorialPopupTextLabel: Label | null = null;
+  private tutorialPopupSkipHandler: (() => void) | null = null;
+  private tutorialPopupNextHandler: (() => void) | null = null;
   /** F·关卡三选一发奖浮层（首通胜利后盖在结果弹窗之上·必须选 1 个才离开）。 */
   private levelRewardNode: Node | null = null;
   private levelRewardTitleLabel: Label | null = null;
@@ -605,6 +616,8 @@ export class S7DemoController extends Component {
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
+    this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
+    this.buildTutorialPopup(W, H); // M0 弱引导首触短教程弹窗（最后建→盖在所有面板之上）
   }
 
   // ===== 星港主界面 hub =====
@@ -1522,6 +1535,186 @@ export class S7DemoController extends Component {
       mkB(nodeId, bw, bh, new Color(60, 110, 170, 255), x, y, () => this.onPickLevel(nodeId));
     });
     mkB('关闭', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLevelSelect());
+  }
+
+  // ===== M0 新手引导 UI 壳（通用·M1-M3 复用，本层不含具体步骤内容） =====
+
+  /** 搭强引导遮罩（默认隐藏）：满屏吞触摸（锁定其他操作）+ 目标高光描边框 + 引导文字 + 「下一步」按钮。 */
+  private buildTutorialOverlay(W: number, H: number): void {
+    const panel = new Node('S7TutorialOverlay');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const ut = panel.addComponent(UITransform);
+    ut.setContentSize(W, H);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 150);
+    dim.rect(-W / 2, -H / 2, W, H);
+    dim.fill();
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸：高光下方的真实按钮不可点，只能走「下一步」
+
+    const highlightNode = new Node('highlight');
+    highlightNode.layer = this.node.layer;
+    panel.addChild(highlightNode);
+    const highlightGfx = highlightNode.addComponent(Graphics);
+
+    const textNode = new Node('text');
+    textNode.layer = this.node.layer;
+    panel.addChild(textNode);
+    textNode.setPosition(0, -H * 0.32, 0);
+    const textLabel = textNode.addComponent(Label);
+    textLabel.fontSize = 32;
+    textLabel.lineHeight = 42;
+    textLabel.color = new Color(255, 255, 255);
+    const textUt = textNode.addComponent(UITransform);
+    textUt.setContentSize(W * 0.82, 200);
+    textLabel.overflow = Label.Overflow.RESIZE_HEIGHT;
+    textLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
+
+    const btnW = 220, btnH = 70;
+    const btnNode = new Node('nextBtn');
+    btnNode.layer = this.node.layer;
+    panel.addChild(btnNode);
+    btnNode.setPosition(0, -H * 0.42, 0);
+    const btnUt = btnNode.addComponent(UITransform);
+    btnUt.setContentSize(btnW, btnH);
+    const btnBg = btnNode.addComponent(Graphics);
+    btnBg.fillColor = new Color(80, 160, 230, 255);
+    btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 12);
+    btnBg.fill();
+    const btnTextNode = new Node('t');
+    btnTextNode.layer = this.node.layer;
+    btnNode.addChild(btnTextNode);
+    const btnLabel = btnTextNode.addComponent(Label);
+    btnLabel.fontSize = 32;
+    btnLabel.lineHeight = 40;
+    btnLabel.color = new Color(255, 255, 255);
+    btnLabel.string = '下一步';
+    btnNode.on(Node.EventType.TOUCH_END, () => this.tutorialNextHandler?.(), this);
+
+    panel.active = false;
+    this.tutorialOverlayNode = panel;
+    this.tutorialHighlightGfx = highlightGfx;
+    this.tutorialTextLabel = textLabel;
+    this.tutorialNextLabel = btnLabel;
+  }
+
+  /**
+   * 展示强引导一步：高光描边框跟着 target 的世界坐标包围盒（target 为 null 则不画高光，仅文字+遮罩）；
+   * text 为引导文案；onNext 为点「下一步」的回调（通常调 advanceStrongGuideStep 再决定下一步展示什么）。
+   */
+  private showTutorialStep(text: string, target: Node | null, onNext: () => void, nextLabel = '下一步'): void {
+    if (!this.tutorialOverlayNode || !this.tutorialHighlightGfx || !this.tutorialTextLabel) return;
+    this.tutorialTextLabel.string = text;
+    if (this.tutorialNextLabel) this.tutorialNextLabel.string = nextLabel;
+    this.tutorialNextHandler = onNext;
+    const gfx = this.tutorialHighlightGfx;
+    gfx.clear();
+    if (target) {
+      const targetUt = target.getComponent(UITransform);
+      if (targetUt) {
+        const overlayUt = this.tutorialOverlayNode.getComponent(UITransform)!;
+        const worldPos = target.getWorldPosition();
+        const local = overlayUt.convertToNodeSpaceAR(worldPos);
+        const w = targetUt.contentSize.width * target.scale.x;
+        const h = targetUt.contentSize.height * target.scale.y;
+        gfx.lineWidth = 4;
+        gfx.strokeColor = new Color(255, 220, 80, 255);
+        gfx.roundRect(local.x - w / 2 - 8, local.y - h / 2 - 8, w + 16, h + 16, 10);
+        gfx.stroke();
+      }
+    }
+    this.tutorialOverlayNode.active = true;
+  }
+
+  /** 收起强引导遮罩（强引导全部完成时调用）。 */
+  private hideTutorialStep(): void {
+    if (this.tutorialOverlayNode) this.tutorialOverlayNode.active = false;
+    this.tutorialNextHandler = null;
+  }
+
+  /** 搭弱引导首触短教程弹窗（默认隐藏）：居中卡片，文字 + 跳过/下一步 两键。 */
+  private buildTutorialPopup(W: number, H: number): void {
+    const panel = new Node('S7TutorialPopup');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const ut = panel.addComponent(UITransform);
+    ut.setContentSize(W, H);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 120);
+    dim.rect(-W / 2, -H / 2, W, H);
+    dim.fill();
+    panel.on(Node.EventType.TOUCH_END, () => {}, this);
+
+    const cardW = W * 0.78, cardH = 320;
+    const cardNode = new Node('card');
+    cardNode.layer = this.node.layer;
+    panel.addChild(cardNode);
+    const cardUt = cardNode.addComponent(UITransform);
+    cardUt.setContentSize(cardW, cardH);
+    const cardBg = cardNode.addComponent(Graphics);
+    cardBg.fillColor = new Color(28, 34, 52, 255);
+    cardBg.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
+    cardBg.fill();
+
+    const textNode = new Node('text');
+    textNode.layer = this.node.layer;
+    cardNode.addChild(textNode);
+    textNode.setPosition(0, 40, 0);
+    const textLabel = textNode.addComponent(Label);
+    textLabel.fontSize = 30;
+    textLabel.lineHeight = 40;
+    textLabel.color = new Color(255, 255, 255);
+    const textUt = textNode.addComponent(UITransform);
+    textUt.setContentSize(cardW * 0.86, 200);
+    textLabel.overflow = Label.Overflow.RESIZE_HEIGHT;
+    textLabel.horizontalAlign = Label.HorizontalAlign.CENTER;
+
+    const mkBtn = (label: string, x: number, color: Color, tap: () => void): void => {
+      const w = cardW * 0.36, h = 68;
+      const n = new Node('b');
+      n.layer = this.node.layer;
+      cardNode.addChild(n);
+      n.setPosition(x, -cardH / 2 + 60, 0);
+      const nut = n.addComponent(UITransform);
+      nut.setContentSize(w, h);
+      const bg = n.addComponent(Graphics);
+      bg.fillColor = color;
+      bg.roundRect(-w / 2, -h / 2, w, h, 12);
+      bg.fill();
+      const ln = new Node('t');
+      ln.layer = this.node.layer;
+      n.addChild(ln);
+      const l = ln.addComponent(Label);
+      l.fontSize = 28;
+      l.lineHeight = 36;
+      l.color = new Color(255, 255, 255);
+      l.string = label;
+      n.on(Node.EventType.TOUCH_END, tap, this);
+    };
+    mkBtn('跳过', -cardW * 0.22, new Color(90, 90, 100, 255), () => this.tutorialPopupSkipHandler?.());
+    mkBtn('下一步', cardW * 0.22, new Color(80, 160, 230, 255), () => this.tutorialPopupNextHandler?.());
+
+    panel.active = false;
+    this.tutorialPopupNode = panel;
+    this.tutorialPopupTextLabel = textLabel;
+  }
+
+  /** 展示弱引导首触短教程弹窗；onSkip/onNext 通常都应调 markFirstTouchSeen 再各自收尾（跳过=直接关，下一步=可能翻页或关）。 */
+  private showTutorialPopup(text: string, onSkip: () => void, onNext: () => void): void {
+    if (!this.tutorialPopupNode || !this.tutorialPopupTextLabel) return;
+    this.tutorialPopupTextLabel.string = text;
+    this.tutorialPopupSkipHandler = onSkip;
+    this.tutorialPopupNextHandler = onNext;
+    this.tutorialPopupNode.active = true;
+  }
+
+  /** 收起弱引导首触短教程弹窗。 */
+  private hideTutorialPopup(): void {
+    if (this.tutorialPopupNode) this.tutorialPopupNode.active = false;
+    this.tutorialPopupSkipHandler = null;
+    this.tutorialPopupNextHandler = null;
   }
 
   /** 搭"战前备战"叠加层（默认隐藏）。布局：敌情预览(上半) ↔ 九宫格(下半居中·上下对称) → 底部三键。
