@@ -62,6 +62,9 @@ import {
 } from '../../core/s7/S7GachaService';
 import { S7AdGateway, S7MockAdAdapter } from '../../core/s7/S7AdGateway';
 import { S7AutoBattleRng } from '../../core/s7/S7AutoBattleRng';
+// 音效/BGM 工程接口（附录C 事件钩子）：当前只接 MockSoundAdapter，真机播放属后续任务。
+import { SoundService } from '../../sound/SoundService';
+import { MockSoundAdapter } from '../../sound/MockSoundAdapter';
 // 阶段一 F·关卡三选一发奖（首通限定·三档稀缺池·Boss大奖·看广告×2）。
 import { DEFAULT_S7_LEVEL_REWARD_CONFIG, S7LevelReward, S7LevelRewardStage } from '../../core/s7/S7LevelRewardConfig';
 import {
@@ -168,6 +171,8 @@ const S7_DEMO_FLAGSHIP_ID = 'shp01';
 @ccclass('S7DemoController')
 export class S7DemoController extends Component {
   private adapter: SaveStorageAdapter | null = null;
+  /** 音效/BGM 服务（附录C 事件钩子）：当前只用 MockSoundAdapter，真机播放属后续任务。 */
+  private readonly sound = new SoundService(new MockSoundAdapter());
   private session: S7RunSession | null = null;
   private playerState: S7PlayerState | null = null;
   private saveVersion = S7_CURRENT_SAVE_VERSION;
@@ -855,6 +860,8 @@ export class S7DemoController extends Component {
       this.gachaResultLabel.string = (head + lines.join('\n')) || '出货异常（配置空池？）';
     }
     if (r.outcomes.length > 0) this.feedActivity(S7_ACTIVITY_ACTIONS.gacha, r.outcomes.length); // G：抽卡喂活动进度(每抽)
+    const hasHighlight = r.outcomes.some((o) => o.result === 'new_body' || o.result === 'floor_body' || o.isExclusive);
+    if (r.outcomes.length > 0) this.sound.playSfx(hasHighlight ? 'gacha_highlight' : 'gacha_draw');
     this.persist();
     this.refresh();      // 顶部货币栏（券变了）
     this.refreshGacha(); // 池说明/保底/兑换
@@ -889,6 +896,7 @@ export class S7DemoController extends Component {
       else if (res.result === 'exclusive_body') this.gachaResultLabel.string = `兑换箱：${this.unitName('ship', res.exclusiveShipId)}[A级·专属] 到手!${res.shardsGained > 0 ? ` +碎片${res.shardsGained}` : ''}`;
       else this.gachaResultLabel.string = `兑换箱：[A级·专属]已拥有→碎片+${res.shardsGained}`;
     }
+    if (res.ok) this.sound.playSfx(res.result === 'exclusive_body' ? 'gacha_highlight' : 'reward_claim');
     this.persist();
     this.refreshGacha();
   }
@@ -1429,6 +1437,7 @@ export class S7DemoController extends Component {
   /** 弹结果窗（背景保留战斗画面：不隐藏 stage、不切场景）。 */
   private openResultPopup(won: boolean): void {
     if (!this.resultPopupNode) return;
+    this.sound.playSfx(won ? 'battle_victory' : 'battle_defeat');
     if (this.resultTitleLabel) {
       this.resultTitleLabel.string = won ? '★ 战斗胜利 ★' : '战斗失败';
       this.resultTitleLabel.color = won ? new Color(150, 235, 160) : new Color(255, 150, 150);
@@ -1442,6 +1451,7 @@ export class S7DemoController extends Component {
 
   /** 收起就地战斗画面 + 结果窗（玩家选完才切场景）：复位备战 UI、隐藏备战面板、回主界面状态。 */
   private dismissBattleScene(): void {
+    this.sound.playBgm('bgm_hub');
     if (this.resultPopupNode) this.resultPopupNode.active = false;
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = false;
     if (this.prebattleUiNode) this.prebattleUiNode.active = true; // 复位（下次进备战正常显示）
@@ -1735,6 +1745,7 @@ export class S7DemoController extends Component {
       lineup = built;
     }
     const nodeId = this.session.currentNodeId;
+    this.sound.playBgm('bgm_battle');
     // J：全队加成（研究塔+星核展厅）+ 每舰升阶/升星加成，都附到上阵舰喂进战斗。
     const team = this.teamBonusBlocks();
     const battleLineup = (lineup && lineup.ok)
@@ -2703,10 +2714,12 @@ export class S7DemoController extends Component {
       const r = upgradeShipOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, shipLevelCap(bLv));
       if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spent.starOre}星矿+${r.spent.hullAlloy}合金${r.spent.shipBlueprint ? `+${r.spent.shipBlueprint}舰碎片` : ''}`
         : r.reason === 'cap_reached' ? `已达船坞上限（升船坞解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '资源不够（出战/回收攒）' : '暂无成本配置';
+      if (r.ok) this.sound.playSfx('upgrade_level_up');
     } else {
       const r = upgradePilotOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, driverLevelCap(bLv));
       if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spentPilotToken}驾驶记录`
         : r.reason === 'cap_reached' ? `已达训练舱上限（升训练舱解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '驾驶记录不够' : '暂无成本配置';
+      if (r.ok) this.sound.playSfx('upgrade_level_up');
     }
     this.persist();
     this.refresh();
@@ -3068,6 +3081,7 @@ export class S7DemoController extends Component {
       return;
     }
     const text = this.applyChestReward(c.options[index]);
+    this.sound.playSfx('chest_open');
     this.persist();
     this.refresh();
     this.refreshChestOpen(); // 先刷新（会写状态行）→ 再覆盖成「到手」结果，避免被状态行盖掉。
@@ -3538,6 +3552,7 @@ export class S7DemoController extends Component {
     }
     const texts = res.rewards.map((rw) => this.applyMailReward(rw)).filter((t) => t.length > 0);
     if (this.mailResultLabel) this.mailResultLabel.string = texts.length > 0 ? `已领取：${texts.join('、')}` : '已领取（空邮件）';
+    this.sound.playSfx('reward_claim');
     this.persist();
     this.refresh();
     this.refreshMail();
@@ -3854,9 +3869,11 @@ export class S7DemoController extends Component {
       const r = ascendShip(this.playerState.unitTiers, this.playerState.exclusiveShards, DEFAULT_S7_ASCEND_CONFIG, unitId);
       if (rl) rl.string = r.ok ? `升阶到 ${shipTierName(r.toTier)} 阶！插件槽 ${r.pluginSlots}${r.coreSlot ? '·星核槽已开' : ''}`
         : r.reason === 'max_tier' ? '已满阶 SS' : r.reason === 'insufficient' ? `专属碎片不够（需 ${r.needExclusive}·去抽卡攒或背包转换）` : '暂不可升阶';
+      if (r.ok) this.sound.playSfx('upgrade_ascend');
     } else {
       const r = starupPilot(this.playerState.unitTiers, this.playerState.exclusiveShards, DEFAULT_S7_ASCEND_CONFIG, unitId);
       if (rl) rl.string = r.ok ? `升星到 ${r.toStar}★！` : r.reason === 'max_tier' ? '已满星 5★' : r.reason === 'insufficient' ? `专属碎片不够（需 ${r.needExclusive}）` : '暂不可升星';
+      if (r.ok) this.sound.playSfx('upgrade_star_up');
     }
     this.persist();
     this.refresh();
@@ -3919,6 +3936,7 @@ export class S7DemoController extends Component {
     const text = this.offlineGainsText(this.offlinePending.gains);
     this.offlinePending = null;
     this.setResult(`领取离线收益 ${text}${cap}`, new Color(235, 215, 130));
+    this.sound.playSfx('reward_claim');
     this.persist();
     this.refresh();
   }
