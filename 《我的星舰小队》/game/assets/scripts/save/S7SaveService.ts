@@ -81,6 +81,11 @@ import {
   createDefaultS7UnitTierState,
   normalizeS7UnitTierState,
 } from '../core/s7/S7UnitTierState';
+import {
+  S7TutorialState,
+  createDefaultS7TutorialState,
+  normalizeS7TutorialState,
+} from '../core/s7/S7TutorialState';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -102,8 +107,9 @@ import {
  * v15（阶段一 E·商人小站）：playerState 增加 merchant(当前货架 + 本周期购买量/刷新次数 + 周期标记)；旧档加载补默认空(加性迁移，无需重置)。
  * v16（阶段一 J·升阶升星）：playerState 增加 unitTiers(星舰阶级 C/B/A + 驾驶员星级 1-5★)；旧档加载补默认(全 C 阶/1★，加性迁移，无需重置)。
  * v17（阶段一 I·星核三渠道）：playerState 增加 expansionOpenedCount(扩张宝藏已开箱次数·判首次全池自选/之后随机三选一·§5.4/§10.5)；旧档加载补默认 0(加性迁移，无需重置)。
+ * v18（阶段一 M·新手引导）：playerState 增加 tutorial(强引导步数+完成标记+弱引导首触已展示清单)；旧档加载补默认(全 0/未完成/空清单，加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 17;
+export const S7_CURRENT_SAVE_VERSION = 18;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -165,6 +171,8 @@ export interface S7PlayerState {
   unitTiers: S7UnitTierState;
   /** 扩张宝藏已开箱次数（阶段一 I·§5.4/§10.5）：0=首次开=全池自选；≥1=随机三选一。 */
   expansionOpenedCount: number;
+  /** 新手引导进度（阶段一 M）：强引导步数/完成标记 + 弱引导首触已展示清单，形状由 core/s7/S7TutorialState 拥有。 */
+  tutorial: S7TutorialState;
 }
 
 export interface S7SaveData {
@@ -201,6 +209,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     merchant: createDefaultS7Merchant(),
     unitTiers: createDefaultS7UnitTierState(),
     expansionOpenedCount: 0,
+    tutorial: createDefaultS7TutorialState(),
   };
 }
 
@@ -258,6 +267,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     unitTiers: normalizeS7UnitTierState(src.unitTiers),
     expansionOpenedCount: typeof src.expansionOpenedCount === 'number' && Number.isFinite(src.expansionOpenedCount) && src.expansionOpenedCount > 0
       ? Math.floor(src.expansionOpenedCount) : 0,
+    tutorial: normalizeS7TutorialState(src.tutorial),
   };
 }
 
@@ -371,6 +381,8 @@ export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now
       // 阶段一I：补 expansionOpenedCount（扩张宝藏开箱次数·显式列全勿漏·6b-2 教训）。
       expansionOpenedCount: typeof data.playerState?.expansionOpenedCount === 'number' && Number.isFinite(data.playerState.expansionOpenedCount) && data.playerState.expansionOpenedCount > 0
         ? Math.floor(data.playerState.expansionOpenedCount) : 0,
+      // 阶段一M：补 tutorial（新手引导进度·显式列全勿漏·6b-2 教训）。
+      tutorial: normalizeS7TutorialState(data.playerState?.tutorial),
     },
     lastOnlineTime: now,
   };
