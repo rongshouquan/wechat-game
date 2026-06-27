@@ -38,11 +38,10 @@ async function ensure(): Promise<void> {
 const progressAt = (nodeId: string): S7MainlineProgressState => ({ currentNodeId: nodeId, clearedNodeIds: [] });
 
 describe('C1b-step1a 节点奖励解析 resolveNodeRewardGrants', () => {
-  it('n001 解析出软货币（取首个 reward_param 行的 min；真实样例 starOre90/hullAlloy25）', async () => {
+  it('n001 解析出软货币（取首个 reward_param 行的 min；改动#3后只剩 hullAlloy25，星矿移出必得进三选一）', async () => {
     await ensure();
     const grants = resolveNodeRewardGrants(runtime, 'n001');
     expect(grants).toEqual([
-      { resourceId: 'starOre', amount: 90 },
       { resourceId: 'hullAlloy', amount: 25 },
     ]);
   });
@@ -75,7 +74,6 @@ describe('C1b-step1a 首通结算 settleS7NodeVictory', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.grants).toEqual([
-      { resourceId: 'starOre', amount: 90 },
       { resourceId: 'hullAlloy', amount: 25 },
     ]);
     expect(r.completedNodeId).toBe('n001');
@@ -112,7 +110,7 @@ describe('C1b-step1a 首通结算 settleS7NodeVictory', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     applyResourceGrants(resources, r.grants);
-    expect(resources.starOre).toBe(90);
+    expect(resources.starOre).toBe(0); // 改动#3：星矿不再随节点结算必得
     expect(resources.hullAlloy).toBe(25);
   });
 });

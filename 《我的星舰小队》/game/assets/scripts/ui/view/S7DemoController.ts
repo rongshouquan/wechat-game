@@ -35,6 +35,8 @@ import {
   buildBuildingUpgradeView,
   upgradeBuildingWithDiscount,
 } from '../../core/s7/S7BuildingUpgradeFlow';
+import { unlockBuildingWithStarOre } from '../../core/s7/S7BuildingUpgradeService';
+import { S7TutorialState, advanceStrongGuideStep, completeStrongGuide } from '../../core/s7/S7TutorialState';
 import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState, getBuildingLevel } from '../../core/s7/S7BuildingState';
 import { S7PopulationState, createDefaultS7Population, residentRateBonusPct, residentStorageExtensionHours, workerCostDiscountPct } from '../../core/s7/S7Population';
 import {
@@ -129,6 +131,19 @@ const S7_DEMO_SEED_FORMATION: { slotRef: string; shipId: string; pilotId: string
   { slotRef: 'p1c2', shipId: 'shp02', pilotId: 'pil02' },
   { slotRef: 'p2c2', shipId: 'shp03', pilotId: 'pil03' },
 ];
+/** M1 新手引导开局：只给起始编队第一组（内容无关，按角色引用，第二阶段换内容不重写）。 */
+const S7_TUTORIAL_STARTER = S7_DEMO_SEED_FORMATION[0];
+/**
+ * M1 教程解锁船坞/训练舱的星矿花费（GDD-M §第1关后：关1三选一强制选的+50星矿要同时
+ * 解锁船坞+训练舱、还要够紧接着的「船升Lv1」演示）。两项合计须 ≤ 50 - 22（船升 Lv1 实际花费，
+ * 见 upgrade_cost_param ship_lv_1_10 ÷10），留出安全余量；占位值·第二块数值校准。
+ */
+const S7_TUTORIAL_DOCK_UNLOCK_COST = 15;
+const S7_TUTORIAL_TRAINING_UNLOCK_COST = 10;
+/** M1 教程关1节点（=默认起手节点·内容无关，第二阶段换内容不重写）。 */
+const S7_TUTORIAL_LEVEL1_NODE = createDefaultS7MainlineProgress().currentNodeId;
+/** M1 关1三选一强制选的星矿量（GDD-M §第1关 +50：要够后面解锁船坞15+升船22+解锁训练舱10=47，留3余量）。占位·第二块校准。 */
+const S7_TUTORIAL_LEVEL1_STARORE = 50;
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
 const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | 'legendary' }[] = [
   { pluginId: 'plg02', quality: 'legendary' }, // 武器
@@ -405,6 +420,13 @@ export class S7DemoController extends Component {
   private tutorialPopupTextLabel: Label | null = null;
   private tutorialPopupSkipHandler: (() => void) | null = null;
   private tutorialPopupNextHandler: (() => void) | null = null;
+  /** M1：强引导步骤里要高光指引的真实按钮 Node 引用（出战/船坞入口/训练舱入口/备战面板开始战斗）。 */
+  private hubSortieBtn: Node | null = null;
+  private hubDockEntryNode: Node | null = null;
+  private hubTrainingEntryNode: Node | null = null;
+  private prebattleSortieBtn: Node | null = null;
+  private resultHomeBtn: Node | null = null;        // 结果弹窗「返回星港」（强引导 step3 高光）
+  private unitManageUpgradeBtn: Node | null = null;  // 单位管理「升级」（强引导 step5/8 高光）
   /** F·关卡三选一发奖浮层（首通胜利后盖在结果弹窗之上·必须选 1 个才离开）。 */
   private levelRewardNode: Node | null = null;
   private levelRewardTitleLabel: Label | null = null;
@@ -419,6 +441,7 @@ export class S7DemoController extends Component {
     choices: S7LevelReward[]; bossGrand: S7LevelReward | null;
     softGrants: { resourceId: string; amount: number }[]; // 固定软货币（已发一份·看广告×2 时再补一份）
     showAdDouble: boolean; adDoubled: boolean;
+    forcedPickIndex?: number; // M1 关1强引导：写死三选一、强制选此索引（星矿），其余仅展示
   } | null = null;
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
@@ -450,7 +473,17 @@ export class S7DemoController extends Component {
     // B 块：拿插件库存引用 + 建 pluginId→槽位 映射（装/卸判同类槽 + 显示用）。
     this.pluginInventory = this.playerState.pluginInventory;
     runtime.getAll<S7PluginConfig>('plugin_config').forEach((c) => this.pluginSlotMap.set(c.pluginId, c.slotTag));
-    this.ensureDemoSquadSeeded();
+    // M1：老档(存档迁移来的、教程还在默认状态)视为已过完教程，保留旧版"一进来全发好"体验；
+    // 新档真走教程，初始锁定、靠教程逐步解锁/发货。
+    const tutorial = this.playerState.tutorial;
+    if (!loaded.isNew && tutorial.strongGuideStep === 0 && !tutorial.strongGuideDone) {
+      completeStrongGuide(tutorial);
+    }
+    if (tutorial.strongGuideDone) {
+      this.ensureDemoSquadSeeded();
+    } else {
+      this.ensureTutorialStarterSeeded();
+    }
     this.session = new S7RunSession(
       this.playerState.resources,
       this.playerState.mainlineProgress,
@@ -466,7 +499,9 @@ export class S7DemoController extends Component {
     const population = this.playerState.population;
     this.buildings = buildings;
     this.population = population;
-    this.ensureDefaultBuildingsUnlocked(); // 就地解锁 buildings（同引用）
+    if (tutorial.strongGuideDone) {
+      this.ensureDefaultBuildingsUnlocked(); // 就地解锁 buildings（同引用）
+    }
     const offline = computeS7OfflineSettlement(
       model, buildings, population, this.playerState.mainlineProgress, loaded.data.lastOnlineTime, now,
     );
@@ -481,6 +516,11 @@ export class S7DemoController extends Component {
     // 上线即有离线收益：在结果行提示金额，引导点上方金色「领取」。
     if (this.offlinePending) {
       this.setResult(`离线攒了 ${this.offlineGainsText(this.offlinePending.gains)}，点上方「领取离线收益」`, new Color(235, 215, 130));
+    }
+    // M1 强引导：新手没走完 → 归一冷启动恢复步 + 展示当前引导步（开场/续上次进度）。
+    if (this.isStrongGuideActive()) {
+      this.normalizeTutorialResumeStep();
+      this.runTutorialStep();
     }
   }
 
@@ -529,6 +569,16 @@ export class S7DemoController extends Component {
     }
     if (this.pluginInventory && this.pluginInventory.plugins.length === 0) {
       for (const p of S7_DEMO_SEED_PLUGINS) addOwnedPlugin(this.pluginInventory, p.pluginId, p.quality);
+    }
+  }
+
+  /** M1：教程开局，只给起始船+起始驾驶员编 1 号位，建筑/插件/星核全留空，靠教程逐步解锁（与 ensureDemoSquadSeeded 二选一·按 tutorial.strongGuideDone 分支）。 */
+  private ensureTutorialStarterSeeded(): void {
+    if (!this.squad) return;
+    if (this.squad.ownedShips.length === 0) {
+      grantShip(this.squad, S7_TUTORIAL_STARTER.shipId);
+      grantPilot(this.squad, S7_TUTORIAL_STARTER.pilotId);
+      assignSlot(this.squad, S7_TUTORIAL_STARTER.slotRef, S7_TUTORIAL_STARTER.shipId, S7_TUTORIAL_STARTER.pilotId);
     }
   }
 
@@ -644,29 +694,30 @@ export class S7DemoController extends Component {
     const gy0 = topY - 360;
     const gap = 150;
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
-    this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
+    this.hubDockEntryNode = this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
     this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
     this.makeHubEntry('居住舱', '人口', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openHabitat(), 'bld_habitat');
     this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
     this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
     this.makeHubEntry('研究塔', '升级', new Color(90, 110, 150, 255), rx, gy0 - gap * 2, ew, eh, () => this.openBuildingUpgrade('bld_research_tower'), 'bld_research_tower');
     this.makeHubEntry('星核展厅', '收藏', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openGallery(), 'bld_rsv_core_gallery');
-    this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
+    this.hubTrainingEntryNode = this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
 
     // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
     this.makeHubEntry('背包', '资源/宝箱', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.openBackpack());
     const mailEntry = this.makeHubEntry('邮件', '查看', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.openMail());
     this.hubMailSubLabel = mailEntry.getChildByName('s')?.getComponent(Label) ?? null; // 副标签 refresh() 显可领数
-    this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
+    this.hubSortieBtn = this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
 
     // —— 中央临时提示（默认空）——
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
 
-    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处只留 离线/重置/发测试邮件）——
-    this.offlineBtn = this.makeButton('领离线', 200, 60, new Color(205, 165, 60, 255), -W * 0.22, botY + 56, () => this.onClaimOffline());
-    this.offlineBtn.active = false;
-    this.makeButton('发测试邮件', 200, 60, new Color(80, 120, 160, 255), 0, botY + 56, () => this.devSendTestMail()); // DEV-TEMP·验 G2 邮件领取
-    this.makeButton('重置存档', 200, 60, new Color(120, 70, 70, 255), W * 0.22, botY + 56, () => this.onReset());
+    // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处留 离线/邮件/重置/跳过引导）——
+    this.offlineBtn = this.addBtn(this.node, '领离线', 168, 60, new Color(205, 165, 60, 255), -W * 0.36, botY + 56, () => this.onClaimOffline(), 26).node.parent;
+    if (this.offlineBtn) this.offlineBtn.active = false;
+    this.addBtn(this.node, '发测试邮件', 168, 60, new Color(80, 120, 160, 255), -W * 0.12, botY + 56, () => this.devSendTestMail(), 24); // DEV-TEMP·验 G2 邮件领取
+    this.addBtn(this.node, '重置存档', 168, 60, new Color(120, 70, 70, 255), W * 0.12, botY + 56, () => this.onReset(), 26);
+    this.addBtn(this.node, '跳过引导', 168, 60, new Color(70, 110, 90, 255), W * 0.36, botY + 56, () => this.devSkipGuide(), 26); // DEV-TEMP·跳过新手强引导→老演示态
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
     this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
@@ -698,6 +749,13 @@ export class S7DemoController extends Component {
     node.on(Node.EventType.TOUCH_END, onTap, this);
     if (trackBuildingId) this.hubBuildingTracks.push({ id: trackBuildingId, label: sl });
     return node;
+  }
+
+  /** M1：建筑未解锁则提示「XX未解锁」并返回 true（调用方据此拦截打开面板）；已解锁返回 false。 */
+  private blockIfBuildingLocked(buildingId: string, name: string): boolean {
+    if (this.buildings && isBuildingUnlocked(this.buildings, buildingId)) return false;
+    this.hubToast(`${name}未解锁`);
+    return true;
   }
 
   /** 中央临时提示：显示一行字、约 1.4 秒后自动清空。 */
@@ -1006,6 +1064,7 @@ export class S7DemoController extends Component {
   }
 
   private openSalvage(): void {
+    if (this.blockIfBuildingLocked('bld_salvage_port', '打捞港')) return;
     if (!this.salvageNode) return;
     this.salvageNode.active = true;
     if (this.salvageResultLabel) this.salvageResultLabel.string = '选档+时长→开始打捞';
@@ -1205,6 +1264,7 @@ export class S7DemoController extends Component {
   }
 
   private openMerchant(): void {
+    if (this.blockIfBuildingLocked('bld_merchant_station', '商人小站')) return;
     if (!this.merchantNode || !this.playerState || !this.session) return;
     // 进店先按当前日刷新货架（跨天自动重铺 + 清购买量/计数）。
     refreshMerchantToCycle(this.playerState.merchant, DEFAULT_S7_MERCHANT_CONFIG, this.merchantLevel(), new S7AutoBattleRng(`mc_${Date.now()}`), Date.now());
@@ -1351,6 +1411,7 @@ export class S7DemoController extends Component {
   }
 
   private openBuildingUpgrade(buildingId: string): void {
+    if (this.blockIfBuildingLocked(buildingId, '该建筑')) return;
     if (!this.buildingUpgradeNode) return;
     this.buildingUpgradeTarget = buildingId;
     // 置顶：升级弹窗被多个建筑界面共用，必须盖在当前界面之上（否则被后建的船坞/训练舱浮层压在底下）。
@@ -1444,6 +1505,7 @@ export class S7DemoController extends Component {
     lvlLbl.string = '选择关卡';
     const homeLbl = mkB(220, 92, new Color(120, 90, 160, 255), 0, -dh * 0.30, () => this.onResultGoHome());
     homeLbl.string = '返回星港';
+    this.resultHomeBtn = homeLbl.node.parent; // M1：强引导 step3 高光「返回星港」用
     this.resultRightLabel = mkB(220, 92, new Color(225, 150, 45, 255), W * 0.30, -dh * 0.30, () => this.onResultGoPrebattle());
   }
 
@@ -1624,6 +1686,9 @@ export class S7DemoController extends Component {
         gfx.stroke();
       }
     }
+    // 置顶：结果弹窗 / 单位管理 / 三选一发奖都会 setSiblingIndex 抢到最前，遮罩须再抬到它们之上才能盖住+吞触摸。
+    const parent = this.tutorialOverlayNode.parent;
+    if (parent) this.tutorialOverlayNode.setSiblingIndex(parent.children.length - 1);
     this.tutorialOverlayNode.active = true;
   }
 
@@ -1631,6 +1696,176 @@ export class S7DemoController extends Component {
   private hideTutorialStep(): void {
     if (this.tutorialOverlayNode) this.tutorialOverlayNode.active = false;
     this.tutorialNextHandler = null;
+  }
+
+  // ===== M1a 强引导步骤调度器（关1 + 关1后解锁建筑&升级，到出战进关2为止）=====
+
+  /** 强引导是否进行中（新手没走完=锁操作引导态）。 */
+  private isStrongGuideActive(): boolean {
+    return !!this.playerState && !this.playerState.tutorial.strongGuideDone;
+  }
+
+  /**
+   * 冷启动恢复归一：从存档某步重进时，把「战斗/三选一/结果弹窗」这段临时弹窗态(step2~3)归一到 step4(回星港·解锁船坞)。
+   * 因为关1战斗已结算入档(进度已到下一节点)，这些弹窗无法忠实复现 → 直接续到"回到星港解锁建筑"。
+   * step2 时若三选一弹窗已丢失(星矿未入账)→ 先补发星矿。只在 init 调一次。
+   */
+  private normalizeTutorialResumeStep(): void {
+    if (!this.isStrongGuideActive() || !this.playerState) return;
+    const t = this.playerState.tutorial;
+    if (t.strongGuideStep === 2) { this.grantTutorialLevel1StarOre(); t.strongGuideStep = 4; this.persist(); }
+    else if (t.strongGuideStep === 3) { t.strongGuideStep = 4; this.persist(); }
+  }
+
+  /** 补发关1三选一强制的星矿（冷启动恢复用·与三选一选星矿同量；幂等性由调用点 step 把关）。 */
+  private grantTutorialLevel1StarOre(): void {
+    const res = this.session?.resources as Record<string, number> | undefined;
+    if (res && res.starOre !== undefined) res.starOre += S7_TUTORIAL_LEVEL1_STARORE;
+  }
+
+  /**
+   * 按 tutorial.strongGuideStep 展示当前该高光哪个按钮/弹哪句引导。
+   * 每步「下一步」回调：先 advanceStrongGuideStep 递增、做该步副作用(出战/解锁/升级…)、落盘、再回头调本方法展示下一步。
+   * 每个 case 自带「确保上下文」(冷启动从存档某步恢复也续得上)。步序见类顶部 M1a 注释。
+   */
+  private runTutorialStep(): void {
+    if (!this.isStrongGuideActive() || !this.playerState) return;
+    const t = this.playerState.tutorial;
+    const ship = S7_TUTORIAL_STARTER.shipId;
+    const pilot = S7_TUTORIAL_STARTER.pilotId;
+    switch (t.strongGuideStep) {
+      case 0:
+        this.showTutorialStep(
+          '指挥官，欢迎接手这座破败的小星港。\n这片星域又乱又热闹——星盗、失控无人舰、废铁机械、星能污染舰横行。\n你的使命：收集星舰、组建小队、打败敌人，把小破港养成热闹大星港！',
+          null,
+          () => { advanceStrongGuideStep(t); this.persist(); this.openPrebattle(); this.runTutorialStep(); },
+          '出发',
+        );
+        break;
+      case 1:
+        this.openPrebattle();
+        this.showTutorialStep(
+          '这是出战前的备战界面。\n点「开始战斗」，看你的极焰号自动迎敌——这一关它只会普通攻击。',
+          this.prebattleSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
+        );
+        break;
+      case 2:
+        // 正常流程由 openLevelReward 触发本步遮罩(pendingLevelReward 在)；冷启动已被 normalize 归一到 step4，不会落这。
+        if (this.pendingLevelReward) this.showTutorialLevel1Choice();
+        break;
+      case 3:
+        this.showTutorialStep(
+          '打赢了！奖励到手。\n点「返回星港」回到你的星港，去解锁建筑。',
+          this.resultHomeBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
+        );
+        break;
+      case 4:
+        this.showTutorialStep(
+          '你的星港百废待兴——所有建筑都还没解锁。\n先用刚得的星矿解锁「船坞」（造船、养船的地方）。',
+          this.hubDockEntryNode,
+          () => {
+            advanceStrongGuideStep(t);
+            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_dock', S7_TUTORIAL_DOCK_UNLOCK_COST);
+            this.persist(); this.hideTutorialStep();
+            this.openDockManageForTutorial('ship', ship);
+            this.runTutorialStep();
+          },
+        );
+        break;
+      case 5:
+        this.openDockManageForTutorial('ship', ship);
+        this.showTutorialStep(
+          '这是极焰号的管理面板。\n点「升级」把它升到 Lv1——升级花星矿和合金，能直接变强。',
+          this.unitManageUpgradeBtn,
+          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', ship); this.persist(); this.runTutorialStep(); },
+        );
+        break;
+      case 6:
+        this.showTutorialStep(
+          '升到 Lv1，极焰号解锁了星舰技能「集火炮」！\n（星舰升到一定等级会解锁专属技能，战斗中自动释放。）',
+          null,
+          () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
+        );
+        break;
+      case 7:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '光有船不够，还得练驾驶员。\n用星矿解锁「训练舱」（练驾驶员的地方）。',
+          this.hubTrainingEntryNode,
+          () => {
+            advanceStrongGuideStep(t);
+            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_pilot_training_bay', S7_TUTORIAL_TRAINING_UNLOCK_COST);
+            this.persist(); this.hideTutorialStep();
+            this.openDockManageForTutorial('pilot', pilot);
+            this.runTutorialStep();
+          },
+        );
+        break;
+      case 8:
+        this.openDockManageForTutorial('pilot', pilot);
+        this.showTutorialStep(
+          '这是驾驶员「炎」的管理面板。\n点「升级」把炎升到 Lv1。',
+          this.unitManageUpgradeBtn,
+          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('pilot', pilot); this.persist(); this.runTutorialStep(); },
+        );
+        break;
+      case 9:
+        this.showTutorialStep(
+          '炎升到 Lv1，解锁了驾驶能力「集火血量最少的敌人」！\n（驾驶员能力会改变星舰的战斗行为——炎会专挑残血敌人补刀。）',
+          null,
+          () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
+        );
+        break;
+      case 10:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '船和驾驶员都练好了，去挑战第 2 关吧！\n点「出战」进入下一关备战。',
+          this.hubSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); },
+        );
+        break;
+      default:
+        // M1a 完结(step≥11)：M1b 关2 内容尚未做 → 收起遮罩、放开自由玩(船坞/训练舱已解锁，其余仍锁)。
+        this.hideTutorialStep();
+        break;
+    }
+  }
+
+  /** M1：教程内打开船坞/训练舱 + 直接进该单位管理面板（升级键稳定可高光）。幂等。 */
+  private openDockManageForTutorial(kind: 'ship' | 'pilot', unitId: string): void {
+    if (kind === 'ship') this.openDock(); else this.openTraining();
+    this.openUnitManage(kind, unitId);
+  }
+
+  /** M1：教程内收起 单位管理 + 船坞/训练舱，回到星港主界面。 */
+  private closeUnitPanelsToHub(): void {
+    if (this.unitManageNode) this.unitManageNode.active = false;
+    if (this.dockNode) this.dockNode.active = false;
+    if (this.trainingNode) this.trainingNode.active = false;
+    this.refresh();
+  }
+
+  /** M1 关1：在三选一发奖浮层上盖遮罩、高光「星矿」卡，强制玩家选星矿（下一步=替他选）。 */
+  private showTutorialLevel1Choice(): void {
+    const p = this.pendingLevelReward;
+    if (!p || !this.playerState) return;
+    const idx = p.forcedPickIndex ?? p.choices.findIndex((c) => c.kind === 'resource' && c.resourceId === 'starOre');
+    const pick = idx >= 0 ? idx : 0;
+    const card = this.levelRewardListNode ? (this.levelRewardListNode.children[pick] ?? null) : null;
+    this.showTutorialStep(
+      '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）',
+      card,
+      () => {
+        const t = this.playerState!.tutorial;
+        advanceStrongGuideStep(t); // →3
+        this.hideTutorialStep();
+        this.onPickLevelChoice(pick); // 入账星矿 + 收三选一浮层(露出结果弹窗) + 落盘(含 step3)
+        this.runTutorialStep();       // 展示 step3(结果弹窗·返回星港)
+      },
+      '选星矿',
+    );
   }
 
   /** 搭弱引导首触短教程弹窗（默认隐藏）：居中卡片，文字 + 跳过/下一步 两键。 */
@@ -1743,13 +1978,14 @@ export class S7DemoController extends Component {
       const l = n.addComponent(Label); l.fontSize = size; l.lineHeight = Math.round(size * 1.3); l.color = color; l.string = text;
       return l;
     };
-    const mkBtn = (text: string, w: number, h: number, color: Color, x: number, y: number, onTap: () => void): void => {
+    const mkBtn = (text: string, w: number, h: number, color: Color, x: number, y: number, onTap: () => void): Node => {
       const n = new Node('pbBtn'); n.layer = this.node.layer; ui.addChild(n); n.setPosition(x, y, 0);
       const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
       const bg = n.addComponent(Graphics); bg.fillColor = color; bg.roundRect(-w / 2, -h / 2, w, h, 12); bg.fill();
       const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
       const l = ln.addComponent(Label); l.fontSize = 34; l.lineHeight = 42; l.color = new Color(255, 255, 255); l.string = text;
       n.on(Node.EventType.TOUCH_END, onTap, this);
+      return n;
     };
 
     // 标题 + 信息行（节点/战力/敌情概要）。
@@ -1779,7 +2015,7 @@ export class S7DemoController extends Component {
     // 底部三键：选择关卡(左) / 返回星港(中·回基地) / 开始战斗(右)。
     mkBtn('选择关卡', 230, 88, new Color(70, 130, 180, 255), -W * 0.32, botY + 58, () => this.openLevelSelect());
     mkBtn('返回星港', 230, 88, new Color(120, 90, 160, 255), 0, botY + 58, () => this.closePrebattle());
-    mkBtn('🚀 开始战斗', 330, 112, new Color(225, 150, 45, 255), W * 0.30, botY + 58, () => this.onConfirmSortie());
+    this.prebattleSortieBtn = mkBtn('🚀 开始战斗', 330, 112, new Color(225, 150, 45, 255), W * 0.30, botY + 58, () => this.onConfirmSortie());
 
     // 备战内嵌战斗的「跳过」键（挂面板·不在 ui 容器内，开战时单独显示）。
     const skip = new Node('pbSkip'); skip.layer = this.node.layer; panel.addChild(skip); skip.setPosition(0, botY + 58, 0);
@@ -2871,8 +3107,14 @@ export class S7DemoController extends Component {
     return panel;
   }
 
-  private openDock(): void { if (this.dockNode) { this.dockNode.active = true; this.refreshUnitTrain('ship'); } }
-  private openTraining(): void { if (this.trainingNode) { this.trainingNode.active = true; this.refreshUnitTrain('pilot'); } }
+  private openDock(): void {
+    if (this.blockIfBuildingLocked('bld_dock', '船坞')) return;
+    if (this.dockNode) { this.dockNode.active = true; this.refreshUnitTrain('ship'); }
+  }
+  private openTraining(): void {
+    if (this.blockIfBuildingLocked('bld_pilot_training_bay', '训练舱')) return;
+    if (this.trainingNode) { this.trainingNode.active = true; this.refreshUnitTrain('pilot'); }
+  }
 
   /** 刷新船坞/训练舱：建筑等级与等级上限 + 重建拥有单位列表(名/等级/升级键)。 */
   private refreshUnitTrain(kind: 'ship' | 'pilot'): void {
@@ -2942,8 +3184,14 @@ export class S7DemoController extends Component {
     else { this.galleryNode = panel; this.galleryInfoLabel = info; }
   }
 
-  private openHabitat(): void { if (this.habitatNode) { this.habitatNode.active = true; this.refreshInfoBuilding('habitat'); } }
-  private openGallery(): void { if (this.galleryNode) { this.galleryNode.active = true; this.refreshInfoBuilding('gallery'); } }
+  private openHabitat(): void {
+    if (this.blockIfBuildingLocked('bld_habitat', '居住舱')) return;
+    if (this.habitatNode) { this.habitatNode.active = true; this.refreshInfoBuilding('habitat'); }
+  }
+  private openGallery(): void {
+    if (this.blockIfBuildingLocked('bld_rsv_core_gallery', '星核展厅')) return;
+    if (this.galleryNode) { this.galleryNode.active = true; this.refreshInfoBuilding('gallery'); }
+  }
 
   /** 刷新居住舱/星核展厅信息（进界面 + 升级后调）。 */
   private refreshInfoBuilding(kind: 'habitat' | 'gallery'): void {
@@ -2985,7 +3233,7 @@ export class S7DemoController extends Component {
     this.unitManageInfoLabel = this.mkPanelLabel(panel, '', 26, new Color(222, 230, 245), 0, topY * 0.18);
     this.unitManageResultLabel = this.mkPanelLabel(panel, '', 24, new Color(180, 230, 200), 0, botY + 200);
     // 动作：升级 / 升阶或升星 / 装配(仅舰) / 返回。
-    this.addBtn(panel, '升级', 200, 80, new Color(70, 150, 110, 255), -W * 0.30, botY + 110, () => this.onUpgradeUnit(this.unitManageKind, this.unitManageId), 28);
+    this.unitManageUpgradeBtn = this.addBtn(panel, '升级', 200, 80, new Color(70, 150, 110, 255), -W * 0.30, botY + 110, () => this.onUpgradeUnit(this.unitManageKind, this.unitManageId), 28).node.parent; // M1：强引导 step5/8 高光「升级」用
     this.unitManageAscendLabel = this.addBtn(panel, '升阶', 200, 80, new Color(150, 110, 180, 255), -W * 0.06, botY + 110, () => this.onAscendUnit(this.unitManageKind, this.unitManageId), 28);
     this.unitManageEquipBtn = this.addBtn(panel, '装配', 200, 80, new Color(70, 130, 160, 255), W * 0.18, botY + 110, () => { this.prebattleSelShip = this.unitManageId; this.openLoadout(); }, 28).node.parent;
     this.addBtn(panel, '返回', 200, 80, new Color(120, 90, 160, 255), W * 0.34, botY + 36, () => { panel.active = false; }, 28);
@@ -3882,7 +4130,19 @@ export class S7DemoController extends Component {
       pilots: this.runtime.getAll<S7PilotConfig>('pilot_config').map((c) => c.pilotId),
     };
     const rng = new S7AutoBattleRng(`levelreward:${nodeId}:${S7_DEMO_RUN_SEED}`);
-    const choices = rollLevelChoices(DEFAULT_S7_LEVEL_REWARD_CONFIG, stage, rng, candidates);
+    let choices = rollLevelChoices(DEFAULT_S7_LEVEL_REWARD_CONFIG, stage, rng, candidates);
+    // M1 关1强引导：三选一写死「精良插件 / 普通信标 / 星矿」、强制选星矿（GDD-M §第1关）。
+    // 不走随机池——保证玩家第一次见到的三项与教学文案一致、且必有星矿可选（下一步解锁建筑要用）。
+    let forcedPickIndex: number | undefined;
+    if (this.playerState && !this.playerState.tutorial.strongGuideDone
+      && this.playerState.tutorial.strongGuideStep === 2 && nodeId === S7_TUTORIAL_LEVEL1_NODE) {
+      choices = [
+        { kind: 'plugin', quality: 'fine', count: 1 },
+        { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
+        { kind: 'resource', resourceId: 'starOre', amount: S7_TUTORIAL_LEVEL1_STARORE },
+      ];
+      forcedPickIndex = 2;
+    }
     const isBoss = stage === 'boss';
     const bossGrand = isBoss ? resolveBossGrand(DEFAULT_S7_LEVEL_REWARD_CONFIG, firstBossNodeId(allNodes) === nodeId) : null;
     if (choices.length === 0) {
@@ -3894,6 +4154,7 @@ export class S7DemoController extends Component {
       nodeId, stage, isBoss, choices, bossGrand,
       softGrants,
       showAdDouble: stage === 'elite' || stage === 'boss', adDoubled: false,
+      forcedPickIndex,
     };
   }
 
@@ -3905,6 +4166,8 @@ export class S7DemoController extends Component {
     this.levelRewardNode.active = true;
     if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '';
     this.refreshLevelReward();
+    // M1 关1强引导：三选一是写死的强制选星矿 → 盖遮罩高光星矿卡、锁住其余选项。
+    if (this.isStrongGuideActive() && this.pendingLevelReward.forcedPickIndex !== undefined) this.showTutorialLevel1Choice();
   }
 
   private stageName(stage: S7LevelRewardStage): string {
@@ -4077,6 +4340,10 @@ export class S7DemoController extends Component {
   /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
   private onReset(): void {
     if (!this.session || !this.playerState || this.playing) return;
+    // M1：重置=回到老版"全发好"演示态，教程一并标完成，避免卡在"建筑已解锁但教程还要求花矿解锁"的矛盾。
+    completeStrongGuide(this.playerState.tutorial);
+    this.hideTutorialStep();
+    this.hideTutorialPopup();
     for (const key of Object.keys(this.session.resources)) {
       this.session.resources[key] = 0;
     }
@@ -4117,6 +4384,35 @@ export class S7DemoController extends Component {
     this.setResult('已重置：回到 n001、资源清零、等级归 1、建筑回 1 级', new Color(180, 200, 230));
     this.persist();
     this.refresh();
+  }
+
+  /**
+   * DEV-TEMP·跳过新手强引导（不清存档）：标 strongGuideDone → 收引导遮罩 → 老演示态全量发货
+   * （补齐起手缺的船/员/资源/插件/星核 + 解锁全建筑）→ 落盘刷新。正式版删（与新手引导一并清 DEV 入口）。
+   */
+  private devSkipGuide(): void {
+    if (!this.playerState || !this.squad) return;
+    completeStrongGuide(this.playerState.tutorial);
+    this.hideTutorialStep();
+    this.hideTutorialPopup();
+    // 全量发货（幂等·grant* 已拥有跳过；资源用 Math.max 只补不降）。
+    for (const s of S7_DEMO_SEED_SHIPS) grantShip(this.squad, s);
+    for (const p of S7_DEMO_SEED_PILOTS) grantPilot(this.squad, p);
+    for (const f of S7_DEMO_SEED_FORMATION) assignSlot(this.squad, f.slotRef, f.shipId, f.pilotId);
+    const r = this.playerState.resources as Record<string, number>;
+    const topUp: Record<string, number> = {
+      starOre: 100000, hullAlloy: 100000, pilotToken: 5000, supplyTicket: 188,
+      starCargo: 50000, beaconCommon: 8, beaconRare: 5, beaconEpic: 3, shipBlueprint: 300, pilotShardUniversal: 300,
+    };
+    for (const k of Object.keys(topUp)) r[k] = Math.max(r[k] ?? 0, topUp[k]);
+    for (const s of S7_DEMO_SEED_SHIPS) addExclusiveShards(this.playerState.exclusiveShards, s, 200);
+    for (const p of S7_DEMO_SEED_PILOTS) addExclusiveShards(this.playerState.exclusiveShards, p, 200);
+    if (Object.keys(this.squad.ownedCores).length === 0) for (const c of S7_DEMO_SEED_CORES) grantCore(this.squad, c, 1);
+    if (this.pluginInventory && this.pluginInventory.plugins.length === 0) for (const p of S7_DEMO_SEED_PLUGINS) addOwnedPlugin(this.pluginInventory, p.pluginId, p.quality);
+    this.ensureDefaultBuildingsUnlocked();
+    this.persist();
+    this.refresh();
+    this.hubToast('已跳过新手引导（DEV·全量发货）');
   }
 
   // ===== C 离线收益领取 =====

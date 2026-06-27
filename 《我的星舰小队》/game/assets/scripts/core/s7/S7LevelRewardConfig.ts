@@ -2,7 +2,7 @@
 //
 // ⚠️ 全表 v0.1 占位（Ron 授权 Claude 定灰盒占位·第二块「关卡三选一各档量」统一校准）：
 //   - 关卡首通奖励 = 固定软货币(保底·仍由既有 S7NodeSettlement 发) + 该档稀缺道具「三选一」(本模块新增的那一层)。
-//   - 三档稀缺池(普通/精英/Boss)的候选构成 **严格照 §8 列的**（不加不减）；池内随机取 choiceCount(=3) 个不同项供选 1。
+//   - 三档稀缺池(普通/精英/Boss)的候选构成 **严格照 §8 列的 + GDD-v2.0 改动#3(星矿移出必得改进池)**；池内随机取 choiceCount(=3) 个不同项供选 1。
 //   - 「随机指定专属碎片」= 随机选一个具体单位(舰/员)给其专属碎片；三选一里显示是哪艘/哪位（看得见才选·区别于打捞盲盒只给通用碎片）。
 //   - Boss 必给特殊大奖(非三选一)：首个 Boss = 过载核心(core07)；其余 Boss 必给星辉货舱(starlightCargo)。
 //   - 看广告×2(仅精英/Boss)：翻倍本次首通结果（数量类×2；唯一核不翻倍）。
@@ -36,8 +36,9 @@ export interface S7LevelRewardConfig {
   /** 三档稀缺池（三选一候选）。 */
   pools: Record<S7LevelPoolStage, S7LevelPoolEntry[]>;
   /**
-   * 首通固定软货币补充（§8·首通限定）：旧节点 reward_param 只发了星矿+合金，
-   * 这里补 驾驶记录(pilotToken)+星贝(starCargo)，与 reward_param 的软货币一起构成「首通固定奖励」。占位·第二块校准。
+   * 首通固定软货币补充（§8·首通限定·改动#3后）：节点 reward_param 只发星舰合金(hullAlloy)，
+   * 这里补 驾驶记录(pilotToken)+星贝(starCargo)，与 reward_param 的合金一起构成「固定软货币·必得」三类；
+   * 星矿不再必得，改走本文件三选一池 + 离线产出 + 商人小站 + 打捞（GDD-v2.0 §S8 改动#3）。占位·第二块校准。
    */
   fixedSoftBonus: { resourceId: string; amount: number }[];
   /** 一次三选一展示的选项数（§8 = 3）。 */
@@ -62,7 +63,7 @@ export const DEFAULT_S7_LEVEL_REWARD_CONFIG: S7LevelRewardConfig = {
     { resourceId: 'starCargo', amount: 60 },
   ],
   pools: {
-    // §8 普通关池：精良插件 / 普通信标 / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片 / 补给券 / 星核碎片(少量)
+    // §8 普通关池：精良插件 / 普通信标 / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片 / 补给券 / 星核碎片(少量) / 星矿(改动#3新增)
     normal: [
       PLG('fine', 30),
       RES('beaconCommon', 1, 22),
@@ -70,8 +71,9 @@ export const DEFAULT_S7_LEVEL_REWARD_CONFIG: S7LevelRewardConfig = {
       EXS('pilot', 8, 20),
       RES('supplyTicket', 3, 22),
       RES('coreFrag', 3, 10),
+      RES('starOre', 50, 24), // 改动#3：星矿移出必得，进三选一（占位量·第二块校准）
     ],
-    // §8 精英关池：优秀插件 / 稀有信标 / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片 / 补给券 / 星核碎片(中量)
+    // §8 精英关池：优秀插件 / 稀有信标 / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片 / 补给券 / 星核碎片(中量) / 星矿(改动#3新增)
     elite: [
       PLG('superior', 28),
       RES('beaconRare', 1, 20),
@@ -79,8 +81,9 @@ export const DEFAULT_S7_LEVEL_REWARD_CONFIG: S7LevelRewardConfig = {
       EXS('pilot', 12, 20),
       RES('supplyTicket', 5, 22),
       RES('coreFrag', 8, 14),
+      RES('starOre', 80, 22), // 改动#3：星矿移出必得，进三选一（占位量·第二块校准）
     ],
-    // §8 Boss关池：优秀插件(小概率传奇) / 史诗信标 / 星空宝石 / 星核碎片(大笔) / 补给券(较多) / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片
+    // §8 Boss关池：优秀插件(小概率传奇) / 史诗信标 / 星空宝石 / 星核碎片(大笔) / 补给券(较多) / 随机指定星舰专属碎片 / 随机指定驾驶员专属碎片 / 星矿(改动#3新增)
     boss: [
       PLG('superior', 24),
       PLG('legendary', 6), // 小概率传奇（低权重·§8）
@@ -90,6 +93,7 @@ export const DEFAULT_S7_LEVEL_REWARD_CONFIG: S7LevelRewardConfig = {
       RES('supplyTicket', 10, 16),
       EXS('ship', 15, 14),
       EXS('pilot', 15, 14),
+      RES('starOre', 150, 18), // 改动#3：星矿移出必得，进三选一（占位量·第二块校准）
     ],
   },
   bossGrand: { firstBossCoreId: 'core07', otherBossChestId: 'starlightCargo' },

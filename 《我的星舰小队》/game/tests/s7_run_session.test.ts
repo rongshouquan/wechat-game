@@ -45,8 +45,7 @@ describe('C1b-step1b playS7Node（纯函数）', () => {
     expect(o.settlement && o.settlement.ok).toBe(true);
     if (o.settlement && o.settlement.ok) {
       expect(o.settlement.grants).toEqual([
-        { resourceId: 'starOre', amount: 90 },
-        { resourceId: 'hullAlloy', amount: 25 },
+        { resourceId: 'hullAlloy', amount: 25 }, // 改动#3：星矿移出必得，进三选一
       ]);
       expect(o.settlement.nextNodeId).toBe('n002');
     }
@@ -69,7 +68,7 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     const o = s.playCurrentNode('r1');
     expect(o.won).toBe(true);
     expect(s.currentNodeId).toBe('n002');
-    expect(s.resources.starOre).toBe(90);
+    expect(s.resources.starOre).toBe(0); // 改动#3：星矿不再随节点结算必得
     expect(s.resources.hullAlloy).toBe(25);
   });
 
@@ -102,15 +101,15 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     const path: string[] = [];
     for (const expectNode of ['n001', 'n002', 'n003', 'n004', 'n005']) {
       expect(s.currentNodeId).toBe(expectNode);
-      const oreBefore = s.resources.starOre;
+      const alloyBefore = s.resources.hullAlloy;
       const o = s.playCurrentNode('demo');
       expect(o.won).toBe(true); // 默认 3 舰阵容确定性清掉早期群怪
       expect(o.settlement && o.settlement.ok).toBe(true);
-      expect(s.resources.starOre).toBeGreaterThan(oreBefore); // 每关都发软货币
+      expect(s.resources.hullAlloy).toBeGreaterThan(alloyBefore); // 每关都发软货币（改动#3后星矿不再每关必得，仍发的是合金）
       path.push(s.currentNodeId);
     }
     expect(path).toEqual(['n002', 'n003', 'n004', 'n005', 'n006']); // 逐节点前移
-    expect(s.resources.starOre).toBe(450); // 5×90
+    expect(s.resources.starOre).toBe(0); // 改动#3：星矿不再随节点结算必得
     expect(s.resources.hullAlloy).toBe(125); // 5×25
   });
 
