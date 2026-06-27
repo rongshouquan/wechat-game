@@ -144,6 +144,8 @@ const S7_TUTORIAL_TRAINING_UNLOCK_COST = 10;
 const S7_TUTORIAL_LEVEL1_NODE = createDefaultS7MainlineProgress().currentNodeId;
 /** M1 关1三选一强制选的星矿量（GDD-M §第1关 +50：要够后面解锁船坞15+升船22+解锁训练舱10=47，留3余量）。占位·第二块校准。 */
 const S7_TUTORIAL_LEVEL1_STARORE = 50;
+/** M1 关2三选一强制选的武器插件（GDD-M §第2关·变更#4：选前显示"武器槽·精良"、选后揭晓真实名）。内容无关·占位 plg09(武器)。 */
+const S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN = { pluginId: 'plg09', quality: 'fine' as const, slotTag: 'weapon' as const };
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
 const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | 'legendary' }[] = [
   { pluginId: 'plg02', quality: 'legendary' }, // 武器
@@ -1698,7 +1700,7 @@ export class S7DemoController extends Component {
     this.tutorialNextHandler = null;
   }
 
-  // ===== M1a 强引导步骤调度器（关1 + 关1后解锁建筑&升级，到出战进关2为止）=====
+  // ===== M1a/M1b 强引导步骤调度器（关1 解锁建筑&升级 → 关2 技能演示&插件装配）=====
 
   /** 强引导是否进行中（新手没走完=锁操作引导态）。 */
   private isStrongGuideActive(): boolean {
@@ -1706,15 +1708,22 @@ export class S7DemoController extends Component {
   }
 
   /**
-   * 冷启动恢复归一：从存档某步重进时，把「战斗/三选一/结果弹窗」这段临时弹窗态(step2~3)归一到 step4(回星港·解锁船坞)。
-   * 因为关1战斗已结算入档(进度已到下一节点)，这些弹窗无法忠实复现 → 直接续到"回到星港解锁建筑"。
-   * step2 时若三选一弹窗已丢失(星矿未入账)→ 先补发星矿。只在 init 调一次。
+   * 冷启动恢复归一：从存档某步重进时，把每关「战斗/三选一/结果弹窗/揭晓」这段临时弹窗态归一到该关后的"星港步"。
+   * 因为关卡战斗已结算入档(进度已前移)，这些弹窗无法忠实复现 → 直接续到回星港那步；
+   * 若停在三选一那步(强制奖励还没入账)→ 先补发该关强制奖励。只在 init 调一次。
+   *   关1：step2(三选一)/3(结果弹窗) → step4；step2 补发星矿。
+   *   关2：step12(三选一)/13(揭晓) → step14；step12 补发武器插件。
    */
   private normalizeTutorialResumeStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
     const t = this.playerState.tutorial;
-    if (t.strongGuideStep === 2) { this.grantTutorialLevel1StarOre(); t.strongGuideStep = 4; this.persist(); }
-    else if (t.strongGuideStep === 3) { t.strongGuideStep = 4; this.persist(); }
+    switch (t.strongGuideStep) {
+      case 2: this.grantTutorialLevel1StarOre(); t.strongGuideStep = 4; this.persist(); break;
+      case 3: t.strongGuideStep = 4; this.persist(); break;
+      case 12: this.grantTutorialLevel2Plugin(); t.strongGuideStep = 14; this.persist(); break;
+      case 13: t.strongGuideStep = 14; this.persist(); break;
+      default: break;
+    }
   }
 
   /** 补发关1三选一强制的星矿（冷启动恢复用·与三选一选星矿同量；幂等性由调用点 step 把关）。 */
@@ -1723,10 +1732,18 @@ export class S7DemoController extends Component {
     if (res && res.starOre !== undefined) res.starOre += S7_TUTORIAL_LEVEL1_STARORE;
   }
 
+  /** 补发关2三选一强制的武器插件（冷启动恢复用·与三选一选的同一具体插件；幂等性由调用点 step 把关）。 */
+  private grantTutorialLevel2Plugin(): void {
+    if (!this.pluginInventory) return;
+    const p = S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN;
+    addOwnedPlugin(this.pluginInventory, p.pluginId, p.quality);
+  }
+
   /**
    * 按 tutorial.strongGuideStep 展示当前该高光哪个按钮/弹哪句引导。
    * 每步「下一步」回调：先 advanceStrongGuideStep 递增、做该步副作用(出战/解锁/升级…)、落盘、再回头调本方法展示下一步。
-   * 每个 case 自带「确保上下文」(冷启动从存档某步恢复也续得上)。步序见类顶部 M1a 注释。
+   * 每个 case 自带「确保上下文」(冷启动从存档某步恢复也续得上)。步序见各 case 内联注释：
+   *   0-10 = M1a(关1+解锁建筑&升级)；11-13 = M1b 关2(出战→武器插件三选一→揭晓)；≥14 = 待续(M1b-2/3)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -1752,7 +1769,7 @@ export class S7DemoController extends Component {
         break;
       case 2:
         // 正常流程由 openLevelReward 触发本步遮罩(pendingLevelReward 在)；冷启动已被 normalize 归一到 step4，不会落这。
-        if (this.pendingLevelReward) this.showTutorialLevel1Choice();
+        if (this.pendingLevelReward) this.showTutorialForcedChoice();
         break;
       case 3:
         this.showTutorialStep(
@@ -1823,11 +1840,32 @@ export class S7DemoController extends Component {
         this.showTutorialStep(
           '船和驾驶员都练好了，去挑战第 2 关吧！\n点「出战」进入下一关备战。',
           this.hubSortieBtn,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); },
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); this.runTutorialStep(); },
+        );
+        break;
+      // ===== M1b 关2：技能演示（文字介绍）+ 插件三选一（变更#4）=====
+      case 11:
+        this.openPrebattle();
+        this.showTutorialStep(
+          '第 2 关，敌人更多了。\n现在极焰号升了级、炎也会驾驶了——点「开始战斗」看看比上关轻松多少。',
+          this.prebattleSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
+        );
+        break;
+      case 12:
+        // 正常流程由 openLevelReward 触发本步遮罩；冷启动已被 normalize 归一到 step14，不会落这。
+        if (this.pendingLevelReward) this.showTutorialForcedChoice();
+        break;
+      case 13:
+        this.showTutorialStep(
+          `恭喜获得 ${this.pluginName(S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId)}（武器槽·精良）！\n这是把武器插件，装上能强化极焰号的输出。\n下一步去船坞把它装到极焰号身上。`,
+          null,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
+          '去装配',
         );
         break;
       default:
-        // M1a 完结(step≥11)：M1b 关2 内容尚未做 → 收起遮罩、放开自由玩(船坞/训练舱已解锁，其余仍锁)。
+        // M1b-1 完结(step≥14)：装配/槽位教学(M1b-2)、活动短教程(M1b-3)尚未做 → 收起遮罩、放开自由玩。
         this.hideTutorialStep();
         break;
     }
@@ -1847,24 +1885,31 @@ export class S7DemoController extends Component {
     this.refresh();
   }
 
-  /** M1 关1：在三选一发奖浮层上盖遮罩、高光「星矿」卡，强制玩家选星矿（下一步=替他选）。 */
-  private showTutorialLevel1Choice(): void {
+  /**
+   * M1 关1/关2：在三选一发奖浮层上盖遮罩、高光强制项卡，强制玩家选（下一步=替他选）。
+   * 文案按当前步分：step2=关1强制选星矿；step12=关2强制选武器插件（变更#4 选前只见槽位+品质）。
+   */
+  private showTutorialForcedChoice(): void {
     const p = this.pendingLevelReward;
     if (!p || !this.playerState) return;
-    const idx = p.forcedPickIndex ?? p.choices.findIndex((c) => c.kind === 'resource' && c.resourceId === 'starOre');
-    const pick = idx >= 0 ? idx : 0;
+    const idx = p.forcedPickIndex ?? 0;
+    const pick = (idx >= 0 && idx < p.choices.length) ? idx : 0;
     const card = this.levelRewardListNode ? (this.levelRewardListNode.children[pick] ?? null) : null;
+    const isL2 = this.playerState.tutorial.strongGuideStep === 12;
+    const text = isL2
+      ? '又是三选一！这次选「武器槽·精良」那张插件。\n注意：选前只看到"槽位+品质"，选了才揭晓具体是哪个插件。'
+      : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
     this.showTutorialStep(
-      '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）',
+      text,
       card,
       () => {
         const t = this.playerState!.tutorial;
-        advanceStrongGuideStep(t); // →3
+        advanceStrongGuideStep(t); // 关1 2→3 / 关2 12→13
         this.hideTutorialStep();
-        this.onPickLevelChoice(pick); // 入账星矿 + 收三选一浮层(露出结果弹窗) + 落盘(含 step3)
-        this.runTutorialStep();       // 展示 step3(结果弹窗·返回星港)
+        this.onPickLevelChoice(pick); // 入账强制项 + 收三选一浮层(露出结果弹窗) + 落盘(含新步)
+        this.runTutorialStep();       // 关1→step3(返回星港) / 关2→step13(揭晓)
       },
-      '选星矿',
+      isL2 ? '选武器插件' : '选星矿',
     );
   }
 
@@ -3217,6 +3262,11 @@ export class S7DemoController extends Component {
     return this.runtime?.getById<{ name: string }>('core_config', coreId)?.name ?? coreId;
   }
 
+  /** 插件 id → 中文名（取配置·缺失回退 id）。变更#4 揭晓具体插件名用。 */
+  private pluginName(pluginId: string): string {
+    return this.runtime?.getById<{ name: string }>('plugin_config', pluginId)?.name ?? pluginId;
+  }
+
   // ===== 升阶升星 step2：单位管理面板（详情 + 升级/升阶升星/装配·预留属性&技能详情）=====
 
   /** 搭单位管理浮层（船坞单舰 / 训练舱驾驶员共用）。 */
@@ -4134,14 +4184,26 @@ export class S7DemoController extends Component {
     // M1 关1强引导：三选一写死「精良插件 / 普通信标 / 星矿」、强制选星矿（GDD-M §第1关）。
     // 不走随机池——保证玩家第一次见到的三项与教学文案一致、且必有星矿可选（下一步解锁建筑要用）。
     let forcedPickIndex: number | undefined;
-    if (this.playerState && !this.playerState.tutorial.strongGuideDone
-      && this.playerState.tutorial.strongGuideStep === 2 && nodeId === S7_TUTORIAL_LEVEL1_NODE) {
-      choices = [
-        { kind: 'plugin', quality: 'fine', count: 1 },
-        { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
-        { kind: 'resource', resourceId: 'starOre', amount: S7_TUTORIAL_LEVEL1_STARORE },
-      ];
-      forcedPickIndex = 2;
+    if (this.playerState && !this.playerState.tutorial.strongGuideDone) {
+      const step = this.playerState.tutorial.strongGuideStep;
+      if (step === 2 && nodeId === S7_TUTORIAL_LEVEL1_NODE) {
+        choices = [
+          { kind: 'plugin', quality: 'fine', count: 1 },
+          { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
+          { kind: 'resource', resourceId: 'starOre', amount: S7_TUTORIAL_LEVEL1_STARORE },
+        ];
+        forcedPickIndex = 2;
+      } else if (step === 12) {
+        // 关2强引导（变更#4）：三选一写死「武器槽·精良(→急速弹链) / 补给券 / 普通信标」、强制选武器插件。
+        // 选前只显示槽位+品质（slotTag），选后由 applyLevelReward 按 revealPluginId 揭晓真实插件名。
+        const p = S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN;
+        choices = [
+          { kind: 'plugin', quality: p.quality, count: 1, slotTag: p.slotTag, revealPluginId: p.pluginId },
+          { kind: 'resource', resourceId: 'supplyTicket', amount: 3 },
+          { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
+        ];
+        forcedPickIndex = 0;
+      }
     }
     const isBoss = stage === 'boss';
     const bossGrand = isBoss ? resolveBossGrand(DEFAULT_S7_LEVEL_REWARD_CONFIG, firstBossNodeId(allNodes) === nodeId) : null;
@@ -4166,8 +4228,8 @@ export class S7DemoController extends Component {
     this.levelRewardNode.active = true;
     if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '';
     this.refreshLevelReward();
-    // M1 关1强引导：三选一是写死的强制选星矿 → 盖遮罩高光星矿卡、锁住其余选项。
-    if (this.isStrongGuideActive() && this.pendingLevelReward.forcedPickIndex !== undefined) this.showTutorialLevel1Choice();
+    // M1 关1/关2 强引导：三选一是写死的强制项 → 盖遮罩高光该卡、锁住其余选项（关1星矿 / 关2武器插件）。
+    if (this.isStrongGuideActive() && this.pendingLevelReward.forcedPickIndex !== undefined) this.showTutorialForcedChoice();
   }
 
   private stageName(stage: S7LevelRewardStage): string {
@@ -4215,7 +4277,12 @@ export class S7DemoController extends Component {
     switch (r.kind) {
       case 'resource': return `${this.zhRes(r.resourceId)}×${r.amount}`;
       case 'exclusiveShard': return `${this.unitName(r.unitKind, r.unitId)}专属碎片×${r.amount}`;
-      case 'plugin': { const q = r.quality === 'fine' ? '精良' : r.quality === 'superior' ? '优秀' : '传奇'; return `${q}插件${r.count > 1 ? `×${r.count}` : ''}`; }
+      case 'plugin': {
+        const q = r.quality === 'fine' ? '精良' : r.quality === 'superior' ? '优秀' : '传奇';
+        // 变更#4：选前只显示"槽位·品质"（有 slotTag 时），不揭晓具体插件名；无 slotTag 走旧"品质插件"。
+        if (r.slotTag) return `${S7_SLOT_TAG_NAMES[r.slotTag]}槽·${q}${r.count > 1 ? `×${r.count}` : ''}`;
+        return `${q}插件${r.count > 1 ? `×${r.count}` : ''}`;
+      }
       case 'chest': return `${this.chestName(r.chestId)}×${r.amount}`;
       case 'core': return `${this.coreName(r.coreId)}[核]`;
     }
@@ -4274,11 +4341,14 @@ export class S7DemoController extends Component {
         if (this.pluginInventory) {
           const ids = Array.from(this.pluginSlotMap.keys());
           for (let k = 0; k < r.count; k += 1) {
-            const pid = ids.length > 0 ? ids[this.pluginInventory.plugins.length % ids.length] : 'plg01';
+            // 变更#4：revealPluginId 指定具体插件（教程关2 写死）→ 发它；否则按旧逻辑轮换挑一个。
+            const pid = r.revealPluginId ?? (ids.length > 0 ? ids[this.pluginInventory.plugins.length % ids.length] : 'plg01');
             addOwnedPlugin(this.pluginInventory, pid, r.quality);
           }
         }
         const q = r.quality === 'fine' ? '精良' : r.quality === 'superior' ? '优秀' : '传奇';
+        // 揭晓：有 revealPluginId 时返回其真实名（变更#4 选后才知道具体是哪个）。
+        if (r.revealPluginId) return `${this.pluginName(r.revealPluginId)}（${r.slotTag ? S7_SLOT_TAG_NAMES[r.slotTag] + '槽·' : ''}${q}）`;
         return `${q}插件${r.count > 1 ? `×${r.count}` : ''}`;
       }
       case 'chest':

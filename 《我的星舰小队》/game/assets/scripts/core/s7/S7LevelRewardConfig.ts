@@ -12,6 +12,7 @@
 
 import { S7PluginQuality } from './S7PluginEffects';
 import { S7ChestType } from './S7ChestInventory';
+import type { S7PluginSlot } from '../../config/s7/ConfigTypesS7';
 
 /** 关卡奖励档（三选一池口径）。none = 该节点不发三选一（如整备 reset_gate / 提醒 protection_notice 节点）。 */
 export type S7LevelRewardStage = 'normal' | 'elite' | 'boss' | 'none';
@@ -22,7 +23,7 @@ export type S7LevelPoolStage = 'normal' | 'elite' | 'boss';
 export type S7LevelReward =
   | { kind: 'resource'; resourceId: string; amount: number }
   | { kind: 'exclusiveShard'; unitKind: 'ship' | 'pilot'; unitId: string; amount: number } // 随机指定专属碎片（已定具体单位）
-  | { kind: 'plugin'; quality: S7PluginQuality; count: number }                            // 插件（品质·应用侧挑 pluginId 入库）
+  | { kind: 'plugin'; quality: S7PluginQuality; count: number; slotTag?: S7PluginSlot; revealPluginId?: string } // 插件（品质·应用侧挑 pluginId 入库）；变更#4：slotTag 在选前只显示"槽位·品质"，revealPluginId 指定具体插件、选后揭晓其名
   | { kind: 'chest'; chestId: S7ChestType; amount: number }                                // 星辉货舱等宝箱（Boss 大奖）
   | { kind: 'core'; coreId: string };                                                      // 唯一核（过载核心）·首个 Boss 固定大奖
 
