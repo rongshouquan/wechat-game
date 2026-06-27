@@ -157,8 +157,6 @@ const S7_TUTORIAL_LEVEL3_TICKETS = 2;
 const S7_TUTORIAL_SALVAGE_UNLOCK_COST = 8;
 /** M3 关5解锁商人小站的星矿花费（占位·全程预算见 DOCK 注释，关5时约剩7矿·第二块校准）。 */
 const S7_TUTORIAL_MERCHANT_UNLOCK_COST = 5;
-/** M3 关5三选一强制选的星贝量（占位·让强引导流程可控+给买补给券留余量·第二块校准）。 */
-const S7_TUTORIAL_LEVEL5_CARGO = 100;
 /** M3 关5抽卡补强强制招募的克制驾驶员（内容无关·第三个种子驾驶员；显示真实配置名）。 */
 const S7_TUTORIAL_COUNTER_PILOT = S7_DEMO_SEED_PILOTS[2];
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
@@ -441,6 +439,7 @@ export class S7DemoController extends Component {
   private tutorialHintNode: Node | null = null;
   private tutorialHintLabel: Label | null = null;
   private tutorialInteractiveGoal: (() => boolean) | null = null;
+  private tutorialMerchantTicketBaseline = 0; // M3-1a 商人买补给券：进店时补给券基准（买多一张才算完成）
   /** M1：强引导步骤里要高光指引的真实按钮 Node 引用（出战/船坞入口/训练舱入口/备战面板开始战斗）。 */
   private hubSortieBtn: Node | null = null;
   private hubDockEntryNode: Node | null = null;
@@ -1762,7 +1761,7 @@ export class S7DemoController extends Component {
       case 22: t.strongGuideStep = 23; this.persist(); break;
       case 34: this.grantTutorialLevel4Beacon(); t.strongGuideStep = 36; this.persist(); break;
       case 35: t.strongGuideStep = 36; this.persist(); break;
-      case 40: this.grantTutorialLevel5Cargo(); t.strongGuideStep = 42; this.persist(); break;
+      case 40: t.strongGuideStep = 42; this.persist(); break; // 关5三选一不强制(毕业自选)·冷启动丢了就跳过、不补发
       case 41: t.strongGuideStep = 42; this.persist(); break;
       default: break;
     }
@@ -1793,12 +1792,6 @@ export class S7DemoController extends Component {
     if (res && res.beaconCommon !== undefined) res.beaconCommon += 1;
   }
 
-  /** 补发关5三选一强制的星贝（冷启动恢复用；幂等性由调用点 step 把关）。 */
-  private grantTutorialLevel5Cargo(): void {
-    const res = this.session?.resources as Record<string, number> | undefined;
-    if (res && res.starCargo !== undefined) res.starCargo += S7_TUTORIAL_LEVEL5_CARGO;
-  }
-
   /** M1c：抽卡强制招募一个单位到拥有（已拥有跳过·幂等）+ 消耗1张补给券（若有）。 */
   private grantTutorialGachaUnit(kind: 'ship' | 'pilot', id: string): void {
     if (!this.squad) return;
@@ -1818,7 +1811,7 @@ export class S7DemoController extends Component {
    *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；
    *   32-33 = M2-2(交互式摆阵·玩家真拖老舰到后排→出战关4)；
    *   34-38 = M2-3(信标三选一→返回→解锁打捞港→交互式打捞→收尾)；
-   *   39-43 = M3-1a 关5(出战→星贝三选一→返回→解锁商人→交互式买补给券)；
+   *   39-43 = M3-1a 关5(出战→三选一毕业自选[不强制·星贝是必得不进池]→返回→解锁商人→交互式买补给券)；
    *   44-46 = M3-1b(抽卡得克制驾驶员→交互式装到旗舰→强引导结束 completeStrongGuide)；≥47 = 强引导已结束。
    *   升阶/升星/星核/离线/居住舱 = 弱引导首触(玩家自然触发时弹·不在强引导链)。
    */
@@ -2191,8 +2184,8 @@ export class S7DemoController extends Component {
         );
         break;
       case 40:
-        // 正常流程由 openLevelReward 触发本步遮罩；冷启动已被 normalize 归一到 step42，不会落这。
-        if (this.pendingLevelReward) this.showTutorialForcedChoice();
+        // 正常流程由 openLevelReward 触发"毕业自选"提示条；冷启动已被 normalize 归一到 step42，不会落这。
+        if (this.pendingLevelReward) this.showTutorialGraduationPick();
         break;
       case 41:
         this.showTutorialStep(
@@ -2215,13 +2208,17 @@ export class S7DemoController extends Component {
           },
         );
         break;
-      case 43:
+      case 43: {
         this.openMerchant();
+        // 相对基准：记下进店时的补给券数，买多一张才算完成（防关5自选万一抽到补给券导致提前满足）。
+        const ticket0 = !this.session ? 0 : Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0);
+        this.tutorialMerchantTicketBaseline = ticket0;
         this.showTutorialHint(
           '用星贝买一张补给券：点「补给券」那一行右边的「买」。\n（补给券是抽卡用的货币，下一步要用它招募新驾驶员。）',
-          () => !!this.session && Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0) >= 1,
+          () => !!this.session && Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0) > this.tutorialMerchantTicketBaseline,
         );
         break;
+      }
       // ===== M3-1b 关5后：抽卡得克制驾驶员 → 装到旗舰 → 强引导结束 =====
       case 44:
         this.openGacha(); this.switchGachaPool('recruit');
@@ -2325,21 +2322,31 @@ export class S7DemoController extends Component {
         ? '三选一——这次选「补给券」。\n敌人越来越强，得赶紧扩充编队；补给券是招募新成员（抽卡）用的货币。'
         : step === 34
           ? '三选一——这次选「普通信标」。\n信标是打捞用的：下一步去解锁打捞港，用它挂机产资源。'
-          : step === 40
-            ? '三选一——这次选「星贝」。\n星贝是跟商人交易的货币：下一步去商人小站，用它买补给券。'
-            : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
-    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : step === 34 ? '选普通信标' : step === 40 ? '选星贝' : '选星矿';
+          : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
+    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : step === 34 ? '选普通信标' : '选星矿';
     this.showTutorialStep(
       text,
       card,
       () => {
         const t = this.playerState!.tutorial;
-        advanceStrongGuideStep(t); // 关1 2→3 / 关2 12→13 / 关3 21→22
+        advanceStrongGuideStep(t); // 关1 2→3 / 关2 12→13 / 关3 21→22 / 关4 34→35
         this.hideTutorialStep();
         this.onPickLevelChoice(pick); // 入账强制项 + 收三选一浮层(露出结果弹窗) + 落盘(含新步)
-        this.runTutorialStep();       // 关1→step3(返回星港) / 关2→step13(揭晓) / 关3→step22(扩编提示)
+        this.runTutorialStep();       // 关1→step3 / 关2→step13 / 关3→step22 / 关4→step35
       },
       btn,
+    );
+  }
+
+  /**
+   * M3 关5：三选一不强制（星贝是必得软货币·不进三选一·GDD §S8）→ 顶部提示条引导玩家"毕业自选"，
+   * 不盖遮罩、可点任意卡；选完(onPickLevelChoice 清空 pendingLevelReward)由 update() 轮询续到 step41。
+   */
+  private showTutorialGraduationPick(): void {
+    if (!this.pendingLevelReward) return;
+    this.showTutorialHint(
+      '🎓 这关的奖励三选一——你已经学会怎么挑了，这次自己选一个喜欢的！',
+      () => !this.pendingLevelReward,
     );
   }
 
@@ -4740,15 +4747,8 @@ export class S7DemoController extends Component {
           { kind: 'resource', resourceId: 'supplyTicket', amount: 1 },
         ];
         forcedPickIndex = 0;
-      } else if (step === 40) {
-        // 关5强引导：三选一写死「星贝×100 / 合金 / 普通信标」、强制选星贝（下一步去商人用星贝买补给券）。
-        choices = [
-          { kind: 'resource', resourceId: 'starCargo', amount: S7_TUTORIAL_LEVEL5_CARGO },
-          { kind: 'resource', resourceId: 'hullAlloy', amount: 80 },
-          { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
-        ];
-        forcedPickIndex = 0;
       }
+      // 关5(step40)不强制：用正常随机池三选一，让玩家"毕业自选"（星贝是必得软货币·不进三选一·GDD §S8）。
     }
     const isBoss = stage === 'boss';
     const bossGrand = isBoss ? resolveBossGrand(DEFAULT_S7_LEVEL_REWARD_CONFIG, firstBossNodeId(allNodes) === nodeId) : null;
@@ -4773,8 +4773,10 @@ export class S7DemoController extends Component {
     this.levelRewardNode.active = true;
     if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '';
     this.refreshLevelReward();
-    // M1 关1/关2 强引导：三选一是写死的强制项 → 盖遮罩高光该卡、锁住其余选项（关1星矿 / 关2武器插件）。
+    // M1 关1-4 强引导：三选一是写死的强制项 → 盖遮罩高光该卡、锁住其余选项。
     if (this.isStrongGuideActive() && this.pendingLevelReward.forcedPickIndex !== undefined) this.showTutorialForcedChoice();
+    // M3 关5(step40)：不强制 → 顶部提示条引导玩家"毕业自选"，选完(pendingLevelReward 清空)由 update() 续到 step41。
+    else if (this.isStrongGuideActive() && this.playerState?.tutorial.strongGuideStep === 40) this.showTutorialGraduationPick();
   }
 
   private stageName(stage: S7LevelRewardStage): string {
