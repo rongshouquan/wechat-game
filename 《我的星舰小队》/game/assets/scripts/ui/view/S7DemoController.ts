@@ -1755,6 +1755,9 @@ export class S7DemoController extends Component {
     const t = this.playerState.tutorial;
     const ship = S7_TUTORIAL_STARTER.shipId;
     const pilot = S7_TUTORIAL_STARTER.pilotId;
+    // 引导文字一律用实际配置名（与界面一致·内容无关：换内容不用改代码）。
+    const shipName = this.unitName('ship', ship);
+    const pilotName = this.unitName('pilot', pilot);
     switch (t.strongGuideStep) {
       case 0:
         this.showTutorialStep(
@@ -1767,7 +1770,7 @@ export class S7DemoController extends Component {
       case 1:
         this.openPrebattle();
         this.showTutorialStep(
-          '这是出战前的备战界面。\n点「开始战斗」，看你的极焰号自动迎敌——这一关它只会普通攻击。',
+          `这是出战前的备战界面。\n点「开始战斗」，看你的${shipName}自动迎敌——这一关它只会普通攻击。`,
           this.prebattleSortieBtn,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
         );
@@ -1799,14 +1802,14 @@ export class S7DemoController extends Component {
       case 5:
         this.openDockManageForTutorial('ship', ship);
         this.showTutorialStep(
-          '这是极焰号的管理面板。\n点「升级」把它升到 Lv1——升级花星矿和合金，能直接变强。',
+          `这是${shipName}的管理面板。\n点「升级」把它升到 Lv1——升级花星矿和合金，能直接变强。`,
           this.unitManageUpgradeBtn,
           () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', ship); this.persist(); this.runTutorialStep(); },
         );
         break;
       case 6:
         this.showTutorialStep(
-          '升到 Lv1，极焰号解锁了星舰技能「集火炮」！\n（星舰升到一定等级会解锁专属技能，战斗中自动释放。）',
+          `升到 Lv1，${shipName}解锁了它的星舰技能！\n（星舰升到一定等级会解锁专属技能，战斗中自动释放。）`,
           null,
           () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
         );
@@ -1828,14 +1831,14 @@ export class S7DemoController extends Component {
       case 8:
         this.openDockManageForTutorial('pilot', pilot);
         this.showTutorialStep(
-          '这是驾驶员「炎」的管理面板。\n点「升级」把炎升到 Lv1。',
+          `这是驾驶员「${pilotName}」的管理面板。\n点「升级」把${pilotName}升到 Lv1。`,
           this.unitManageUpgradeBtn,
           () => { advanceStrongGuideStep(t); this.onUpgradeUnit('pilot', pilot); this.persist(); this.runTutorialStep(); },
         );
         break;
       case 9:
         this.showTutorialStep(
-          '炎升到 Lv1，解锁了驾驶能力「集火血量最少的敌人」！\n（驾驶员能力会改变星舰的战斗行为——炎会专挑残血敌人补刀。）',
+          `${pilotName}升到 Lv1，解锁了驾驶能力！\n（驾驶员能力会改变星舰的战斗行为——让它在战斗里更聪明地选目标。）`,
           null,
           () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
         );
@@ -1852,7 +1855,7 @@ export class S7DemoController extends Component {
       case 11:
         this.openPrebattle();
         this.showTutorialStep(
-          '第 2 关，敌人更多了。\n现在极焰号升了级、炎也会驾驶了——点「开始战斗」看看比上关轻松多少。',
+          `第 2 关，敌人更多了。\n现在${shipName}升了级、${pilotName}也会驾驶了——点「开始战斗」看看比上关轻松多少。`,
           this.prebattleSortieBtn,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
         );
@@ -1863,7 +1866,7 @@ export class S7DemoController extends Component {
         break;
       case 13:
         this.showTutorialStep(
-          `恭喜获得 ${this.pluginName(S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId)}（武器槽·精良）！\n这是把武器插件，装上能强化极焰号的输出。\n下一步去船坞把它装到极焰号身上。`,
+          `恭喜获得 ${this.pluginName(S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId)}（武器槽·精良）！\n这是把武器插件，装上能强化${shipName}的输出。\n下一步去船坞把它装到${shipName}身上。`,
           null,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
           '去装配',
@@ -1873,7 +1876,7 @@ export class S7DemoController extends Component {
       case 14:
         this.closeUnitPanelsToHub();
         this.showTutorialStep(
-          '回到星港了。进「船坞」给极焰号装上刚拿到的武器插件。',
+          `回到星港了。进「船坞」给${shipName}装上刚拿到的武器插件。`,
           this.hubDockEntryNode,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openDockManageForTutorial('ship', ship); this.runTutorialStep(); },
         );
@@ -1881,7 +1884,7 @@ export class S7DemoController extends Component {
       case 15:
         this.openDockManageForTutorial('ship', ship);
         this.showTutorialStep(
-          '点「装配」打开极焰号的装备界面。',
+          `点「装配」打开${shipName}的装备界面。`,
           this.unitManageEquipBtn,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openLoadoutForTutorial(ship); this.runTutorialStep(); },
         );
@@ -1889,7 +1892,7 @@ export class S7DemoController extends Component {
       case 16:
         this.openLoadoutForTutorial(ship);
         this.showTutorialStep(
-          '这是装配界面。极焰号现在是 C 阶，只有 1 个插件槽能用；\n升到 B 阶开第 2 个槽（技能槽）、A 阶开第 3 个（战术槽）。\n先把这把武器插件装进唯一的槽里。',
+          `这是装配界面。${shipName}现在是 C 阶，只有 1 个插件槽能用；\n升到 B 阶开第 2 个槽（技能槽）、A 阶开第 3 个（战术槽）。\n先把这把武器插件装进唯一的槽里。`,
           null,
           () => { advanceStrongGuideStep(t); this.equipTutorialWeaponPlugin(ship); this.persist(); this.runTutorialStep(); },
           '装上',
@@ -1898,7 +1901,7 @@ export class S7DemoController extends Component {
       case 17:
         this.openLoadoutForTutorial(ship);
         this.showTutorialStep(
-          '装好了！武器插件已上，极焰号战力提升。\n（以后任意装备都在这里装/卸；升阶开更多槽。）',
+          `装好了！武器插件已上，${shipName}战力提升。\n（以后任意装备都在这里装/卸；升阶开更多槽。）`,
           null,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.closeLoadout(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
           '完成',
