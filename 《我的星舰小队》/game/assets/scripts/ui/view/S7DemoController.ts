@@ -155,6 +155,12 @@ const S7_TUTORIAL_GACHA_SHIP = S7_DEMO_SEED_SHIPS[1];   // 星舰池抽中
 const S7_TUTORIAL_LEVEL3_TICKETS = 2;
 /** M2 关4解锁打捞港的星矿花费（GDD-M §第4关·占位·第二块校准）。 */
 const S7_TUTORIAL_SALVAGE_UNLOCK_COST = 8;
+/** M3 关5解锁商人小站的星矿花费（占位·全程预算见 DOCK 注释，关5时约剩7矿·第二块校准）。 */
+const S7_TUTORIAL_MERCHANT_UNLOCK_COST = 5;
+/** M3 关5三选一强制选的星贝量（占位·让强引导流程可控+给买补给券留余量·第二块校准）。 */
+const S7_TUTORIAL_LEVEL5_CARGO = 100;
+/** M3 关5抽卡补强强制招募的克制驾驶员（内容无关·第三个种子驾驶员；显示真实配置名）。 */
+const S7_TUTORIAL_COUNTER_PILOT = S7_DEMO_SEED_PILOTS[2];
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
 const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | 'legendary' }[] = [
   { pluginId: 'plg02', quality: 'legendary' }, // 武器
@@ -442,6 +448,7 @@ export class S7DemoController extends Component {
   private hubActivityEntryNode: Node | null = null; // 「3天行动」入口（M1b-3 活动短教程高光）
   private hubGachaEntryNode: Node | null = null;    // 「星港补给站」入口（M1c 抽卡引导高光）
   private hubSalvageEntryNode: Node | null = null;  // 「打捞港」入口（M2 打捞引导高光）
+  private hubMerchantEntryNode: Node | null = null; // 「商人小站」入口（M3 商人引导高光）
   private prebattleSortieBtn: Node | null = null;
   private resultHomeBtn: Node | null = null;        // 结果弹窗「返回星港」（强引导 step3 高光）
   private unitManageUpgradeBtn: Node | null = null;  // 单位管理「升级」（强引导 step5/8 高光）
@@ -726,7 +733,7 @@ export class S7DemoController extends Component {
     this.hubSalvageEntryNode = this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
     this.makeHubEntry('居住舱', '人口', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openHabitat(), 'bld_habitat');
     this.hubGachaEntryNode = this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
-    this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
+    this.hubMerchantEntryNode = this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
     this.makeHubEntry('研究塔', '升级', new Color(90, 110, 150, 255), rx, gy0 - gap * 2, ew, eh, () => this.openBuildingUpgrade('bld_research_tower'), 'bld_research_tower');
     this.makeHubEntry('星核展厅', '收藏', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openGallery(), 'bld_rsv_core_gallery');
     this.hubTrainingEntryNode = this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
@@ -1753,6 +1760,8 @@ export class S7DemoController extends Component {
       case 22: t.strongGuideStep = 23; this.persist(); break;
       case 34: this.grantTutorialLevel4Beacon(); t.strongGuideStep = 36; this.persist(); break;
       case 35: t.strongGuideStep = 36; this.persist(); break;
+      case 40: this.grantTutorialLevel5Cargo(); t.strongGuideStep = 42; this.persist(); break;
+      case 41: t.strongGuideStep = 42; this.persist(); break;
       default: break;
     }
   }
@@ -1782,6 +1791,12 @@ export class S7DemoController extends Component {
     if (res && res.beaconCommon !== undefined) res.beaconCommon += 1;
   }
 
+  /** 补发关5三选一强制的星贝（冷启动恢复用；幂等性由调用点 step 把关）。 */
+  private grantTutorialLevel5Cargo(): void {
+    const res = this.session?.resources as Record<string, number> | undefined;
+    if (res && res.starCargo !== undefined) res.starCargo += S7_TUTORIAL_LEVEL5_CARGO;
+  }
+
   /** M1c：抽卡强制招募一个单位到拥有（已拥有跳过·幂等）+ 消耗1张补给券（若有）。 */
   private grantTutorialGachaUnit(kind: 'ship' | 'pilot', id: string): void {
     if (!this.squad) return;
@@ -1800,7 +1815,8 @@ export class S7DemoController extends Component {
    *   26 = M1c-2(引导出战关4·不白送资源·新单位留玩家自然攒够再练)；27-28 = 废弃(原升级演示·老档兼容跳到29)；
    *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；
    *   32-33 = M2-2(交互式摆阵·玩家真拖老舰到后排→出战关4)；
-   *   34-38 = M2-3(信标三选一→返回→解锁打捞港→交互式打捞→收尾)；≥39 = 待续(M3 关5/首Boss)。
+   *   34-38 = M2-3(信标三选一→返回→解锁打捞港→交互式打捞→收尾)；
+   *   39-43 = M3-1a 关5(出战→星贝三选一→返回→解锁商人→交互式买补给券)；≥44 = 待续(M3-1b 抽卡得克制驾驶员+装上+强引导结束)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -2150,18 +2166,60 @@ export class S7DemoController extends Component {
         break;
       case 38:
         this.showTutorialStep(
-          '打捞队派出去了！挂机就会产资源，时间到回来点「收菜」领。\n关 4 这些就教到这——继续推进主线吧！',
+          '打捞队派出去了！挂机就会产资源，时间到回来点「收菜」领。\n继续推进主线吧！',
           null,
           () => {
             advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep();
             if (this.salvageNode) this.salvageNode.active = false; // 回星港
-            this.refresh();
+            this.refresh(); this.runTutorialStep();
           },
           '完成',
         );
         break;
+      // ===== M3-1a 关5 + 商人小站（强引导收尾·关5商人买补给券）=====
+      case 39:
+        this.closeUnitPanelsToHub();
+        this.openPrebattle();
+        this.showTutorialStep(
+          '第 5 关——敌人的打法越来越刁钻了。\n点「开始战斗」迎战。',
+          this.prebattleSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
+        );
+        break;
+      case 40:
+        // 正常流程由 openLevelReward 触发本步遮罩；冷启动已被 normalize 归一到 step42，不会落这。
+        if (this.pendingLevelReward) this.showTutorialForcedChoice();
+        break;
+      case 41:
+        this.showTutorialStep(
+          '打赢了！但你会发现：敌人开始用刁钻打法（比如躲后排、专破前排）。\n应对的办法是「克制」——多备几个驾驶员，换着上去打不同的敌人。\n点「返回星港」，去商人那补给、招募新成员。',
+          this.resultHomeBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
+        );
+        break;
+      case 42:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '「商人小站」能用星贝（你出战攒下的货币）买补给券、信标等。\n用星矿解锁它。',
+          this.hubMerchantEntryNode,
+          () => {
+            advanceStrongGuideStep(t);
+            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_merchant_station', S7_TUTORIAL_MERCHANT_UNLOCK_COST);
+            this.persist(); this.hideTutorialStep();
+            this.openMerchant();
+            this.runTutorialStep();
+          },
+        );
+        break;
+      case 43:
+        this.openMerchant();
+        this.showTutorialHint(
+          '用星贝买一张补给券：点「补给券」那一行右边的「买」。\n（补给券是抽卡用的货币，下一步要用它招募新驾驶员。）',
+          () => !!this.session && Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0) >= 1,
+        );
+        break;
       default:
-        // M2 完结(step≥39)：关5(M3·克制墙/商人/升阶升星/首Boss星核)尚未做 → 收起遮罩/提示条、放开自由玩。
+        // M3-1a 完结(step≥44)：抽卡得克制驾驶员+装上+强引导结束(M3-1b)尚未做 → 收起遮罩/提示条、放开自由玩。
         this.hideTutorialStep();
         this.hideTutorialHint();
         break;
@@ -2217,8 +2275,10 @@ export class S7DemoController extends Component {
         ? '三选一——这次选「补给券」。\n敌人越来越强，得赶紧扩充编队；补给券是招募新成员（抽卡）用的货币。'
         : step === 34
           ? '三选一——这次选「普通信标」。\n信标是打捞用的：下一步去解锁打捞港，用它挂机产资源。'
-          : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
-    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : step === 34 ? '选普通信标' : '选星矿';
+          : step === 40
+            ? '三选一——这次选「星贝」。\n星贝是跟商人交易的货币：下一步去商人小站，用它买补给券。'
+            : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
+    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : step === 34 ? '选普通信标' : step === 40 ? '选星贝' : '选星矿';
     this.showTutorialStep(
       text,
       card,
@@ -4628,6 +4688,14 @@ export class S7DemoController extends Component {
           { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
           { kind: 'resource', resourceId: 'hullAlloy', amount: 60 },
           { kind: 'resource', resourceId: 'supplyTicket', amount: 1 },
+        ];
+        forcedPickIndex = 0;
+      } else if (step === 40) {
+        // 关5强引导：三选一写死「星贝×100 / 合金 / 普通信标」、强制选星贝（下一步去商人用星贝买补给券）。
+        choices = [
+          { kind: 'resource', resourceId: 'starCargo', amount: S7_TUTORIAL_LEVEL5_CARGO },
+          { kind: 'resource', resourceId: 'hullAlloy', amount: 80 },
+          { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
         ];
         forcedPickIndex = 0;
       }
