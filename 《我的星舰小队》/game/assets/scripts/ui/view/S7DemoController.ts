@@ -498,17 +498,19 @@ export class S7DemoController extends Component {
     // B 块：拿插件库存引用 + 建 pluginId→槽位 映射（装/卸判同类槽 + 显示用）。
     this.pluginInventory = this.playerState.pluginInventory;
     runtime.getAll<S7PluginConfig>('plugin_config').forEach((c) => this.pluginSlotMap.set(c.pluginId, c.slotTag));
-    // M1：老档(存档迁移来的、教程还在默认状态)视为已过完教程，保留旧版"一进来全发好"体验；
+    // M1：老档(存档迁移来的、教程还在默认状态=step0)视为已过完教程，保留旧版"一进来全发好"体验；
     // 新档真走教程，初始锁定、靠教程逐步解锁/发货。
     const tutorial = this.playerState.tutorial;
     if (!loaded.isNew && tutorial.strongGuideStep === 0 && !tutorial.strongGuideDone) {
       completeStrongGuide(tutorial);
     }
-    if (tutorial.strongGuideDone) {
+    if (tutorial.strongGuideDone && tutorial.strongGuideStep === 0) {
+      // 仅"迁移的老档/开局即跳过引导"(step 仍为 0)走旧 demo 全发好；
       this.ensureDemoSquadSeeded();
-    } else {
+    } else if (!tutorial.strongGuideDone) {
       this.ensureTutorialStarterSeeded();
     }
+    // 自然走完教程(done 且 step>0)：保留玩家教程中挣得的状态，不再发货（不白送星核等）。
     this.session = new S7RunSession(
       this.playerState.resources,
       this.playerState.mainlineProgress,
@@ -1816,7 +1818,9 @@ export class S7DemoController extends Component {
    *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；
    *   32-33 = M2-2(交互式摆阵·玩家真拖老舰到后排→出战关4)；
    *   34-38 = M2-3(信标三选一→返回→解锁打捞港→交互式打捞→收尾)；
-   *   39-43 = M3-1a 关5(出战→星贝三选一→返回→解锁商人→交互式买补给券)；≥44 = 待续(M3-1b 抽卡得克制驾驶员+装上+强引导结束)。
+   *   39-43 = M3-1a 关5(出战→星贝三选一→返回→解锁商人→交互式买补给券)；
+   *   44-46 = M3-1b(抽卡得克制驾驶员→交互式装到旗舰→强引导结束 completeStrongGuide)；≥47 = 强引导已结束。
+   *   升阶/升星/星核/离线/居住舱 = 弱引导首触(玩家自然触发时弹·不在强引导链)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -2218,8 +2222,54 @@ export class S7DemoController extends Component {
           () => !!this.session && Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0) >= 1,
         );
         break;
+      // ===== M3-1b 关5后：抽卡得克制驾驶员 → 装到旗舰 → 强引导结束 =====
+      case 44:
+        this.openGacha(); this.switchGachaPool('recruit');
+        this.showTutorialStep(
+          '用刚买的补给券，在「驾驶员招募池」抽 1 次，招募一名新驾驶员来应对刁钻敌人。\n点「下一步」抽卡。',
+          this.gachaSingleBtn,
+          () => {
+            advanceStrongGuideStep(t); // →45
+            this.grantTutorialGachaUnit('pilot', S7_TUTORIAL_COUNTER_PILOT);
+            this.persist();
+            this.hideTutorialStep();
+            this.showTutorialStep(
+              `🎉 招募到驾驶员「${this.unitName('pilot', S7_TUTORIAL_COUNTER_PILOT)}」！\n下一步把它装到旗舰上，换个驾驶员应对敌人——这就是「克制」。`,
+              null,
+              () => { this.hideTutorialStep(); this.closeGacha(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
+              '去装配',
+            );
+          },
+        );
+        break;
+      case 45: {
+        this.openPrebattle();
+        this.prebattleSelShip = S7_TUTORIAL_STARTER.shipId;
+        this.openBoarding();
+        const flagName = this.unitName('ship', S7_TUTORIAL_STARTER.shipId);
+        const newPName = this.unitName('pilot', S7_TUTORIAL_COUNTER_PILOT);
+        this.showTutorialHint(
+          `把驾驶员「${newPName}」装到旗舰「${flagName}」上：点「装配」→ 在列表点「${newPName}」→ 点「装备」。\n（换驾驶员应对不同敌人 = 克制。原来的驾驶员会被换下、留着以后再用。）`,
+          () => this.pilotOf(S7_TUTORIAL_STARTER.shipId) === S7_TUTORIAL_COUNTER_PILOT,
+        );
+        break;
+      }
+      case 46:
+        this.showTutorialStep(
+          '搞定！核心系统都教完啦——战斗、升级、插件、抽卡、装配、摆阵、克制、打捞、商人……\n往后自由探索：升阶、升星、星核这些，等你自然玩到会有简短提示。\n强引导到此结束，祝你在星港玩得开心，指挥官！',
+          null,
+          () => {
+            completeStrongGuide(this.playerState!.tutorial);
+            this.persist();
+            this.hideTutorialStep();
+            this.closeLoadout(); this.closeBoarding(); this.closeUnitPanelsToHub();
+            this.refresh();
+          },
+          '开始探索',
+        );
+        break;
       default:
-        // M3-1a 完结(step≥44)：抽卡得克制驾驶员+装上+强引导结束(M3-1b)尚未做 → 收起遮罩/提示条、放开自由玩。
+        // 强引导已结束(step≥47/或 completeStrongGuide)：收起遮罩/提示条、放开自由玩。
         this.hideTutorialStep();
         this.hideTutorialHint();
         break;
