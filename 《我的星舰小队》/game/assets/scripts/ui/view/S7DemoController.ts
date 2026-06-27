@@ -153,6 +153,8 @@ const S7_TUTORIAL_GACHA_PILOT = S7_DEMO_SEED_PILOTS[1]; // 驾驶员池抽中
 const S7_TUTORIAL_GACHA_SHIP = S7_DEMO_SEED_SHIPS[1];   // 星舰池抽中
 /** M1c 关3三选一强制选的补给券量（GDD-M §第3关 +2：够后面抽 2 次·驾驶员/星舰各 1）。占位·第二块校准。 */
 const S7_TUTORIAL_LEVEL3_TICKETS = 2;
+/** M2 关4解锁打捞港的星矿花费（GDD-M §第4关·占位·第二块校准）。 */
+const S7_TUTORIAL_SALVAGE_UNLOCK_COST = 20;
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
 const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | 'legendary' }[] = [
   { pluginId: 'plg02', quality: 'legendary' }, // 武器
@@ -439,6 +441,7 @@ export class S7DemoController extends Component {
   private hubTrainingEntryNode: Node | null = null;
   private hubActivityEntryNode: Node | null = null; // 「3天行动」入口（M1b-3 活动短教程高光）
   private hubGachaEntryNode: Node | null = null;    // 「星港补给站」入口（M1c 抽卡引导高光）
+  private hubSalvageEntryNode: Node | null = null;  // 「打捞港」入口（M2 打捞引导高光）
   private prebattleSortieBtn: Node | null = null;
   private resultHomeBtn: Node | null = null;        // 结果弹窗「返回星港」（强引导 step3 高光）
   private unitManageUpgradeBtn: Node | null = null;  // 单位管理「升级」（强引导 step5/8 高光）
@@ -720,7 +723,7 @@ export class S7DemoController extends Component {
     const gap = 150;
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
     this.hubDockEntryNode = this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
-    this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
+    this.hubSalvageEntryNode = this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
     this.makeHubEntry('居住舱', '人口', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openHabitat(), 'bld_habitat');
     this.hubGachaEntryNode = this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
     this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
@@ -1748,6 +1751,8 @@ export class S7DemoController extends Component {
       case 13: t.strongGuideStep = 14; this.persist(); break;
       case 21: this.grantTutorialLevel3Tickets(); t.strongGuideStep = 23; this.persist(); break;
       case 22: t.strongGuideStep = 23; this.persist(); break;
+      case 34: this.grantTutorialLevel4Beacon(); t.strongGuideStep = 36; this.persist(); break;
+      case 35: t.strongGuideStep = 36; this.persist(); break;
       default: break;
     }
   }
@@ -1769,6 +1774,12 @@ export class S7DemoController extends Component {
   private grantTutorialLevel3Tickets(): void {
     const res = this.session?.resources as Record<string, number> | undefined;
     if (res && res.supplyTicket !== undefined) res.supplyTicket += S7_TUTORIAL_LEVEL3_TICKETS;
+  }
+
+  /** 补发关4三选一强制的普通信标（冷启动恢复用；幂等性由调用点 step 把关）。 */
+  private grantTutorialLevel4Beacon(): void {
+    const res = this.session?.resources as Record<string, number> | undefined;
+    if (res && res.beaconCommon !== undefined) res.beaconCommon += 1;
   }
 
   /** M1c：抽卡强制招募一个单位到拥有（已拥有跳过·幂等）+ 消耗1张补给券（若有）。 */
@@ -1797,7 +1808,8 @@ export class S7DemoController extends Component {
    *   20-25 = M1c-1 关3(出战→补给券三选一→返回→激活补给站→驾驶员/星舰池各抽1得新队)；
    *   26-28 = M1c-2(补资源→船坞升新星舰演示→引导出战关4)；
    *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；
-   *   32-33 = M2-2(交互式摆阵·玩家真拖老舰到后排→出战关4)；≥34 = 待续(M2-3 信标三选一+打捞)。
+   *   32-33 = M2-2(交互式摆阵·玩家真拖老舰到后排→出战关4)；
+   *   34-38 = M2-3(信标三选一→返回→解锁打捞港→交互式打捞→收尾)；≥39 = 待续(M3 关5/首Boss)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -2129,8 +2141,53 @@ export class S7DemoController extends Component {
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
         );
         break;
+      // ===== M2-3 关4后：三选一普通信标 → 解锁打捞港 → 打捞（交互式）=====
+      case 34:
+        // 正常流程由 openLevelReward 触发本步遮罩；冷启动已被 normalize 归一到 step36，不会落这。
+        if (this.pendingLevelReward) this.showTutorialForcedChoice();
+        break;
+      case 35:
+        this.showTutorialStep(
+          '拿到普通信标了！信标是打捞用的——打捞能挂机产资源。\n点「返回星港」，去解锁打捞港。',
+          this.resultHomeBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
+        );
+        break;
+      case 36:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '「打捞港」能派打捞队挂机产资源（星矿/合金等）。\n用星矿解锁它。',
+          this.hubSalvageEntryNode,
+          () => {
+            advanceStrongGuideStep(t);
+            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_salvage_port', S7_TUTORIAL_SALVAGE_UNLOCK_COST);
+            this.persist(); this.hideTutorialStep();
+            this.openSalvage();
+            this.runTutorialStep();
+          },
+        );
+        break;
+      case 37:
+        this.openSalvage();
+        this.showTutorialHint(
+          '开一次打捞：点「普通」信标档 → 点「2h」时长 → 点「开始打捞」。\n（用掉刚拿的普通信标，挂机 2 小时就有收获。）',
+          () => !!this.playerState && this.playerState.salvage.missions.length > 0,
+        );
+        break;
+      case 38:
+        this.showTutorialStep(
+          '打捞队派出去了！挂机就会产资源，时间到回来点「收菜」领。\n关 4 这些就教到这——继续推进主线吧！',
+          null,
+          () => {
+            advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep();
+            if (this.salvageNode) this.salvageNode.active = false; // 回星港
+            this.refresh();
+          },
+          '完成',
+        );
+        break;
       default:
-        // M2-2 完结(step≥34)：关4三选一信标+打捞(M2-3)尚未做 → 收起遮罩/提示条、放开自由玩。
+        // M2 完结(step≥39)：关5(M3·克制墙/商人/升阶升星/首Boss星核)尚未做 → 收起遮罩/提示条、放开自由玩。
         this.hideTutorialStep();
         this.hideTutorialHint();
         break;
@@ -2184,8 +2241,10 @@ export class S7DemoController extends Component {
       ? '又是三选一！这次选「武器槽·精良」那张插件。\n注意：选前只看到"槽位+品质"，选了才揭晓具体是哪个插件。'
       : step === 21
         ? '三选一——这次选「补给券」。\n敌人越来越强，得赶紧扩充编队；补给券是招募新成员（抽卡）用的货币。'
-        : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
-    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : '选星矿';
+        : step === 34
+          ? '三选一——这次选「普通信标」。\n信标是打捞用的：下一步去解锁打捞港，用它挂机产资源。'
+          : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
+    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : step === 34 ? '选普通信标' : '选星矿';
     this.showTutorialStep(
       text,
       card,
@@ -4587,6 +4646,14 @@ export class S7DemoController extends Component {
           { kind: 'resource', resourceId: 'supplyTicket', amount: S7_TUTORIAL_LEVEL3_TICKETS },
           { kind: 'resource', resourceId: 'hullAlloy', amount: 40 },
           { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
+        ];
+        forcedPickIndex = 0;
+      } else if (step === 34) {
+        // 关4强引导：三选一写死「普通信标×1 / 合金 / 补给券」、强制选普通信标（下一步解锁打捞港要用）。
+        choices = [
+          { kind: 'resource', resourceId: 'beaconCommon', amount: 1 },
+          { kind: 'resource', resourceId: 'hullAlloy', amount: 60 },
+          { kind: 'resource', resourceId: 'supplyTicket', amount: 1 },
         ];
         forcedPickIndex = 0;
       }
