@@ -429,6 +429,10 @@ export class S7DemoController extends Component {
   private tutorialPopupTextLabel: Label | null = null;
   private tutorialPopupSkipHandler: (() => void) | null = null;
   private tutorialPopupNextHandler: (() => void) | null = null;
+  /** M2·交互式强引导（不锁操作）：顶部提示条 + 目标轮询（玩家在真实 UI 完成目标 → update() 检测推进）。 */
+  private tutorialHintNode: Node | null = null;
+  private tutorialHintLabel: Label | null = null;
+  private tutorialInteractiveGoal: (() => boolean) | null = null;
   /** M1：强引导步骤里要高光指引的真实按钮 Node 引用（出战/船坞入口/训练舱入口/备战面板开始战斗）。 */
   private hubSortieBtn: Node | null = null;
   private hubDockEntryNode: Node | null = null;
@@ -679,6 +683,7 @@ export class S7DemoController extends Component {
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
     this.buildTutorialPopup(W, H); // M0 弱引导首触短教程弹窗（最后建→盖在所有面板之上）
+    this.buildTutorialHint(W, H); // M2 交互式强引导顶部提示条（不锁操作·最后建→盖在所有面板之上）
   }
 
   // ===== 星港主界面 hub =====
@@ -1678,6 +1683,7 @@ export class S7DemoController extends Component {
    */
   private showTutorialStep(text: string, target: Node | null, onNext: () => void, nextLabel = '下一步'): void {
     if (!this.tutorialOverlayNode || !this.tutorialHighlightGfx || !this.tutorialTextLabel) return;
+    this.hideTutorialHint(); // 锁操作遮罩与交互提示条互斥
     this.tutorialTextLabel.string = text;
     if (this.tutorialNextLabel) this.tutorialNextLabel.string = nextLabel;
     this.tutorialNextHandler = onNext;
@@ -1780,7 +1786,8 @@ export class S7DemoController extends Component {
    *   0-10 = M1a(关1+解锁建筑&升级)；11-13 = M1b-1 关2(出战→武器插件三选一→揭晓)；
    *   14-17 = M1b-2(回船坞→装配→装插件&槽位教学)；18-19 = M1b-3(活动短教程→引导出战关3)；
    *   20-25 = M1c-1 关3(出战→补给券三选一→返回→激活补给站→驾驶员/星舰池各抽1得新队)；
-   *   26-28 = M1c-2(补资源→船坞升新星舰演示→引导出战关4)；≥29 = 待续(M2 关4 上阵/摆阵/克制/打捞)。
+   *   26-28 = M1c-2(补资源→船坞升新星舰演示→引导出战关4)；
+   *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；≥32 = 待续(M2-2 摆阵 + M2-3 打捞)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -2063,9 +2070,39 @@ export class S7DemoController extends Component {
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); this.runTutorialStep(); },
         );
         break;
+      // ===== M2-1 关4备战：上阵新舰 + 铁律 + 装配驾驶员（交互式·玩家真操作）=====
+      case 29: {
+        this.openPrebattle();
+        const sName = this.unitName('ship', S7_TUTORIAL_GACHA_SHIP);
+        this.showTutorialHint(
+          `把新星舰「${sName}」上阵：点下面九宫格的空格 → 在列表里选它 → 点「上场」。`,
+          () => !!this.squad && isShipDeployed(this.squad, S7_TUTORIAL_GACHA_SHIP),
+        );
+        break;
+      }
+      case 30:
+        this.showTutorialStep(
+          '上阵成功！但有条铁律：星舰必须配上驾驶员才能上场战斗——\n新星舰现在还缺驾驶员。下一步给它配一个。',
+          null,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.runTutorialStep(); },
+        );
+        break;
+      case 31: {
+        this.openPrebattle();
+        this.prebattleSelShip = S7_TUTORIAL_GACHA_SHIP;
+        this.openBoarding();
+        const sName = this.unitName('ship', S7_TUTORIAL_GACHA_SHIP);
+        const pName = this.unitName('pilot', S7_TUTORIAL_GACHA_PILOT);
+        this.showTutorialHint(
+          `给「${sName}」配驾驶员：点「装配」→ 在列表点驾驶员「${pName}」→ 点「装备」。\n（装配不必回星港，备战界面就能配；只有升级/升阶才回星港。）`,
+          () => this.pilotOf(S7_TUTORIAL_GACHA_SHIP) !== null,
+        );
+        break;
+      }
       default:
-        // M1c 完结(step≥29)：关4(上阵/摆阵/克制/打捞·M2)尚未做 → 收起遮罩、放开自由玩。
+        // M2-1 完结(step≥32)：摆阵(M2-2)+打捞(M2-3)尚未做 → 收起遮罩/提示条、放开自由玩。
         this.hideTutorialStep();
+        this.hideTutorialHint();
         break;
     }
   }
@@ -2215,6 +2252,54 @@ export class S7DemoController extends Component {
     if (this.tutorialPopupNode) this.tutorialPopupNode.active = false;
     this.tutorialPopupSkipHandler = null;
     this.tutorialPopupNextHandler = null;
+  }
+
+  // ===== M2 交互式强引导：顶部提示条（不锁操作）+ 目标轮询 =====
+
+  /** 搭交互式提示条（默认隐藏·顶部安全区下方·不吞触摸→玩家可操作真实 UI）。 */
+  private buildTutorialHint(W: number, H: number): void {
+    const band = getS7UsableBand();
+    const panel = new Node('S7TutorialHint'); panel.layer = this.node.layer; this.node.addChild(panel);
+    panel.setPosition(0, band.usableTopY - 36, 0);
+    // 半透明底条（窄·只盖顶部一行·不挡九宫格/上阵面板）；不挂触摸监听 → 不吞触摸。
+    const bg = panel.addComponent(Graphics);
+    bg.fillColor = new Color(20, 28, 48, 230);
+    bg.roundRect(-W * 0.46, -52, W * 0.92, 104, 14);
+    bg.fill();
+    const tN = new Node('t'); tN.layer = this.node.layer; panel.addChild(tN);
+    const l = tN.addComponent(Label); l.fontSize = 26; l.lineHeight = 34; l.color = new Color(255, 235, 170);
+    l.horizontalAlign = Label.HorizontalAlign.CENTER;
+    const tut = tN.addComponent(UITransform); tut.setContentSize(W * 0.88, 100);
+    l.overflow = Label.Overflow.RESIZE_HEIGHT;
+    panel.active = false;
+    this.tutorialHintNode = panel;
+    this.tutorialHintLabel = l;
+  }
+
+  /**
+   * 展示一个「交互式」强引导步：顶部提示条说明该做什么（不锁操作），玩家在真实 UI 完成 goal()
+   * 后由 update() 检测推进（无「下一步」按钮）。goal 必须只在真正完成时返回 true。
+   */
+  private showTutorialHint(text: string, goal: () => boolean): void {
+    if (!this.tutorialHintNode || !this.tutorialHintLabel) return;
+    this.hideTutorialStep(); // 交互提示条与锁操作遮罩互斥
+    this.tutorialHintLabel.string = text;
+    this.tutorialInteractiveGoal = goal;
+    this.tutorialHintNode.active = true;
+    this.raiseTutorialHintIfActive();
+  }
+
+  /** 收起交互式提示条 + 清目标。 */
+  private hideTutorialHint(): void {
+    if (this.tutorialHintNode) this.tutorialHintNode.active = false;
+    this.tutorialInteractiveGoal = null;
+  }
+
+  /** 提示条活动时抬到最前（玩家打开上阵/装配/打捞面板会 setSiblingIndex 抢前→提示条须再抬上去才可见）。 */
+  private raiseTutorialHintIfActive(): void {
+    if (!this.tutorialHintNode || !this.tutorialHintNode.active) return;
+    const parent = this.tutorialHintNode.parent;
+    if (parent) this.tutorialHintNode.setSiblingIndex(parent.children.length - 1);
   }
 
   /** 搭"战前备战"叠加层（默认隐藏）。布局：敌情预览(上半) ↔ 九宫格(下半居中·上下对称) → 底部三键。
@@ -2700,6 +2785,7 @@ export class S7DemoController extends Component {
     if (this.playing || !this.boardingNode) return;
     this.refreshBoarding();
     this.boardingNode.active = true;
+    this.raiseTutorialHintIfActive(); // M2：上阵面板打开后把交互提示条抬到最前
   }
   private closeBoarding(): void {
     if (this.boardingNode) this.boardingNode.active = false;
@@ -2849,6 +2935,7 @@ export class S7DemoController extends Component {
     const parent = this.loadoutNode.parent;
     if (parent) this.loadoutNode.setSiblingIndex(parent.children.length - 1);
     this.loadoutNode.active = true;
+    this.raiseTutorialHintIfActive(); // M2：装配面板打开后把交互提示条抬到最前
   }
 
   private closeLoadout(): void {
@@ -3229,6 +3316,18 @@ export class S7DemoController extends Component {
 
   /** 每帧推进回放（cc 自动调用）。 */
   update(dt: number): void {
+    // M2 交互式强引导：玩家在真实 UI 完成目标 → 收提示条、推进、派发下一步。
+    if (this.tutorialInteractiveGoal && this.isStrongGuideActive() && this.playerState) {
+      let done = false;
+      try { done = this.tutorialInteractiveGoal(); } catch { done = false; }
+      if (done) {
+        this.tutorialInteractiveGoal = null;
+        this.hideTutorialHint();
+        advanceStrongGuideStep(this.playerState.tutorial);
+        this.persist();
+        this.runTutorialStep();
+      }
+    }
     if (!this.playing || !this.playback) return;
     const frames = this.playback.frames;
     // L 入场仪式：先放我方滑入（不推进战斗帧），完成后再正常逐帧。
@@ -4671,6 +4770,7 @@ export class S7DemoController extends Component {
     completeStrongGuide(this.playerState.tutorial);
     this.hideTutorialStep();
     this.hideTutorialPopup();
+    this.hideTutorialHint();
     for (const key of Object.keys(this.session.resources)) {
       this.session.resources[key] = 0;
     }
@@ -4722,6 +4822,7 @@ export class S7DemoController extends Component {
     completeStrongGuide(this.playerState.tutorial);
     this.hideTutorialStep();
     this.hideTutorialPopup();
+    this.hideTutorialHint();
     // 全量发货（幂等·grant* 已拥有跳过；资源用 Math.max 只补不降）。
     for (const s of S7_DEMO_SEED_SHIPS) grantShip(this.squad, s);
     for (const p of S7_DEMO_SEED_PILOTS) grantPilot(this.squad, p);
