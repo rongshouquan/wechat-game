@@ -36,7 +36,7 @@ import {
   upgradeBuildingWithDiscount,
 } from '../../core/s7/S7BuildingUpgradeFlow';
 import { unlockBuildingWithStarOre } from '../../core/s7/S7BuildingUpgradeService';
-import { S7TutorialState, advanceStrongGuideStep, completeStrongGuide } from '../../core/s7/S7TutorialState';
+import { S7TutorialState, advanceStrongGuideStep, completeStrongGuide, hasSeenFirstTouch, markFirstTouchSeen } from '../../core/s7/S7TutorialState';
 import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState, getBuildingLevel } from '../../core/s7/S7BuildingState';
 import { S7PopulationState, createDefaultS7Population, residentRateBonusPct, residentStorageExtensionHours, workerCostDiscountPct } from '../../core/s7/S7Population';
 import {
@@ -146,6 +146,8 @@ const S7_TUTORIAL_LEVEL1_NODE = createDefaultS7MainlineProgress().currentNodeId;
 const S7_TUTORIAL_LEVEL1_STARORE = 50;
 /** M1 关2三选一强制选的武器插件（GDD-M §第2关·变更#4：选前显示"武器槽·精良"、选后揭晓真实名）。内容无关·占位 plg09(武器)。 */
 const S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN = { pluginId: 'plg09', quality: 'fine' as const, slotTag: 'weapon' as const };
+/** M1b-3 活动首触短教程 id（弱引导·首次打开活动面板时弹一次）。 */
+const S7_FIRST_TOUCH_ACTIVITY = 'activity_intro';
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
 const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | 'legendary' }[] = [
   { pluginId: 'plg02', quality: 'legendary' }, // 武器
@@ -426,6 +428,7 @@ export class S7DemoController extends Component {
   private hubSortieBtn: Node | null = null;
   private hubDockEntryNode: Node | null = null;
   private hubTrainingEntryNode: Node | null = null;
+  private hubActivityEntryNode: Node | null = null; // 「3天行动」入口（M1b-3 活动短教程高光）
   private prebattleSortieBtn: Node | null = null;
   private resultHomeBtn: Node | null = null;        // 结果弹窗「返回星港」（强引导 step3 高光）
   private unitManageUpgradeBtn: Node | null = null;  // 单位管理「升级」（强引导 step5/8 高光）
@@ -689,7 +692,7 @@ export class S7DemoController extends Component {
 
     // —— 活动（左右两枚·占位）——
     const ay = topY - 210;
-    this.makeHubEntry('3天行动', '进度/领奖', new Color(90, 160, 120, 255), -W * 0.24, ay, 290, 88, () => this.openActivity('action3'));
+    this.hubActivityEntryNode = this.makeHubEntry('3天行动', '进度/领奖', new Color(90, 160, 120, 255), -W * 0.24, ay, 290, 88, () => this.openActivity('action3'));
     this.makeHubEntry('7天扩张', '进度/领奖', new Color(120, 110, 180, 255), W * 0.24, ay, 290, 88, () => this.openActivity('expansion7'));
 
     // —— 7 建筑入口岛（2 列网格）——
@@ -1744,7 +1747,8 @@ export class S7DemoController extends Component {
    * 每步「下一步」回调：先 advanceStrongGuideStep 递增、做该步副作用(出战/解锁/升级…)、落盘、再回头调本方法展示下一步。
    * 每个 case 自带「确保上下文」(冷启动从存档某步恢复也续得上)。步序见各 case 内联注释：
    *   0-10 = M1a(关1+解锁建筑&升级)；11-13 = M1b-1 关2(出战→武器插件三选一→揭晓)；
-   *   14-17 = M1b-2(回船坞→装配→装插件&槽位教学)；≥18 = 待续(M1b-3 活动短教程 + M1c 关3抽卡)。
+   *   14-17 = M1b-2(回船坞→装配→装插件&槽位教学)；18-19 = M1b-3(活动短教程→引导出战关3)；
+   *   ≥20 = 待续(M1c 关3抽卡)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -1900,8 +1904,32 @@ export class S7DemoController extends Component {
           '完成',
         );
         break;
+      // ===== M1b-3 关2后续：活动短教程（弱引导）+ 引导出战关3 =====
+      case 18:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '回基地了。先认识两个限时活动——点「下一步」打开「3天行动 / 7天扩张」看一眼。\n（这俩边玩边自动攒进度、不强求现在做，看完就走。）',
+          this.hubActivityEntryNode,
+          () => {
+            advanceStrongGuideStep(t); // →19
+            this.persist();
+            this.hideTutorialStep();
+            this.openActivity('action3'); // 触发首触弱弹窗；关弹窗时回调续到 step19
+            // 防御：首触已看过(弹窗没弹)→直接续 step19。
+            if (!this.tutorialPopupNode?.active) { this.closeActivityToHub(); this.runTutorialStep(); }
+          },
+        );
+        break;
+      case 19:
+        this.closeActivityToHub();
+        this.showTutorialStep(
+          '认识完啦！这俩活动平时正常玩就会自动推进度。\n现在去挑战第 3 关——点「出战」。',
+          this.hubSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); this.runTutorialStep(); },
+        );
+        break;
       default:
-        // M1b-2 完结(step≥18)：活动短教程(M1b-3)+关3抽卡(M1c)尚未做 → 收起遮罩、放开自由玩。
+        // M1b 完结(step≥20)：关3 抽卡教学(M1c)尚未做 → 收起遮罩、放开自由玩。
         this.hideTutorialStep();
         break;
     }
@@ -3754,6 +3782,35 @@ export class S7DemoController extends Component {
     if (this.activityMsgLabel) this.activityMsgLabel.string = '';
     this.refreshActivity();
     this.refresh(); // 邮件红点（结算宝藏可能刚进邮箱）
+    this.maybeShowActivityFirstTouch(); // M1b-3 弱引导：首次打开活动 → 弹一次首触短教程
+  }
+
+  /** M1b-3 弱引导：首次打开活动面板 → 弹首触短教程（只一次·可跳过/下一步）。 */
+  private maybeShowActivityFirstTouch(): void {
+    if (!this.playerState) return;
+    if (hasSeenFirstTouch(this.playerState.tutorial, S7_FIRST_TOUCH_ACTIVITY)) return;
+    markFirstTouchSeen(this.playerState.tutorial, S7_FIRST_TOUCH_ACTIVITY);
+    this.persist();
+    this.showTutorialPopup(
+      '🗓 这是限时活动（3天行动 / 7天扩张）——\n正常推关 / 升级 / 打捞 / 抽卡就会自动累积进度，不用专门打卡；\n到段位领过程奖励、完成领宝藏（7天扩张能拿完整星核）。\n先知道有这回事就行，不强求现在做完。',
+      () => this.onActivityFirstTouchClose(),
+      () => this.onActivityFirstTouchClose(),
+    );
+  }
+
+  /** 活动首触短教程关闭：收弹窗；教程内(step19)则关活动回星港 + 续引导出战关3，自由玩则保留活动面板继续用。 */
+  private onActivityFirstTouchClose(): void {
+    this.hideTutorialPopup();
+    if (this.isStrongGuideActive() && this.playerState && this.playerState.tutorial.strongGuideStep === 19) {
+      this.closeActivityToHub();
+      this.runTutorialStep();
+    }
+  }
+
+  /** M1b-3：收起活动面板回星港主界面。 */
+  private closeActivityToHub(): void {
+    if (this.activityNode) this.activityNode.active = false;
+    this.refresh();
   }
 
   /** 剩余时间「Xd Yh」短描述。 */
