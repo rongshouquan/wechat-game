@@ -1743,7 +1743,8 @@ export class S7DemoController extends Component {
    * 按 tutorial.strongGuideStep 展示当前该高光哪个按钮/弹哪句引导。
    * 每步「下一步」回调：先 advanceStrongGuideStep 递增、做该步副作用(出战/解锁/升级…)、落盘、再回头调本方法展示下一步。
    * 每个 case 自带「确保上下文」(冷启动从存档某步恢复也续得上)。步序见各 case 内联注释：
-   *   0-10 = M1a(关1+解锁建筑&升级)；11-13 = M1b 关2(出战→武器插件三选一→揭晓)；≥14 = 待续(M1b-2/3)。
+   *   0-10 = M1a(关1+解锁建筑&升级)；11-13 = M1b-1 关2(出战→武器插件三选一→揭晓)；
+   *   14-17 = M1b-2(回船坞→装配→装插件&槽位教学)；≥18 = 待续(M1b-3 活动短教程 + M1c 关3抽卡)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -1864,8 +1865,43 @@ export class S7DemoController extends Component {
           '去装配',
         );
         break;
+      // ===== M1b-2 关2后：插件装配 + 槽位教学 =====
+      case 14:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '回到星港了。进「船坞」给极焰号装上刚拿到的武器插件。',
+          this.hubDockEntryNode,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openDockManageForTutorial('ship', ship); this.runTutorialStep(); },
+        );
+        break;
+      case 15:
+        this.openDockManageForTutorial('ship', ship);
+        this.showTutorialStep(
+          '点「装配」打开极焰号的装备界面。',
+          this.unitManageEquipBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openLoadoutForTutorial(ship); this.runTutorialStep(); },
+        );
+        break;
+      case 16:
+        this.openLoadoutForTutorial(ship);
+        this.showTutorialStep(
+          '这是装配界面。极焰号现在是 C 阶，只有 1 个插件槽能用；\n升到 B 阶开第 2 个槽（技能槽）、A 阶开第 3 个（战术槽）。\n先把这把武器插件装进唯一的槽里。',
+          null,
+          () => { advanceStrongGuideStep(t); this.equipTutorialWeaponPlugin(ship); this.persist(); this.runTutorialStep(); },
+          '装上',
+        );
+        break;
+      case 17:
+        this.openLoadoutForTutorial(ship);
+        this.showTutorialStep(
+          '装好了！武器插件已上，极焰号战力提升。\n（以后任意装备都在这里装/卸；升阶开更多槽。）',
+          null,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.closeLoadout(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
+          '完成',
+        );
+        break;
       default:
-        // M1b-1 完结(step≥14)：装配/槽位教学(M1b-2)、活动短教程(M1b-3)尚未做 → 收起遮罩、放开自由玩。
+        // M1b-2 完结(step≥18)：活动短教程(M1b-3)+关3抽卡(M1c)尚未做 → 收起遮罩、放开自由玩。
         this.hideTutorialStep();
         break;
     }
@@ -1883,6 +1919,24 @@ export class S7DemoController extends Component {
     if (this.dockNode) this.dockNode.active = false;
     if (this.trainingNode) this.trainingNode.active = false;
     this.refresh();
+  }
+
+  /** M1b-2：教程内为指定星舰打开装配面板（设选中舰→开 loadout）。幂等。 */
+  private openLoadoutForTutorial(shipId: string): void {
+    this.prebattleSelShip = shipId;
+    if (this.loadoutNode && !this.loadoutNode.active) this.openLoadout();
+    else this.refreshLoadout();
+  }
+
+  /** M1b-2：把关2拿到的武器插件装到指定星舰的武器槽（已在该舰则跳过·幂等）。 */
+  private equipTutorialWeaponPlugin(shipId: string): void {
+    if (!this.pluginInventory) return;
+    const inst = this.pluginInventory.plugins.find((p) => p.pluginId === S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId);
+    if (!inst) return;
+    const ref: S7EquipRef = { kind: 'plugin', id: inst.instanceId };
+    if (this.equipShipOf(ref) === shipId) { this.refreshLoadout(); return; } // 已在本舰→幂等
+    this.doEquip(ref, shipId);
+    this.refreshLoadout();
   }
 
   /**
