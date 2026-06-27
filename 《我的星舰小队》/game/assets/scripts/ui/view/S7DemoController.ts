@@ -1764,6 +1764,15 @@ export class S7DemoController extends Component {
     if (res && (res.supplyTicket ?? 0) >= 1) res.supplyTicket -= 1; // 用券招募（够2张·三选一发的）
   }
 
+  /** M1c-2：升级演示前补一笔养成资源（用 Math.max 只补不降），保证新老单位练级不卡。占位量·第二块校准。 */
+  private grantTutorialLevelUpBundle(): void {
+    const res = this.playerState?.resources as Record<string, number> | undefined;
+    if (!res) return;
+    res.starOre = Math.max(res.starOre ?? 0, 300);
+    res.hullAlloy = Math.max(res.hullAlloy ?? 0, 300);
+    res.pilotToken = Math.max(res.pilotToken ?? 0, 100);
+  }
+
   /**
    * 按 tutorial.strongGuideStep 展示当前该高光哪个按钮/弹哪句引导。
    * 每步「下一步」回调：先 advanceStrongGuideStep 递增、做该步副作用(出战/解锁/升级…)、落盘、再回头调本方法展示下一步。
@@ -1771,7 +1780,7 @@ export class S7DemoController extends Component {
    *   0-10 = M1a(关1+解锁建筑&升级)；11-13 = M1b-1 关2(出战→武器插件三选一→揭晓)；
    *   14-17 = M1b-2(回船坞→装配→装插件&槽位教学)；18-19 = M1b-3(活动短教程→引导出战关3)；
    *   20-25 = M1c-1 关3(出战→补给券三选一→返回→激活补给站→驾驶员/星舰池各抽1得新队)；
-   *   ≥26 = 待续(M1c-2 升级演示→出战关4)。
+   *   26-28 = M1c-2(补资源→船坞升新星舰演示→引导出战关4)；≥29 = 待续(M2 关4 上阵/摆阵/克制/打捞)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -2020,8 +2029,42 @@ export class S7DemoController extends Component {
           },
         );
         break;
+      // ===== M1c-2 关3后：升级新队伍（演示）+ 引导出战关4 =====
+      case 26: {
+        this.closeUnitPanelsToHub();
+        const newShipName = this.unitName('ship', S7_TUTORIAL_GACHA_SHIP);
+        this.showTutorialStep(
+          `招到新成员啦！新单位也得练一练才顶用。\n给你备了点资源——去「船坞」把新星舰「${newShipName}」也升一级试试。`,
+          this.hubDockEntryNode,
+          () => {
+            advanceStrongGuideStep(t); // →27
+            this.grantTutorialLevelUpBundle(); // 给够资源·别卡升级
+            this.persist();
+            this.hideTutorialStep();
+            this.openDockManageForTutorial('ship', S7_TUTORIAL_GACHA_SHIP);
+            this.runTutorialStep();
+          },
+        );
+        break;
+      }
+      case 27:
+        this.openDockManageForTutorial('ship', S7_TUTORIAL_GACHA_SHIP);
+        this.showTutorialStep(
+          '点「升级」，把新星舰练一级。\n（新驾驶员也一样——去训练舱用同样方式练，这里就不重复演示了。）',
+          this.unitManageUpgradeBtn,
+          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', S7_TUTORIAL_GACHA_SHIP); this.persist(); this.runTutorialStep(); },
+        );
+        break;
+      case 28:
+        this.closeUnitPanelsToHub();
+        this.showTutorialStep(
+          '队伍扩充好了！平时多练队伍，后面才扛得住。\n现在去挑战第 4 关——点「出战」。',
+          this.hubSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); this.runTutorialStep(); },
+        );
+        break;
       default:
-        // M1c-1 完结(step≥26)：升级演示&出战关4(M1c-2)尚未做 → 收起遮罩、放开自由玩。
+        // M1c 完结(step≥29)：关4(上阵/摆阵/克制/打捞·M2)尚未做 → 收起遮罩、放开自由玩。
         this.hideTutorialStep();
         break;
     }
