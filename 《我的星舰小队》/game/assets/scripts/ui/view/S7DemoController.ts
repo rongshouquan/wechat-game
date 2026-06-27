@@ -752,7 +752,7 @@ export class S7DemoController extends Component {
     this.offlineBtn = this.addBtn(this.node, '领离线', 168, 60, new Color(205, 165, 60, 255), -W * 0.36, botY + 56, () => this.onClaimOffline(), 26).node.parent;
     if (this.offlineBtn) this.offlineBtn.active = false;
     this.addBtn(this.node, '发测试邮件', 168, 60, new Color(80, 120, 160, 255), -W * 0.12, botY + 56, () => this.devSendTestMail(), 24); // DEV-TEMP·验 G2 邮件领取
-    this.addBtn(this.node, '重置存档', 168, 60, new Color(120, 70, 70, 255), W * 0.12, botY + 56, () => this.onReset(), 26);
+    this.addBtn(this.node, '重玩教程', 168, 60, new Color(120, 70, 70, 255), W * 0.12, botY + 56, () => this.onReset(), 26);
     this.addBtn(this.node, '跳过引导', 168, 60, new Color(70, 110, 90, 255), W * 0.36, botY + 56, () => this.devSkipGuide(), 26); // DEV-TEMP·跳过新手强引导→老演示态
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
@@ -4957,8 +4957,9 @@ export class S7DemoController extends Component {
   /** 重置 S7 存档到初始（演示反复验证用）：回 n001、清零资源与单位等级、落盘。 */
   private onReset(): void {
     if (!this.session || !this.playerState || this.playing) return;
-    // M1：重置=回到老版"全发好"演示态，教程一并标完成，避免卡在"建筑已解锁但教程还要求花矿解锁"的矛盾。
-    completeStrongGuide(this.playerState.tutorial);
+    // DEV-TEMP·重玩教程：重置到教程第 0 步（强引导从头跑·建筑全锁·只给起手编队）；demo 自由态用「跳过引导」进。
+    const tut = this.playerState.tutorial;
+    tut.strongGuideStep = 0; tut.strongGuideDone = false; tut.seenFirstTouch = [];
     this.hideTutorialStep();
     this.hideTutorialPopup();
     this.hideTutorialHint();
@@ -4968,40 +4969,42 @@ export class S7DemoController extends Component {
     this.session.progress = createDefaultS7MainlineProgress();
     this.playerState.unitLevels.shipLevels = {};
     this.playerState.unitLevels.pilotLevels = {};
-    // C：建筑/人口也归零（重新解锁默认建筑到 1 级），清未领离线。
+    // 建筑/人口归零，且建筑保持全锁（教程靠引导逐步解锁，不预先解锁）。
     this.playerState.buildings = createDefaultS7BuildingState();
     this.playerState.population = createDefaultS7Population();
     this.buildings = this.playerState.buildings;
     this.population = this.playerState.population;
-    this.ensureDefaultBuildingsUnlocked();
     this.offlinePending = null;
-    // C/D/E：抽卡/打捞/商人状态也归零（这几块后加·原 reset 漏了→刷新次数/保底/任务会残留）。
     this.playerState.gacha = createDefaultS7GachaState();
     this.playerState.salvage = createDefaultS7Salvage();
     this.playerState.merchant = createDefaultS7Merchant();
     this.playerState.unitTiers = createDefaultS7UnitTierState();
-    // B 块：插件库存也就地清空（会话持有引用，不能整体替换）→ ensureDemoSquadSeeded 重发时实例号从 pi1 起复现。
     if (this.pluginInventory) {
       this.pluginInventory.plugins = [];
       this.pluginInventory.nextInstanceSeq = 1;
       this.pluginInventory.nextActionSeq = 0;
     }
-    // A-step2：阵容就地清空+重新发货（会话持有 squad 引用，不能整体替换→必须原地改）。
+    // 阵容就地清空 + 只发起手编队（教程态·会话持有 squad 引用，不能整体替换→原地改）。
     if (this.squad) {
       this.squad.ownedShips = [];
       this.squad.ownedPilots = [];
       this.squad.ownedCores = {};
       this.squad.formation = [];
-      this.squad.shipLoadouts = {}; // B 块：装配按船记忆，重置一并清
-      this.ensureDemoSquadSeeded();
+      this.squad.shipLoadouts = {};
+      this.ensureTutorialStarterSeeded();
     }
-    this.prebattleSelSlot = null;
-    this.closeLoadout();
-    this.closePrebattle();
-    this.closeBase();
-    this.setResult('已重置：回到 n001、资源清零、等级归 1、建筑回 1 级', new Color(180, 200, 230));
+    // 收起一切可能开着的面板，回到干净星港。
+    this.prebattleSelSlot = null; this.prebattleSelShip = null;
+    this.closeLoadout(); this.closeBoarding(); this.closePrebattle(); this.closeBase();
+    this.closeUnitPanelsToHub();
+    if (this.gachaNode) this.gachaNode.active = false;
+    if (this.salvageNode) this.salvageNode.active = false;
+    if (this.merchantNode) this.merchantNode.active = false;
+    if (this.activityNode) this.activityNode.active = false;
+    this.setResult('已重玩教程：回到教程开头', new Color(180, 200, 230));
     this.persist();
     this.refresh();
+    this.runTutorialStep(); // 从第 0 步（开场）开始
   }
 
   /**
