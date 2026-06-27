@@ -621,6 +621,15 @@ export class S7DemoController extends Component {
     return this.squad ? this.squad.shipLoadouts[shipId]?.pilotId ?? null : null;
   }
 
+  /** 某上阵船所在格的 col（纵深：c2=前排靠中线 / c0=后排）；未上阵返回 null。M2 摆阵目标判定用。 */
+  private shipSlotCol(shipId: string): number | null {
+    if (!this.squad) return null;
+    const slot = this.squad.formation.find((s) => s.shipId === shipId)?.slotRef;
+    if (!slot) return null;
+    const m = slot.match(/c(\d)/);
+    return m ? Number(m[1]) : null;
+  }
+
   // ===== 战场/备战 共用坐标（上下对称·中间留隙；备战看到的站位 = 战斗站位）=====
   /** 我方格位屏幕坐标：row(0-2)=横向左右、col(0-2)=纵深(c2前排靠中线·在上)。我方占下半。 */
   private fieldPlayerPos(row: number, col: number): { x: number; y: number } {
@@ -1787,7 +1796,8 @@ export class S7DemoController extends Component {
    *   14-17 = M1b-2(回船坞→装配→装插件&槽位教学)；18-19 = M1b-3(活动短教程→引导出战关3)；
    *   20-25 = M1c-1 关3(出战→补给券三选一→返回→激活补给站→驾驶员/星舰池各抽1得新队)；
    *   26-28 = M1c-2(补资源→船坞升新星舰演示→引导出战关4)；
-   *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；≥32 = 待续(M2-2 摆阵 + M2-3 打捞)。
+   *   29-31 = M2-1 关4备战(交互式：上阵新舰→铁律→装配驾驶员·玩家真操作)；
+   *   32-33 = M2-2(交互式摆阵·玩家真拖老舰到后排→出战关4)；≥34 = 待续(M2-3 信标三选一+打捞)。
    */
   private runTutorialStep(): void {
     if (!this.isStrongGuideActive() || !this.playerState) return;
@@ -2099,8 +2109,28 @@ export class S7DemoController extends Component {
         );
         break;
       }
+      // ===== M2-2 关4备战：摆阵换位（交互式·玩家真拖）+ 出战关4 =====
+      case 32: {
+        this.closeLoadout();
+        this.closeBoarding();
+        this.openPrebattle();
+        const starterName = this.unitName('ship', S7_TUTORIAL_STARTER.shipId);
+        this.showTutorialHint(
+          `站位有讲究：突击型老舰「${starterName}」站后排输出更好，新护卫舰留前排扛伤。\n把「${starterName}」从前排拖到后排（往下那排的格子）。`,
+          () => { const c = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId); return c !== null && c < 2; },
+        );
+        break;
+      }
+      case 33:
+        this.openPrebattle();
+        this.showTutorialStep(
+          '站位摆好了！新护卫舰前排扛伤、老舰后排输出。\n点「开始战斗」——这关敌人更多，但靠新阵容应该轻松。',
+          this.prebattleSortieBtn,
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
+        );
+        break;
       default:
-        // M2-1 完结(step≥32)：摆阵(M2-2)+打捞(M2-3)尚未做 → 收起遮罩/提示条、放开自由玩。
+        // M2-2 完结(step≥34)：关4三选一信标+打捞(M2-3)尚未做 → 收起遮罩/提示条、放开自由玩。
         this.hideTutorialStep();
         this.hideTutorialHint();
         break;
