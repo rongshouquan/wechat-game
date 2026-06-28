@@ -2260,14 +2260,12 @@ export class S7DemoController extends Component {
       case 36:
         this.closeUnitPanelsToHub();
         this.showTutorialStep(
-          '「打捞港」能派打捞队挂机产资源（星矿/合金等）。\n用星矿解锁它。',
+          '「打捞港」能派打捞队挂机产资源（星矿/合金等）。\n点闪烁高亮的「打捞港」。',
           this.hubSalvageEntryNode,
           () => {
-            advanceStrongGuideStep(t);
-            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_salvage_port', S7_TUTORIAL_SALVAGE_UNLOCK_COST);
-            this.persist(); this.hideTutorialStep();
-            this.openSalvage();
-            this.runTutorialStep();
+            this.openBuildingUnlockDialog('bld_salvage_port', '打捞港');
+            this.showTutorialStep('花星矿解锁打捞港——点闪烁高亮的「确认」。', this.buildingUnlockConfirmBtn,
+              () => { advanceStrongGuideStep(t); this.onConfirmBuildingUnlock(); this.persist(); this.runTutorialStep(); });
           },
         );
         break;
@@ -2314,14 +2312,12 @@ export class S7DemoController extends Component {
       case 42:
         this.closeUnitPanelsToHub();
         this.showTutorialStep(
-          '「商人小站」能用星贝（你出战攒下的货币）买补给券、信标等。\n用星矿解锁它。',
+          '「商人小站」能用星贝（你出战攒下的货币）买补给券、信标等。\n点闪烁高亮的「商人小站」。',
           this.hubMerchantEntryNode,
           () => {
-            advanceStrongGuideStep(t);
-            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_merchant_station', S7_TUTORIAL_MERCHANT_UNLOCK_COST);
-            this.persist(); this.hideTutorialStep();
-            this.openMerchant();
-            this.runTutorialStep();
+            this.openBuildingUnlockDialog('bld_merchant_station', '商人小站');
+            this.showTutorialStep('花星矿解锁商人小站——点闪烁高亮的「确认」。', this.buildingUnlockConfirmBtn,
+              () => { advanceStrongGuideStep(t); this.onConfirmBuildingUnlock(); this.persist(); this.runTutorialStep(); });
           },
         );
         break;
