@@ -3480,8 +3480,8 @@ export class S7DemoController extends Component {
     this.playback = pb;
     this.frameIdx = 0;
     this.stepClock = 0;
-    // 总时长压到 ~2.8 秒内：每帧停留 = clamp(2.8/帧数, 0.03, 0.10)。
-    this.stepSec = Math.max(0.03, Math.min(0.10, 2.8 / Math.max(1, pb.frames.length - 1)));
+    // 每帧停留 = clamp(目标总时长/帧数, 下限, 上限)：放慢到能看清战斗过程（嫌慢可点倍速键）。占位·真机手感再调。
+    this.stepSec = Math.max(0.18, Math.min(0.40, 7.5 / Math.max(1, pb.frames.length - 1)));
     this.computePositions(pb);
     // L 入场仪式：开战我方从屏幕下方平行飞入（~0.5s·情绪价值·不影响数值）。
     this.introSec = 0.5;
