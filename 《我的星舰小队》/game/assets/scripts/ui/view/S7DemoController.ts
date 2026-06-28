@@ -440,6 +440,15 @@ export class S7DemoController extends Component {
   private tutorialHintLabel: Label | null = null;
   private tutorialInteractiveGoal: (() => boolean) | null = null;
   private tutorialMerchantTicketBaseline = 0; // M3-1a 商人买补给券：进店时补给券基准（买多一张才算完成）
+  // 交互式引导改版（Ron 真机反馈）：教学不出自己的按钮，让玩家点真界面那个按钮/卡——
+  // 闪烁高亮框（不锁操作）框住目标真按钮 + update() 轮询玩家完成。
+  private tutorialFlashNode: Node | null = null;   // 满屏不吞触摸·只画闪烁高亮框
+  private tutorialFlashGfx: Graphics | null = null;
+  private tutorialFlashTarget: Node | null = null; // 当前要闪烁高亮的真按钮/卡
+  private tutorialFlashClock = 0;                   // 闪烁动画相位累加（update 用）
+  private tutorialInfoMode = false;                 // 纯讲解步（遮罩点任意处继续·无按钮）
+  private tutorialPendingUnlock: string | null = null; // 待解锁建筑 id：玩家点该入口时由 blockIfBuildingLocked 就地解锁
+  private tutorialForcedPickIndex: number | null = null; // 强制三选一：只允许点这张卡（其余点了没反应）
   /** M1：强引导步骤里要高光指引的真实按钮 Node 引用（出战/船坞入口/训练舱入口/备战面板开始战斗）。 */
   private hubSortieBtn: Node | null = null;
   private hubDockEntryNode: Node | null = null;
@@ -787,11 +796,30 @@ export class S7DemoController extends Component {
     return node;
   }
 
-  /** M1：建筑未解锁则提示「XX未解锁」并返回 true（调用方据此拦截打开面板）；已解锁返回 false。 */
+  /** M1：建筑未解锁则提示「XX未解锁」并返回 true（调用方据此拦截打开面板）；已解锁返回 false。
+   *  教程改版：若该建筑正是当前引导让你解锁的（tutorialPendingUnlock），点它就地花星矿解锁→放行（玩家点真入口完成"解锁"）。 */
   private blockIfBuildingLocked(buildingId: string, name: string): boolean {
     if (this.buildings && isBuildingUnlocked(this.buildings, buildingId)) return false;
+    if (this.buildings && this.tutorialPendingUnlock === buildingId && this.playerState) {
+      const cost = this.tutorialUnlockCostFor(buildingId);
+      unlockBuildingWithStarOre(this.buildings, this.playerState.resources, buildingId, cost);
+      this.tutorialPendingUnlock = null;
+      this.refresh();
+      return false; // 解锁成功→放行打开面板
+    }
     this.hubToast(`${name}未解锁`);
     return true;
+  }
+
+  /** 教程各建筑的解锁星矿花费（占位·全程预算见 DOCK 注释·第二块校准）。 */
+  private tutorialUnlockCostFor(buildingId: string): number {
+    switch (buildingId) {
+      case 'bld_dock': return S7_TUTORIAL_DOCK_UNLOCK_COST;
+      case 'bld_pilot_training_bay': return S7_TUTORIAL_TRAINING_UNLOCK_COST;
+      case 'bld_salvage_port': return S7_TUTORIAL_SALVAGE_UNLOCK_COST;
+      case 'bld_merchant_station': return S7_TUTORIAL_MERCHANT_UNLOCK_COST;
+      default: return 0;
+    }
   }
 
   /** 中央临时提示：显示一行字、约 1.4 秒后自动清空。 */
@@ -1649,7 +1677,8 @@ export class S7DemoController extends Component {
     dim.fillColor = new Color(0, 0, 0, 150);
     dim.rect(-W / 2, -H / 2, W, H);
     dim.fill();
-    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸：高光下方的真实按钮不可点，只能走「下一步」
+    // 吞触摸（锁定其他操作）；纯讲解步(tutorialInfoMode)下点任意处=继续。
+    panel.on(Node.EventType.TOUCH_END, () => { if (this.tutorialInfoMode) this.tutorialNextHandler?.(); }, this);
 
     const highlightNode = new Node('highlight');
     highlightNode.layer = this.node.layer;
@@ -1704,6 +1733,8 @@ export class S7DemoController extends Component {
   private showTutorialStep(text: string, target: Node | null, onNext: () => void, nextLabel = '下一步'): void {
     if (!this.tutorialOverlayNode || !this.tutorialHighlightGfx || !this.tutorialTextLabel) return;
     this.hideTutorialHint(); // 锁操作遮罩与交互提示条互斥
+    this.tutorialInfoMode = false;
+    if (this.tutorialNextLabel?.node.parent) this.tutorialNextLabel.node.parent.active = true; // 恢复「下一步」按钮(showTutorialInfo 会藏它)
     this.tutorialTextLabel.string = text;
     if (this.tutorialNextLabel) this.tutorialNextLabel.string = nextLabel;
     this.tutorialNextHandler = onNext;
@@ -1733,6 +1764,7 @@ export class S7DemoController extends Component {
   private hideTutorialStep(): void {
     if (this.tutorialOverlayNode) this.tutorialOverlayNode.active = false;
     this.tutorialNextHandler = null;
+    this.tutorialInfoMode = false;
   }
 
   // ===== M1a/M1b 强引导步骤调度器（关1 解锁建筑&升级 → 关2 技能演示&插件装配）=====
@@ -1825,95 +1857,81 @@ export class S7DemoController extends Component {
     const pilotName = this.unitName('pilot', pilot);
     switch (t.strongGuideStep) {
       case 0:
-        this.showTutorialStep(
+        this.showTutorialInfo(
           '指挥官，欢迎接手这座破败的小星港。\n这片星域又乱又热闹——星盗、失控无人舰、废铁机械、星能污染舰横行。\n你的使命：收集星舰、组建小队、打败敌人，把小破港养成热闹大星港！',
-          null,
           () => { advanceStrongGuideStep(t); this.persist(); this.openPrebattle(); this.runTutorialStep(); },
-          '出发',
         );
         break;
       case 1:
         this.openPrebattle();
-        this.showTutorialStep(
-          `这是出战前的备战界面。\n点「开始战斗」，看你的${shipName}自动迎敌——这一关它只会普通攻击。`,
+        this.showTutorialHint(
+          `这是备战界面。点闪烁高亮的「开始战斗」，看你的${shipName}自动迎敌（这一关它只会普攻）。`,
+          () => this.playing, // 点了真按钮→开打→推进；之后三选一由 openLevelReward 触发
           this.prebattleSortieBtn,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onConfirmSortie(); },
         );
         break;
       case 2:
-        // 正常流程由 openLevelReward 触发本步遮罩(pendingLevelReward 在)；冷启动已被 normalize 归一到 step4，不会落这。
-        if (this.pendingLevelReward) this.showTutorialForcedChoice();
+        // 三选一由 openLevelReward 触发(战斗结束、卡建好才弹)；这里仅冷启动/防御，正常已被 normalize 归一到 step4。
+        if (this.pendingLevelReward && this.levelRewardNode?.active) this.showTutorialForcedChoice();
         break;
       case 3:
-        this.showTutorialStep(
-          '打赢了！奖励到手。\n点「返回星港」回到你的星港，去解锁建筑。',
+        this.showTutorialHint(
+          '打赢了！奖励到手。\n点闪烁高亮的「返回星港」回到星港，去解锁建筑。',
+          () => !this.resultPopupNode?.active, // 点了真「返回星港」→结果窗关→推进
           this.resultHomeBtn,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
         );
         break;
       case 4:
-        this.showTutorialStep(
-          '你的星港百废待兴——所有建筑都还没解锁。\n先用刚得的星矿解锁「船坞」（造船、养船的地方）。',
+        this.tutorialPendingUnlock = 'bld_dock'; // 玩家点船坞入口时由 blockIfBuildingLocked 就地花星矿解锁
+        this.showTutorialHint(
+          '星港百废待兴——点闪烁高亮的「船坞」，用刚得的星矿解锁它（造船养船的地方）。',
+          () => !!this.buildings && isBuildingUnlocked(this.buildings, 'bld_dock'),
           this.hubDockEntryNode,
-          () => {
-            advanceStrongGuideStep(t);
-            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_dock', S7_TUTORIAL_DOCK_UNLOCK_COST);
-            this.persist(); this.hideTutorialStep();
-            this.openDockManageForTutorial('ship', ship);
-            this.runTutorialStep();
-          },
         );
         break;
       case 5:
-        this.openDockManageForTutorial('ship', ship);
-        this.showTutorialStep(
-          `这是${shipName}的管理面板。\n点「升级」把它升到 Lv1——升级花星矿和合金，能直接变强。`,
+        this.openDockManageForTutorial('ship', ship); // 进船坞→该舰管理面板(升级键稳定)
+        this.showTutorialHint(
+          `这是${shipName}的管理面板。点闪烁高亮的「升级」，把它升到 Lv1（花星矿+合金、直接变强）。`,
+          () => getShipLevel(this.playerState!.unitLevels, ship) >= 1,
           this.unitManageUpgradeBtn,
-          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', ship); this.persist(); this.runTutorialStep(); },
         );
         break;
       case 6:
-        this.showTutorialStep(
+        this.showTutorialInfo(
           `升到 Lv1，${shipName}解锁了它的星舰技能！\n（星舰升到一定等级会解锁专属技能，战斗中自动释放。）`,
-          null,
           () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
         );
         break;
       case 7:
         this.closeUnitPanelsToHub();
-        this.showTutorialStep(
-          '光有船不够，还得练驾驶员。\n用星矿解锁「训练舱」（练驾驶员的地方）。',
+        this.tutorialPendingUnlock = 'bld_pilot_training_bay';
+        this.showTutorialHint(
+          '光有船不够，还得练驾驶员。\n点闪烁高亮的「训练舱」，用星矿解锁它。',
+          () => !!this.buildings && isBuildingUnlocked(this.buildings, 'bld_pilot_training_bay'),
           this.hubTrainingEntryNode,
-          () => {
-            advanceStrongGuideStep(t);
-            if (this.buildings) unlockBuildingWithStarOre(this.buildings, this.playerState!.resources, 'bld_pilot_training_bay', S7_TUTORIAL_TRAINING_UNLOCK_COST);
-            this.persist(); this.hideTutorialStep();
-            this.openDockManageForTutorial('pilot', pilot);
-            this.runTutorialStep();
-          },
         );
         break;
       case 8:
         this.openDockManageForTutorial('pilot', pilot);
-        this.showTutorialStep(
-          `这是驾驶员「${pilotName}」的管理面板。\n点「升级」把${pilotName}升到 Lv1。`,
+        this.showTutorialHint(
+          `这是驾驶员「${pilotName}」的管理面板。点闪烁高亮的「升级」，把${pilotName}升到 Lv1。`,
+          () => getPilotLevel(this.playerState!.unitLevels, pilot) >= 1,
           this.unitManageUpgradeBtn,
-          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('pilot', pilot); this.persist(); this.runTutorialStep(); },
         );
         break;
       case 9:
-        this.showTutorialStep(
+        this.showTutorialInfo(
           `${pilotName}升到 Lv1，解锁了驾驶能力！\n（驾驶员能力会改变星舰的战斗行为——让它在战斗里更聪明地选目标。）`,
-          null,
           () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
         );
         break;
       case 10:
         this.closeUnitPanelsToHub();
-        this.showTutorialStep(
-          '船和驾驶员都练好了，去挑战第 2 关吧！\n点「出战」进入下一关备战。',
+        this.showTutorialHint(
+          '船和驾驶员都练好了，去挑战第 2 关！\n点闪烁高亮的「出战」。',
+          () => !!this.prebattleNode?.active, // 点了真「出战」→进备战→推进
           this.hubSortieBtn,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openPrebattle(); this.runTutorialStep(); },
         );
         break;
       // ===== M1b 关2：技能演示（文字介绍）+ 插件三选一（变更#4）=====
@@ -2314,28 +2332,18 @@ export class S7DemoController extends Component {
     if (!p || !this.playerState) return;
     const idx = p.forcedPickIndex ?? 0;
     const pick = (idx >= 0 && idx < p.choices.length) ? idx : 0;
+    this.tutorialForcedPickIndex = pick; // 只允许点这张卡（onPickLevelChoice 把关）
     const card = this.levelRewardListNode ? (this.levelRewardListNode.children[pick] ?? null) : null;
     const step = this.playerState.tutorial.strongGuideStep;
     const text = step === 12
-      ? '又是三选一！这次选「武器槽·精良」那张插件。\n注意：选前只看到"槽位+品质"，选了才揭晓具体是哪个插件。'
+      ? '三选一：点闪烁高亮的「武器槽·精良」插件（选前只显示槽位+品质，选后才揭晓具体名）。'
       : step === 21
-        ? '三选一——这次选「补给券」。\n敌人越来越强，得赶紧扩充编队；补给券是招募新成员（抽卡）用的货币。'
+        ? '三选一：点闪烁高亮的「补给券」——招募新成员（抽卡）要用它。'
         : step === 34
-          ? '三选一——这次选「普通信标」。\n信标是打捞用的：下一步去解锁打捞港，用它挂机产资源。'
-          : '首通奖励来了——三选一！\n这次教学先选「星矿」：下一步要用它解锁建筑。\n（以后每关三选一都自己挑，按需要拿。）';
-    const btn = step === 12 ? '选武器插件' : step === 21 ? '选补给券' : step === 34 ? '选普通信标' : '选星矿';
-    this.showTutorialStep(
-      text,
-      card,
-      () => {
-        const t = this.playerState!.tutorial;
-        advanceStrongGuideStep(t); // 关1 2→3 / 关2 12→13 / 关3 21→22 / 关4 34→35
-        this.hideTutorialStep();
-        this.onPickLevelChoice(pick); // 入账强制项 + 收三选一浮层(露出结果弹窗) + 落盘(含新步)
-        this.runTutorialStep();       // 关1→step3 / 关2→step13 / 关3→step22 / 关4→step35
-      },
-      btn,
-    );
+          ? '三选一：点闪烁高亮的「普通信标」——下一步解锁打捞港要用。'
+          : '首通奖励三选一：点闪烁高亮的「星矿」——下一步解锁建筑要用。';
+    // 玩家直接点高亮那张卡的「选这个」→ onPickLevelChoice 清空 pendingLevelReward → update() 轮询续下一步。
+    this.showTutorialHint(text, () => !this.pendingLevelReward, card);
   }
 
   /**
@@ -2454,32 +2462,80 @@ export class S7DemoController extends Component {
     panel.active = false;
     this.tutorialHintNode = panel;
     this.tutorialHintLabel = l;
+    // 闪烁高亮层（满屏·不挂触摸监听→不吞触摸，玩家点得到下面的真按钮）：画框框住目标按钮/卡，update() 做闪烁。
+    const flash = new Node('S7TutorialFlash'); flash.layer = this.node.layer; this.node.addChild(flash);
+    flash.addComponent(UITransform).setContentSize(W, H);
+    this.tutorialFlashGfx = flash.addComponent(Graphics);
+    flash.active = false;
+    this.tutorialFlashNode = flash;
   }
 
   /**
-   * 展示一个「交互式」强引导步：顶部提示条说明该做什么（不锁操作），玩家在真实 UI 完成 goal()
-   * 后由 update() 检测推进（无「下一步」按钮）。goal 必须只在真正完成时返回 true。
+   * 交互式强引导步：顶部提示条说明该做什么（不锁操作），玩家在真实 UI 完成 goal() 后由 update() 检测推进。
+   * target 给了就闪烁高亮框住那个真按钮/卡（玩家直接点它，不点教学按钮）。goal 必须只在真正完成时返回 true。
    */
-  private showTutorialHint(text: string, goal: () => boolean): void {
+  private showTutorialHint(text: string, goal: () => boolean, target: Node | null = null): void {
     if (!this.tutorialHintNode || !this.tutorialHintLabel) return;
     this.hideTutorialStep(); // 交互提示条与锁操作遮罩互斥
     this.tutorialHintLabel.string = text;
     this.tutorialInteractiveGoal = goal;
+    this.tutorialFlashTarget = target;
     this.tutorialHintNode.active = true;
+    if (this.tutorialFlashNode) this.tutorialFlashNode.active = !!target;
     this.raiseTutorialHintIfActive();
   }
 
-  /** 收起交互式提示条 + 清目标。 */
+  /** 收起交互式提示条 + 清目标 + 清闪烁高亮。 */
   private hideTutorialHint(): void {
     if (this.tutorialHintNode) this.tutorialHintNode.active = false;
+    if (this.tutorialFlashNode) this.tutorialFlashNode.active = false;
+    if (this.tutorialFlashGfx) this.tutorialFlashGfx.clear();
     this.tutorialInteractiveGoal = null;
+    this.tutorialFlashTarget = null;
+    this.tutorialForcedPickIndex = null;
   }
 
-  /** 提示条活动时抬到最前（玩家打开上阵/装配/打捞面板会 setSiblingIndex 抢前→提示条须再抬上去才可见）。 */
+  /** 提示条/高亮活动时抬到最前（玩家打开上阵/装配/打捞面板会 setSiblingIndex 抢前→须再抬上去才可见）。 */
   private raiseTutorialHintIfActive(): void {
-    if (!this.tutorialHintNode || !this.tutorialHintNode.active) return;
-    const parent = this.tutorialHintNode.parent;
-    if (parent) this.tutorialHintNode.setSiblingIndex(parent.children.length - 1);
+    const parent = this.tutorialHintNode?.parent;
+    if (!parent) return;
+    if (this.tutorialFlashNode && this.tutorialFlashNode.active) this.tutorialFlashNode.setSiblingIndex(parent.children.length - 1);
+    if (this.tutorialHintNode && this.tutorialHintNode.active) this.tutorialHintNode.setSiblingIndex(parent.children.length - 1);
+  }
+
+  /** 每帧更新闪烁高亮框（脉动透明度+微放大），框住 tutorialFlashTarget 的真按钮包围盒。update() 调。 */
+  private tickTutorialFlash(dt: number): void {
+    const gfx = this.tutorialFlashGfx;
+    const target = this.tutorialFlashTarget;
+    if (!gfx || !this.tutorialFlashNode || !this.tutorialFlashNode.active || !target) return;
+    const ut = target.getComponent(UITransform);
+    const flashUt = this.tutorialFlashNode.getComponent(UITransform);
+    if (!ut || !flashUt) return;
+    this.tutorialFlashClock += dt;
+    const pulse = 0.5 + 0.5 * Math.sin(this.tutorialFlashClock * 6); // 0..1 脉动
+    const local = flashUt.convertToNodeSpaceAR(target.getWorldPosition());
+    const w = ut.contentSize.width * target.scale.x;
+    const h = ut.contentSize.height * target.scale.y;
+    const pad = 6 + pulse * 10; // 边距随脉动放大→"放大/闪烁"感
+    gfx.clear();
+    gfx.lineWidth = 4 + pulse * 3;
+    gfx.strokeColor = new Color(255, 220, 80, Math.round(140 + pulse * 115));
+    gfx.roundRect(local.x - w / 2 - pad, local.y - h / 2 - pad, w + pad * 2, h + pad * 2, 12);
+    gfx.stroke();
+  }
+
+  /** 纯讲解步（无游戏动作可点）：满屏遮罩 + 文字 + "（点任意处继续）"，点任意处推进（无按钮）。 */
+  private showTutorialInfo(text: string, onNext: () => void): void {
+    if (!this.tutorialOverlayNode || !this.tutorialTextLabel) return;
+    this.hideTutorialHint();
+    this.tutorialInfoMode = true;
+    this.tutorialNextHandler = onNext;
+    this.tutorialTextLabel.string = `${text}\n\n（点任意处继续）`;
+    if (this.tutorialNextLabel?.node.parent) this.tutorialNextLabel.node.parent.active = false; // 藏「下一步」按钮
+    if (this.tutorialHighlightGfx) this.tutorialHighlightGfx.clear(); // 讲解步无高亮
+    const parent = this.tutorialOverlayNode.parent;
+    if (parent) this.tutorialOverlayNode.setSiblingIndex(parent.children.length - 1);
+    this.tutorialOverlayNode.active = true;
   }
 
   /** 搭"战前备战"叠加层（默认隐藏）。布局：敌情预览(上半) ↔ 九宫格(下半居中·上下对称) → 底部三键。
@@ -3496,7 +3552,8 @@ export class S7DemoController extends Component {
 
   /** 每帧推进回放（cc 自动调用）。 */
   update(dt: number): void {
-    // M2 交互式强引导：玩家在真实 UI 完成目标 → 收提示条、推进、派发下一步。
+    // 交互式强引导：闪烁高亮框 + 玩家在真实 UI 完成目标 → 收提示条、推进、派发下一步。
+    this.tickTutorialFlash(dt);
     if (this.tutorialInteractiveGoal && this.isStrongGuideActive() && this.playerState) {
       let done = false;
       try { done = this.tutorialInteractiveGoal(); } catch { done = false; }
@@ -4839,6 +4896,10 @@ export class S7DemoController extends Component {
   private onPickLevelChoice(index: number): void {
     const p = this.pendingLevelReward;
     if (!p || !this.playerState || !this.session) return;
+    // 教程强制三选一：只允许点高亮那张（其余点了没反应·提示再点高亮的）。
+    if (this.tutorialForcedPickIndex !== null && index !== this.tutorialForcedPickIndex) {
+      this.hubToast('点闪烁高亮的那张'); return;
+    }
     const chosen = p.choices[index];
     if (!chosen) return;
     const x2 = p.adDoubled;
