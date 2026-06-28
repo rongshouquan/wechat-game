@@ -424,8 +424,9 @@ export class S7DemoController extends Component {
   private resultTitleLabel: Label | null = null;
   private resultMsgLabel: Label | null = null;
   private resultRightLabel: Label | null = null;
-  /** M0·强引导遮罩（锁操作+高光+引导文字，M1-M3 复用）：满屏吞触摸 + 目标高光框 + 文字 + 「下一步」按钮。 */
+  /** M0·强引导遮罩（锁操作+挖洞聚光+引导文字，M1-M3 复用）：满屏吞触摸 + 目标处不压暗(正常亮) + 高光框 + 文字。 */
   private tutorialOverlayNode: Node | null = null;
+  private tutorialDimGfx: Graphics | null = null;       // 暗化层：目标包围盒处挖洞(不盖暗)→目标正常亮，其余压暗
   private tutorialHighlightGfx: Graphics | null = null;
   private tutorialTextLabel: Label | null = null;
   private tutorialNextLabel: Label | null = null;
@@ -1734,7 +1735,8 @@ export class S7DemoController extends Component {
     const ut = panel.addComponent(UITransform);
     ut.setContentSize(W, H);
     const dim = panel.addComponent(Graphics);
-    dim.fillColor = new Color(0, 0, 0, 150);
+    this.tutorialDimGfx = dim; // 暗化层(挖洞)：实际暗块由 drawTutorialDim 按目标重画
+    dim.fillColor = new Color(0, 0, 0, 175);
     dim.rect(-W / 2, -H / 2, W, H);
     dim.fill();
     // 吞触摸（锁定其他操作）；点中高亮目标/纯讲解步点任意处 → 推进（见 onTutorialOverlayTap）。
@@ -1800,10 +1802,33 @@ export class S7DemoController extends Component {
     this.tutorialTextLabel.string = target ? text : `${text}\n\n（点任意处继续）`;
     if (this.tutorialNextLabel?.node.parent) this.tutorialNextLabel.node.parent.active = false; // 永远藏「下一步」按钮
     if (this.tutorialHighlightGfx) this.tutorialHighlightGfx.clear();
+    this.drawTutorialDim(target); // 暗化层挖洞：目标处正常亮、其余压暗（讲解步=全屏暗）
     // 置顶：结果弹窗/单位管理/三选一发奖会 setSiblingIndex 抢前，遮罩须再抬上去才能盖住+吞触摸。
     const parent = this.tutorialOverlayNode.parent;
     if (parent) this.tutorialOverlayNode.setSiblingIndex(parent.children.length - 1);
     this.tutorialOverlayNode.active = true;
+  }
+
+  /** 重画暗化层：有目标→目标包围盒处挖洞(不压暗·正常亮)、其余四块压暗；无目标(讲解步)→全屏压暗。 */
+  private drawTutorialDim(target: Node | null): void {
+    const gfx = this.tutorialDimGfx;
+    const overlayUt = this.tutorialOverlayNode?.getComponent(UITransform);
+    if (!gfx || !overlayUt) return;
+    const W = this.viewW, H = this.viewH;
+    gfx.clear();
+    gfx.fillColor = new Color(0, 0, 0, 175);
+    const ut = target?.getComponent(UITransform);
+    if (!target || !ut) { gfx.rect(-W / 2, -H / 2, W, H); gfx.fill(); return; } // 讲解步=全屏暗
+    const c = overlayUt.convertToNodeSpaceAR(target.getWorldPosition());
+    const pad = 12;
+    const hw = ut.contentSize.width * target.scale.x / 2 + pad;
+    const hh = ut.contentSize.height * target.scale.y / 2 + pad;
+    const L = c.x - hw, R = c.x + hw, B = c.y - hh, T = c.y + hh;
+    const rect = (x: number, y: number, w: number, h: number): void => { if (w > 0 && h > 0) { gfx.rect(x, y, w, h); gfx.fill(); } };
+    rect(-W / 2, T, W, H / 2 - T);          // 洞上方
+    rect(-W / 2, -H / 2, W, B + H / 2);     // 洞下方
+    rect(-W / 2, B, L + W / 2, T - B);      // 洞左侧
+    rect(R, B, W / 2 - R, T - B);           // 洞右侧
   }
 
   /** 锁死遮罩被点：纯讲解步点任意处继续；动作步只有点中高亮目标包围盒才推进(点别处无反应)。 */
