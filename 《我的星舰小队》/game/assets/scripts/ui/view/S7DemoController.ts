@@ -134,12 +134,14 @@ const S7_DEMO_SEED_FORMATION: { slotRef: string; shipId: string; pilotId: string
 /** M1 新手引导开局：只给起始编队第一组（内容无关，按角色引用，第二阶段换内容不重写）。 */
 const S7_TUTORIAL_STARTER = S7_DEMO_SEED_FORMATION[0];
 /**
- * M1 教程解锁船坞/训练舱的星矿花费。全程靠关1三选一发的 +50 星矿（合法关卡奖励·非白送）覆盖：
+ * M1 教程解锁船坞/训练舱/星港补给站的星矿花费。全程靠关1三选一发的 +50 星矿（合法关卡奖励·非白送）覆盖：
  * 50 −8(船坞) −22(升起手船 Lv1·见 upgrade_cost_param ship_lv_1_10 ÷10) −5(训练舱) = 15，
- * 到关4 再 −8(解锁打捞港) = 7，全程不为负、不靠任何白送。占位值·第二块数值校准。
+ * 关3 再 −3(解锁星港补给站) = 12，关4 再 −8(解锁打捞港) = 4，关5 再 −4(解锁商人小站) = 0，
+ * 全程不为负、不靠任何白送。占位值·第二块数值校准。
  */
 const S7_TUTORIAL_DOCK_UNLOCK_COST = 8;
 const S7_TUTORIAL_TRAINING_UNLOCK_COST = 5;
+const S7_TUTORIAL_GACHA_UNLOCK_COST = 3;
 /** M1 教程关1节点（=默认起手节点·内容无关，第二阶段换内容不重写）。 */
 const S7_TUTORIAL_LEVEL1_NODE = createDefaultS7MainlineProgress().currentNodeId;
 /** M1 关1三选一强制选的星矿量（GDD-M §第1关 +50：覆盖全程教程的解锁/升级花费·见上 DOCK 注释；非白送·占位·第二块校准）。 */
@@ -155,8 +157,8 @@ const S7_TUTORIAL_GACHA_SHIP = S7_DEMO_SEED_SHIPS[1];   // 星舰池抽中
 const S7_TUTORIAL_LEVEL3_TICKETS = 2;
 /** M2 关4解锁打捞港的星矿花费（GDD-M §第4关·占位·第二块校准）。 */
 const S7_TUTORIAL_SALVAGE_UNLOCK_COST = 8;
-/** M3 关5解锁商人小站的星矿花费（占位·全程预算见 DOCK 注释，关5时约剩7矿·第二块校准）。 */
-const S7_TUTORIAL_MERCHANT_UNLOCK_COST = 5;
+/** M3 关5解锁商人小站的星矿花费（占位·全程预算见 DOCK 注释，关5时约剩4矿·第二块校准）。 */
+const S7_TUTORIAL_MERCHANT_UNLOCK_COST = 4;
 /** M3 关5抽卡补强强制招募的克制驾驶员（内容无关·第三个种子驾驶员；显示真实配置名）。 */
 const S7_TUTORIAL_COUNTER_PILOT = S7_DEMO_SEED_PILOTS[2];
 /** B 块 DEV-TEMP·开局发插件实例（待抽卡/掉落/合成接好后删）：覆盖三槽 + 品质混搭。pluginId 见 plugin_config。 */
@@ -254,6 +256,7 @@ export class S7DemoController extends Component {
   private prebattleGfx: Graphics | null = null;     // 画底板 + 敌情预览 + 九宫格（也用于"战斗即战前"的就地演出）
   private prebattleInfoLabel: Label | null = null;  // 节点名 + 我方VS推荐战力 + 敌情概要
   private prebattleCellLabels: Label[] = [];        // 9 格文字(与 SLOTS 平行)
+  private prebattleCellNodes: Map<string, Node> = new Map(); // 9 格真节点(键=slotRef如"p0c0")——教程锁步定位高亮/挖洞用
   /** 备战可交互 UI 容器（标题/信息/九宫格/底部按钮）；开战时整体隐藏，让 gfx 就地演战斗。 */
   private prebattleUiNode: Node | null = null;
   /** 备战内嵌战斗的「跳过」键（挂在备战面板上，开战时显示）。 */
@@ -274,6 +277,9 @@ export class S7DemoController extends Component {
   private boardingDetailLabel: Label | null = null; // 右侧选中船详情
   private boardingBoardBtnLabel: Label | null = null; // 右侧 上场/下场 按钮文字
   private boardingActionsNode: Node | null = null;  // 右侧 装配/上下场 按钮容器（没选船时隐藏）
+  private boardingEquipBtn: Node | null = null;     // 右侧「装配」真按钮节点（教程锁步高亮用）
+  private boardingBoardBtn: Node | null = null;     // 右侧「上场/下场」真按钮节点（教程锁步高亮用）
+  private boardingShipRowBtns: Map<string, Node> = new Map(); // 左侧星舰行真按钮节点(键=shipId，刷新重建)——教程锁步高亮用
 
   // ===== B 块 单舰装配（驾驶员 + 插件×3槽 + 星核，统称"装备"）=====
   private pluginInventory: S7PluginInventoryState | null = null;
@@ -299,6 +305,7 @@ export class S7DemoController extends Component {
   private gachaTabBtns: { pool: S7GachaPoolId; node: Node }[] = [];
   private gachaSingleBtn: Node | null = null;      // 单抽按钮（券<1 变灰）
   private gachaTenBtn: Node | null = null;         // 十连按钮（券<10 变灰）
+  private gachaBackBtn: Node | null = null;        // 「返回星港」（强引导：去自动跳转·要求玩家真点）
 
   // ===== D 打捞港界面（信标打捞）=====
   private salvageNode: Node | null = null;
@@ -309,6 +316,8 @@ export class S7DemoController extends Component {
   private salvageListNode: Node | null = null;      // 进行中任务列表容器（刷新重建）
   private salvageTierBtns: { tier: S7BeaconTier; node: Node }[] = [];
   private salvageHourBtns: { hours: number; node: Node }[] = [];
+  private salvageStartBtn: Node | null = null;       // 「开始打捞」（强引导：要求玩家真点）
+  private salvageCollectBtns: Map<string, Node> = new Map(); // missionId→「收菜」按钮（列表刷新重建·每帧重抓）
   private salvageTicking = false;                   // 打捞界面开着时每秒刷新倒计时
 
   // ===== E 商人小站界面 =====
@@ -331,10 +340,17 @@ export class S7DemoController extends Component {
   private dockListNode: Node | null = null;
   private dockInfoLabel: Label | null = null;
   private dockResultLabel: Label | null = null;
+  private dockBackBtn: Node | null = null;       // 「返回星港」（强引导：去自动跳转·要求玩家真点）
   private trainingNode: Node | null = null;
   private trainingListNode: Node | null = null;
   private trainingInfoLabel: Label | null = null;
   private trainingResultLabel: Label | null = null;
+  private trainingBackBtn: Node | null = null;   // 「返回星港」（同上）
+  /** 船坞/训练舱列表里每行「管理」按钮（kind:unitId → Node），refreshUnitTrain() 重建时刷新；强引导高光用。 */
+  private manageRowBtns = new Map<string, Node>();
+  private manageRowBtn(kind: 'ship' | 'pilot', unitId: string): Node | null {
+    return this.manageRowBtns.get(`${kind}:${unitId}`) ?? null;
+  }
   // 居住舱(人口中枢) / 星核展厅(收藏) 信息界面
   private habitatNode: Node | null = null;
   private habitatInfoLabel: Label | null = null;
@@ -348,6 +364,7 @@ export class S7DemoController extends Component {
   private unitManageResultLabel: Label | null = null;
   private unitManageAscendLabel: Label | null = null; // 升阶/升星 按钮文字
   private unitManageEquipBtn: Node | null = null;      // 装配按钮(仅星舰显示)
+  private unitManageBackBtn: Node | null = null;        // 「返回」（强引导：去自动跳转·要求玩家真点）
   // 背包·通用碎片转换（点使用→选专属单位→选数量→转换·Ron 2026-06-21）
   private backpackNode: Node | null = null;
   private backpackKind: 'ship' | 'pilot' = 'ship';
@@ -398,13 +415,16 @@ export class S7DemoController extends Component {
   private loadoutNode: Node | null = null;
   private loadoutTitleLabel: Label | null = null;
   private loadoutMsgLabel: Label | null = null;
+  private loadoutBackBtn: Node | null = null; // 「返回」（强引导：去自动跳转·要求玩家真点）
   /** 装备列表容器（每次刷新清空重建：驾驶员/插件分三类/星核 + 装在哪艘船标记）。 */
   private loadoutListNode: Node | null = null;
+  private loadoutItemBtns: Map<string, Node> = new Map(); // 装配列表条目真按钮节点(键=`${kind}:${id}`，刷新重建)——教程锁步高亮用
   // 装备详情弹窗：标题/信息 + 取消 + 主操作按钮(装备/卸下，文字与行为按状态变)。
   private equipDetailNode: Node | null = null;
   private equipDetailTitle: Label | null = null;
   private equipDetailInfo: Label | null = null;
   private equipDetailActionLabel: Label | null = null;
+  private equipDetailActionBtn: Node | null = null; // 装备详情弹窗主操作真按钮节点（教程锁步高亮用）
   /** 当前详情弹窗针对的装备 + 主操作模式。 */
   private equipPending: S7EquipRef | null = null;
   private equipActionMode: 'equip' | 'unequip' | 'move' = 'equip';
@@ -446,7 +466,21 @@ export class S7DemoController extends Component {
   private tutorialFlashNode: Node | null = null;   // 满屏不吞触摸·只画闪烁高亮框
   private tutorialFlashGfx: Graphics | null = null;
   private tutorialFlashTarget: Node | null = null; // 当前要闪烁高亮的真按钮/卡
+  private tutorialDimHoleTarget: Node | null = null; // 挖洞范围（默认=tutorialFlashTarget；传更大的卡片节点可保留弹窗自身文字可见）
   private tutorialFlashClock = 0;                   // 闪烁动画相位累加（update 用）
+  /** 留洞锁屏（拖拽步专用）：四块挡板盖住目标四周(压暗+吞触摸)，目标包围盒处真留空洞——
+   *  洞内无任何节点→原生触摸序列(start/move/end)直通底下真节点，drag 手势能正常完成；洞外四块各自挡触摸。 */
+  private tutorialDragLockNode: Node | null = null;
+  private tutorialDragLockTop: Node | null = null;
+  private tutorialDragLockBottom: Node | null = null;
+  private tutorialDragLockLeft: Node | null = null;
+  private tutorialDragLockRight: Node | null = null;
+  private tutorialDragLockTopGfx: Graphics | null = null;
+  private tutorialDragLockBottomGfx: Graphics | null = null;
+  private tutorialDragLockLeftGfx: Graphics | null = null;
+  private tutorialDragLockRightGfx: Graphics | null = null;
+  /** DEV-TEMP：左上角常驻测试键（跳过引导/重置教程）——教程各遮罩激活时也要置顶可点，见 raiseTutorialDevBar()。上线前删。 */
+  private tutorialDevBarNode: Node | null = null;
   private tutorialInfoMode = false;                 // 纯讲解步（遮罩点任意处继续·无按钮）
   private tutorialForcedPickIndex: number | null = null; // 强制三选一：只允许点这张卡（防御·锁死遮罩已挡住其余）
   /** 建筑解锁确认弹框（真功能·点未解锁建筑弹出）：花XX星矿解锁该建筑至Lv1？ */
@@ -719,6 +753,27 @@ export class S7DemoController extends Component {
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
     this.buildTutorialPopup(W, H); // M0 弱引导首触短教程弹窗（最后建→盖在所有面板之上）
     this.buildTutorialHint(W, H); // M2 交互式强引导顶部提示条（不锁操作·最后建→盖在所有面板之上）
+    this.buildTutorialDragLock(W, H); // M4 留洞锁屏（拖拽步专用·最后建→盖在所有面板之上）
+    this.buildTutorialDevBar(W, H); // DEV-TEMP 左上角常驻测试键（最后建→默认最顶；教程遮罩抬前时会再抬一次见 raiseTutorialDevBar）
+  }
+
+  /** DEV-TEMP：左上角常驻「跳过引导」「重置教程」——教程遮罩/提示条/弹窗激活期间也要能点，故各自抬前时都会再调 raiseTutorialDevBar()。上线前整体删。 */
+  private buildTutorialDevBar(W: number, H: number): void {
+    const band = getS7UsableBand();
+    const bar = new Node('S7TutorialDevBar');
+    bar.layer = this.node.layer;
+    this.node.addChild(bar);
+    bar.setPosition(0, 0, 0);
+    const x = -W / 2 + 100, y = band.usableTopY - 30;
+    this.addBtn(bar, '重置教程', 150, 56, new Color(120, 70, 70, 220), x, y, () => this.onReset(), 22);
+    this.addBtn(bar, '跳过引导', 150, 56, new Color(70, 110, 90, 220), x, y - 64, () => this.devSkipGuide(), 22);
+    this.tutorialDevBarNode = bar;
+  }
+
+  /** 把 DEV 测试键条抬到最前（盖过教程遮罩/提示条/弹窗）。三处教程浮层各自抬前后都要调一次。 */
+  private raiseTutorialDevBar(): void {
+    const parent = this.tutorialDevBarNode?.parent;
+    if (parent && this.tutorialDevBarNode) this.tutorialDevBarNode.setSiblingIndex(parent.children.length - 1);
   }
 
   // ===== 星港主界面 hub =====
@@ -748,7 +803,7 @@ export class S7DemoController extends Component {
     this.hubDockEntryNode = this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
     this.hubSalvageEntryNode = this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
     this.makeHubEntry('居住舱', '人口', new Color(160, 130, 90, 255), lx, gy0 - gap, ew, eh, () => this.openHabitat(), 'bld_habitat');
-    this.hubGachaEntryNode = this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha());
+    this.hubGachaEntryNode = this.makeHubEntry('星港补给站', '抽卡', new Color(210, 120, 70, 255), rx, gy0 - gap, ew, eh, () => this.openGacha(), 'bld_supply_station');
     this.hubMerchantEntryNode = this.makeHubEntry('商人小站', '买卖', new Color(150, 110, 70, 255), lx, gy0 - gap * 2, ew, eh, () => this.openMerchant(), 'bld_merchant_station');
     this.makeHubEntry('研究塔', '升级', new Color(90, 110, 150, 255), rx, gy0 - gap * 2, ew, eh, () => this.openBuildingUpgrade('bld_research_tower'), 'bld_research_tower');
     this.makeHubEntry('星核展厅', '收藏', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openGallery(), 'bld_rsv_core_gallery');
@@ -767,8 +822,6 @@ export class S7DemoController extends Component {
     this.offlineBtn = this.addBtn(this.node, '领离线', 168, 60, new Color(205, 165, 60, 255), -W * 0.36, botY + 56, () => this.onClaimOffline(), 26).node.parent;
     if (this.offlineBtn) this.offlineBtn.active = false;
     this.addBtn(this.node, '发测试邮件', 168, 60, new Color(80, 120, 160, 255), -W * 0.12, botY + 56, () => this.devSendTestMail(), 24); // DEV-TEMP·验 G2 邮件领取
-    this.addBtn(this.node, '重玩教程', 168, 60, new Color(120, 70, 70, 255), W * 0.12, botY + 56, () => this.onReset(), 26);
-    this.addBtn(this.node, '跳过引导', 168, 60, new Color(70, 110, 90, 255), W * 0.36, botY + 56, () => this.devSkipGuide(), 26); // DEV-TEMP·跳过新手强引导→老演示态
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
     this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
@@ -817,6 +870,7 @@ export class S7DemoController extends Component {
       case 'bld_pilot_training_bay': return S7_TUTORIAL_TRAINING_UNLOCK_COST;
       case 'bld_salvage_port': return S7_TUTORIAL_SALVAGE_UNLOCK_COST;
       case 'bld_merchant_station': return S7_TUTORIAL_MERCHANT_UNLOCK_COST;
+      case 'bld_supply_station': return S7_TUTORIAL_GACHA_UNLOCK_COST;
       case 'bld_habitat': return 30;
       case 'bld_research_tower': return 40;
       case 'bld_rsv_core_gallery': return 50;
@@ -877,6 +931,7 @@ export class S7DemoController extends Component {
       case 'bld_pilot_training_bay': this.openTraining(); break;
       case 'bld_salvage_port': this.openSalvage(); break;
       case 'bld_merchant_station': this.openMerchant(); break;
+      case 'bld_supply_station': this.openGacha(); break;
       case 'bld_habitat': this.openHabitat(); break;
       case 'bld_rsv_core_gallery': this.openGallery(); break;
       default: break;
@@ -936,7 +991,8 @@ export class S7DemoController extends Component {
     // 赞助补给（看广告得券）。
     this.addBtn(panel, '赞助补给·看广告得补给券', 460, 80, new Color(200, 120, 70, 255), 0, botY + 120, () => this.onGachaSponsorAd(), 28);
     // 返回星港。
-    this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 36, () => this.closeGacha(), 30);
+    const back = this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 36, () => this.closeGacha(), 30);
+    this.gachaBackBtn = back.node.parent;
   }
 
   /** 在某浮层下加一个标签（随浮层显隐）。 */
@@ -971,6 +1027,7 @@ export class S7DemoController extends Component {
   }
 
   private openGacha(): void {
+    if (this.blockIfBuildingLocked('bld_supply_station', '星港补给站')) return;
     if (!this.gachaNode || !this.playerState) return;
     // 进界面先刷新到当前日（专属轮换可能在离开期间发生→忘领满格走邮件补发·零头清零）。
     refreshGachaToDay(this.playerState.gacha, this.playerState.mailbox, DEFAULT_S7_GACHA_CONFIG, gachaDayIndex(Date.now()), Date.now());
@@ -1160,7 +1217,7 @@ export class S7DemoController extends Component {
       this.salvageHourBtns.push({ hours: h, node: n });
     });
 
-    this.addBtn(panel, '开始打捞 (耗1信标)', 420, 88, new Color(70, 160, 130, 255), 0, topY - 410, () => this.onSalvageStart(), 30);
+    this.salvageStartBtn = this.addBtn(panel, '开始打捞 (耗1信标)', 420, 88, new Color(70, 160, 130, 255), 0, topY - 410, () => this.onSalvageStart(), 30).node.parent;
 
     // 进行中任务列表容器。
     this.mkPanelLabel(panel, '— 进行中 —', 24, new Color(150, 170, 190), 0, topY - 480);
@@ -1224,6 +1281,7 @@ export class S7DemoController extends Component {
 
     // 重建任务列表。
     this.salvageListNode.removeAllChildren();
+    this.salvageCollectBtns.clear();
     const band = getS7UsableBand();
     let y = band.usableTopY - 540;
     const now = Date.now();
@@ -1238,7 +1296,8 @@ export class S7DemoController extends Component {
       this.mkPanelLabel(this.salvageListNode, txt, 26, done ? new Color(150, 235, 170) : new Color(220, 225, 235), -this.viewW * 0.20, y);
       const mid = m.id;
       if (done) {
-        this.addBtn(this.salvageListNode, '收菜', 150, 64, new Color(70, 160, 110, 255), this.viewW * 0.30, y, () => this.onSalvageCollect(mid), 28);
+        const btn = this.addBtn(this.salvageListNode, '收菜', 150, 64, new Color(70, 160, 110, 255), this.viewW * 0.30, y, () => this.onSalvageCollect(mid), 28);
+        if (btn.node.parent) this.salvageCollectBtns.set(mid, btn.node.parent);
       } else {
         this.addBtn(this.salvageListNode, '看广告加速', 230, 64, new Color(200, 130, 70, 255), this.viewW * 0.26, y, () => this.onSalvageSpeedup(mid), 26);
         this.addBtn(this.salvageListNode, '秒成', 110, 64, new Color(110, 90, 140, 255), this.viewW * 0.44, y, () => this.devFinishSalvage(mid), 24); // DEV-TEMP
@@ -1309,6 +1368,14 @@ export class S7DemoController extends Component {
     if (!this.playerState) return;
     const m = this.playerState.salvage.missions.find((x) => x.id === missionId);
     if (m) { m.endTime = Date.now(); this.persist(); this.refreshSalvage(); }
+  }
+
+  /** M5 关5：首次打捞教学奖励——直接判完成，免去真机不可能等的 2h（非 DEV-TEMP，正式逻辑保留）。 */
+  private tutorialFinishFirstSalvage(): void {
+    if (!this.playerState) return;
+    const missions = this.playerState.salvage.missions;
+    const m = missions[missions.length - 1];
+    if (m) m.endTime = Date.now();
   }
 
   /** 把一条打捞奖励入账，返回中文短描述（供结果行汇总）。完整星舰已拥有→折该船专属碎片(15·同抽卡重复)。 */
@@ -1792,21 +1859,24 @@ export class S7DemoController extends Component {
    * 展示强引导一步：高光描边框跟着 target 的世界坐标包围盒（target 为 null 则不画高光，仅文字+遮罩）；
    * text 为引导文案；onNext 为点「下一步」的回调（通常调 advanceStrongGuideStep 再决定下一步展示什么）。
    */
-  private showTutorialStep(text: string, target: Node | null, onNext: () => void, _nextLabel = ''): void {
+  private showTutorialStep(text: string, target: Node | null, onNext: () => void, _nextLabel = '', holeTarget?: Node | null): void {
     if (!this.tutorialOverlayNode || !this.tutorialTextLabel) return;
     this.hideTutorialHint(); // 与非阻塞提示条互斥
     // 锁死全屏：只有点中高亮目标(target)才推进；target=null=纯讲解步=点任意处继续。无「下一步」按钮。
     this.tutorialInfoMode = !target;
     this.tutorialNextHandler = onNext;
     this.tutorialFlashTarget = target; // 闪烁高亮由 tickTutorialFlash 每帧画在 tutorialHighlightGfx 上
+    // 挖洞范围默认=target；目标是"弹窗内的小按钮"时传 holeTarget=整张弹窗卡片，避免卡片自身文字被压暗看着像空的。
+    this.tutorialDimHoleTarget = holeTarget !== undefined ? holeTarget : target;
     this.tutorialTextLabel.string = target ? text : `${text}\n\n（点任意处继续）`;
     if (this.tutorialNextLabel?.node.parent) this.tutorialNextLabel.node.parent.active = false; // 永远藏「下一步」按钮
     if (this.tutorialHighlightGfx) this.tutorialHighlightGfx.clear();
-    this.drawTutorialDim(target); // 暗化层挖洞：目标处正常亮、其余压暗（讲解步=全屏暗）
+    this.drawTutorialDim(this.tutorialDimHoleTarget); // 暗化层挖洞：目标处正常亮、其余压暗（讲解步=全屏暗）
     // 置顶：结果弹窗/单位管理/三选一发奖会 setSiblingIndex 抢前，遮罩须再抬上去才能盖住+吞触摸。
     const parent = this.tutorialOverlayNode.parent;
     if (parent) this.tutorialOverlayNode.setSiblingIndex(parent.children.length - 1);
     this.tutorialOverlayNode.active = true;
+    this.raiseTutorialDevBar();
   }
 
   /** 重画暗化层：有目标→目标包围盒处挖洞(不压暗·正常亮)、其余四块压暗；无目标(讲解步)→全屏压暗。 */
@@ -1858,6 +1928,8 @@ export class S7DemoController extends Component {
     this.tutorialNextHandler = null;
     this.tutorialInfoMode = false;
     this.tutorialFlashTarget = null;
+    this.tutorialDimHoleTarget = null;
+    this.hideTutorialDragLock();
   }
 
   // ===== M1a/M1b 强引导步骤调度器（关1 解锁建筑&升级 → 关2 技能演示&插件装配）=====
@@ -1986,21 +2058,47 @@ export class S7DemoController extends Component {
         );
         break;
       case 5:
-        this.openDockManageForTutorial('ship', ship); // 进船坞→该舰管理面板(升级键稳定)
+        // 船坞已由 case4 确认解锁时自动打开(真实功能行为)；这里不再代劝直接跳管理面板，要玩家自己点「管理」。
         this.showTutorialStep(
-          `这是${shipName}的管理面板。点闪烁高亮的「升级」，把它升到 Lv1（花星矿+合金、直接变强）。`,
-          this.unitManageUpgradeBtn,
-          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', ship); this.persist(); this.runTutorialStep(); },
+          `进船坞了。点闪烁高亮的「管理」，管理${shipName}。`,
+          this.manageRowBtn('ship', ship),
+          () => {
+            this.openUnitManage('ship', ship); // 点「管理」→真实动作(遮罩吞触摸·手动复刻)
+            this.showTutorialStep(
+              `这是${shipName}的管理面板。点闪烁高亮的「升级」，把它升到 Lv1（花星矿+合金、直接变强）。`,
+              this.unitManageUpgradeBtn,
+              () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', ship); this.persist(); this.runTutorialStep(); },
+            );
+          },
         );
         break;
       case 6:
         this.showTutorialInfo(
           `升到 Lv1，${shipName}解锁了它的星舰技能！\n（星舰升到一定等级会解锁专属技能，战斗中自动释放。）`,
-          () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
+          () => {
+            this.showTutorialStep(
+              '点闪烁高亮的「返回」，退出管理面板。',
+              this.unitManageBackBtn,
+              () => {
+                if (this.unitManageNode) this.unitManageNode.active = false; // 点「返回」→真实动作(遮罩吞触摸·手动复刻)
+                this.showTutorialStep(
+                  '点闪烁高亮的「返回星港」，回到星港。',
+                  this.dockBackBtn,
+                  () => {
+                    advanceStrongGuideStep(t);
+                    if (this.dockNode) this.dockNode.active = false;
+                    this.refresh();
+                    this.persist();
+                    this.runTutorialStep();
+                  },
+                );
+              },
+            );
+          },
         );
         break;
       case 7:
-        this.closeUnitPanelsToHub();
+        this.closeUnitPanelsToHub(); // 确保上下文(冷启动可续)
         this.showTutorialStep(
           '光有船不够，还得练驾驶员。\n点闪烁高亮的「训练舱」。',
           this.hubTrainingEntryNode,
@@ -2012,17 +2110,42 @@ export class S7DemoController extends Component {
         );
         break;
       case 8:
-        this.openDockManageForTutorial('pilot', pilot);
         this.showTutorialStep(
-          `这是驾驶员「${pilotName}」的管理面板。点闪烁高亮的「升级」，把${pilotName}升到 Lv1。`,
-          this.unitManageUpgradeBtn,
-          () => { advanceStrongGuideStep(t); this.onUpgradeUnit('pilot', pilot); this.persist(); this.runTutorialStep(); },
+          `进训练舱了。点闪烁高亮的「管理」，管理驾驶员「${pilotName}」。`,
+          this.manageRowBtn('pilot', pilot),
+          () => {
+            this.openUnitManage('pilot', pilot); // 点「管理」→真实动作(遮罩吞触摸·手动复刻)
+            this.showTutorialStep(
+              `这是驾驶员「${pilotName}」的管理面板。点闪烁高亮的「升级」，把${pilotName}升到 Lv1。`,
+              this.unitManageUpgradeBtn,
+              () => { advanceStrongGuideStep(t); this.onUpgradeUnit('pilot', pilot); this.persist(); this.runTutorialStep(); },
+            );
+          },
         );
         break;
       case 9:
         this.showTutorialInfo(
           `${pilotName}升到 Lv1，解锁了驾驶能力！\n（驾驶员能力会改变星舰的战斗行为——让它在战斗里更聪明地选目标。）`,
-          () => { advanceStrongGuideStep(t); this.persist(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
+          () => {
+            this.showTutorialStep(
+              '点闪烁高亮的「返回」，退出管理面板。',
+              this.unitManageBackBtn,
+              () => {
+                if (this.unitManageNode) this.unitManageNode.active = false; // 点「返回」→真实动作(遮罩吞触摸·手动复刻)
+                this.showTutorialStep(
+                  '点闪烁高亮的「返回星港」，回到星港。',
+                  this.trainingBackBtn,
+                  () => {
+                    advanceStrongGuideStep(t);
+                    if (this.trainingNode) this.trainingNode.active = false;
+                    this.refresh();
+                    this.persist();
+                    this.runTutorialStep();
+                  },
+                );
+              },
+            );
+          },
         );
         break;
       case 10:
@@ -2048,10 +2171,9 @@ export class S7DemoController extends Component {
         break;
       case 13:
         this.showTutorialStep(
-          `恭喜获得 ${this.pluginName(S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId)}（武器槽·精良）！\n这是把武器插件，装上能强化${shipName}的输出。\n下一步去船坞把它装到${shipName}身上。`,
-          null,
+          `恭喜获得 ${this.pluginName(S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId)}（武器槽·精良）！\n这是把武器插件，装上能强化${shipName}的输出。\n点闪烁高亮的「返回星港」，下一步去船坞把它装到${shipName}身上。`,
+          this.resultHomeBtn,
           () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.onResultGoHome(); this.runTutorialStep(); },
-          '去装配',
         );
         break;
       // ===== M1b-2 关2后：插件装配 + 槽位教学 =====
@@ -2060,40 +2182,83 @@ export class S7DemoController extends Component {
         this.showTutorialStep(
           `回到星港了。进「船坞」给${shipName}装上刚拿到的武器插件。`,
           this.hubDockEntryNode,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openDockManageForTutorial('ship', ship); this.runTutorialStep(); },
+          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openDock(); this.runTutorialStep(); },
         );
         break;
       case 15:
-        this.openDockManageForTutorial('ship', ship);
+        this.openDock(); // 确保上下文(冷启动可续)
         this.showTutorialStep(
-          `点「装配」打开${shipName}的装备界面。`,
-          this.unitManageEquipBtn,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openLoadoutForTutorial(ship); this.runTutorialStep(); },
+          `点闪烁高亮的「管理」，管理${shipName}。`,
+          this.manageRowBtn('ship', ship),
+          () => {
+            this.openUnitManage('ship', ship); // 点「管理」→真实动作(遮罩吞触摸·手动复刻)
+            this.showTutorialStep(
+              `点「装配」打开${shipName}的装备界面。`,
+              this.unitManageEquipBtn,
+              () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openLoadoutForTutorial(ship); this.runTutorialStep(); },
+            );
+          },
         );
         break;
-      case 16:
+      case 16: {
         this.openLoadoutForTutorial(ship);
+        const pluginRef = this.tutorialWeaponPluginRef();
+        const pName = this.pluginName(S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId);
         this.showTutorialStep(
-          `这是装配界面。${shipName}现在是 C 阶，只有 1 个插件槽能用；\n升到 B 阶开第 2 个槽（技能槽）、A 阶开第 3 个（战术槽）。\n先把这把武器插件装进唯一的槽里。`,
-          null,
-          () => { advanceStrongGuideStep(t); this.equipTutorialWeaponPlugin(ship); this.persist(); this.runTutorialStep(); },
-          '装上',
+          `这是装配界面。${shipName}现在是 C 阶，只有 1 个插件槽能用；\n升到 B 阶开第 2 个槽（技能槽）、A 阶开第 3 个（战术槽）。\n在列表里点「${pName}」。`,
+          pluginRef ? this.loadoutItemBtns.get(`plugin:${pluginRef.id}`) ?? null : null,
+          () => {
+            if (pluginRef) this.openEquipDetail(pluginRef);
+            this.showTutorialStep(
+              '点闪烁高亮的「装备」，把它装进唯一的槽里。',
+              this.equipDetailActionBtn,
+              () => {
+                advanceStrongGuideStep(t);
+                this.onEquipDetailAction();
+                this.persist();
+                this.runTutorialStep();
+              },
+              '',
+              this.equipDetailNode,
+            );
+          },
         );
         break;
+      }
       case 17:
-        this.openLoadoutForTutorial(ship);
+        this.openLoadoutForTutorial(ship); // 确保上下文(冷启动可续)
         this.showTutorialStep(
-          `装好了！武器插件已上，${shipName}战力提升。\n（以后任意装备都在这里装/卸；升阶开更多槽。）`,
-          null,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.closeLoadout(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
-          '完成',
+          `装好了！武器插件已上，${shipName}战力提升。\n（以后任意装备都在这里装/卸；升阶开更多槽。）\n点闪烁高亮的「返回」，退出装配界面。`,
+          this.loadoutBackBtn,
+          () => {
+            this.closeLoadout(); // 点「返回」→真实动作(遮罩吞触摸·手动复刻)
+            this.showTutorialStep(
+              '点闪烁高亮的「返回」，退出管理面板。',
+              this.unitManageBackBtn,
+              () => {
+                if (this.unitManageNode) this.unitManageNode.active = false;
+                this.showTutorialStep(
+                  '点闪烁高亮的「返回星港」，回到星港。',
+                  this.dockBackBtn,
+                  () => {
+                    advanceStrongGuideStep(t);
+                    if (this.dockNode) this.dockNode.active = false;
+                    this.refresh();
+                    this.persist();
+                    this.hideTutorialStep();
+                    this.runTutorialStep();
+                  },
+                );
+              },
+            );
+          },
         );
         break;
       // ===== M1b-3 关2后续：活动短教程（弱引导）+ 引导出战关3 =====
       case 18:
         this.closeUnitPanelsToHub();
         this.showTutorialStep(
-          '回基地了。先认识两个限时活动——点「下一步」打开「3天行动 / 7天扩张」看一眼。\n（这俩边玩边自动攒进度、不强求现在做，看完就走。）',
+          '回基地了。先认识两个限时活动——点闪烁高亮的「3天行动」入口看一眼。\n（这俩边玩边自动攒进度、不强求现在做，看完就走。）',
           this.hubActivityEntryNode,
           () => {
             advanceStrongGuideStep(t); // →19
@@ -2136,23 +2301,28 @@ export class S7DemoController extends Component {
       case 23:
         this.closeUnitPanelsToHub();
         this.showTutorialStep(
-          '这是「星港补给站」——用补给券招募新星舰和驾驶员。\n点「下一步」进去抽卡。',
+          '「星港补给站」能用补给券招募新星舰和驾驶员。\n点闪烁高亮的「星港补给站」。',
           this.hubGachaEntryNode,
-          () => { advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep(); this.openGacha(); this.runTutorialStep(); },
+          () => {
+            this.openBuildingUnlockDialog('bld_supply_station', '星港补给站');
+            this.showTutorialStep('花星矿解锁星港补给站——点闪烁高亮的「确认」。', this.buildingUnlockConfirmBtn,
+              () => { advanceStrongGuideStep(t); this.onConfirmBuildingUnlock(); this.persist(); this.runTutorialStep(); });
+          },
         );
         break;
       case 24:
         this.openGacha(); this.switchGachaPool('recruit');
         this.showTutorialStep(
-          '这是「驾驶员招募池」。点「下一步」抽 1 次，招募一名新驾驶员。',
+          '这是「驾驶员招募池」。点闪烁高亮的「单抽」，招募一名新驾驶员。',
           this.gachaSingleBtn,
           () => {
             advanceStrongGuideStep(t); // →25
             this.grantTutorialGachaUnit('pilot', S7_TUTORIAL_GACHA_PILOT);
             this.persist();
             this.hideTutorialStep();
+            const star = this.playerState ? getPilotStar(this.playerState.unitTiers, S7_TUTORIAL_GACHA_PILOT) : 1;
             this.showTutorialStep(
-              `🎉 招募到驾驶员「${this.unitName('pilot', S7_TUTORIAL_GACHA_PILOT)}」！`,
+              `🎉 招募到驾驶员「${this.unitName('pilot', S7_TUTORIAL_GACHA_PILOT)}」（${star}★）！`,
               null,
               () => { this.hideTutorialStep(); this.runTutorialStep(); },
               '继续',
@@ -2160,25 +2330,39 @@ export class S7DemoController extends Component {
           },
         );
         break;
-      case 25:
-        this.openGacha(); this.switchGachaPool('refit');
+      case 25: {
+        this.openGacha();
+        const refitTab = this.gachaTabBtns.find((b) => b.pool === 'refit')?.node ?? null;
         this.showTutorialStep(
-          '再切到「星舰招募池」。点「下一步」抽 1 次，招募一艘新星舰。',
-          this.gachaSingleBtn,
+          '再切到「星舰招募池」——点闪烁高亮的页签。',
+          refitTab,
           () => {
-            advanceStrongGuideStep(t); // →26
-            this.grantTutorialGachaUnit('ship', S7_TUTORIAL_GACHA_SHIP);
-            this.persist();
-            this.hideTutorialStep();
+            this.switchGachaPool('refit');
             this.showTutorialStep(
-              `🎉 招募到星舰「${this.unitName('ship', S7_TUTORIAL_GACHA_SHIP)}」！\n新成员加入了，下一步去把队伍练强。`,
-              null,
-              () => { this.hideTutorialStep(); this.closeGacha(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
-              '继续',
+              '点闪烁高亮的「单抽」，招募一艘新星舰。',
+              this.gachaSingleBtn,
+              () => {
+                advanceStrongGuideStep(t); // →26
+                this.grantTutorialGachaUnit('ship', S7_TUTORIAL_GACHA_SHIP);
+                this.persist();
+                this.hideTutorialStep();
+                const tier = this.playerState ? shipTierName(getShipTier(this.playerState.unitTiers, S7_TUTORIAL_GACHA_SHIP)) : 'C';
+                this.showTutorialStep(
+                  `🎉 招募到星舰「${this.unitName('ship', S7_TUTORIAL_GACHA_SHIP)}」（${tier}阶）！\n新成员加入了，下一步去把队伍练强。\n点闪烁高亮的「返回星港」，回到星港。`,
+                  this.gachaBackBtn,
+                  () => {
+                    this.hideTutorialStep();
+                    this.closeGacha(); // 点「返回星港」→真实动作(遮罩吞触摸·手动复刻)
+                    this.closeUnitPanelsToHub();
+                    this.runTutorialStep();
+                  },
+                );
+              },
             );
           },
         );
         break;
+      }
       // ===== M1c-2 关3后：引导出战关4（不白送资源·升级新单位留玩家自然攒够再练）=====
       case 26:
         this.closeUnitPanelsToHub();
@@ -2200,9 +2384,32 @@ export class S7DemoController extends Component {
       case 29: {
         this.openPrebattle();
         const sName = this.unitName('ship', S7_TUTORIAL_GACHA_SHIP);
-        this.showTutorialHint(
-          `把新星舰「${sName}」上阵：点下面九宫格的空格 → 在列表里选它 → 点「上场」。`,
-          () => !!this.squad && isShipDeployed(this.squad, S7_TUTORIAL_GACHA_SHIP),
+        const slotRef = 'p1c2'; // 前排空格(起手船占 p0c2)，新护卫舰直接部署前排
+        this.showTutorialStep(
+          `把新星舰「${sName}」上阵：点闪烁高亮的空格。`,
+          this.prebattleCellNodes.get(slotRef) ?? null,
+          () => {
+            this.onSelectPrebattleSlot(slotRef);
+            this.showTutorialStep(
+              `在列表里点「${sName}」选中它。`,
+              this.boardingShipRowBtns.get(S7_TUTORIAL_GACHA_SHIP) ?? null,
+              () => {
+                this.onBoardingPickShip(S7_TUTORIAL_GACHA_SHIP);
+                this.showTutorialStep(
+                  '点闪烁高亮的「上场」，让它进场。',
+                  this.boardingBoardBtn,
+                  () => {
+                    advanceStrongGuideStep(t);
+                    this.onToggleBoard();
+                    this.persist();
+                    this.hideTutorialStep();
+                    this.closeBoarding();
+                    this.runTutorialStep();
+                  },
+                );
+              },
+            );
+          },
         );
         break;
       }
@@ -2219,22 +2426,52 @@ export class S7DemoController extends Component {
         this.openBoarding();
         const sName = this.unitName('ship', S7_TUTORIAL_GACHA_SHIP);
         const pName = this.unitName('pilot', S7_TUTORIAL_GACHA_PILOT);
-        this.showTutorialHint(
-          `给「${sName}」配驾驶员：点「装配」→ 在列表点驾驶员「${pName}」→ 点「装备」。\n（装配不必回星港，备战界面就能配；只有升级/升阶才回星港。）`,
-          () => this.pilotOf(S7_TUTORIAL_GACHA_SHIP) !== null,
+        this.showTutorialStep(
+          `给「${sName}」配驾驶员：点闪烁高亮的「装配」。\n（装配不必回星港，备战界面就能配；只有升级/升阶才回星港。）`,
+          this.boardingEquipBtn,
+          () => {
+            this.openLoadout();
+            this.showTutorialStep(
+              `在列表里点驾驶员「${pName}」。`,
+              this.loadoutItemBtns.get(`pilot:${S7_TUTORIAL_GACHA_PILOT}`) ?? null,
+              () => {
+                this.openEquipDetail({ kind: 'pilot', id: S7_TUTORIAL_GACHA_PILOT });
+                this.showTutorialStep(
+                  '点闪烁高亮的「装备」，把它装上。',
+                  this.equipDetailActionBtn,
+                  () => {
+                    advanceStrongGuideStep(t);
+                    this.onEquipDetailAction();
+                    this.persist();
+                    this.hideTutorialStep();
+                    this.closeLoadout();
+                    this.closeBoarding();
+                    this.runTutorialStep();
+                  },
+                  '',
+                  this.equipDetailNode,
+                );
+              },
+            );
+          },
         );
         break;
       }
-      // ===== M2-2 关4备战：摆阵换位（交互式·玩家真拖）+ 出战关4 =====
+      // ===== M2-2 关4备战：摆阵换位（留洞锁屏·玩家真拖）+ 出战关4 =====
       case 32: {
         this.closeLoadout();
         this.closeBoarding();
         this.openPrebattle();
         const starterName = this.unitName('ship', S7_TUTORIAL_STARTER.shipId);
-        this.showTutorialHint(
-          `站位有讲究：突击型老舰「${starterName}」站后排输出更好，新护卫舰留前排扛伤。\n把「${starterName}」从前排拖到后排（往下那排的格子）。`,
-          () => { const c = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId); return c !== null && c < 2; },
-        );
+        const curSlot = this.squad?.formation.find((f) => f.shipId === S7_TUTORIAL_STARTER.shipId)?.slotRef ?? null;
+        const cellNode = curSlot ? this.prebattleCellNodes.get(curSlot) ?? null : null;
+        if (cellNode) {
+          this.showTutorialDragLock(
+            `站位有讲究：突击型老舰「${starterName}」站后排输出更好，新护卫舰留前排扛伤。\n把闪烁高亮的「${starterName}」从前排拖到后排（往下那排的格子），其余地方锁死点不了。`,
+            cellNode,
+            () => { const c = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId); return c !== null && c < 2; },
+          );
+        }
         break;
       }
       case 33:
@@ -2269,25 +2506,56 @@ export class S7DemoController extends Component {
           },
         );
         break;
-      case 37:
+      case 37: {
         this.openSalvage();
-        this.showTutorialHint(
-          '开一次打捞：点「普通」信标档 → 点「2h」时长 → 点「开始打捞」。\n（用掉刚拿的普通信标，挂机 2 小时就有收获。）',
-          () => !!this.playerState && this.playerState.salvage.missions.length > 0,
-        );
-        break;
-      case 38:
+        const tierBtn = this.salvageTierBtns.find((b) => b.tier === 'common')?.node ?? null;
         this.showTutorialStep(
-          '打捞队派出去了！挂机就会产资源，时间到回来点「收菜」领。\n继续推进主线吧！',
-          null,
+          '点闪烁高亮的「普通」信标档。',
+          tierBtn,
           () => {
-            advanceStrongGuideStep(t); this.persist(); this.hideTutorialStep();
-            if (this.salvageNode) this.salvageNode.active = false; // 回星港
-            this.refresh(); this.runTutorialStep();
+            this.selectSalvageTier('common');
+            const hourBtn = this.salvageHourBtns.find((b) => b.hours === 2)?.node ?? null;
+            this.showTutorialStep(
+              '点闪烁高亮的「2h」时长。',
+              hourBtn,
+              () => {
+                this.selectSalvageHours(2);
+                this.showTutorialStep(
+                  '点闪烁高亮的「开始打捞」，用掉刚拿的普通信标。',
+                  this.salvageStartBtn,
+                  () => {
+                    this.onSalvageStart();
+                    this.tutorialFinishFirstSalvage(); // 第一次打捞·直接判完成，免去真机不可能等的2h
+                    advanceStrongGuideStep(t); // →38
+                    this.persist();
+                    this.hideTutorialStep();
+                    this.runTutorialStep();
+                  },
+                );
+              },
+            );
           },
-          '完成',
         );
         break;
+      }
+      case 38: {
+        this.refreshSalvage(); // 重建列表→让刚完成的任务出现「收菜」按钮、抓进 salvageCollectBtns
+        const mission = this.playerState?.salvage.missions[0];
+        const collectBtn = mission ? this.salvageCollectBtns.get(mission.id) ?? null : null;
+        this.showTutorialStep(
+          '第一次打捞，直接帮你跳过等待——点闪烁高亮的「收菜」领取奖励。',
+          collectBtn,
+          () => {
+            if (mission) this.onSalvageCollect(mission.id);
+            advanceStrongGuideStep(t); // →39
+            this.persist();
+            this.hideTutorialStep();
+            this.closeSalvage();
+            this.runTutorialStep();
+          },
+        );
+        break;
+      }
       // ===== M3-1a 关5 + 商人小站（强引导收尾·关5商人买补给券）=====
       case 39:
         this.closeUnitPanelsToHub();
@@ -2386,12 +2654,6 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** M1：教程内打开船坞/训练舱 + 直接进该单位管理面板（升级键稳定可高光）。幂等。 */
-  private openDockManageForTutorial(kind: 'ship' | 'pilot', unitId: string): void {
-    if (kind === 'ship') this.openDock(); else this.openTraining();
-    this.openUnitManage(kind, unitId);
-  }
-
   /** M1：教程内收起 单位管理 + 船坞/训练舱，回到星港主界面。 */
   private closeUnitPanelsToHub(): void {
     if (this.unitManageNode) this.unitManageNode.active = false;
@@ -2407,15 +2669,11 @@ export class S7DemoController extends Component {
     else this.refreshLoadout();
   }
 
-  /** M1b-2：把关2拿到的武器插件装到指定星舰的武器槽（已在该舰则跳过·幂等）。 */
-  private equipTutorialWeaponPlugin(shipId: string): void {
-    if (!this.pluginInventory) return;
+  /** M1b-2：关2拿到的武器插件实例 ref（找不到=未发货，返回 null·正常不会发生）。 */
+  private tutorialWeaponPluginRef(): S7EquipRef | null {
+    if (!this.pluginInventory) return null;
     const inst = this.pluginInventory.plugins.find((p) => p.pluginId === S7_TUTORIAL_LEVEL2_WEAPON_PLUGIN.pluginId);
-    if (!inst) return;
-    const ref: S7EquipRef = { kind: 'plugin', id: inst.instanceId };
-    if (this.equipShipOf(ref) === shipId) { this.refreshLoadout(); return; } // 已在本舰→幂等
-    this.doEquip(ref, shipId);
-    this.refreshLoadout();
+    return inst ? { kind: 'plugin', id: inst.instanceId } : null;
   }
 
   /**
@@ -2532,6 +2790,7 @@ export class S7DemoController extends Component {
     this.tutorialPopupSkipHandler = onSkip;
     this.tutorialPopupNextHandler = onNext;
     this.tutorialPopupNode.active = true;
+    this.raiseTutorialDevBar();
   }
 
   /** 收起弱引导首触短教程弹窗。 */
@@ -2592,6 +2851,76 @@ export class S7DemoController extends Component {
     this.tutorialInteractiveGoal = null;
     this.tutorialFlashTarget = null;
     this.tutorialForcedPickIndex = null;
+    this.hideTutorialDragLock();
+  }
+
+  /** 搭"留洞锁屏"四块挡板（默认隐藏，初始 0 大小；每次展示前由 layoutTutorialDragLockBlockers 按目标重摆）。 */
+  private buildTutorialDragLock(W: number, H: number): void {
+    const container = new Node('S7TutorialDragLock'); container.layer = this.node.layer; this.node.addChild(container);
+    container.addComponent(UITransform).setContentSize(W, H); // 缺这行 convertToNodeSpaceAR 拿不到坐标系→挡板永远摆不上(真机栽过)
+    const mk = (name: string): [Node, Graphics] => {
+      const n = new Node(name); n.layer = this.node.layer; container.addChild(n);
+      n.addComponent(UITransform).setContentSize(1, 1);
+      const gfx = n.addComponent(Graphics);
+      n.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸（挡板范围内点击无反应，洞内无此节点→直通底下真节点）
+      n.active = false;
+      return [n, gfx];
+    };
+    [this.tutorialDragLockTop, this.tutorialDragLockTopGfx] = mk('top');
+    [this.tutorialDragLockBottom, this.tutorialDragLockBottomGfx] = mk('bottom');
+    [this.tutorialDragLockLeft, this.tutorialDragLockLeftGfx] = mk('left');
+    [this.tutorialDragLockRight, this.tutorialDragLockRightGfx] = mk('right');
+    container.active = false;
+    this.tutorialDragLockNode = container;
+  }
+
+  /** 按 target 包围盒摆四块挡板：上/下/左/右各盖一块，target 处真留空(无节点)——与 drawTutorialDim 同套挖洞算法。 */
+  private layoutTutorialDragLockBlockers(target: Node): void {
+    const container = this.tutorialDragLockNode;
+    const ut = target.getComponent(UITransform);
+    if (!container) return;
+    const containerUt = container.getComponent(UITransform);
+    if (!ut || !containerUt) return;
+    const W = this.viewW, H = this.viewH;
+    const c = containerUt.convertToNodeSpaceAR(target.getWorldPosition());
+    const pad = 12;
+    const hw = ut.contentSize.width * target.scale.x / 2 + pad;
+    const hh = ut.contentSize.height * target.scale.y / 2 + pad;
+    const L = c.x - hw, R = c.x + hw, B = c.y - hh, T = c.y + hh;
+    const place = (n: Node | null, gfx: Graphics | null, x: number, y: number, w: number, h: number): void => {
+      if (!n) return;
+      const active = w > 0 && h > 0;
+      n.active = active;
+      if (!active) return;
+      n.getComponent(UITransform)!.setContentSize(w, h);
+      n.setPosition(x + w / 2, y + h / 2, 0);
+      if (gfx) { gfx.clear(); gfx.fillColor = new Color(0, 0, 0, 175); gfx.rect(-w / 2, -h / 2, w, h); gfx.fill(); }
+    };
+    place(this.tutorialDragLockTop, this.tutorialDragLockTopGfx, -W / 2, T, W, H / 2 - T);
+    place(this.tutorialDragLockBottom, this.tutorialDragLockBottomGfx, -W / 2, -H / 2, W, B + H / 2);
+    place(this.tutorialDragLockLeft, this.tutorialDragLockLeftGfx, -W / 2, B, L + W / 2, T - B);
+    place(this.tutorialDragLockRight, this.tutorialDragLockRightGfx, R, B, W / 2 - R, T - B);
+  }
+
+  /**
+   * 留洞锁屏：拖拽步专用——target 四周锁死(压暗+吞触摸)，target 包围盒处真留空洞，
+   * 玩家在洞内对真节点的拖拽手势(start/move/end)完整直通，其余地方点了无反应。
+   * goal() 真正拖对位置才返回 true；复用 tutorialInteractiveGoal 轮询(update() 自动推进+收尾)。
+   */
+  private showTutorialDragLock(text: string, target: Node, goal: () => boolean): void {
+    this.showTutorialHint(text, goal, target); // 文字提示条 + 闪烁高亮框 + goal 轮询
+    this.layoutTutorialDragLockBlockers(target);
+    if (this.tutorialDragLockNode) {
+      this.tutorialDragLockNode.active = true;
+      const parent = this.tutorialDragLockNode.parent;
+      if (parent) this.tutorialDragLockNode.setSiblingIndex(parent.children.length - 1);
+    }
+    this.raiseTutorialHintIfActive(); // 把提示条/高亮/DEV键再抬到挡板之上
+  }
+
+  /** 收起留洞锁屏四块挡板。 */
+  private hideTutorialDragLock(): void {
+    if (this.tutorialDragLockNode) this.tutorialDragLockNode.active = false;
   }
 
   /** 提示条/高亮活动时抬到最前（玩家打开上阵/装配/打捞面板会 setSiblingIndex 抢前→须再抬上去才可见）。 */
@@ -2600,6 +2929,7 @@ export class S7DemoController extends Component {
     if (!parent) return;
     if (this.tutorialFlashNode && this.tutorialFlashNode.active) this.tutorialFlashNode.setSiblingIndex(parent.children.length - 1);
     if (this.tutorialHintNode && this.tutorialHintNode.active) this.tutorialHintNode.setSiblingIndex(parent.children.length - 1);
+    this.raiseTutorialDevBar();
   }
 
   /** 每帧更新闪烁高亮框（脉动透明度+微放大），框住 tutorialFlashTarget 的真按钮包围盒。update() 调。
@@ -2691,6 +3021,7 @@ export class S7DemoController extends Component {
         const ln = new Node('t'); ln.layer = this.node.layer; cn.addChild(ln);
         const l = ln.addComponent(Label); l.fontSize = 30; l.lineHeight = 36; l.color = new Color(230, 240, 255); l.string = '';
         this.prebattleCellLabels.push(l);
+        this.prebattleCellNodes.set(slotRef, cn);
       }
     }
 
@@ -3106,8 +3437,9 @@ export class S7DemoController extends Component {
     this.boardingDetailLabel = dN.addComponent(Label); this.boardingDetailLabel.fontSize = 24; this.boardingDetailLabel.lineHeight = 32; this.boardingDetailLabel.color = new Color(220, 230, 250);
     const actions = new Node('bActions'); actions.layer = this.node.layer; panel.addChild(actions); actions.setPosition(0, 0, 0);
     this.boardingActionsNode = actions;
-    this.addBtn(actions, '装配', 200, 80, new Color(70, 130, 110, 255), W * 0.16, sheetBot + H * 0.13, () => this.openLoadout(), 30);
+    this.boardingEquipBtn = this.addBtn(actions, '装配', 200, 80, new Color(70, 130, 110, 255), W * 0.16, sheetBot + H * 0.13, () => this.openLoadout(), 30).node.parent;
     this.boardingBoardBtnLabel = this.addBtn(actions, '上场', 200, 80, new Color(90, 110, 160, 255), W * 0.32, sheetBot + H * 0.13, () => this.onToggleBoard(), 30);
+    this.boardingBoardBtn = this.boardingBoardBtnLabel.node.parent;
 
     // 底部中间「返回」。
     this.addBtn(panel, '返回', 240, 84, new Color(120, 90, 160, 255), 0, sheetBot + 56, () => this.closeBoarding(), 32);
@@ -3131,6 +3463,7 @@ export class S7DemoController extends Component {
     const W = this.viewW, H = this.viewH;
     const list = this.boardingShipListNode;
     list.removeAllChildren();
+    this.boardingShipRowBtns.clear();
     // 排序：① 当前格上的船最前 → ② 上阵的靠前 → ③ 战力高靠前。
     const cellShip = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot)?.shipId ?? null : null;
     const ships = this.squad.ownedShips.slice().sort((a, b) => {
@@ -3148,7 +3481,8 @@ export class S7DemoController extends Component {
       const sel = this.prebattleSelShip === shipId;
       const label = `${shipId}（战力${this.shipPower(shipId)}）${deployed ? '·已上场' : ''}`;
       const col = sel ? new Color(70, 130, 95, 255) : deployed ? new Color(45, 95, 75, 255) : new Color(55, 95, 150, 255);
-      this.addBtn(list, label, bw, bh, col, -W * 0.24, y, () => this.onBoardingPickShip(shipId), 24);
+      const row = this.addBtn(list, label, bw, bh, col, -W * 0.24, y, () => this.onBoardingPickShip(shipId), 24);
+      this.boardingShipRowBtns.set(shipId, row.node.parent as Node);
       y -= bh + 10;
     }
     // 右侧详情 + 操作。
@@ -3220,7 +3554,8 @@ export class S7DemoController extends Component {
 
     // 底部：一键卸装(左) / 关闭(中) / 一键装配(右)。
     this.addBtn(panel, '一键卸装', 230, 84, new Color(125, 80, 80, 255), -W * 0.30, band.usableBottomY + 56, () => this.onLoadoutUnequipAll(), 30);
-    this.addBtn(panel, '返回', 200, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 30);
+    const back = this.addBtn(panel, '返回', 200, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 56, () => this.closeLoadout(), 30);
+    this.loadoutBackBtn = back.node.parent;
     this.addBtn(panel, '一键装配', 230, 84, new Color(70, 140, 110, 255), W * 0.30, band.usableBottomY + 56, () => this.onLoadoutAutoEquip(), 30);
 
     this.buildEquipDetailPopup(W, H);
@@ -3241,6 +3576,7 @@ export class S7DemoController extends Component {
     this.equipDetailInfo = iN.addComponent(Label); this.equipDetailInfo.fontSize = 28; this.equipDetailInfo.lineHeight = 38; this.equipDetailInfo.color = new Color(215, 225, 245);
     this.addBtn(panel, '取消', 240, 84, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.11, () => this.closeEquipDetail(), 32);
     this.equipDetailActionLabel = this.addBtn(panel, '装备', 240, 84, new Color(70, 140, 110, 255), W * 0.20, -H * 0.11, () => this.onEquipDetailAction(), 32);
+    this.equipDetailActionBtn = this.equipDetailActionLabel.node.parent;
   }
 
   /** 移动确认弹窗（装备已在别船时二次确认）：文案 + 取消(左) + 确认(右)。 */
@@ -3290,6 +3626,7 @@ export class S7DemoController extends Component {
     if (this.loadoutTitleLabel) this.loadoutTitleLabel.string = `装配 — ${ship}　战力 ${this.shipPower(ship)}`;
     const list = this.loadoutListNode;
     list.removeAllChildren();
+    this.loadoutItemBtns.clear();
     const W = this.viewW;
     const band = getS7UsableBand();
     // 调大 + 往下铺开（别堆顶部）：大格、大字、段间留白。
@@ -3317,7 +3654,8 @@ export class S7DemoController extends Component {
         const onShip = this.equipShipOf(it.ref);
         const marker = onShip === ship ? '★本舰' : onShip ? `▶${onShip}` : '未装';
         const col = onShip === ship ? new Color(55, 130, 95, 255) : onShip ? new Color(125, 100, 55, 255) : new Color(55, 95, 150, 255);
-        this.addBtn(list, `${it.top}\n${marker}`, w, h, col, x, y - r * (h + 16), () => this.openEquipDetail(it.ref), 26);
+        const btn = this.addBtn(list, `${it.top}\n${marker}`, w, h, col, x, y - r * (h + 16), () => this.openEquipDetail(it.ref), 26);
+        this.loadoutItemBtns.set(`${it.ref.kind}:${it.ref.id}`, btn.node.parent as Node);
       });
       y -= (Math.ceil(sorted.length / 3) || 1) * (h + 16) + 22;
     };
@@ -3797,10 +4135,10 @@ export class S7DemoController extends Component {
     const info = this.mkPanelLabel(panel, '', 24, new Color(200, 220, 240), 0, topY - 92);
     const list = new Node('utList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
     const result = this.mkPanelLabel(panel, kind === 'ship' ? '选星舰升级(花星矿/合金/舰碎片·船坞等级封顶)' : '选驾驶员升级(花驾驶记录·训练舱等级封顶)', 22, new Color(180, 230, 200), 0, botY + 120);
-    this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => { panel.active = false; }, 28);
+    const back = this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => { panel.active = false; }, 28);
     this.addBtn(panel, kind === 'ship' ? '升级船坞' : '升级训练舱', 260, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade(bid), 26);
-    if (kind === 'ship') { this.dockNode = panel; this.dockListNode = list; this.dockInfoLabel = info; this.dockResultLabel = result; }
-    else { this.trainingNode = panel; this.trainingListNode = list; this.trainingInfoLabel = info; this.trainingResultLabel = result; }
+    if (kind === 'ship') { this.dockNode = panel; this.dockListNode = list; this.dockInfoLabel = info; this.dockResultLabel = result; this.dockBackBtn = back.node.parent; }
+    else { this.trainingNode = panel; this.trainingListNode = list; this.trainingInfoLabel = info; this.trainingResultLabel = result; this.trainingBackBtn = back.node.parent; }
     return panel;
   }
 
@@ -3823,6 +4161,7 @@ export class S7DemoController extends Component {
     const cap = kind === 'ship' ? shipLevelCap(bLv) : driverLevelCap(bLv);
     if (infoLabel) infoLabel.string = kind === 'ship' ? `船坞 Lv.${bLv} · 星舰等级上限 ${cap}` : `训练舱 Lv.${bLv} · 驾驶员等级上限 ${cap}`;
     listNode.removeAllChildren();
+    for (const key of Array.from(this.manageRowBtns.keys())) { if (key.startsWith(`${kind}:`)) this.manageRowBtns.delete(key); }
     const units = kind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
     let y = getS7UsableBand().usableTopY - 170;
     if (units.length === 0) this.mkPanelLabel(listNode, '（还没有拥有的单位）', 24, new Color(150, 160, 175), 0, y);
@@ -3831,7 +4170,8 @@ export class S7DemoController extends Component {
       const tierStr = kind === 'ship' ? `${shipTierName(getShipTier(this.playerState.unitTiers, uid))}阶` : `${getPilotStar(this.playerState.unitTiers, uid)}★`;
       this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  ${tierStr}·Lv.${lv}`, 24, new Color(225, 225, 235), -this.viewW * 0.20, y);
       const id = uid;
-      this.addBtn(listNode, '管理', 150, 56, new Color(80, 130, 160, 255), this.viewW * 0.34, y, () => this.openUnitManage(kind, id), 26);
+      const manageBtn = this.addBtn(listNode, '管理', 150, 56, new Color(80, 130, 160, 255), this.viewW * 0.34, y, () => this.openUnitManage(kind, id), 26);
+      this.manageRowBtns.set(`${kind}:${id}`, manageBtn.node.parent as Node);
       y -= 62;
     }
   }
@@ -3938,7 +4278,7 @@ export class S7DemoController extends Component {
     this.unitManageUpgradeBtn = this.addBtn(panel, '升级', 200, 80, new Color(70, 150, 110, 255), -W * 0.30, botY + 110, () => this.onUpgradeUnit(this.unitManageKind, this.unitManageId), 28).node.parent; // M1：强引导 step5/8 高光「升级」用
     this.unitManageAscendLabel = this.addBtn(panel, '升阶', 200, 80, new Color(150, 110, 180, 255), -W * 0.06, botY + 110, () => this.onAscendUnit(this.unitManageKind, this.unitManageId), 28);
     this.unitManageEquipBtn = this.addBtn(panel, '装配', 200, 80, new Color(70, 130, 160, 255), W * 0.18, botY + 110, () => { this.prebattleSelShip = this.unitManageId; this.openLoadout(); }, 28).node.parent;
-    this.addBtn(panel, '返回', 200, 80, new Color(120, 90, 160, 255), W * 0.34, botY + 36, () => { panel.active = false; }, 28);
+    this.unitManageBackBtn = this.addBtn(panel, '返回', 200, 80, new Color(120, 90, 160, 255), W * 0.34, botY + 36, () => { panel.active = false; }, 28).node.parent;
   }
 
   private openUnitManage(kind: 'ship' | 'pilot', unitId: string): void {
