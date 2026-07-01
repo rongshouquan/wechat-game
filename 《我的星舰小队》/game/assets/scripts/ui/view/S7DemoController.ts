@@ -1807,7 +1807,7 @@ export class S7DemoController extends Component {
     ut.setContentSize(W, H);
     const dim = panel.addComponent(Graphics);
     this.tutorialDimGfx = dim; // 暗化层(挖洞)：实际暗块由 drawTutorialDim 按目标重画
-    dim.fillColor = new Color(0, 0, 0, 175);
+    dim.fillColor = new Color(0, 0, 0, 120);
     dim.rect(-W / 2, -H / 2, W, H);
     dim.fill();
     // 吞触摸（锁定其他操作）；点中高亮目标/纯讲解步点任意处 → 推进（见 onTutorialOverlayTap）。
@@ -1890,7 +1890,7 @@ export class S7DemoController extends Component {
     if (!gfx || !overlayUt) return;
     const W = this.viewW, H = this.viewH;
     gfx.clear();
-    gfx.fillColor = new Color(0, 0, 0, 175);
+    gfx.fillColor = new Color(0, 0, 0, 120);
     const ut = target?.getComponent(UITransform);
     if (!target || !ut) { gfx.rect(-W / 2, -H / 2, W, H); gfx.fill(); return; } // 讲解步=全屏暗
     const c = overlayUt.convertToNodeSpaceAR(target.getWorldPosition());
@@ -2213,17 +2213,14 @@ export class S7DemoController extends Component {
           pluginRef ? this.loadoutItemBtns.get(`plugin:${pluginRef.id}`) ?? null : null,
           () => {
             if (pluginRef) this.openEquipDetail(pluginRef);
-            this.showTutorialStep(
+            // 用 hint 而非 overlay：overlay 虽做全屏透明洞但某些设备仍遮挡弹窗；hint 收起 overlay 让弹窗完整可见
+            this.showTutorialHint(
               '点闪烁高亮的「装备」，把它装进唯一的槽里。',
-              this.equipDetailActionBtn,
               () => {
-                advanceStrongGuideStep(t);
-                this.onEquipDetailAction();
-                this.persist();
-                this.runTutorialStep();
+                const ids = this.squad?.shipLoadouts[S7_TUTORIAL_STARTER.shipId]?.pluginInstanceIds ?? [];
+                return pluginRef ? ids.includes(pluginRef.id) : false;
               },
-              '',
-              this.equipDetailNode,
+              this.equipDetailActionBtn,
             );
           },
         );
@@ -2440,20 +2437,10 @@ export class S7DemoController extends Component {
               this.loadoutItemBtns.get(`pilot:${S7_TUTORIAL_GACHA_PILOT}`) ?? null,
               () => {
                 this.openEquipDetail({ kind: 'pilot', id: S7_TUTORIAL_GACHA_PILOT });
-                this.showTutorialStep(
+                this.showTutorialHint(
                   '点闪烁高亮的「装备」，把它装上。',
+                  () => this.pilotOf(S7_TUTORIAL_GACHA_SHIP) === S7_TUTORIAL_GACHA_PILOT,
                   this.equipDetailActionBtn,
-                  () => {
-                    advanceStrongGuideStep(t);
-                    this.onEquipDetailAction();
-                    this.persist();
-                    this.hideTutorialStep();
-                    this.closeLoadout();
-                    this.closeBoarding();
-                    this.runTutorialStep();
-                  },
-                  '',
-                  this.equipDetailNode,
                 );
               },
             );
@@ -2469,13 +2456,12 @@ export class S7DemoController extends Component {
         const starterName = this.unitName('ship', S7_TUTORIAL_STARTER.shipId);
         const curSlot = this.squad?.formation.find((f) => f.shipId === S7_TUTORIAL_STARTER.shipId)?.slotRef ?? null;
         const cellNode = curSlot ? this.prebattleCellNodes.get(curSlot) ?? null : null;
-        if (cellNode) {
-          this.showTutorialDragLock(
-            `站位有讲究：突击型老舰「${starterName}」站后排输出更好，新护卫舰留前排扛伤。\n把闪烁高亮的「${starterName}」从前排拖到后排（往下那排的格子），其余地方锁死点不了。`,
-            cellNode,
-            () => { const c = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId); return c !== null && c < 2; },
-          );
-        }
+        // 开放全九宫格拖拽；「开始战斗」由 onConfirmSortie 拦截：晨星仍在前排则阻止并提示
+        this.showTutorialHint(
+          `站位有讲究：突击型老舰「${starterName}」站后排输出更好，新护卫舰留前排扛伤。\n把闪烁高亮的「${starterName}」从前排拖到后排（往下那排的格子）——拖对后才能开始战斗。`,
+          () => { const c = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId); return c !== null && c < 2; },
+          cellNode,
+        );
         break;
       }
       case 33:
@@ -2544,6 +2530,9 @@ export class S7DemoController extends Component {
       }
       case 38: {
         this.refreshSalvage(); // 重建列表→让刚完成的任务出现「收菜」按钮、抓进 salvageCollectBtns
+        // 停掉自动刷新 tick：否则每秒 refreshSalvage() 会 removeAllChildren 重建，导致 collectBtn 引用变悬空
+        // 悬空节点 getWorldPosition() 返回异常值 → 高亮框出现在错误位置（真机实测 bug）
+        if (this.salvageTicking) { this.salvageTicking = false; this.unschedule(this.salvageTick); }
         const mission = this.playerState?.salvage.missions[0];
         const collectBtn = mission ? this.salvageCollectBtns.get(mission.id) ?? null : null;
         this.showTutorialStep(
@@ -2651,20 +2640,10 @@ export class S7DemoController extends Component {
               this.loadoutItemBtns.get(`pilot:${S7_TUTORIAL_COUNTER_PILOT}`) ?? null,
               () => {
                 this.openEquipDetail({ kind: 'pilot', id: S7_TUTORIAL_COUNTER_PILOT });
-                this.showTutorialStep(
+                this.showTutorialHint(
                   '点闪烁高亮的「装备」，换上克制驾驶员。\n（原驾驶员会被换下·留着以后再用。）',
+                  () => this.pilotOf(S7_TUTORIAL_STARTER.shipId) === S7_TUTORIAL_COUNTER_PILOT,
                   this.equipDetailActionBtn,
-                  () => {
-                    advanceStrongGuideStep(t); // →46
-                    this.onEquipDetailAction();
-                    this.persist();
-                    this.hideTutorialStep();
-                    this.closeLoadout();
-                    this.closeBoarding();
-                    this.runTutorialStep();
-                  },
-                  '',
-                  this.equipDetailNode,
                 );
               },
             );
@@ -2815,8 +2794,7 @@ export class S7DemoController extends Component {
       l.string = label;
       n.on(Node.EventType.TOUCH_END, tap, this);
     };
-    mkBtn('跳过', -cardW * 0.22, new Color(90, 90, 100, 255), () => this.tutorialPopupSkipHandler?.());
-    mkBtn('下一步', cardW * 0.22, new Color(80, 160, 230, 255), () => this.tutorialPopupNextHandler?.());
+    mkBtn('知道了', 0, new Color(80, 160, 230, 255), () => this.tutorialPopupNextHandler?.());
 
     panel.active = false;
     this.tutorialPopupNode = panel;
@@ -3209,6 +3187,14 @@ export class S7DemoController extends Component {
    */
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
+    // 关4摆阵教程(step32)：晨星仍在前排→阻止出战并提示
+    if (this.isStrongGuideActive() && this.playerState?.tutorial.strongGuideStep === 32) {
+      const col = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId);
+      if (col !== null && col >= 2) {
+        this.setPrebattleInfo('⚠ 先把晨星护卫舰拖到后排（第二或第三排），再开始战斗');
+        return;
+      }
+    }
     // #2 出战前校验编队（v1.0 §4.4 空船不能上阵）：有船缺驾驶员/没上阵 → 拦下并提示，不开打。
     // 带插件库存校验(与会话内部一致)，built.lineup 即含插件——下面附上全队加成后直接喂战斗。
     let lineup: ReturnType<typeof buildSquadLineup> | null = null;
