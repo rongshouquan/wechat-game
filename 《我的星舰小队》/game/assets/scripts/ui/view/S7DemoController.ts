@@ -326,6 +326,7 @@ export class S7DemoController extends Component {
   private merchantListNode: Node | null = null;     // 货架 offer 列表容器（刷新重建）
   private merchantSellNode: Node | null = null;      // 回收按钮容器（随等级解锁·刷新重建）
   private merchantResultLabel: Label | null = null;
+  private merchantTicketBuyBtn: Node | null = null; // 补给券那行的「买」按钮（列表刷新重建·强引导 case43 用）
 
   // ===== J 建筑升级入口（弹框·各建筑共用 + 主界面等级/可升提示）=====
   private buildingUpgradeNode: Node | null = null;
@@ -1476,6 +1477,7 @@ export class S7DemoController extends Component {
       this.merchantStarLabel.string = `星贝 ${Math.floor(this.session.resources.starCargo ?? 0)}　商人Lv.${lv}　免费刷新次数剩余${m.freeRefreshRemaining}　广告刷新次数剩余${m.adRefreshRemaining}`;
     }
     this.merchantListNode.removeAllChildren();
+    this.merchantTicketBuyBtn = null;
     let y = getS7UsableBand().usableTopY - 200;
     for (const offer of m.offers) {
       const remain = offerRemaining(m, offer);
@@ -1484,7 +1486,9 @@ export class S7DemoController extends Component {
       this.mkPanelLabel(this.merchantListNode, `${tag}${nameStr}  ${offer.price}星贝  (剩${remain}/${offer.purchaseLimit})`, 24, remain > 0 ? new Color(225, 220, 200) : new Color(140, 140, 140), -this.viewW * 0.16, y);
       const oid = offer.offerId;
       const canBuy = remain > 0 && Math.floor(this.session.resources.starCargo ?? 0) >= offer.price;
-      this.addBtn(this.merchantListNode, '买', 110, 56, canBuy ? new Color(70, 150, 110, 255) : new Color(70, 75, 90, 255), this.viewW * 0.38, y, () => this.onMerchantBuy(oid), 26);
+      const btn = this.addBtn(this.merchantListNode, '买', 110, 56, canBuy ? new Color(70, 150, 110, 255) : new Color(70, 75, 90, 255), this.viewW * 0.38, y, () => this.onMerchantBuy(oid), 26);
+      // 补给券是 alwaysOffers[0]→offerId='o0'，固定在第一行，捕获以便强引导 case43 锁步高亮。
+      if (offer.offerId === 'o0') this.merchantTicketBuyBtn = btn.node.parent;
       y -= 60;
     }
     this.rebuildMerchantSell(lv);
@@ -2589,30 +2593,41 @@ export class S7DemoController extends Component {
           },
         );
         break;
-      case 43: {
+      case 43:
         this.openMerchant();
-        // 相对基准：记下进店时的补给券数，买多一张才算完成（防关5自选万一抽到补给券导致提前满足）。
-        const ticket0 = !this.session ? 0 : Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0);
-        this.tutorialMerchantTicketBaseline = ticket0;
-        this.showTutorialHint(
-          '用星贝买一张补给券：点「补给券」那一行右边的「买」。\n（补给券是抽卡用的货币，下一步要用它招募新驾驶员。）',
-          () => !!this.session && Math.floor((this.session.resources as Record<string, number>).supplyTicket ?? 0) > this.tutorialMerchantTicketBaseline,
+        this.showTutorialStep(
+          '用星贝买一张补给券——点闪烁高亮的「买」。\n（补给券是抽卡货币，下一步要用它招募新驾驶员。）',
+          this.merchantTicketBuyBtn,
+          () => {
+            advanceStrongGuideStep(t); // →44
+            this.onMerchantBuy('o0'); // offerId o0 = 补给券（alwaysOffers 第1项固定）
+            this.persist();
+            this.hideTutorialStep();
+            this.closeMerchant();
+            this.closeUnitPanelsToHub();
+            this.showTutorialStep(
+              '买到补给券了！下一步去补给站用它招募新驾驶员。',
+              null,
+              () => { this.hideTutorialStep(); this.runTutorialStep(); },
+              '去抽卡',
+            );
+          },
         );
         break;
-      }
       // ===== M3-1b 关5后：抽卡得克制驾驶员 → 装到旗舰 → 强引导结束 =====
       case 44:
         this.openGacha(); this.switchGachaPool('recruit');
         this.showTutorialStep(
-          '用刚买的补给券，在「驾驶员招募池」抽 1 次，招募一名新驾驶员来应对刁钻敌人。\n点「下一步」抽卡。',
+          '用刚买的补给券，在「驾驶员招募池」抽 1 次，招募一名能克制刁钻敌人的驾驶员。\n点闪烁高亮的「单抽」。',
           this.gachaSingleBtn,
           () => {
             advanceStrongGuideStep(t); // →45
             this.grantTutorialGachaUnit('pilot', S7_TUTORIAL_COUNTER_PILOT);
             this.persist();
             this.hideTutorialStep();
+            const star = this.playerState ? getPilotStar(this.playerState.unitTiers, S7_TUTORIAL_COUNTER_PILOT) : 1;
             this.showTutorialStep(
-              `🎉 招募到驾驶员「${this.unitName('pilot', S7_TUTORIAL_COUNTER_PILOT)}」！\n下一步把它装到旗舰上，换个驾驶员应对敌人——这就是「克制」。`,
+              `🎉 招募到驾驶员「${this.unitName('pilot', S7_TUTORIAL_COUNTER_PILOT)}」（${star}★）！\n下一步把它装到旗舰上，换个驾驶员应对敌人——这就是「克制」。`,
               null,
               () => { this.hideTutorialStep(); this.closeGacha(); this.closeUnitPanelsToHub(); this.runTutorialStep(); },
               '去装配',
@@ -2626,9 +2641,34 @@ export class S7DemoController extends Component {
         this.openBoarding();
         const flagName = this.unitName('ship', S7_TUTORIAL_STARTER.shipId);
         const newPName = this.unitName('pilot', S7_TUTORIAL_COUNTER_PILOT);
-        this.showTutorialHint(
-          `把驾驶员「${newPName}」装到旗舰「${flagName}」上：点「装配」→ 在列表点「${newPName}」→ 点「装备」。\n（换驾驶员应对不同敌人 = 克制。原来的驾驶员会被换下、留着以后再用。）`,
-          () => this.pilotOf(S7_TUTORIAL_STARTER.shipId) === S7_TUTORIAL_COUNTER_PILOT,
+        this.showTutorialStep(
+          `给旗舰「${flagName}」换驾驶员：点闪烁高亮的「装配」。`,
+          this.boardingEquipBtn,
+          () => {
+            this.openLoadout();
+            this.showTutorialStep(
+              `在列表里点驾驶员「${newPName}」。`,
+              this.loadoutItemBtns.get(`pilot:${S7_TUTORIAL_COUNTER_PILOT}`) ?? null,
+              () => {
+                this.openEquipDetail({ kind: 'pilot', id: S7_TUTORIAL_COUNTER_PILOT });
+                this.showTutorialStep(
+                  '点闪烁高亮的「装备」，换上克制驾驶员。\n（原驾驶员会被换下·留着以后再用。）',
+                  this.equipDetailActionBtn,
+                  () => {
+                    advanceStrongGuideStep(t); // →46
+                    this.onEquipDetailAction();
+                    this.persist();
+                    this.hideTutorialStep();
+                    this.closeLoadout();
+                    this.closeBoarding();
+                    this.runTutorialStep();
+                  },
+                  '',
+                  this.equipDetailNode,
+                );
+              },
+            );
+          },
         );
         break;
       }
