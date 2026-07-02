@@ -2,7 +2,7 @@
 // 覆盖：冻结口径 shipId 顺序 shp01/shp02/shp03、slotRef 顺序 p0c2/p1c2/p2c2；
 // createS7DefaultDryRunLineup 返回 fresh copy（改返回值不污染常量/下一次调用）；
 // 该阵容可被 S7BattleEncounterAssembler 映射（p0c2->bu_ship_vanguard / p1c2->bu_ship_gunner / p2c2->bu_ship_guardian）；
-// 可经 S7BattleRunService 跑 n001/n018/n075 到 summary；静态隔离与未来在线化不堵死。
+// 可经 S7BattleRunService 跑 n001/n084/n150 到 summary；静态隔离与未来在线化不堵死。
 // 真实链路用样例配置跑出；不改磁盘样例表。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -42,8 +42,8 @@ const EXPECTED = [
 
 const NODES: ReadonlyArray<readonly [string, string | number]> = [
   ['n001', 'r1'],
-  ['n018', 7],
-  ['n075', 'abc'],
+  ['n084', 7],
+  ['n150', 'abc'],
 ];
 
 describe('S7DefaultBattleLineup - 冻结口径', () => {

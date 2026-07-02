@@ -1,5 +1,5 @@
 // BATTLE-RT-04: S7 专用纯 TS 实时自动战斗核心 S7AutoBattleEngine 测试。
-// 覆盖任务包 §7 的 25 个要点：n001/n018/n075 跑通、同/异 seed、站位寻敌、能量/大招、
+// 覆盖任务包 §7 的 25 个要点：n001/n084/n150 跑通、同/异 seed、站位寻敌、能量/大招、
 // 短路、护盾、治疗、清群/贯穿/后排、mark/vulnerable/shield_break、星核、Boss 阶段与召唤上限、
 // 超时判负、静态隔离、配置只读、日志上限、tick 顺序稳定、日志 schema、满场召唤、输入校验、状态重入。
 // 允许在内存里 clone 配置表制造边界用例；不改磁盘样例表。
@@ -221,7 +221,7 @@ describe('S7AutoBattleEngine - 治疗与超时 (#9)', () => {
       { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c0' }, // 奶妈放后排少挨打
       { unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }, // 前排受伤目标
     ];
-    const r = engine.run({ encounterRef: 'enc_n018', battleSeed: 'heal', playerUnits: lineup });
+    const r = engine.run({ encounterRef: 'enc_n084', battleSeed: 'heal', playerUnits: lineup });
     const heals = ofType(r.log, 'heal').filter((e) => (e.amount ?? 0) > 0);
     expect(heals.length).toBeGreaterThan(0); // 真实奶到友方
     expect(heals.every((e) => typeof e.shieldAfter === 'number')).toBe(true); // RT-04-fix#1：heal 补 shieldAfter
@@ -345,16 +345,16 @@ describe('S7AutoBattleEngine - 星核触发 (#14)', () => {
 });
 
 describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
-  it('n018 Boss 触发 start / mid / final 三阶段 (#15)', async () => {
+  it('n084 Boss 触发 start / mid / final 三阶段 (#15)', async () => {
     const engine = await engineOf(loadBundle());
-    const r = engine.run({ encounterRef: 'enc_n018', battleSeed: 'n018', playerUnits: FIVE });
+    const r = engine.run({ encounterRef: 'enc_n084', battleSeed: 'n084', playerUnits: FIVE });
     const phases = ofType(r.log, 'boss_phase').map((e) => e.phaseTag);
     expect(phases).toEqual(['start', 'mid', 'final']);
   });
 
-  it('n075 Boss 召唤总量不超过 10 并记录 boss_phase (#16)', async () => {
+  it('n150 Boss 召唤总量不超过 10 并记录 boss_phase (#16)', async () => {
     const engine = await engineOf(loadBundle());
-    const r = engine.run({ encounterRef: 'enc_n075', battleSeed: 'n075', playerUnits: FIVE });
+    const r = engine.run({ encounterRef: 'enc_n150', battleSeed: 'n150', playerUnits: FIVE });
     expect(ofType(r.log, 'boss_phase').length).toBeGreaterThan(0);
     expect(summonedCount(r.log)).toBeLessThanOrEqual(10);
   });
@@ -362,16 +362,16 @@ describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
 
 describe('S7AutoBattleEngine - 超时判负 (#17)', () => {
   it('超时未清敌时玩家失败，reason=timeout', async () => {
-    // 单艘脆皮 vs n075 终 Boss：必然超时或被清，构造极弱阵容确保非 all_enemies_down。
+    // 单艘脆皮 vs n150 终 Boss：必然超时或被清，构造极弱阵容确保非 all_enemies_down。
     const engine = await engineOf(loadBundle());
-    const r = engine.run({ encounterRef: 'enc_n075', battleSeed: 'to', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
+    const r = engine.run({ encounterRef: 'enc_n150', battleSeed: 'to', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
     expect(r.winner).toBe('enemy');
     expect(['timeout', 'all_players_down']).toContain(r.reason);
     // 进一步：超大血量 Boss、单奶阵容必然超时。
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { ultimateEffectRef: 'eff_ult_repair_burst', maxHp: 100000, armor: 200 });
     const engine2 = await engineOf(b);
-    const r2 = engine2.run({ encounterRef: 'enc_n075', battleSeed: 'to2', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
+    const r2 = engine2.run({ encounterRef: 'enc_n150', battleSeed: 'to2', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
     expect(r2.reason).toBe('timeout');
     expect(r2.winner).toBe('enemy');
     expect(r2.durationSec).toBe(120);
@@ -407,8 +407,8 @@ describe('S7AutoBattleEngine - 运行不改配置 (#19)', () => {
       phases: rt.getAll('battle_boss_phase_param'),
     });
     const engine = new S7AutoBattleEngine(rt);
-    engine.run({ encounterRef: 'enc_n018', battleSeed: 'immut', playerUnits: FIVE });
-    engine.run({ encounterRef: 'enc_n075', battleSeed: 'immut', playerUnits: FIVE });
+    engine.run({ encounterRef: 'enc_n084', battleSeed: 'immut', playerUnits: FIVE });
+    engine.run({ encounterRef: 'enc_n150', battleSeed: 'immut', playerUnits: FIVE });
     const after = JSON.stringify({
       units: rt.getAll('battle_unit_stat_param'),
       effects: rt.getAll('battle_effect_param'),
@@ -421,9 +421,9 @@ describe('S7AutoBattleEngine - 运行不改配置 (#19)', () => {
 });
 
 describe('S7AutoBattleEngine - 日志上限 (#20)', () => {
-  it('n075 日志为事件触发，长度有上限（< 1000）', async () => {
+  it('n150 日志为事件触发，长度有上限（< 1000）', async () => {
     const engine = await engineOf(loadBundle());
-    const r = engine.run({ encounterRef: 'enc_n075', battleSeed: 'len', playerUnits: FIVE });
+    const r = engine.run({ encounterRef: 'enc_n150', battleSeed: 'len', playerUnits: FIVE });
     expect(r.log.length).toBeLessThan(1000);
   });
 });
@@ -431,8 +431,8 @@ describe('S7AutoBattleEngine - 日志上限 (#20)', () => {
 describe('S7AutoBattleEngine - tick 顺序稳定 (#21)', () => {
   it('同 seed 下整条日志的(类型/时间/行动者)序列完全固定', async () => {
     const engine = await engineOf(loadBundle());
-    const a = engine.run({ encounterRef: 'enc_n018', battleSeed: 'order', playerUnits: FIVE });
-    const b = engine.run({ encounterRef: 'enc_n018', battleSeed: 'order', playerUnits: FIVE });
+    const a = engine.run({ encounterRef: 'enc_n084', battleSeed: 'order', playerUnits: FIVE });
+    const b = engine.run({ encounterRef: 'enc_n084', battleSeed: 'order', playerUnits: FIVE });
     const seq = (r: S7AutoBattleResult): string => r.log.map((e) => `${e.timeSec}|${e.type}|${e.actorId ?? ''}|${e.stateTag ?? ''}|${e.phaseTag ?? ''}`).join('\n');
     expect(seq(a)).toBe(seq(b));
     // 同一 tick 内固定顺序：state_expire 早于该 tick 的 unit_attack；boss_phase 早于 unit_down。
@@ -456,7 +456,7 @@ describe('S7AutoBattleEngine - tick 顺序稳定 (#21)', () => {
 describe('S7AutoBattleEngine - 日志 schema (#22)', () => {
   it('关键事件含必备字段', async () => {
     const engine = await engineOf(loadBundle());
-    const r = engine.run({ encounterRef: 'enc_n018', battleSeed: 'schema', playerUnits: FIVE });
+    const r = engine.run({ encounterRef: 'enc_n084', battleSeed: 'schema', playerUnits: FIVE });
     for (const e of r.log) {
       expect(typeof e.timeSec).toBe('number');
       expect(typeof e.type).toBe('string');
@@ -524,24 +524,24 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
   it('召唤受 summonCountCap 与空格双重约束：cap 触顶 / 满场少召 / 不报错', async () => {
     // 23a：把 phase summonUnitRefs 加长到 12，cap=10；空格充裕时总召唤恰好触顶 cap。
     const b1 = cloneBundle(loadBundle());
-    Object.assign(row(b1, 'battle_boss_phase_param', 'phase_n075_mid'), {
+    Object.assign(row(b1, 'battle_boss_phase_param', 'phase_n150_mid'), {
       summonUnitRefs: Array(12).fill('bu_enemy_boss_add'),
       summonCountCap: 10,
     });
-    Object.assign(row(b1, 'battle_unit_stat_param', 'bu_boss_n075'), { maxHp: 2500 }); // 确保打到 50% 触发 mid
+    Object.assign(row(b1, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 2500 }); // 确保打到 50% 触发 mid
     const e1 = await engineOf(b1);
-    const r1 = e1.run({ encounterRef: 'enc_n075', battleSeed: 'cap', playerUnits: FIVE });
+    const r1 = e1.run({ encounterRef: 'enc_n150', battleSeed: 'cap', playerUnits: FIVE });
     expect(ofType(r1.log, 'boss_phase').some((e) => e.phaseTag === 'mid')).toBe(true);
     expect(summonedCount(r1.log)).toBe(10); // 触顶 cap（5×7=35 空格充裕：boss 9 + 2 开场附属，余 24）
 
     // 23b：开场把敌方格子几乎填满（仅余 3 空格），mid 想召 12 但只能少召 3，不报错不无限刷。
     const b2 = cloneBundle(loadBundle());
-    Object.assign(row(b2, 'battle_boss_phase_param', 'phase_n075_mid'), {
+    Object.assign(row(b2, 'battle_boss_phase_param', 'phase_n150_mid'), {
       summonUnitRefs: Array(12).fill('bu_enemy_boss_add'),
       summonCountCap: 10,
     });
-    Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n075'), { maxHp: 2500 });
-    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n075_adds'), {
+    Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 2500 });
+    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n150_adds'), {
       // 5×7=35 格：boss 占 9（r0c2..r2c4）+ 23 附属 = 32，仅余 3 空格（r4c4/r4c5/r4c6）。
       count: 23,
       slotRefs: [
@@ -552,7 +552,7 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
       maxConcurrentOnField: 35,
     });
     const e2 = await engineOf(b2);
-    const r2 = e2.run({ encounterRef: 'enc_n075', battleSeed: 'cap2', playerUnits: FIVE });
+    const r2 = e2.run({ encounterRef: 'enc_n150', battleSeed: 'cap2', playerUnits: FIVE });
     const summoned2 = summonedCount(r2.log);
     expect(summoned2).toBeLessThanOrEqual(10);
     expect(summoned2).toBeLessThan(10); // 满场少召，未触顶 cap

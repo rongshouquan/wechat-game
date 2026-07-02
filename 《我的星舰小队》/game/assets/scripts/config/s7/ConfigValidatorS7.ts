@@ -102,7 +102,8 @@ const BUILDING_RELEASE_TAGS = ['default_release', 'conditional_post'];
 const BUILDING_DEFAULT_KEYS = ['dock', 'pilot_training_bay', 'habitat', 'supply_station', 'salvage_port', 'merchant_station', 'research_tower'];
 const BUILDING_RESERVED_KEYS = ['core_gallery'];
 const BUILDING_ANCHOR_DAYS = ['D7', 'D14', 'D21', 'D28'];
-const FORBIDDEN_FALLBACK_NODES = ['n033', 'n047', 'n053', 'n063', 'n070'];
+// 70 回退机制已作废（Codex 旧遗留，2026-07-02 随150关拓扑改造一并清理）：恒为空，任何节点不得 cut_70。
+const FORBIDDEN_FALLBACK_NODES: string[] = [];
 
 function seq(prefix: string, from: number, to: number): string[] {
   const out: string[] = [];
@@ -122,11 +123,13 @@ const TIER_C_TABLES: S7ConfigTableName[] = [
   'tutorial_trigger_config', 'unlock_checkpoint_config', 'protection_reset_config',
 ];
 
-const S7_MAINLINE_NODE_IDS = seq3('n', 1, 75);
-const S7_CHAPTER_IDS = seq('ch', 1, 12);
-const S7_STARFIELD_IDS = seq('sf', 1, 4);
-const S7_BOSS_NODE_IDS = ['n018', 'n037', 'n056', 'n075'];
-const S7_TUTORIAL_STEP_IDS = seq('tut', 1, 38);
+// 150关拓扑改造（2026-07-02，GDD-v2.0 S2/S14 毕业节奏建模确认）：6星域/25章节/6Boss/150节点。
+const S7_MAINLINE_NODE_IDS = seq3('n', 1, 150);
+const S7_CHAPTER_IDS = seq('ch', 1, 25);
+const S7_STARFIELD_IDS = seq('sf', 1, 6);
+const S7_BOSS_NODE_IDS = ['n060', 'n084', 'n102', 'n120', 'n138', 'n150'];
+// 真实强引导教程只覆盖 n001-n005（见 S7DemoController runTutorialStep），此表不再铺到后面的 Codex 旧占位步骤。
+const S7_TUTORIAL_STEP_IDS = seq('tut', 1, 5);
 
 const S7_NODE_TYPE_TAGS = [
   'tutorial_battle', 'tutorial_position', 'normal', 'elite', 'tutorial_shield', 'checkpoint', 'review', 'boss',
@@ -140,12 +143,10 @@ const S7_SECONDARY_PRESSURE_TAGS = [
   'low_burst', 'berserk_low', 'shield_low', 'one_of_t03_t05_t08_t09',
 ];
 
+// 简化为每个大Boss一个不看广告检查点（原16个绑定旧75节点具体位置，随拓扑改造一并简化，2026-07-02）。
 const S7_NO_AD_CHECK_TAGS = [
-  'none', 'no_ad_mainline_basic_precheck', 'free_cargo_good_item_check', 'no_ad_mainline_basic_pass',
-  'free_5_ship_check', 'day7_full_core_check', 'free_reset_gate_ready', 'free_total_reset_check',
-  'no_ad_reset_not_required', 'free_3_core_path_precheck', 'free_3_core_path_check', 'no_ad_midline_pass_check',
-  'free_3_core_path_late_check', 'no_ad_75_precheck', 'free_cargo_good_item_recheck', 'no_ad_75_ready_check',
-  'no_ad_75_pass_check',
+  'none', 'no_ad_boss1_check', 'no_ad_boss2_check', 'no_ad_boss3_check',
+  'no_ad_boss4_check', 'no_ad_boss5_check', 'no_ad_boss6_check',
 ];
 
 const S7_PROTECTION_TAGS = ['active', 'ending_notice', 'closed'];
@@ -637,8 +638,8 @@ function validateTierB(
     } else {
       const lo = num(row.pressureMin); const hi = num(row.pressureMax);
       if (lo === null || hi === null || lo > hi) errors.push({ table: 'pressure_param', id, message: 'pressureMin <= pressureMax 不成立' });
-      if (scope === 'boss' && row.refKey === 'n075' && (hi === null || hi > 14500)) {
-        errors.push({ table: 'pressure_param', id, message: 'N075 压力上限必须 <= 14500，不上探 15500' });
+      if (scope === 'boss' && row.refKey === 'n150' && (hi === null || hi > 14500)) {
+        errors.push({ table: 'pressure_param', id, message: 'N150（终Boss）压力上限必须 <= 14500，不上探 15500' });
       }
     }
   }
@@ -719,10 +720,10 @@ function validateTierC(
   const templateIds = new Set<string>(S7_DEFAULT_IDS.battle_template_config);
   const tutorialIds = new Set<string>(S7_TUTORIAL_STEP_IDS);
 
-  // mainline_node_config：75 节点完整、字段枚举、70 回退白名单、N038/N039 转折
+  // mainline_node_config：150 节点完整、字段枚举、70 回退白名单（已作废）、N018/N019 转折
   const mainlineRows = rowsByTable.mainline_node_config;
-  if (mainlineRows.length !== 75) {
-    errors.push({ table: 'mainline_node_config', id: '-', message: `主线节点必须为 75 行，实际 ${mainlineRows.length}` });
+  if (mainlineRows.length !== 150) {
+    errors.push({ table: 'mainline_node_config', id: '-', message: `主线节点必须为 150 行，实际 ${mainlineRows.length}` });
   }
   const mainlineById = new Map<string, Record<string, unknown>>();
   const seenNodeIds = new Set<string>();
@@ -777,23 +778,24 @@ function validateTierC(
     if (row && row.fallback70Tag !== 'cut_70') errors.push({ table: 'mainline_node_config', id, message: `${id} 必须 fallback70Tag=cut_70` });
   }
 
-  // 保护期分布：N001-N037 active；N038 ending_notice；N039-N075 closed
+  // 保护期分布（2026-07-02 拓扑改造：转折点前移到 n018/n019，配合系统解锁前置化）：
+  // N001-N017 active；N018 ending_notice；N019-N150 closed
   for (const id of S7_MAINLINE_NODE_IDS) {
     const row = mainlineById.get(id);
     if (!row) continue;
     const idx = Number(id.slice(1));
-    const expected = idx <= 37 ? 'active' : idx === 38 ? 'ending_notice' : 'closed';
+    const expected = idx <= 17 ? 'active' : idx === 18 ? 'ending_notice' : 'closed';
     if (row.protectionPeriodTag !== expected) errors.push({ table: 'mainline_node_config', id, message: `protectionPeriodTag 应为 ${expected}` });
   }
 
-  // N038/N039 转折：非战斗节点，protection 字段必填
-  const n038 = mainlineById.get('n038');
-  if (n038 && (n038.problemTagRef !== 'none' || n038.templateRef !== 'none')) {
-    errors.push({ table: 'mainline_node_config', id: 'n038', message: 'N038 必须为非战斗节点（templateRef/problemTagRef=none）' });
+  // N018/N019 转折：非战斗节点，protection 字段必填
+  const n018 = mainlineById.get('n018');
+  if (n018 && (n018.problemTagRef !== 'none' || n018.templateRef !== 'none')) {
+    errors.push({ table: 'mainline_node_config', id: 'n018', message: 'N018 必须为非战斗节点（templateRef/problemTagRef=none）' });
   }
-  const n039 = mainlineById.get('n039');
-  if (n039 && (n039.problemTagRef !== 'none' || n039.templateRef !== 'none')) {
-    errors.push({ table: 'mainline_node_config', id: 'n039', message: 'N039 必须为非战斗节点（templateRef/problemTagRef=none）' });
+  const n019 = mainlineById.get('n019');
+  if (n019 && (n019.problemTagRef !== 'none' || n019.templateRef !== 'none')) {
+    errors.push({ table: 'mainline_node_config', id: 'n019', message: 'N019 必须为非战斗节点（templateRef/problemTagRef=none）' });
   }
 
   // chapter_config：12 章节完整，Boss 章节挂接正确
@@ -809,7 +811,8 @@ function validateTierC(
     if (boss !== 'none' && (typeof boss !== 'string' || !S7_BOSS_NODE_IDS.includes(boss))) errors.push({ table: 'chapter_config', id, message: 'bossRef 非法' });
   }
   for (const id of S7_CHAPTER_IDS) if (!seenChapters.has(id)) errors.push({ table: 'chapter_config', id, message: `缺少章节 ${id}` });
-  for (const expected of ['ch03', 'ch06', 'ch09', 'ch12']) {
+  // 6星域末尾章节（2026-07-02 拓扑改造：ch10/14/17/20/23/25，对应 n060/084/102/120/138/150）
+  for (const expected of ['ch10', 'ch14', 'ch17', 'ch20', 'ch23', 'ch25']) {
     const row = chapterRows.find((r) => r.chapterId === expected);
     if (!row || row.bossRef === 'none') errors.push({ table: 'chapter_config', id: expected, message: `${expected} 必须设置 bossRef` });
   }
@@ -828,13 +831,13 @@ function validateTierC(
   }
   for (const id of S7_STARFIELD_IDS) if (!seenStarfields.has(id)) errors.push({ table: 'star_region_config', id, message: `缺少星域 ${id}` });
 
-  // boss_node_config：4 Boss 完整，主问题与 mainline 一致，N075 必须 t10
+  // boss_node_config：6 Boss 完整，主问题与 mainline 一致，终Boss(N150) 必须 t10
   const bossRows = rowsByTable.boss_node_config;
   const seenBoss = new Set<string>();
   for (const row of bossRows) {
     const id = String(row.bossNodeId);
     seenBoss.add(id);
-    if (!S7_BOSS_NODE_IDS.includes(id)) errors.push({ table: 'boss_node_config', id, message: 'bossNodeId 必须为 n018/n037/n056/n075' });
+    if (!S7_BOSS_NODE_IDS.includes(id)) errors.push({ table: 'boss_node_config', id, message: `bossNodeId 必须为 ${S7_BOSS_NODE_IDS.join('/')}` });
     if (typeof row.mainProblemTag !== 'string' || !S7_PROBLEM_TAGS.includes(row.mainProblemTag)) errors.push({ table: 'boss_node_config', id, message: 'mainProblemTag 非法' });
     checkSingleRef(errors, 'boss_node_config', id, 'templateRef', row.templateRef, templateIds);
     if (typeof row.secondaryPressureTag !== 'string' || !S7_SECONDARY_PRESSURE_TAGS.includes(row.secondaryPressureTag)) errors.push({ table: 'boss_node_config', id, message: 'secondaryPressureTag 非法' });
@@ -844,8 +847,8 @@ function validateTierC(
     if (mline && mline.problemTagRef !== row.mainProblemTag) errors.push({ table: 'boss_node_config', id, message: 'mainProblemTag 必须与 mainline_node_config 对应节点一致' });
   }
   for (const id of S7_BOSS_NODE_IDS) if (!seenBoss.has(id)) errors.push({ table: 'boss_node_config', id, message: `缺少 Boss 节点 ${id}` });
-  const n075boss = bossRows.find((r) => r.bossNodeId === 'n075');
-  if (n075boss && n075boss.templateRef !== 't10') errors.push({ table: 'boss_node_config', id: 'n075', message: 'N075 templateRef 必须为 t10（Boss 狂暴主轴）' });
+  const finalBoss = bossRows.find((r) => r.bossNodeId === 'n150');
+  if (finalBoss && finalBoss.templateRef !== 't10') errors.push({ table: 'boss_node_config', id: 'n150', message: 'N150（终Boss）templateRef 必须为 t10（Boss 狂暴主轴）' });
 
   // tutorial_trigger_config：38 步完整，结构字段与对应主线节点一致
   const tutRows = rowsByTable.tutorial_trigger_config;
@@ -866,9 +869,10 @@ function validateTierC(
       if (row.unlockRef !== mline.unlockRef) errors.push({ table: 'tutorial_trigger_config', id, message: 'unlockRef 必须与对应主线节点 unlockRef 一致' });
       if (row.protectionPeriodTag !== mline.protectionPeriodTag) errors.push({ table: 'tutorial_trigger_config', id, message: 'protectionPeriodTag 必须与对应主线节点一致' });
     }
-    const expectedMandatory = ['tut01', 'tut02', 'tut26', 'tut27'].includes(id);
+    // 教程表已简化为仅 tut01-05（真实强引导只覆盖 n001-n005，见 S7DemoController），强制确认仅 TUT01/02。
+    const expectedMandatory = ['tut01', 'tut02'].includes(id);
     if (expectedMandatory && row.skippableTag !== 'mandatory_ack') errors.push({ table: 'tutorial_trigger_config', id, message: `${id} 必须为 mandatory_ack` });
-    if (!expectedMandatory && row.skippableTag === 'mandatory_ack') errors.push({ table: 'tutorial_trigger_config', id, message: `${id} 不得为 mandatory_ack（仅 TUT01/02/26/27）` });
+    if (!expectedMandatory && row.skippableTag === 'mandatory_ack') errors.push({ table: 'tutorial_trigger_config', id, message: `${id} 不得为 mandatory_ack（仅 TUT01/02）` });
   }
   for (const id of S7_TUTORIAL_STEP_IDS) if (!seenTut.has(id)) errors.push({ table: 'tutorial_trigger_config', id, message: `缺少教程触发 ${id}` });
 
@@ -908,28 +912,28 @@ function validateTierC(
   const registeredBuildingRefs = new Set<string>(unlockRows.map((r) => String(r.buildingUnlockRef)).filter((v) => v !== 'none'));
   for (const bid of buildingUnlockIds) if (!registeredBuildingRefs.has(bid)) errors.push({ table: 'unlock_checkpoint_config', id: bid, message: `建筑解锁 "${bid}" 缺少桥接登记行` });
 
-  // protection_reset_config：N038/N039 转折字段必填
+  // protection_reset_config：N018/N019 转折字段必填（2026-07-02 拓扑改造：转折点前移，原N038/N039）
   const protRows = rowsByTable.protection_reset_config;
   const protById = new Map<string, Record<string, unknown>>();
   for (const row of protRows) {
     const id = String(row.nodeId);
     protById.set(id, row);
-    if (!['n038', 'n039'].includes(id)) errors.push({ table: 'protection_reset_config', id, message: 'nodeId 仅允许 n038/n039' });
+    if (!['n018', 'n019'].includes(id)) errors.push({ table: 'protection_reset_config', id, message: 'nodeId 仅允许 n018/n019' });
     if (typeof row.protectionPeriodTag !== 'string' || !S7_PROTECTION_TAGS.includes(row.protectionPeriodTag)) errors.push({ table: 'protection_reset_config', id, message: 'protectionPeriodTag 非法' });
     if (typeof row.freeResetFlag !== 'boolean') errors.push({ table: 'protection_reset_config', id, message: 'freeResetFlag 必须是布尔值' });
     if (typeof row.irreversibleWarningFlag !== 'boolean') errors.push({ table: 'protection_reset_config', id, message: 'irreversibleWarningFlag 必须是布尔值' });
     if (!Array.isArray(row.resetScopeTags)) errors.push({ table: 'protection_reset_config', id, message: 'resetScopeTags 必须是数组' });
     if (!Array.isArray(row.alwaysReversibleTags) || row.alwaysReversibleTags.length === 0) errors.push({ table: 'protection_reset_config', id, message: 'alwaysReversibleTags 不能为空' });
   }
-  const n038p = protById.get('n038');
-  if (!n038p) errors.push({ table: 'protection_reset_config', id: 'n038', message: '缺少 N038 行' });
+  const n018p = protById.get('n018');
+  if (!n018p) errors.push({ table: 'protection_reset_config', id: 'n018', message: '缺少 N018 行' });
   else {
-    if (n038p.freeResetFlag !== true) errors.push({ table: 'protection_reset_config', id: 'n038', message: 'N038 freeResetFlag 必须为 true（全队整备 / 免费总重置）' });
-    if (!Array.isArray(n038p.resetScopeTags) || n038p.resetScopeTags.length === 0) errors.push({ table: 'protection_reset_config', id: 'n038', message: 'N038 resetScopeTags 不能为空' });
+    if (n018p.freeResetFlag !== true) errors.push({ table: 'protection_reset_config', id: 'n018', message: 'N018 freeResetFlag 必须为 true（全队整备 / 免费总重置）' });
+    if (!Array.isArray(n018p.resetScopeTags) || n018p.resetScopeTags.length === 0) errors.push({ table: 'protection_reset_config', id: 'n018', message: 'N018 resetScopeTags 不能为空' });
   }
-  const n039p = protById.get('n039');
-  if (!n039p) errors.push({ table: 'protection_reset_config', id: 'n039', message: '缺少 N039 行' });
-  else if (n039p.irreversibleWarningFlag !== true) errors.push({ table: 'protection_reset_config', id: 'n039', message: 'N039 irreversibleWarningFlag 必须为 true（正式养成期提醒）' });
+  const n019p = protById.get('n019');
+  if (!n019p) errors.push({ table: 'protection_reset_config', id: 'n019', message: '缺少 N019 行' });
+  else if (n019p.irreversibleWarningFlag !== true) errors.push({ table: 'protection_reset_config', id: 'n019', message: 'N019 irreversibleWarningFlag 必须为 true（正式养成期提醒）' });
 
   // 红线：T11/T12、PIL/CORE/PLG-RSV、条件预留建筑（core_gallery，含历史 observatory token 防回归）不得进入 Tier C 默认结构
   for (const table of TIER_C_TABLES) {
@@ -960,9 +964,10 @@ function validateTierD(
   for (const row of mainlineRows) mainlineById.set(String(row.nodeId), row);
   const rewardParamIds = new Set<string>(rowsByTable.reward_param.map((r) => String(r.rowId)));
 
-  // reward_pool_ref_config：19 个 rewardAnchorRef 与 mainline_node_config.rewardAnchorRef 双向覆盖
+  // reward_pool_ref_config：9 个 rewardAnchorRef 与 mainline_node_config.rewardAnchorRef 双向覆盖
+  // （2026-07-02 拓扑改造简化：原19个锚点含大量单节点narrative专属锚点，压缩为 basic/elite/cargo旗舰 + 5区域Boss + 终Boss）
   const poolRows = rowsByTable.reward_pool_ref_config;
-  if (poolRows.length !== 19) errors.push({ table: 'reward_pool_ref_config', id: '-', message: `必须为 19 行，实际 ${poolRows.length}` });
+  if (poolRows.length !== 9) errors.push({ table: 'reward_pool_ref_config', id: '-', message: `必须为 9 行，实际 ${poolRows.length}` });
   const anchorRefsFromMainline = new Set<string>(mainlineRows.map((r) => String(r.rewardAnchorRef)));
   const seenAnchors = new Set<string>();
   for (const row of poolRows) {
@@ -1002,17 +1007,7 @@ function validateTierD(
   for (const anchor of seenAnchors) {
     if (!anchorRefsFromMainline.has(anchor)) errors.push({ table: 'reward_pool_ref_config', id: anchor, message: `rewardAnchorRef "${anchor}" 未被任何主线节点引用` });
   }
-  // reward_review_comfort 的 nodeRefs 必须精确等于 70 回退可删节点（防 70 回退后奖励断点）
-  const comfortRow = poolRows.find((r) => r.rewardAnchorRef === 'reward_review_comfort');
-  if (!comfortRow) {
-    errors.push({ table: 'reward_pool_ref_config', id: 'reward_review_comfort', message: '缺少 reward_review_comfort 行' });
-  } else {
-    const refs = (Array.isArray(comfortRow.nodeRefs) ? comfortRow.nodeRefs.map((v) => String(v)) : []).slice().sort();
-    const expected = [...FORBIDDEN_FALLBACK_NODES].sort();
-    if (JSON.stringify(refs) !== JSON.stringify(expected)) {
-      errors.push({ table: 'reward_pool_ref_config', id: 'reward_review_comfort', message: `nodeRefs 必须精确等于 70 回退可删节点 ${FORBIDDEN_FALLBACK_NODES.join('/')}` });
-    }
-  }
+  // reward_review_comfort（70回退专属安慰奖）随70回退机制一并作废，不再要求存在（2026-07-02）。
 
   // no_ad_path_check_config：16 个 checkTag 与 S7_NO_AD_CHECK_TAGS（去 none）/ mainline.noAdCheckTag 双向覆盖
   const checkRows = rowsByTable.no_ad_path_check_config;
@@ -1334,11 +1329,11 @@ function validateBattle(
   }
 
   const coveredNodes = new Set<string>(encounterRows.map((r) => String(r.nodeRef)));
-  for (const need of ['n001', 'n018', 'n075']) {
+  for (const need of ['n001', 'n084', 'n150']) {
     if (!coveredNodes.has(need)) errors.push({ table: 'battle_encounter_param', id: need, message: `必须覆盖节点 ${need} 的 encounter` });
   }
-  const n075enc = encounterRows.find((r) => String(r.nodeRef) === 'n075');
-  if (n075enc && n075enc.pressureRef !== 'bp_n075') errors.push({ table: 'battle_encounter_param', id: String(n075enc.rowId), message: 'n075 encounter 的 pressureRef 必须为 bp_n075' });
+  const finalEnc = encounterRows.find((r) => String(r.nodeRef) === 'n150');
+  if (finalEnc && finalEnc.pressureRef !== 'bp_n150') errors.push({ table: 'battle_encounter_param', id: String(finalEnc.rowId), message: 'n150（终Boss）encounter 的 pressureRef 必须为 bp_n150' });
 
   // ---- battle_spawn_param ----
   for (const row of spawnRows) {

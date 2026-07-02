@@ -45,14 +45,14 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(r.view.hasBoss).toBe(false);
   });
 
-  it('n018 Boss：hasBoss=true、含 boss 单位、stageType=boss、推荐战力取 boss recommend', () => {
-    const r = buildPrebattleView(runtime, at('n018'), squad2());
+  it('n084 Boss：hasBoss=true、含 boss 单位、stageType=boss、推荐战力取 boss recommend', () => {
+    const r = buildPrebattleView(runtime, at('n084'), squad2());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.view.stageType).toBe('boss');
     expect(r.view.hasBoss).toBe(true);
-    expect(r.view.enemies.some((e) => e.unitStatRef === 'bu_boss_n018' && e.isBoss)).toBe(true);
-    expect(r.view.recommendedPower).toBe(1500); // bp_n018 recommend
+    expect(r.view.enemies.some((e) => e.unitStatRef === 'bu_boss_n084' && e.isBoss)).toBe(true);
+    expect(r.view.recommendedPower).toBe(1500); // bp_n084 recommend
   });
 
   it('n008 暂无遭遇：ok 但 hasEncounter=false、敌人空（仍给 stageType/推荐战力）', () => {
@@ -108,8 +108,8 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(r.view.enemyCount).toBe(10);
   });
 
-  it('非战斗节点（n038 reset_gate）：ok:false', () => {
-    const r = buildPrebattleView(runtime, at('n038'), squad2());
+  it('非战斗节点（n018 reset_gate）：ok:false', () => {
+    const r = buildPrebattleView(runtime, at('n018'), squad2());
     expect(r.ok).toBe(false);
   });
 });

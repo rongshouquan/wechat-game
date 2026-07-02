@@ -72,18 +72,19 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     expect(s.resources.hullAlloy).toBe(25);
   });
 
-  // ⚠️ 样例 battle_encounter_param 只给了 3 个节点的战斗(enc_n001/n018/n075,不连续)；连续多节点循环
-  //   需补遭遇配置(原型内容缺口，见 README 遗留)。故此处按"每个可玩节点独立验机制"，不假设连续可玩。
-  it('对每个可玩遭遇节点(n001/n018/n075)机制成立：胜→按发放入账+进度前移至结算 nextNodeId；负→状态不变；至少一节点胜', async () => {
+  // ⚠️ 样例 battle_encounter_param 只给了 3 个节点的战斗(enc_n001/n084/n150,不连续；2026-07-02 拓扑改造后
+  //   真实Boss内容搬到n084/n150)；连续多节点循环需补遭遇配置(原型内容缺口，见 README 遗留)。
+  //   故此处按"每个可玩节点独立验机制"，不假设连续可玩。
+  it('对每个可玩遭遇节点(n001/n084/n150)机制成立：胜→按发放入账+进度前移至结算 nextNodeId；负→状态不变；至少一节点胜', async () => {
     await ensure();
     let wins = 0;
-    for (const node of ['n001', 'n018', 'n075']) {
+    for (const node of ['n001', 'n084', 'n150']) {
       const s = new S7RunSession(freshResources(), { currentNodeId: node, clearedNodeIds: [] }, runtime, model);
       const oreBefore = s.resources.starOre;
       const o = s.playCurrentNode('loopseed'); // 这 3 个都有遭遇，不应抛错
       expect(o.nodeId).toBe(node);
       if (o.won && o.settlement && o.settlement.ok) {
-        expect(s.currentNodeId).toBe(o.settlement.nextNodeId); // n075 为终点则停留自身
+        expect(s.currentNodeId).toBe(o.settlement.nextNodeId); // n150 为终点则停留自身
         const oreGrant = o.settlement.grants.filter((g) => g.resourceId === 'starOre').reduce((n, g) => n + g.amount, 0);
         expect(s.resources.starOre).toBe(oreBefore + oreGrant);
         wins += 1;

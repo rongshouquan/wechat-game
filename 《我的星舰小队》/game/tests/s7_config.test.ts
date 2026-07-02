@@ -113,10 +113,10 @@ describe('s7 tier b economy params', () => {
     expect(Number(floor.fullCore)).toBeLessThanOrEqual(Number(exp.fullCore));
   });
 
-  it('caps N075 boss pressure at 14500 and keeps min<=max', () => {
+  it('caps N150（终Boss）boss pressure at 14500 and keeps min<=max', () => {
     const rows = readSample<Array<{ rowId: string; scope: string; refKey: string; pressureMax: number; appliesToBoss?: boolean }>>('pressure_param');
-    const n075 = rows.find((r) => r.rowId === 'bp_n075')!;
-    expect(n075.pressureMax).toBeLessThanOrEqual(14500);
+    const finalBoss = rows.find((r) => r.rowId === 'bp_n150')!;
+    expect(finalBoss.pressureMax).toBeLessThanOrEqual(14500);
     for (const r of rows.filter((x) => x.scope === 'template_modifier')) expect(r.appliesToBoss).toBe(false);
   });
 
@@ -247,11 +247,8 @@ describe('s7 tier b building configs', () => {
     }
   });
 
-  it('rejects a building unlock hung on a 70-fallback node', () => {
-    const b = loadS7Bundle();
-    (b.building_unlock_config[0] as { unlockAnchorTag: string }).unlockAnchorTag = 'mainline_n070_entry';
-    expect(validateS7ConfigBundle(b).some((e) => e.table === 'building_unlock_config')).toBe(true);
-  });
+  // "rejects a building unlock hung on a 70-fallback node" 已删除：70回退机制随150关拓扑改造作废（2026-07-02），
+  // 白名单恒为空，该检查分支不再有意义（见 numeric-truth-b1-v1-ignore-codex 记忆的"Codex旧遗留"原则）。
 
   it('rejects requiredLevelCap > 1 in anchor impact check', () => {
     const b = loadS7Bundle();
@@ -268,49 +265,50 @@ describe('s7 tier b building configs', () => {
 });
 
 describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
-  it('covers all 75 mainline nodes N001-N075', () => {
+  it('covers all 150 mainline nodes N001-N150（2026-07-02 拓扑改造）', () => {
     const rows = readSample<Array<{ nodeId: string }>>('mainline_node_config');
-    expect(rows).toHaveLength(75);
+    expect(rows).toHaveLength(150);
     const ids = rows.map((r) => r.nodeId).sort();
-    const expected = Array.from({ length: 75 }, (_, i) => `n${String(i + 1).padStart(3, '0')}`);
+    const expected = Array.from({ length: 150 }, (_, i) => `n${String(i + 1).padStart(3, '0')}`);
     expect(ids).toEqual(expected);
   });
 
-  it('covers 12 chapters, 4 star regions and 4 boss nodes with correct boss bindings', () => {
+  it('covers 25 chapters, 6 star regions and 6 boss nodes with correct boss bindings', () => {
     const chapters = readSample<Array<{ chapterId: string; bossRef: string }>>('chapter_config');
-    expect(chapters).toHaveLength(12);
+    expect(chapters).toHaveLength(25);
     const starRegions = readSample<Array<{ starfieldId: string }>>('star_region_config');
-    expect(starRegions).toHaveLength(4);
+    expect(starRegions).toHaveLength(6);
     const bosses = readSample<Array<{ bossNodeId: string }>>('boss_node_config');
-    expect(bosses.map((r) => r.bossNodeId).sort()).toEqual(['n018', 'n037', 'n056', 'n075']);
+    expect(bosses.map((r) => r.bossNodeId).sort()).toEqual(['n060', 'n084', 'n102', 'n120', 'n138', 'n150']);
     const bossChapters = chapters.filter((c) => c.bossRef !== 'none');
-    expect(bossChapters.map((c) => c.chapterId).sort()).toEqual(['ch03', 'ch06', 'ch09', 'ch12']);
+    expect(bossChapters.map((c) => c.chapterId).sort()).toEqual(['ch10', 'ch14', 'ch17', 'ch20', 'ch23', 'ch25']);
   });
 
-  it('marks the protection-period turning point at N038/N039', () => {
+  it('marks the protection-period turning point at N018/N019（原N038/N039前移）', () => {
     const rows = readSample<Array<{ nodeId: string; protectionPeriodTag: string; templateRef: string; problemTagRef: string }>>('mainline_node_config');
-    const n038 = rows.find((r) => r.nodeId === 'n038')!;
-    const n039 = rows.find((r) => r.nodeId === 'n039')!;
-    expect(n038.protectionPeriodTag).toBe('ending_notice');
-    expect(n039.protectionPeriodTag).toBe('closed');
-    expect(n038.templateRef).toBe('none');
-    expect(n039.templateRef).toBe('none');
+    const n018 = rows.find((r) => r.nodeId === 'n018')!;
+    const n019 = rows.find((r) => r.nodeId === 'n019')!;
+    expect(n018.protectionPeriodTag).toBe('ending_notice');
+    expect(n019.protectionPeriodTag).toBe('closed');
+    expect(n018.templateRef).toBe('none');
+    expect(n019.templateRef).toBe('none');
     for (const r of rows) {
       const idx = Number(r.nodeId.slice(1));
-      const expected = idx <= 37 ? 'active' : idx === 38 ? 'ending_notice' : 'closed';
+      const expected = idx <= 17 ? 'active' : idx === 18 ? 'ending_notice' : 'closed';
       expect(r.protectionPeriodTag).toBe(expected);
     }
   });
 
-  it('restricts 70-fallback deletable nodes to exactly N033/N047/N053/N063/N070', () => {
+  it('70回退机制已作废：所有节点 fallback70Tag 恒为 keep_70', () => {
     const rows = readSample<Array<{ nodeId: string; fallback70Tag: string }>>('mainline_node_config');
-    const cut = rows.filter((r) => r.fallback70Tag === 'cut_70').map((r) => r.nodeId).sort();
-    expect(cut).toEqual(['n033', 'n047', 'n053', 'n063', 'n070']);
+    const cut = rows.filter((r) => r.fallback70Tag !== 'keep_70');
+    expect(cut).toEqual([]);
   });
 
   it('keeps tutorial triggers structural-only (no UI copy / position / bubble / mask fields)', () => {
     const rows = readSample<Array<Record<string, unknown>>>('tutorial_trigger_config');
-    expect(rows).toHaveLength(38);
+    // 真实强引导只覆盖 n001-n005（见 S7DemoController），2026-07-02 拓扑改造后表精简为 5 步。
+    expect(rows).toHaveLength(5);
     const forbiddenKeys = ['text', 'copy', 'bubble', 'mask', 'position', 'finger', 'animation'];
     for (const r of rows) {
       for (const k of Object.keys(r)) {
@@ -318,21 +316,16 @@ describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
       }
     }
     const mandatory = rows.filter((r) => r.skippableTag === 'mandatory_ack').map((r) => r.tutorialStepId).sort();
-    expect(mandatory).toEqual(['tut01', 'tut02', 'tut26', 'tut27']);
+    expect(mandatory).toEqual(['tut01', 'tut02']);
   });
 
-  it('registers all mainline unlockRefs and building unlock bridges, none required on 70-fallback nodes', () => {
+  it('registers all mainline unlockRefs and building unlock bridges', () => {
     const b = loadS7Bundle();
     const mainline = b.mainline_node_config as Array<{ unlockRef: string }>;
     const unlocks = b.unlock_checkpoint_config as Array<{ unlockRef: string; nodeId: string; requiredForMainlineTag: boolean; buildingUnlockRef: string }>;
     const mainlineRefs = new Set(mainline.map((r) => r.unlockRef).filter((u) => u !== 'none'));
     const registered = new Set(unlocks.map((r) => r.unlockRef));
     for (const ref of mainlineRefs) expect(registered.has(ref)).toBe(true);
-
-    const forbidden = ['n033', 'n047', 'n053', 'n063', 'n070'];
-    for (const u of unlocks) {
-      if (u.requiredForMainlineTag) expect(forbidden).not.toContain(u.nodeId);
-    }
 
     const buildingUnlocks = (b.building_unlock_config as Array<{ unlockId: string; cc05aLinkTag: string }>)
       .filter((r) => !/(rsv|observatory|core_gallery)/.test(r.unlockId) && !/(rsv|observatory|core_gallery)/.test(r.cc05aLinkTag));
@@ -348,20 +341,20 @@ describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
     }
   });
 
-  it('requires N038 free total reset and N039 irreversible-growth warning', () => {
+  it('requires N018 free total reset and N019 irreversible-growth warning', () => {
     const rows = readSample<Array<{ nodeId: string; freeResetFlag: boolean; resetScopeTags: string[]; irreversibleWarningFlag: boolean }>>('protection_reset_config');
     expect(rows).toHaveLength(2);
-    const n038 = rows.find((r) => r.nodeId === 'n038')!;
-    const n039 = rows.find((r) => r.nodeId === 'n039')!;
-    expect(n038.freeResetFlag).toBe(true);
-    expect(n038.resetScopeTags.length).toBeGreaterThan(0);
-    expect(n039.irreversibleWarningFlag).toBe(true);
+    const n018 = rows.find((r) => r.nodeId === 'n018')!;
+    const n019 = rows.find((r) => r.nodeId === 'n019')!;
+    expect(n018.freeResetFlag).toBe(true);
+    expect(n018.resetScopeTags.length).toBeGreaterThan(0);
+    expect(n019.irreversibleWarningFlag).toBe(true);
   });
 
-  it('keeps N075 boss template at t10 and rejects an out-of-whitelist cut_70', () => {
+  it('keeps N150（终Boss）template at t10 and rejects any cut_70 (whitelist已清空)', () => {
     const bosses = readSample<Array<{ bossNodeId: string; templateRef: string }>>('boss_node_config');
-    const n075 = bosses.find((r) => r.bossNodeId === 'n075')!;
-    expect(n075.templateRef).toBe('t10');
+    const finalBoss = bosses.find((r) => r.bossNodeId === 'n150')!;
+    expect(finalBoss.templateRef).toBe('t10');
 
     const b = loadS7Bundle();
     (b.mainline_node_config as Array<{ nodeId: string; fallback70Tag: string }>).find((r) => r.nodeId === 'n004')!.fallback70Tag = 'cut_70';
@@ -370,26 +363,23 @@ describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
 });
 
 describe('s7 tier d bridge configs', () => {
-  const FORBIDDEN_FALLBACK_NODES = ['n033', 'n047', 'n053', 'n063', 'n070'];
+  // 70回退机制（原白名单/reward_review_comfort/risk_fallback_70_config 具体行）随150关拓扑改造作废（2026-07-02）。
   const EXPECTED_NO_AD_CHECK_TAGS = [
-    'no_ad_mainline_basic_precheck', 'free_cargo_good_item_check', 'no_ad_mainline_basic_pass',
-    'free_5_ship_check', 'day7_full_core_check', 'free_reset_gate_ready', 'free_total_reset_check',
-    'no_ad_reset_not_required', 'free_3_core_path_precheck', 'free_3_core_path_check',
-    'no_ad_midline_pass_check', 'free_3_core_path_late_check', 'no_ad_75_precheck',
-    'free_cargo_good_item_recheck', 'no_ad_75_ready_check', 'no_ad_75_pass_check',
+    'no_ad_boss1_check', 'no_ad_boss2_check', 'no_ad_boss3_check',
+    'no_ad_boss4_check', 'no_ad_boss5_check', 'no_ad_boss6_check',
   ];
 
-  it('covers all 19 reward pool anchors bidirectionally with mainline rewardAnchorRef, full 75-node coverage', () => {
+  it('covers all 9 reward pool anchors bidirectionally with mainline rewardAnchorRef, full 150-node coverage', () => {
     const rows = readSample<Array<{ rewardAnchorRef: string; nodeRefs: string[] }>>('reward_pool_ref_config');
-    expect(rows).toHaveLength(19);
+    expect(rows).toHaveLength(9);
     const mainline = readSample<Array<{ nodeId: string; rewardAnchorRef: string }>>('mainline_node_config');
 
     const anchorsFromMainline = new Set(mainline.map((r) => r.rewardAnchorRef));
     expect(new Set(rows.map((r) => r.rewardAnchorRef))).toEqual(anchorsFromMainline);
 
     const allNodeRefs = rows.flatMap((r) => r.nodeRefs);
-    expect(allNodeRefs.length).toBe(75);
-    expect(new Set(allNodeRefs).size).toBe(75);
+    expect(allNodeRefs.length).toBe(150);
+    expect(new Set(allNodeRefs).size).toBe(150);
     for (const ref of allNodeRefs) {
       const m = mainline.find((r) => r.nodeId === ref)!;
       const owner = rows.find((r) => r.nodeRefs.includes(ref))!;
@@ -397,15 +387,9 @@ describe('s7 tier d bridge configs', () => {
     }
   });
 
-  it('pins reward_review_comfort nodeRefs to exactly the 70-fallback deletable nodes', () => {
-    const rows = readSample<Array<{ rewardAnchorRef: string; nodeRefs: string[] }>>('reward_pool_ref_config');
-    const comfort = rows.find((r) => r.rewardAnchorRef === 'reward_review_comfort')!;
-    expect([...comfort.nodeRefs].sort()).toEqual([...FORBIDDEN_FALLBACK_NODES].sort());
-  });
-
-  it('covers all 16 no-ad path check tags bidirectionally with mainline noAdCheckTag, none on 70-fallback nodes', () => {
+  it('covers all 6 no-ad path check tags bidirectionally with mainline noAdCheckTag（每个大Boss一个检查点）', () => {
     const rows = readSample<Array<{ checkTag: string; nodeId: string; forbiddenDependencyTag: string[] }>>('no_ad_path_check_config');
-    expect(rows).toHaveLength(16);
+    expect(rows).toHaveLength(6);
     expect([...rows.map((r) => r.checkTag)].sort()).toEqual([...EXPECTED_NO_AD_CHECK_TAGS].sort());
 
     const mainline = readSample<Array<{ nodeId: string; noAdCheckTag: string }>>('mainline_node_config');
@@ -415,42 +399,18 @@ describe('s7 tier d bridge configs', () => {
     for (const r of rows) {
       const m = mainline.find((mm) => mm.nodeId === r.nodeId)!;
       expect(m.noAdCheckTag).toBe(r.checkTag);
-      expect(FORBIDDEN_FALLBACK_NODES).not.toContain(r.nodeId);
     }
   });
 
-  it('covers all 9 fallback-70 nodes with criticalPathTag=false and a valid non-dangling replacementRef', () => {
-    const rows = readSample<Array<{ nodeId: string; fallback70Tag: string; criticalPathTag: boolean; replacementRef: string }>>('risk_fallback_70_config');
-    const mainline = readSample<Array<{ nodeId: string; fallback70Tag: string }>>('mainline_node_config');
-    const expectedNodes = mainline.filter((r) => r.fallback70Tag !== 'keep_70').map((r) => r.nodeId).sort();
-
-    expect(rows).toHaveLength(9);
-    expect([...rows.map((r) => r.nodeId)].sort()).toEqual(expectedNodes);
-    expect([...rows.map((r) => r.nodeId)].filter((id) => mainline.find((m) => m.nodeId === id)!.fallback70Tag === 'cut_70').sort())
-      .toEqual([...FORBIDDEN_FALLBACK_NODES].sort());
-
-    for (const r of rows) {
-      expect(r.criticalPathTag).toBe(false);
-      const embedded = r.replacementRef.match(/n\d{3}/g) ?? [];
-      for (const ref of embedded) {
-        expect(mainline.some((m) => m.nodeId === ref)).toBe(true);
-        expect(FORBIDDEN_FALLBACK_NODES).not.toContain(ref);
-      }
-    }
+  it('70回退登记表已作废：risk_fallback_70_config 恒为空', () => {
+    const rows = readSample<unknown[]>('risk_fallback_70_config');
+    expect(rows).toHaveLength(0);
   });
 
-  it('rejects a reward_pool_ref_config row count other than 19', () => {
+  it('rejects a reward_pool_ref_config row count other than 9', () => {
     const b = loadS7Bundle();
     (b.reward_pool_ref_config as unknown[]).pop();
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'reward_pool_ref_config' && e.id === '-')).toBe(true);
-  });
-
-  it('rejects a reward_review_comfort nodeRefs mismatch with the 70-fallback deletable nodes', () => {
-    const b = loadS7Bundle();
-    const comfort = (b.reward_pool_ref_config as Array<{ rewardAnchorRef: string; nodeRefs: string[] }>)
-      .find((r) => r.rewardAnchorRef === 'reward_review_comfort')!;
-    comfort.nodeRefs = ['n033', 'n047', 'n053', 'n063', 'n075'];
-    expect(validateS7ConfigBundle(b).some((e) => e.table === 'reward_pool_ref_config' && e.id === 'reward_review_comfort')).toBe(true);
   });
 
   it('rejects a rewardParamRef referencing a nonexistent reward_param row', () => {
@@ -461,25 +421,19 @@ describe('s7 tier d bridge configs', () => {
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'reward_pool_ref_config' && e.id === row.rewardAnchorRef)).toBe(true);
   });
 
-  it('rejects a no_ad_path_check_config row bound to a 70-fallback deletable node', () => {
+  it('rejects a no_ad_path_check_config row pointing at a node whose noAdCheckTag disagrees', () => {
     const b = loadS7Bundle();
     const row = (b.no_ad_path_check_config as Array<{ checkTag: string; nodeId: string }>)[0];
-    row.nodeId = 'n033';
+    row.nodeId = 'n001'; // n001 的 noAdCheckTag=none，与本行 checkTag 不一致
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'no_ad_path_check_config' && e.id === row.checkTag)).toBe(true);
   });
 
-  it('rejects a risk_fallback_70_config row with criticalPathTag=true', () => {
+  it('rejects a risk_fallback_70_config row length mismatch (恒应为0)', () => {
     const b = loadS7Bundle();
-    const row = (b.risk_fallback_70_config as Array<{ nodeId: string; criticalPathTag: boolean }>)[0];
-    row.criticalPathTag = true;
-    expect(validateS7ConfigBundle(b).some((e) => e.table === 'risk_fallback_70_config' && e.id === row.nodeId)).toBe(true);
-  });
-
-  it('rejects a risk_fallback_70_config replacementRef dangling on a 70-fallback deletable node', () => {
-    const b = loadS7Bundle();
-    const row = (b.risk_fallback_70_config as Array<{ nodeId: string; replacementRef: string }>)
-      .find((r) => /n\d{3}/.test(r.replacementRef))!;
-    row.replacementRef = 'n033_dangling_review';
-    expect(validateS7ConfigBundle(b).some((e) => e.table === 'risk_fallback_70_config' && e.id === row.nodeId)).toBe(true);
+    (b.risk_fallback_70_config as unknown[]).push({
+      schemaVersion: 's7-0.1.0', nodeId: 'n004', fallback70Tag: 'cut_70',
+      fallbackReasonTag: 'test_injected', replacementRef: 'n005_test', criticalPathTag: false,
+    });
+    expect(validateS7ConfigBundle(b).some((e) => e.table === 'risk_fallback_70_config')).toBe(true);
   });
 });

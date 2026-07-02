@@ -1,8 +1,68 @@
 [
-  {"schemaVersion":"s7-0.1.0","rowId":"protection_level_enhance","periodTag":"protection_n001_n037","operationTag":"level_or_enhance","refundRateMinPct":100,"refundRateMaxPct":100,"crossCurrency":false,"sourceTagRule":"persist","note":"保护期星舰/驾驶员等级与插件/星核强化 100% 同类资源返还，不返星贝"},
-  {"schemaVersion":"s7-0.1.0","rowId":"n038_total_reset","periodTag":"n038_total_reset","operationTag":"total_reset","refundRateMinPct":100,"refundRateMaxPct":100,"crossCurrency":false,"sourceTagRule":"persist","note":"N038 全队整备总重置，100% 同类返还，仅 1 次免费，不绑定广告"},
-  {"schemaVersion":"s7-0.1.0","rowId":"post_n039_level","periodTag":"post_n039","operationTag":"level_refund","refundRateMinPct":60,"refundRateMaxPct":60,"crossCurrency":false,"sourceTagRule":"persist","note":"N039 后正式期等级类回退 60%，不让误投导致主线卡死"},
-  {"schemaVersion":"s7-0.1.0","rowId":"post_n039_enhance","periodTag":"post_n039","operationTag":"enhance_refund","refundRateMinPct":50,"refundRateMaxPct":50,"crossCurrency":false,"sourceTagRule":"persist","note":"N039 后正式期强化类回退 50%，插件/星核装卸仍免费"},
-  {"schemaVersion":"s7-0.1.0","rowId":"high_risk_choice","periodTag":"any","operationTag":"awaken_breakthrough_reroll_core_choose","refundRateMinPct":0,"refundRateMaxPct":30,"crossCurrency":false,"sourceTagRule":"inherit_highest_risk","note":"觉醒/突破/词条重随/星核选择合成 0-30% 或不可回退，不作为主线通关门槛"},
-  {"schemaVersion":"s7-0.1.0","rowId":"high_risk_source","periodTag":"any","operationTag":"merchant_ad_sponsor_treasure","refundRateMinPct":0,"refundRateMaxPct":10,"crossCurrency":false,"sourceTagRule":"no_wash","note":"商人/广告额外/赞助/扩张宝库 0-10% 或不可回收，不进入星贝利润链"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "protection_level_enhance",
+    "periodTag": "protection_n001_n017",
+    "operationTag": "level_or_enhance",
+    "refundRateMinPct": 100,
+    "refundRateMaxPct": 100,
+    "crossCurrency": false,
+    "sourceTagRule": "persist",
+    "note": "保护期星舰/驾驶员等级与插件/星核强化 100% 同类资源返还，不返星贝"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "n038_total_reset",
+    "periodTag": "n038_total_reset",
+    "operationTag": "total_reset",
+    "refundRateMinPct": 100,
+    "refundRateMaxPct": 100,
+    "crossCurrency": false,
+    "sourceTagRule": "persist",
+    "note": "N038 全队整备总重置，100% 同类返还，仅 1 次免费，不绑定广告"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "post_n039_level",
+    "periodTag": "post_n039",
+    "operationTag": "level_refund",
+    "refundRateMinPct": 60,
+    "refundRateMaxPct": 60,
+    "crossCurrency": false,
+    "sourceTagRule": "persist",
+    "note": "N039 后正式期等级类回退 60%，不让误投导致主线卡死"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "post_n039_enhance",
+    "periodTag": "post_n039",
+    "operationTag": "enhance_refund",
+    "refundRateMinPct": 50,
+    "refundRateMaxPct": 50,
+    "crossCurrency": false,
+    "sourceTagRule": "persist",
+    "note": "N039 后正式期强化类回退 50%，插件/星核装卸仍免费"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "high_risk_choice",
+    "periodTag": "any",
+    "operationTag": "awaken_breakthrough_reroll_core_choose",
+    "refundRateMinPct": 0,
+    "refundRateMaxPct": 30,
+    "crossCurrency": false,
+    "sourceTagRule": "inherit_highest_risk",
+    "note": "觉醒/突破/词条重随/星核选择合成 0-30% 或不可回退，不作为主线通关门槛"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "high_risk_source",
+    "periodTag": "any",
+    "operationTag": "merchant_ad_sponsor_treasure",
+    "refundRateMinPct": 0,
+    "refundRateMaxPct": 10,
+    "crossCurrency": false,
+    "sourceTagRule": "no_wash",
+    "note": "商人/广告额外/赞助/扩张宝库 0-10% 或不可回收，不进入星贝利润链"
+  }
 ]

@@ -1,5 +1,5 @@
 // BATTLE-RT-05: S7 专用纯 TS 遇敌组装器 S7BattleEncounterAssembler 测试。
-// 覆盖任务包 §8 的 17 点：n001/n018/n075 组装、组装产物直接喂引擎跑出 battle_end、
+// 覆盖任务包 §8 的 17 点：n001/n084/n150 组装、组装产物直接喂引擎跑出 battle_end、
 // shipId->unitStatRef 映射、各类输入/一致性校验、trace 内容、组装无副作用、
 // 静态隔离、以及“未来在线化不堵死”静态检查。
 // 允许在内存 clone 配置表制造边界用例；不改磁盘样例表。
@@ -87,7 +87,7 @@ describe('S7BattleEncounterAssembler - 装备星核解析为效果积木 (块3b)
   });
 });
 
-describe('S7BattleEncounterAssembler - n001/n018/n075 组装 (#1,#3,#4)', () => {
+describe('S7BattleEncounterAssembler - n001/n084/n150 组装 (#1,#3,#4)', () => {
   it('n001 + [shp01,shp02,shp03] 组装出 enc_n001 (#1)', async () => {
     const asm = await assemblerOf(loadBundle());
     const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'r1', lineup: TRIO });
@@ -97,22 +97,22 @@ describe('S7BattleEncounterAssembler - n001/n018/n075 组装 (#1,#3,#4)', () => 
     expect(out.request.playerUnits.map((u) => u.slotRef)).toEqual(['p0c2', 'p1c2', 'p2c2']);
   });
 
-  it('n018 trio 组装出 enc_n018，context 与 encounter 字段一致 (#3)', async () => {
+  it('n084 trio 组装出 enc_n084，context 与 encounter 字段一致 (#3)', async () => {
     const asm = await assemblerOf(loadBundle());
-    const out = asm.assemble({ progress: progressAt('n018'), runSeed: 7, lineup: TRIO });
-    expect(out.request.encounterRef).toBe('enc_n018');
+    const out = asm.assemble({ progress: progressAt('n084'), runSeed: 7, lineup: TRIO });
+    expect(out.request.encounterRef).toBe('enc_n084');
     expect(out.context.stageType).toBe('boss');
     expect(out.context.templateId).toBe('t04');
     expect(out.context.mainProblemTag).toBe('shield');
-    expect(out.request.battleSeed).toBe('n018:7');
+    expect(out.request.battleSeed).toBe('n084:7');
   });
 
-  it('n075 trio 组装出 enc_n075，battleSeed 带 n075: 前缀 (#4)', async () => {
+  it('n150 trio 组装出 enc_n150，battleSeed 带 n150: 前缀 (#4)', async () => {
     const asm = await assemblerOf(loadBundle());
-    const out = asm.assemble({ progress: progressAt('n075'), runSeed: 'abc', lineup: TRIO });
-    expect(out.request.encounterRef).toBe('enc_n075');
-    expect(out.request.battleSeed).toBe('n075:abc');
-    expect(out.trace.battleSeed.startsWith('n075:')).toBe(true); // trace.battleSeed 为 string 类型
+    const out = asm.assemble({ progress: progressAt('n150'), runSeed: 'abc', lineup: TRIO });
+    expect(out.request.encounterRef).toBe('enc_n150');
+    expect(out.request.battleSeed).toBe('n150:abc');
+    expect(out.trace.battleSeed.startsWith('n150:')).toBe(true); // trace.battleSeed 为 string 类型
   });
 });
 
@@ -143,14 +143,14 @@ describe('S7BattleEncounterAssembler - shipId -> unitStatRef 映射 (#5)', () =>
 });
 
 describe('S7BattleEncounterAssembler - context / encounter 校验 (#6,#7,#8)', () => {
-  it('非战斗节点返回 battle_context_error（n038）(#6)', async () => {
+  it('非战斗节点返回 battle_context_error（n018）(#6)', async () => {
     const asm = await assemblerOf(loadBundle());
-    expect(codeOf(() => asm.assemble({ progress: progressAt('n038'), runSeed: 1, lineup: TRIO }))).toBe('battle_context_error');
+    expect(codeOf(() => asm.assemble({ progress: progressAt('n018'), runSeed: 1, lineup: TRIO }))).toBe('battle_context_error');
   });
 
   it('有 context 但缺 encounter 返回 missing_encounter（n008）(#7)', async () => {
     const asm = await assemblerOf(loadBundle());
-    // 样例 battle_encounter_param 覆盖 n001-n007/n018/n075；n008 是合法 normal context 但暂无 encounter（原型内容缺口）。
+    // 样例 battle_encounter_param 覆盖 n001-n007/n084/n150；n008 是合法 normal context 但暂无 encounter（原型内容缺口）。
     expect(codeOf(() => asm.assemble({ progress: progressAt('n008'), runSeed: 1, lineup: TRIO }))).toBe('missing_encounter');
   });
 
@@ -223,15 +223,15 @@ describe('S7BattleEncounterAssembler - 阵容与 shipId 校验 (#9,#10,#11,#12)'
 describe('S7BattleEncounterAssembler - 确定性与无副作用 (#13,#14)', () => {
   it('同输入组装两次输出深度相等 (#13)', async () => {
     const asm = await assemblerOf(loadBundle());
-    const a = asm.assemble({ progress: progressAt('n075'), runSeed: 'k', lineup: TRIO });
-    const b = asm.assemble({ progress: progressAt('n075'), runSeed: 'k', lineup: TRIO });
+    const a = asm.assemble({ progress: progressAt('n150'), runSeed: 'k', lineup: TRIO });
+    const b = asm.assemble({ progress: progressAt('n150'), runSeed: 'k', lineup: TRIO });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
   it('组装不修改 progress，也不修改 runtime 配置行 (#14)', async () => {
     const rt = await runtimeOf(loadBundle());
     const asm = new S7BattleEncounterAssembler(rt);
-    const progress = progressAt('n018');
+    const progress = progressAt('n084');
     const progressBefore = JSON.stringify(progress);
     const cfgBefore = JSON.stringify({
       enc: rt.getAll('battle_encounter_param'),
@@ -251,11 +251,11 @@ describe('S7BattleEncounterAssembler - 确定性与无副作用 (#13,#14)', () =
 describe('S7BattleEncounterAssembler - trace (#15)', () => {
   it('trace 含全部稳定 ID 字段且 uploadRequired=false，且不进入引擎请求', async () => {
     const asm = await assemblerOf(loadBundle());
-    const out = asm.assemble({ progress: progressAt('n018'), runSeed: 'seedX', lineup: TRIO });
+    const out = asm.assemble({ progress: progressAt('n084'), runSeed: 'seedX', lineup: TRIO });
     expect(out.trace).toEqual({
-      nodeId: 'n018',
-      encounterRef: 'enc_n018',
-      battleSeed: 'n018:seedX',
+      nodeId: 'n084',
+      encounterRef: 'enc_n084',
+      battleSeed: 'n084:seedX',
       shipIds: ['shp01', 'shp02', 'shp03'],
       slotRefs: ['p0c2', 'p1c2', 'p2c2'],
       battleSeedPolicy: 'node_id_plus_run_seed',

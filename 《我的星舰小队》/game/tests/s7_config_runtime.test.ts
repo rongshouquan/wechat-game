@@ -33,6 +33,7 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     for (const t of S7_RUNTIME_TABLE_NAMES) {
       expect(Array.isArray(bundle[t])).toBe(true);
       if (t === 'enhance_cost_param') { expect(bundle[t].length).toBe(0); continue; } // 首发无强化系统→该表为空(砍星核5阶§5.4/插件不分等级§5.3)
+      if (t === 'risk_fallback_70_config') { expect(bundle[t].length).toBe(0); continue; } // 70回退机制已作废(2026-07-02)→恒空
       expect(bundle[t].length).toBeGreaterThan(0);
     }
   });
@@ -42,9 +43,10 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     expect(rt.isLoaded()).toBe(true);
     expect(rt.version).toBe('s7-0.1.0');
     expect(rt.tableNames).toHaveLength(43);
-    // 每张表都可经只读入口访问；除 enhance_cost_param(首发无强化→空)外均非空
+    // 每张表都可经只读入口访问；除 enhance_cost_param(首发无强化→空)、
+    // risk_fallback_70_config(70回退机制已作废，2026-07-02→恒空)外均非空
     for (const t of rt.tableNames) {
-      if (t === 'enhance_cost_param') { expect(rt.getAll(t).length).toBe(0); continue; }
+      if (t === 'enhance_cost_param' || t === 'risk_fallback_70_config') { expect(rt.getAll(t).length).toBe(0); continue; }
       expect(rt.getAll(t).length).toBeGreaterThan(0);
     }
   });
@@ -56,14 +58,14 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     expect(rt.getAll('pilot_config')).toHaveLength(10);
     expect(rt.getAll('core_config')).toHaveLength(7); // 块3b 注册过载核心 core07
     expect(rt.getAll('plugin_config')).toHaveLength(18);
-    expect(rt.getAll('mainline_node_config')).toHaveLength(75);
+    expect(rt.getAll('mainline_node_config')).toHaveLength(150);
   });
 
   it('indexes rows by id for getById / has via the runtime facade', async () => {
     const rt = await S7ConfigRuntime.load(fsReader);
     expect(rt.getById<{ name: string }>('ship_config', 'shp01')?.name).toBe('晨星护卫舰');
     expect(rt.getById<{ rowId: string }>('power_reference_param', 'd28')?.rowId).toBe('d28');
-    expect(rt.has('boss_node_config', 'n075')).toBe(true);
+    expect(rt.has('boss_node_config', 'n150')).toBe(true);
     expect(rt.has('ship_config', 'shp_nonexistent')).toBe(false);
     expect(rt.getById('ship_config', 'shp_nonexistent')).toBeUndefined();
   });

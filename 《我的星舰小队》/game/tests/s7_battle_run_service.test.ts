@@ -1,5 +1,5 @@
 // BATTLE-RT-07A: S7 战斗 dry-run 运行壳 S7BattleRunService 测试。
-// 覆盖：n001/n018/n075 完整跑到 summary；同输入同输出；入参不被修改；
+// 覆盖：n001/n084/n150 完整跑到 summary；同输入同输出；入参不被修改；
 // 组装器错误透传（空 lineup / 坏 slot，不吞错）；battleSeed 来自 nodeId+runSeed（非时间/随机）；
 // 静态隔离（不 import 旧战斗链路/存档/玩家态/completeS7Node/cc/combat/）；
 // 未来在线化不堵死（源码去注释后无真实联网/支付/社交/随机时间痕迹）。
@@ -57,11 +57,11 @@ function codeOf(fn: () => unknown): string {
 
 const NODES: ReadonlyArray<readonly [string, string | number]> = [
   ['n001', 'r1'],
-  ['n018', 7],
-  ['n075', 'abc'],
+  ['n084', 7],
+  ['n150', 'abc'],
 ];
 
-describe('S7BattleRunService - n001/n018/n075 完整跑到 summary', () => {
+describe('S7BattleRunService - n001/n084/n150 完整跑到 summary', () => {
   for (const [node, seed] of NODES) {
     it(`${node} dry-run 产出 context/request/trace/result/summary`, async () => {
       const { service, runtime } = await serviceAndRuntime();
@@ -96,8 +96,8 @@ describe('S7BattleRunService - n001/n018/n075 完整跑到 summary', () => {
 describe('S7BattleRunService - 确定性（同输入同输出）', () => {
   it('同一 runtime/progress/lineup/runSeed 重复调用 JSON 输出深度相等', async () => {
     const { service, runtime } = await serviceAndRuntime();
-    const a = service.run({ runtime, progress: progressAt('n075'), runSeed: 'k', lineup: TRIO });
-    const b = service.run({ runtime, progress: progressAt('n075'), runSeed: 'k', lineup: TRIO });
+    const a = service.run({ runtime, progress: progressAt('n150'), runSeed: 'k', lineup: TRIO });
+    const b = service.run({ runtime, progress: progressAt('n150'), runSeed: 'k', lineup: TRIO });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });
@@ -105,7 +105,7 @@ describe('S7BattleRunService - 确定性（同输入同输出）', () => {
 describe('S7BattleRunService - 入参不被修改', () => {
   it('run 不修改 progress / lineup / runtime 配置行', async () => {
     const { service, runtime } = await serviceAndRuntime();
-    const progress = progressAt('n018');
+    const progress = progressAt('n084');
     const lineup: S7BattleLineupUnitInput[] = TRIO.map((u) => ({ ...u }));
     const progressBefore = JSON.stringify(progress);
     const lineupBefore = JSON.stringify(lineup);
@@ -143,18 +143,18 @@ describe('S7BattleRunService - 错误透传（不吞错）', () => {
     }))).toBe('bad_player_slot');
   });
 
-  it('非战斗节点透传 battle_context_error（n038）', async () => {
+  it('非战斗节点透传 battle_context_error（n018）', async () => {
     const { service, runtime } = await serviceAndRuntime();
-    expect(codeOf(() => service.run({ runtime, progress: progressAt('n038'), runSeed: 1, lineup: TRIO }))).toBe('battle_context_error');
+    expect(codeOf(() => service.run({ runtime, progress: progressAt('n018'), runSeed: 1, lineup: TRIO }))).toBe('battle_context_error');
   });
 });
 
 describe('S7BattleRunService - battleSeed 来自 nodeId + runSeed（非时间/随机）', () => {
   it('battleSeed 等于 `${nodeId}:${runSeed}`，且 trace 与 engine request 一致', async () => {
     const { service, runtime } = await serviceAndRuntime();
-    const out = service.run({ runtime, progress: progressAt('n018'), runSeed: 'seedX', lineup: TRIO });
-    expect(out.request.battleSeed).toBe('n018:seedX');
-    expect(out.trace.battleSeed).toBe('n018:seedX');
+    const out = service.run({ runtime, progress: progressAt('n084'), runSeed: 'seedX', lineup: TRIO });
+    expect(out.request.battleSeed).toBe('n084:seedX');
+    expect(out.trace.battleSeed).toBe('n084:seedX');
   });
 
   it('仅 runSeed 不同则 battleSeed 不同；同 runSeed 再跑 result 完全一致（不掺时间/随机源）', async () => {

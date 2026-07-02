@@ -1,6 +1,6 @@
 // CC-07D: S7 战斗入口上下文层测试。
-// 覆盖：current-node context（n001 normal / n018·n075 boss / 一个 elite）、守卫（unknown/out_of_order/
-// not_battle_node）、boss 不叠加 template_modifier 且 n075 pressureMax=14500、构建不改 progress、
+// 覆盖：current-node context（n001 normal / n084·n150 boss / 一个 elite）、守卫（unknown/out_of_order/
+// not_battle_node）、boss 不叠加 template_modifier 且 n150 pressureMax=14500、构建不改 progress、
 // 以及静态隔离（不 import 流程版战斗/流程引擎模块）。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -66,27 +66,27 @@ describe('s7 battle entry - current node context', () => {
     expect(c.pressure.secondaryPressureCap).toBe(1);
   });
 
-  it('resolves n018 as a boss context (boss view + boss-scope pressure, no template_modifier)', async () => {
+  it('resolves n084 as a boss context (boss view + boss-scope pressure, no template_modifier)', async () => {
     const entry = await buildEntry();
-    const res = entry.resolveCurrentContext(progressAt('n018'));
+    const res = entry.resolveCurrentContext(progressAt('n084'));
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const c = res.context;
     expect(c.stageType).toBe('boss');
     expect(c.boss).not.toBeNull();
-    expect(c.boss?.bossNodeId).toBe('n018');
+    expect(c.boss?.bossNodeId).toBe('n084');
     expect(c.boss?.mainProblemTag).toBe('shield');
     expect(c.templateId).toBe('t04');
     expect(c.secondaryPressure).toBe('swarm_low');
     expect(c.pressure.scope).toBe('boss');
-    expect(c.pressure.pressureRefKey).toBe('n018');
+    expect(c.pressure.pressureRefKey).toBe('n084');
     expect(c.pressure.recommend).toBe(1500);
     expect(c.pressure.templateModifier).toBeNull(); // boss 不叠加 template_modifier
   });
 
-  it('resolves n075 as boss with pressureMax capped at 14500 and no modifier stacking', async () => {
+  it('resolves n150 as boss with pressureMax capped at 14500 and no modifier stacking', async () => {
     const entry = await buildEntry();
-    const res = entry.resolveCurrentContext(progressAt('n075'));
+    const res = entry.resolveCurrentContext(progressAt('n150'));
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const c = res.context;
@@ -97,23 +97,23 @@ describe('s7 battle entry - current node context', () => {
     expect(c.pressure.max).toBe(14500); // 上限保持 14500，不上探
     expect(c.pressure.recommend).toBe(13600);
     expect(c.pressure.templateModifier).toBeNull();
-    expect(c.noAdCheckTag).toBe('no_ad_75_pass_check');
+    expect(c.noAdCheckTag).toBe('no_ad_boss6_check');
   });
 });
 
 describe('s7 battle entry - guards', () => {
-  it('returns not_battle_node for n038 (templateRef none)', async () => {
+  it('returns not_battle_node for n018 (templateRef none)', async () => {
     const entry = await buildEntry();
-    const res = entry.resolveCurrentContext(progressAt('n038'));
+    const res = entry.resolveCurrentContext(progressAt('n018'));
     expect(res.ok).toBe(false);
     if (res.ok) return;
     expect(res.error).toBe('not_battle_node');
-    expect(res.nodeId).toBe('n038');
+    expect(res.nodeId).toBe('n018');
   });
 
-  it('returns not_battle_node for n039 (protection notice)', async () => {
+  it('returns not_battle_node for n019 (protection notice)', async () => {
     const entry = await buildEntry();
-    const res = entry.resolveCurrentContext(progressAt('n039'));
+    const res = entry.resolveCurrentContext(progressAt('n019'));
     expect(res.ok).toBe(false);
     if (res.ok) return;
     expect(res.error).toBe('not_battle_node');
@@ -127,7 +127,7 @@ describe('s7 battle entry - guards', () => {
     expect(res.error).toBe('out_of_order');
     expect(res.nodeId).toBe('n002');
     // 即便目标是合法 boss 节点，只要不是当前节点也不放行。
-    const res2 = entry.resolveContext(progressAt('n001'), 'n018');
+    const res2 = entry.resolveContext(progressAt('n001'), 'n084');
     expect(res2.ok).toBe(false);
     if (res2.ok) return;
     expect(res2.error).toBe('out_of_order');

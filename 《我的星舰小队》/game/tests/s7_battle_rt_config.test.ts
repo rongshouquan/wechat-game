@@ -1,5 +1,5 @@
 // BATTLE-RT-03: S7 轻量实时自动战斗 5 张配置表 schema + 样例 fixture 测试。
-// 覆盖：整盘校验通过、5 表行数、n001/n018/n075 装配契约、17 类 effectType 覆盖、
+// 覆盖：整盘校验通过、5 表行数、n001/n084/n150 装配契约、17 类 effectType 覆盖、
 // 占格/格子/双向闭合/召唤上限/Boss 阶段等阻断规则。不实现战斗引擎。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -52,35 +52,35 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     for (const t of EFFECT_TYPES) expect(got.has(t)).toBe(true);
   });
 
-  it('covers n001 (normal/t01/swarm), n018 (boss/t04/shield), n075 (boss/t10/berserk, pressure bp_n075)', () => {
+  it('covers n001 (normal/t01/swarm), n084 (boss/t04/shield), n150 (boss/t10/berserk, pressure bp_n150)', () => {
     const enc = readTable<Record<string, unknown>>('battle_encounter_param');
     const n001 = enc.find((r) => r.nodeRef === 'n001')!;
-    const n018 = enc.find((r) => r.nodeRef === 'n018')!;
-    const n075 = enc.find((r) => r.nodeRef === 'n075')!;
+    const n084 = enc.find((r) => r.nodeRef === 'n084')!;
+    const n150 = enc.find((r) => r.nodeRef === 'n150')!;
     expect(n001.stageType).toBe('normal');
     expect(n001.templateRef).toBe('t01');
     expect(n001.problemTagRef).toBe('swarm');
     expect(n001.bossPhaseRefs).toEqual([]);
-    expect(n018.stageType).toBe('boss');
-    expect(n018.templateRef).toBe('t04');
-    expect(n018.secondaryPressureTag).toBe('swarm_low');
-    expect(n075.stageType).toBe('boss');
-    expect(n075.templateRef).toBe('t10');
-    expect(n075.problemTagRef).toBe('berserk');
-    expect(n075.secondaryPressureTag).toBe('one_of_t03_t05_t08_t09');
-    expect(n075.pressureRef).toBe('bp_n075');
+    expect(n084.stageType).toBe('boss');
+    expect(n084.templateRef).toBe('t04');
+    expect(n084.secondaryPressureTag).toBe('swarm_low');
+    expect(n150.stageType).toBe('boss');
+    expect(n150.templateRef).toBe('t10');
+    expect(n150.problemTagRef).toBe('berserk');
+    expect(n150.secondaryPressureTag).toBe('one_of_t03_t05_t08_t09');
+    expect(n150.pressureRef).toBe('bp_n150');
   });
 
-  it('keeps n075 boss pressure max at 14500 (existing pressure_param unchanged)', () => {
-    const p = readTable<{ rowId: string; pressureMax: number }>('pressure_param').find((r) => r.rowId === 'bp_n075')!;
+  it('keeps n150 boss pressure max at 14500 (existing pressure_param unchanged)', () => {
+    const p = readTable<{ rowId: string; pressureMax: number }>('pressure_param').find((r) => r.rowId === 'bp_n150')!;
     expect(p.pressureMax).toBeLessThanOrEqual(14500);
     expect(p.pressureMax).toBe(14500);
   });
 
-  it('keeps n075 boss summon at most 10 per phase, n018/n075 at most 3 unique phases', () => {
+  it('keeps n150 boss summon at most 10 per phase, n084/n150 at most 3 unique phases', () => {
     const phases = readTable<{ bossNodeId: string; phaseTag: string; summonCountCap: number }>('battle_boss_phase_param');
     for (const r of phases) expect(r.summonCountCap).toBeLessThanOrEqual(10);
-    for (const boss of ['n018', 'n075']) {
+    for (const boss of ['n084', 'n150']) {
       const tags = phases.filter((r) => r.bossNodeId === boss).map((r) => r.phaseTag);
       expect(tags.length).toBeLessThanOrEqual(3);
       expect(new Set(tags).size).toBe(tags.length);
@@ -121,7 +121,7 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects a multi-cell footprint that goes out of bounds', () => {
     const b = clone(loadBundle());
-    (rowOf(b, 'battle_spawn_param', 'spawn_n075_boss').slotRefs as string[])[0] = 'r0c5'; // 3x3 anchored at c5 -> c7
+    (rowOf(b, 'battle_spawn_param', 'spawn_n150_boss').slotRefs as string[])[0] = 'r0c5'; // 3x3 anchored at c5 -> c7
     expect(hasErr(b, 'battle_spawn_param')).toBe(true);
   });
 
@@ -133,13 +133,13 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects a spawn whose encounterRef breaks the encounter<->spawn closure', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_spawn_param', 'spawn_n001_w1').encounterRef = 'enc_n018';
+    rowOf(b, 'battle_spawn_param', 'spawn_n001_w1').encounterRef = 'enc_n084';
     expect(validateS7ConfigBundle(b).length).toBeGreaterThan(0);
   });
 
   it('rejects an invalid unitRef for the unit target type', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_unit_stat_param', 'bu_boss_n018').unitRef = 'n999';
+    rowOf(b, 'battle_unit_stat_param', 'bu_boss_n084').unitRef = 'n999';
     expect(hasErr(b, 'battle_unit_stat_param')).toBe(true);
   });
 
@@ -151,23 +151,23 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects summonCountCap > 10', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_boss_phase_param', 'phase_n075_mid').summonCountCap = 11;
+    rowOf(b, 'battle_boss_phase_param', 'phase_n150_mid').summonCountCap = 11;
     expect(hasErr(b, 'battle_boss_phase_param')).toBe(true);
   });
 
   it('rejects more than 3 phases for one boss', () => {
     const b = clone(loadBundle());
     (b.battle_boss_phase_param as Array<Record<string, unknown>>).push({
-      schemaVersion: 's7-0.1.0', rowId: 'phase_n018_extra', bossNodeId: 'n018', phaseTag: 'mid',
+      schemaVersion: 's7-0.1.0', rowId: 'phase_n084_extra', bossNodeId: 'n084', phaseTag: 'mid',
       triggerType: 'time_elapsed_sec', triggerValue: 10, effectRefs: ['eff_ult_burst_nuke'],
       summonUnitRefs: [], summonCountCap: 0, note: 'x',
     });
     expect(hasErr(b, 'battle_boss_phase_param')).toBe(true);
   });
 
-  it('rejects an n075 encounter pressureRef other than bp_n075', () => {
+  it('rejects an n150 encounter pressureRef other than bp_n150', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_encounter_param', 'enc_n075').pressureRef = 'bp_n018';
+    rowOf(b, 'battle_encounter_param', 'enc_n150').pressureRef = 'bp_n084';
     expect(hasErr(b, 'battle_encounter_param')).toBe(true);
   });
 

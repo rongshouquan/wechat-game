@@ -1,5 +1,5 @@
 // BATTLE-RT-06: S7 专用纯 TS 战斗日志摘要 summarizeS7BattleLog 测试。
-// 覆盖任务包 §9 的 26 点：真实 n001/n018/n075 摘要、血量/可推导护盾伤害口径、
+// 覆盖任务包 §9 的 26 点：真实 n001/n084/n150 摘要、血量/可推导护盾伤害口径、
 // 治疗与上盾不计、护盾自然过期不被后续攻击捡走、单位累计、0 输出单位入列、top/排序、
 // 8 类胜负提示码、异常但合法日志不崩、不改入参、确定性、静态隔离与未来在线化不堵死。
 // 真实结果用 S7AutoBattleEngine 跑出；边界用例用合成 S7AutoBattleResult，不改磁盘配置表。
@@ -87,18 +87,18 @@ describe('S7BattleLogSummary - 真实战斗结果 (#1-#5)', () => {
     expect(s.playerDamage.map((u) => u.unitId).sort()).toEqual(result.finalState.players.map((u) => u.unitId).sort());
   });
 
-  it('n018 真实结果生成摘要，不崩 (#4)', async () => {
+  it('n084 真实结果生成摘要，不崩 (#4)', async () => {
     const rt = await runtimeOf(loadBundle());
-    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n018', battleSeed: 's', playerUnits: FIVE });
+    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n084', battleSeed: 's', playerUnits: FIVE });
     const s = summarizeS7BattleLog(result);
     expect(['player', 'enemy']).toContain(s.winner);
     expect(s.playerDamage.length).toBeGreaterThan(0);
     expect(s.enemyDamage.length).toBeGreaterThan(0);
   });
 
-  it('n075 真实结果生成摘要，不崩、不超时 (#5)', async () => {
+  it('n150 真实结果生成摘要，不崩、不超时 (#5)', async () => {
     const rt = await runtimeOf(loadBundle());
-    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n075', battleSeed: 's', playerUnits: FIVE });
+    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n150', battleSeed: 's', playerUnits: FIVE });
     const s = summarizeS7BattleLog(result);
     expect(s.durationSec).toBeGreaterThan(0);
     // 玩家伤害合计应能从真实日志推导出正数（gunner 持续输出）。
@@ -319,7 +319,7 @@ describe('S7BattleLogSummary - 健壮性与确定性 (#22,#23,#24)', () => {
 
   it('摘要不修改传入的 result (#23)', async () => {
     const rt = await runtimeOf(loadBundle());
-    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n018', battleSeed: 's', playerUnits: FIVE });
+    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n084', battleSeed: 's', playerUnits: FIVE });
     const before = JSON.stringify(result);
     summarizeS7BattleLog(result);
     expect(JSON.stringify(result)).toBe(before);
@@ -327,7 +327,7 @@ describe('S7BattleLogSummary - 健壮性与确定性 (#22,#23,#24)', () => {
 
   it('同一 result 摘要两次输出深度相等 (#24)', async () => {
     const rt = await runtimeOf(loadBundle());
-    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n075', battleSeed: 's', playerUnits: FIVE });
+    const result = new S7AutoBattleEngine(rt).run({ encounterRef: 'enc_n150', battleSeed: 's', playerUnits: FIVE });
     expect(JSON.stringify(summarizeS7BattleLog(result))).toBe(JSON.stringify(summarizeS7BattleLog(result)));
   });
 });

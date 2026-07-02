@@ -1,114 +1,68 @@
 [
   {
     "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_mainline_basic_precheck",
-    "nodeId": "n012",
-    "requiredStateTag": "basic_upgrade_lineup_protection_fallback_ready",
-    "forbiddenDependencyTag": ["ad", "sponsor_supply", "merchant_bought"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_cargo_good_item_check",
-    "nodeId": "n015",
-    "requiredStateTag": "cargo_free_pick_good_item_present",
-    "forbiddenDependencyTag": ["ad_extra"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_mainline_basic_pass",
-    "nodeId": "n018",
-    "requiredStateTag": "sf1_boss_clear_mainline_continue",
-    "forbiddenDependencyTag": ["ad_temp_power"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_5_ship_check",
-    "nodeId": "n022",
-    "requiredStateTag": "free_5_ship_path_or_fallback_ready",
-    "forbiddenDependencyTag": ["merchant_bought", "sponsor_supply"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "day7_full_core_check",
-    "nodeId": "n024",
-    "requiredStateTag": "d7_full_core_free_select_no_fragment_no_random_no_ad",
-    "forbiddenDependencyTag": ["ad_refresh", "ad_pity", "merchant_bought"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_reset_gate_ready",
-    "nodeId": "n037",
-    "requiredStateTag": "sf2_boss_clear_protection_closing_free_reset_gate_ready",
-    "forbiddenDependencyTag": ["ad", "iap", "merchant_bought"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_total_reset_check",
-    "nodeId": "n038",
-    "requiredStateTag": "sf2_boss_clear_full_team_free_total_reset_available",
-    "forbiddenDependencyTag": ["ad", "iap", "star_shell_arbitrage"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_reset_not_required",
-    "nodeId": "n039",
-    "requiredStateTag": "protection_end_notice_no_ad_no_compensation_growth_continue",
-    "forbiddenDependencyTag": ["ad_compensation", "star_shell_patch"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_3_core_path_precheck",
-    "nodeId": "n049",
-    "requiredStateTag": "free_3_core_path_progress_state_clear",
-    "forbiddenDependencyTag": ["ad", "sponsor_supply", "merchant_bought"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_3_core_path_check",
-    "nodeId": "n054",
-    "requiredStateTag": "free_3_core_path_no_ad_no_sponsor_no_merchant",
-    "forbiddenDependencyTag": ["five_core_gate"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_midline_pass_check",
-    "nodeId": "n056",
-    "requiredStateTag": "sf3_boss_clear_midline_no_ad_path_3_core_stable",
-    "forbiddenDependencyTag": ["ad_temp_power", "sponsor_supply"]
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_3_core_path_late_check",
+    "checkTag": "no_ad_boss1_check",
     "nodeId": "n060",
-    "requiredStateTag": "pre_endgame_3_core_path_still_valid",
-    "forbiddenDependencyTag": ["unique_core_item", "unique_plugin_item"]
+    "requiredStateTag": "boss1_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_75_precheck",
-    "nodeId": "n068",
-    "requiredStateTag": "mainline_75_precheck_final_region_review_no_ad_patch",
-    "forbiddenDependencyTag": ["ad_revive", "ad_temp_power", "merchant_bought"]
+    "checkTag": "no_ad_boss2_check",
+    "nodeId": "n084",
+    "requiredStateTag": "boss2_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "checkTag": "free_cargo_good_item_recheck",
-    "nodeId": "n073",
-    "requiredStateTag": "pre_endgame_cargo_good_item_still_valid",
-    "forbiddenDependencyTag": ["ad_hidden_strong_reward"]
+    "checkTag": "no_ad_boss3_check",
+    "nodeId": "n102",
+    "requiredStateTag": "boss3_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_75_ready_check",
-    "nodeId": "n074",
-    "requiredStateTag": "pre_final_boss_no_ad_mainline_path_ready",
-    "forbiddenDependencyTag": ["ad_revive", "ad_temp_power"]
+    "checkTag": "no_ad_boss4_check",
+    "nodeId": "n120",
+    "requiredStateTag": "boss4_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "checkTag": "no_ad_75_pass_check",
-    "nodeId": "n075",
-    "requiredStateTag": "mainline_75_no_ad_clear_5_core_not_gate",
-    "forbiddenDependencyTag": ["ad", "sponsor_supply", "merchant_bought", "star_shell_arbitrage"]
+    "checkTag": "no_ad_boss5_check",
+    "nodeId": "n138",
+    "requiredStateTag": "boss5_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "checkTag": "no_ad_boss6_check",
+    "nodeId": "n150",
+    "requiredStateTag": "boss6_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
   }
 ]

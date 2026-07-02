@@ -1,31 +1,617 @@
 [
-  {"schemaVersion":"s7-0.1.0","rowId":"mainline_sf01_normal","sourceType":"mainline","packId":"mainline_sf01_normal","resources":[{"resourceId":"hullAlloy","min":25,"max":45}],"goodItemTag":"none","noAdRequired":true,"note":"SF01 普通节点包；精英/检查点包为普通包 2 倍 + 补给券1或普通信标1（改动#3：星矿移出必得，改走三选一/离线/商人/打捞，见 S7LevelRewardConfig）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"mainline_sf02_normal","sourceType":"mainline","packId":"mainline_sf02_normal","resources":[{"resourceId":"hullAlloy","min":35,"max":65}],"goodItemTag":"none","noAdRequired":true,"note":"SF02 普通节点包；精英/检查点包 2-3 倍 + 稀有信标1或补给券1（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"mainline_sf03_normal","sourceType":"mainline","packId":"mainline_sf03_normal","resources":[{"resourceId":"hullAlloy","min":55,"max":90}],"goodItemTag":"none","noAdRequired":true,"note":"SF03 普通节点包；精英/检查点包 2-3 倍 + 星核碎片10-20（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"mainline_sf04_normal","sourceType":"mainline","packId":"mainline_sf04_normal","resources":[{"resourceId":"hullAlloy","min":80,"max":130}],"goodItemTag":"none","noAdRequired":true,"note":"SF04 普通节点包；精英/检查点包 2-3 倍 + 星辉信标或核心材料包（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"boss_n018","sourceType":"boss","packId":"boss_n018","resources":[{"resourceId":"hullAlloy","min":250,"max":400},{"resourceId":"supplyTicket","min":1,"max":1},{"resourceId":"beaconEpic","min":1,"max":1}],"goodItemTag":"no_unique_key_item","noAdRequired":true,"note":"进入 SF02 基础成长，不给唯一通关物（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"boss_n037","sourceType":"boss","packId":"boss_n037","resources":[{"resourceId":"hullAlloy","min":500,"max":750},{"resourceId":"coreFrag","min":20,"max":35},{"resourceId":"beaconEpic","min":1,"max":1}],"goodItemTag":"core_frag_support","noAdRequired":true,"note":"保护期转折与 2 核构筑，不替代 N038 重置（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"boss_n056","sourceType":"boss","packId":"boss_n056","resources":[{"resourceId":"hullAlloy","min":800,"max":1200},{"resourceId":"coreFrag","min":35,"max":60}],"goodItemTag":"core_path_support","noAdRequired":true,"note":"3 核路径稳定，不强迫 5 核（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"boss_n075","sourceType":"boss","packId":"boss_n075","resources":[{"resourceId":"hullAlloy","min":1200,"max":1800},{"resourceId":"starCargo","min":1,"max":1},{"resourceId":"beaconEpic","min":1,"max":1}],"goodItemTag":"cargo_late_good_item_required","noAdRequired":true,"note":"主线收束，不做付费转化，不上探 N075 压力（改动#3：星矿移出必得）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"action3_main","sourceType":"action3","packId":"action3_main","resources":[{"resourceId":"starOre","min":1200,"max":1800},{"resourceId":"hullAlloy","min":500,"max":800},{"resourceId":"shipBlueprint","min":4,"max":6},{"resourceId":"pilotToken","min":2,"max":4},{"resourceId":"supplyTicket","min":2,"max":3},{"resourceId":"beaconCommon","min":1,"max":2}],"goodItemTag":"none","noAdRequired":true,"note":"3 天行动累计（短周期过程给普通信标，§9.3）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"expansion7_d7","sourceType":"expansion7","packId":"expansion7_d7","resources":[{"resourceId":"fullCore","min":1,"max":1},{"resourceId":"coreFrag","min":30,"max":50},{"resourceId":"supplyTicket","min":2,"max":3}],"goodItemTag":"full_core_required","noAdRequired":true,"note":"第 7 天完整自选星核，必须完整免费、不碎片化/随机化/广告化"},
-  {"schemaVersion":"s7-0.1.0","rowId":"expansion7_d14","sourceType":"expansion7","packId":"expansion7_d14","resources":[{"resourceId":"coreFrag","min":50,"max":80},{"resourceId":"beaconRare","min":1,"max":1}],"goodItemTag":"random_core_3choose1","noAdRequired":true,"note":"随机星核三选一，不改成广告刷新"},
-  {"schemaVersion":"s7-0.1.0","rowId":"expansion7_d21","sourceType":"expansion7","packId":"expansion7_d21","resources":[{"resourceId":"coreFrag","min":80,"max":120},{"resourceId":"beaconRare","min":1,"max":1}],"goodItemTag":"random_core_3choose1","noAdRequired":true,"note":"随机星核三选一，支撑 3 核路径"},
-  {"schemaVersion":"s7-0.1.0","rowId":"expansion7_d28","sourceType":"expansion7","packId":"expansion7_d28","resources":[{"resourceId":"coreFrag","min":100,"max":150},{"resourceId":"starCargo","min":1,"max":1}],"goodItemTag":"random_core_3choose1","noAdRequired":true,"note":"随机星核三选一，4-5 核舒适不是通关门槛"},
-  {"schemaVersion":"s7-0.1.0","rowId":"salvage_basic","sourceType":"salvage","packId":"salvage_basic","resources":[{"resourceId":"starOre","min":80,"max":140},{"resourceId":"hullAlloy","min":20,"max":45}],"goodItemTag":"none","noAdRequired":true,"note":"每日最多 3 次计入默认验算，广告只可加速不给专属物"},
-  {"schemaVersion":"s7-0.1.0","rowId":"salvage_mid","sourceType":"salvage","packId":"salvage_mid","resources":[{"resourceId":"starOre","min":160,"max":260},{"resourceId":"hullAlloy","min":45,"max":80},{"resourceId":"beaconCommon","min":0,"max":1}],"goodItemTag":"none","noAdRequired":true,"note":"随星域解锁，不承接关键路径"},
-  {"schemaVersion":"s7-0.1.0","rowId":"salvage_late","sourceType":"salvage","packId":"salvage_late","resources":[{"resourceId":"starOre","min":260,"max":420},{"resourceId":"hullAlloy","min":80,"max":130},{"resourceId":"beaconCommon","min":0,"max":1}],"goodItemTag":"none","noAdRequired":true,"note":"终盘修正，不给唯一星核"},
-  {"schemaVersion":"s7-0.1.0","rowId":"range_basic","sourceType":"range","packId":"range_basic","resources":[{"resourceId":"starOre","min":80,"max":140}],"goodItemTag":"none","noAdRequired":true,"note":"阵容测试引导，不给临时战力"},
-  {"schemaVersion":"s7-0.1.0","rowId":"range_mid","sourceType":"range","packId":"range_mid","resources":[{"resourceId":"hullAlloy","min":80,"max":140}],"goodItemTag":"none","noAdRequired":true,"note":"中期短板修正，最高档不依赖广告"},
-  {"schemaVersion":"s7-0.1.0","rowId":"range_late","sourceType":"range","packId":"range_late","resources":[{"resourceId":"beaconCommon","min":0,"max":1}],"goodItemTag":"none","noAdRequired":true,"note":"终盘复盘，不给主线必需星核"},
-  {"schemaVersion":"s7-0.1.0","rowId":"supply_newbie","sourceType":"supply","packId":"supply_newbie","resources":[],"goodItemTag":"none","noAdRequired":true,"note":"消耗补给券1，三选一补足包；前 8 张券至少覆盖基础插件/成长材料/驾驶员信物/普通信标；不写抽取概率"},
-  {"schemaVersion":"s7-0.1.0","rowId":"supply_growth","sourceType":"supply","packId":"supply_growth","resources":[],"goodItemTag":"none","noAdRequired":true,"note":"消耗补给券1，成长材料三选一；每 5 次至少 1 个当前短板材料包；不成为主线唯一来源"},
-  {"schemaVersion":"s7-0.1.0","rowId":"supply_plugin","sourceType":"supply","packId":"supply_plugin","resources":[],"goodItemTag":"default_plugin_candidate_allowed","noAdRequired":true,"note":"消耗补给券1，插件/插件材料候选，仅默认 18 插件内候选，不提供 PLG-RSV，不做付费池"},
-  {"schemaVersion":"s7-0.1.0","rowId":"beacon_normal","sourceType":"beacon","packId":"beacon_normal","resources":[{"resourceId":"starOre","min":180,"max":300},{"resourceId":"hullAlloy","min":60,"max":120}],"goodItemTag":"none","noAdRequired":true,"note":"基础资源补足，免费来源存在"},
-  {"schemaVersion":"s7-0.1.0","rowId":"beacon_rare","sourceType":"beacon","packId":"beacon_rare","resources":[{"resourceId":"coreFrag","min":10,"max":25}],"goodItemTag":"none","noAdRequired":true,"note":"构筑修正，插件候选1或插件材料，不写概率"},
-  {"schemaVersion":"s7-0.1.0","rowId":"beacon_starlight","sourceType":"beacon","packId":"beacon_starlight","resources":[{"resourceId":"coreFrag","min":25,"max":45}],"goodItemTag":"none","noAdRequired":true,"note":"高价值补足，星辉货舱碎片包或高品质插件候选1，不广告专属"},
-  {"schemaVersion":"s7-0.1.0","rowId":"beacon_core","sourceType":"beacon","packId":"beacon_core","resources":[{"resourceId":"coreFrag","min":35,"max":70}],"goodItemTag":"none","noAdRequired":true,"note":"3-5 核路径补充，不替代第 7 天完整自选"},
-  {"schemaVersion":"s7-0.1.0","rowId":"cargo_early","sourceType":"star_cargo","packId":"cargo_early","resources":[{"resourceId":"coreFrag","min":25}],"goodItemTag":"cargo_early_good_item_required","noAdRequired":true,"note":"免费 3 选 1 至少 1 个好东西：星核碎片25+/高品质插件候选1/通用图纸包1；广告只能额外补选"},
-  {"schemaVersion":"s7-0.1.0","rowId":"cargo_mid","sourceType":"star_cargo","packId":"cargo_mid","resources":[{"resourceId":"coreFrag","min":45}],"goodItemTag":"cargo_mid_good_item_required","noAdRequired":true,"note":"流派修正物：星核碎片45+/稀有插件候选1/星核材料包1；广告不能替代免费好东西"},
-  {"schemaVersion":"s7-0.1.0","rowId":"cargo_late","sourceType":"star_cargo","packId":"cargo_late","resources":[{"resourceId":"coreFrag","min":70}],"goodItemTag":"cargo_late_good_item_required","noAdRequired":true,"note":"终盘修正物：星核碎片70+/星辉信标1/终盘插件候选1"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "mainline_sf01_normal",
+    "sourceType": "mainline",
+    "packId": "mainline_sf01_normal",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 25,
+        "max": 45
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "SF01 普通节点包；精英/检查点包为普通包 2 倍 + 补给券1或普通信标1（改动#3：星矿移出必得，改走三选一/离线/商人/打捞，见 S7LevelRewardConfig）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "mainline_sf02_normal",
+    "sourceType": "mainline",
+    "packId": "mainline_sf02_normal",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 35,
+        "max": 65
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "SF02 普通节点包；精英/检查点包 2-3 倍 + 稀有信标1或补给券1（改动#3：星矿移出必得）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "mainline_sf03_normal",
+    "sourceType": "mainline",
+    "packId": "mainline_sf03_normal",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 55,
+        "max": 90
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "SF03 普通节点包；精英/检查点包 2-3 倍 + 星核碎片10-20（改动#3：星矿移出必得）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "mainline_sf04_normal",
+    "sourceType": "mainline",
+    "packId": "mainline_sf04_normal",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 80,
+        "max": 130
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "SF04 普通节点包；精英/检查点包 2-3 倍 + 星辉信标或核心材料包（改动#3：星矿移出必得）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "action3_main",
+    "sourceType": "action3",
+    "packId": "action3_main",
+    "resources": [
+      {
+        "resourceId": "starOre",
+        "min": 1200,
+        "max": 1800
+      },
+      {
+        "resourceId": "hullAlloy",
+        "min": 500,
+        "max": 800
+      },
+      {
+        "resourceId": "shipBlueprint",
+        "min": 4,
+        "max": 6
+      },
+      {
+        "resourceId": "pilotToken",
+        "min": 2,
+        "max": 4
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 2,
+        "max": 3
+      },
+      {
+        "resourceId": "beaconCommon",
+        "min": 1,
+        "max": 2
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "3 天行动累计（短周期过程给普通信标，§9.3）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "expansion7_d7",
+    "sourceType": "expansion7",
+    "packId": "expansion7_d7",
+    "resources": [
+      {
+        "resourceId": "fullCore",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "coreFrag",
+        "min": 30,
+        "max": 50
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 2,
+        "max": 3
+      }
+    ],
+    "goodItemTag": "full_core_required",
+    "noAdRequired": true,
+    "note": "第 7 天完整自选星核，必须完整免费、不碎片化/随机化/广告化"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "expansion7_d14",
+    "sourceType": "expansion7",
+    "packId": "expansion7_d14",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 50,
+        "max": 80
+      },
+      {
+        "resourceId": "beaconRare",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "random_core_3choose1",
+    "noAdRequired": true,
+    "note": "随机星核三选一，不改成广告刷新"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "expansion7_d21",
+    "sourceType": "expansion7",
+    "packId": "expansion7_d21",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 80,
+        "max": 120
+      },
+      {
+        "resourceId": "beaconRare",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "random_core_3choose1",
+    "noAdRequired": true,
+    "note": "随机星核三选一，支撑 3 核路径"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "expansion7_d28",
+    "sourceType": "expansion7",
+    "packId": "expansion7_d28",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 100,
+        "max": 150
+      },
+      {
+        "resourceId": "starCargo",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "random_core_3choose1",
+    "noAdRequired": true,
+    "note": "随机星核三选一，4-5 核舒适不是通关门槛"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "salvage_basic",
+    "sourceType": "salvage",
+    "packId": "salvage_basic",
+    "resources": [
+      {
+        "resourceId": "starOre",
+        "min": 80,
+        "max": 140
+      },
+      {
+        "resourceId": "hullAlloy",
+        "min": 20,
+        "max": 45
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "每日最多 3 次计入默认验算，广告只可加速不给专属物"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "salvage_mid",
+    "sourceType": "salvage",
+    "packId": "salvage_mid",
+    "resources": [
+      {
+        "resourceId": "starOre",
+        "min": 160,
+        "max": 260
+      },
+      {
+        "resourceId": "hullAlloy",
+        "min": 45,
+        "max": 80
+      },
+      {
+        "resourceId": "beaconCommon",
+        "min": 0,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "随星域解锁，不承接关键路径"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "salvage_late",
+    "sourceType": "salvage",
+    "packId": "salvage_late",
+    "resources": [
+      {
+        "resourceId": "starOre",
+        "min": 260,
+        "max": 420
+      },
+      {
+        "resourceId": "hullAlloy",
+        "min": 80,
+        "max": 130
+      },
+      {
+        "resourceId": "beaconCommon",
+        "min": 0,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "终盘修正，不给唯一星核"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "range_basic",
+    "sourceType": "range",
+    "packId": "range_basic",
+    "resources": [
+      {
+        "resourceId": "starOre",
+        "min": 80,
+        "max": 140
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "阵容测试引导，不给临时战力"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "range_mid",
+    "sourceType": "range",
+    "packId": "range_mid",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 80,
+        "max": 140
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "中期短板修正，最高档不依赖广告"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "range_late",
+    "sourceType": "range",
+    "packId": "range_late",
+    "resources": [
+      {
+        "resourceId": "beaconCommon",
+        "min": 0,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "终盘复盘，不给主线必需星核"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "supply_newbie",
+    "sourceType": "supply",
+    "packId": "supply_newbie",
+    "resources": [],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "消耗补给券1，三选一补足包；前 8 张券至少覆盖基础插件/成长材料/驾驶员信物/普通信标；不写抽取概率"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "supply_growth",
+    "sourceType": "supply",
+    "packId": "supply_growth",
+    "resources": [],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "消耗补给券1，成长材料三选一；每 5 次至少 1 个当前短板材料包；不成为主线唯一来源"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "supply_plugin",
+    "sourceType": "supply",
+    "packId": "supply_plugin",
+    "resources": [],
+    "goodItemTag": "default_plugin_candidate_allowed",
+    "noAdRequired": true,
+    "note": "消耗补给券1，插件/插件材料候选，仅默认 18 插件内候选，不提供 PLG-RSV，不做付费池"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "beacon_normal",
+    "sourceType": "beacon",
+    "packId": "beacon_normal",
+    "resources": [
+      {
+        "resourceId": "starOre",
+        "min": 180,
+        "max": 300
+      },
+      {
+        "resourceId": "hullAlloy",
+        "min": 60,
+        "max": 120
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "基础资源补足，免费来源存在"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "beacon_rare",
+    "sourceType": "beacon",
+    "packId": "beacon_rare",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 10,
+        "max": 25
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "构筑修正，插件候选1或插件材料，不写概率"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "beacon_starlight",
+    "sourceType": "beacon",
+    "packId": "beacon_starlight",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 25,
+        "max": 45
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "高价值补足，星辉货舱碎片包或高品质插件候选1，不广告专属"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "beacon_core",
+    "sourceType": "beacon",
+    "packId": "beacon_core",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 35,
+        "max": 70
+      }
+    ],
+    "goodItemTag": "none",
+    "noAdRequired": true,
+    "note": "3-5 核路径补充，不替代第 7 天完整自选"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "cargo_early",
+    "sourceType": "star_cargo",
+    "packId": "cargo_early",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 25
+      }
+    ],
+    "goodItemTag": "cargo_early_good_item_required",
+    "noAdRequired": true,
+    "note": "免费 3 选 1 至少 1 个好东西：星核碎片25+/高品质插件候选1/通用图纸包1；广告只能额外补选"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "cargo_mid",
+    "sourceType": "star_cargo",
+    "packId": "cargo_mid",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 45
+      }
+    ],
+    "goodItemTag": "cargo_mid_good_item_required",
+    "noAdRequired": true,
+    "note": "流派修正物：星核碎片45+/稀有插件候选1/星核材料包1；广告不能替代免费好东西"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "cargo_late",
+    "sourceType": "star_cargo",
+    "packId": "cargo_late",
+    "resources": [
+      {
+        "resourceId": "coreFrag",
+        "min": 70
+      }
+    ],
+    "goodItemTag": "cargo_late_good_item_required",
+    "noAdRequired": true,
+    "note": "终盘修正物：星核碎片70+/星辉信标1/终盘插件候选1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "boss_1",
+    "sourceType": "boss",
+    "packId": "boss_1",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 300,
+        "max": 450
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "beaconEpic",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequired": true,
+    "note": "boss_1 占位奖励，具体数值留数值一次性校准阶段（150关拓扑改造，2026-07-02）。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "boss_2",
+    "sourceType": "boss",
+    "packId": "boss_2",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 500,
+        "max": 750
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "beaconEpic",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequired": true,
+    "note": "boss_2 占位奖励，具体数值留数值一次性校准阶段（150关拓扑改造，2026-07-02）。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "boss_3",
+    "sourceType": "boss",
+    "packId": "boss_3",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 700,
+        "max": 1050
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "beaconEpic",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequired": true,
+    "note": "boss_3 占位奖励，具体数值留数值一次性校准阶段（150关拓扑改造，2026-07-02）。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "boss_4",
+    "sourceType": "boss",
+    "packId": "boss_4",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 900,
+        "max": 1350
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "beaconEpic",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequired": true,
+    "note": "boss_4 占位奖励，具体数值留数值一次性校准阶段（150关拓扑改造，2026-07-02）。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "boss_5",
+    "sourceType": "boss",
+    "packId": "boss_5",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 1050,
+        "max": 1550
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "beaconEpic",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequired": true,
+    "note": "boss_5 占位奖励，具体数值留数值一次性校准阶段（150关拓扑改造，2026-07-02）。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "boss_final",
+    "sourceType": "boss",
+    "packId": "boss_final",
+    "resources": [
+      {
+        "resourceId": "hullAlloy",
+        "min": 1300,
+        "max": 1900
+      },
+      {
+        "resourceId": "supplyTicket",
+        "min": 1,
+        "max": 1
+      },
+      {
+        "resourceId": "beaconEpic",
+        "min": 1,
+        "max": 1
+      }
+    ],
+    "goodItemTag": "cargo_late_good_item_required",
+    "noAdRequired": true,
+    "note": "boss_final 占位奖励，具体数值留数值一次性校准阶段（150关拓扑改造，2026-07-02）。"
+  }
 ]
