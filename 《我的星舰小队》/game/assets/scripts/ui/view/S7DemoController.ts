@@ -3830,7 +3830,10 @@ export class S7DemoController extends Component {
     if (this.equipDetailTitle) this.equipDetailTitle.string = ref.kind === 'pilot' ? '驾驶员' : ref.kind === 'core' ? '星核' : '插件';
     if (this.equipDetailInfo) this.equipDetailInfo.string = info;
     if (this.equipDetailActionLabel) this.equipDetailActionLabel.string = this.equipActionMode === 'unequip' ? '卸下' : '装备';
+    const edParent = this.equipDetailNode.parent;
+    if (edParent) this.equipDetailNode.setSiblingIndex(edParent.children.length - 1);
     this.equipDetailNode.active = true;
+    this.raiseTutorialHintIfActive();
   }
   private closeEquipDetail(): void { if (this.equipDetailNode) this.equipDetailNode.active = false; }
 
