@@ -1,6 +1,6 @@
 // 单位升级服务（C1b 升级变强 步3，纯 TS，不依赖 cc）：花软货币把星舰升 1 级。v1.0 §6 升级（星舰花星舰合金）。
 //   成本读 upgrade_cost_param（按"等级段总成本"），占位口径：每升一级 = 该段总成本 ÷10（段含 10 级）向下取整。
-//   校验：未满级(<40) → 该级所属段有成本行 → 资源够 → 扣费 + 提级。任一不满足返回 ok:false、不改任何状态。
+//   校验：未满级(<绝对上限 100=SS/5★) → 未达阶级上限 → 该级所属段有成本行 → 资源够 → 扣费 + 提级。任一不满足返回 ok:false、不改任何状态。
 //   ⚠️ 占位简化：÷10 的均摊为原型口径，精确"逐级成本曲线"留第二块；驾驶员升级(花驾驶记录)同理留后。
 // 与配置/save 解耦：成本行由调用方从 runtime.getAll('upgrade_cost_param') 传入；等级状态/资源以中性结构传入。
 
@@ -34,7 +34,11 @@ function costRowFor(costRows: S7UpgradeCostParam[], targetType: 'ship' | 'pilot'
     .sort((a, b) => a.maxLevel - b.maxLevel)[0];
 }
 
-/** 有效等级上限 = min(绝对上限 40, 建筑给的 levelCap)。levelCap 缺省=绝对上限(无额外封顶)。 */
+/**
+ * 有效等级上限 = 阶级/星级给的 levelCap（Ron 2026-07-03「取消建筑卡等级」：上限只由阶级决定，去掉旧的绝对上限 40 min 兜底）。
+ * levelCap 由调用方按单位阶级算好传入（shipLevelCapForTier/pilotLevelCapForStar：C20/B40/A60/S80/SS100）；
+ * 仅对绝对上限 S7_UNIT_MAX_LEVEL(=100·SS/5★天花板) 做防脏参兜底，缺省=绝对上限(无阶级额外封顶)。
+ */
 function effectiveCap(levelCap?: number): number {
   if (typeof levelCap !== 'number' || !Number.isFinite(levelCap)) return S7_UNIT_MAX_LEVEL;
   return Math.max(0, Math.min(S7_UNIT_MAX_LEVEL, Math.floor(levelCap)));
@@ -42,7 +46,7 @@ function effectiveCap(levelCap?: number): number {
 
 /**
  * 把一艘星舰升 1 级：就地扣 resources、提 levels（成功时）；失败不改任何状态。
- * levelCap（J·船坞等级上限）：当前级 >= 有效上限 → cap_reached（提示升船坞）；缺省则只受绝对上限 40 约束。
+ * levelCap（阶级等级上限）：当前级 >= 有效上限 → cap_reached（提示升阶解锁更高）；缺省则只受绝对上限 100 约束。
  */
 export function upgradeShipOneLevel(
   levels: S7UnitLevelState,
@@ -81,7 +85,7 @@ export type S7PilotUpgradeResult =
 
 /**
  * 把一名驾驶员升 1 级（v1.0 §6：花驾驶记录 pilotToken）：就地扣 pilotToken、提 pilotLevels（成功时）。
- * levelCap（J·训练舱等级上限）同船坞。成本读 upgrade_cost_param 的 pilot 行（占位÷10均摊）。
+ * levelCap（星级等级上限）同星舰。成本读 upgrade_cost_param 的 pilot 行（占位÷10均摊）。
  */
 export function upgradePilotOneLevel(
   levels: S7UnitLevelState,

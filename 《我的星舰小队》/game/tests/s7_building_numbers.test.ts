@@ -5,8 +5,6 @@ import {
   buildingCostTierMultiplier,
 } from '../assets/scripts/core/s7/S7BuildingCost';
 import {
-  shipLevelCap,
-  driverLevelCap,
   offlineStorageHours,
   offlineRateBonusPct,
   salvageTeamCount,
@@ -57,15 +55,8 @@ describe('块6b-3 建筑升级成本 S7BuildingCost', () => {
 });
 
 describe('块6b-3 建筑各级效果 S7BuildingEffects', () => {
-  it('船坞 / 训练舱：等级上限 = 楼级 × 5（未解锁=0、越级夹到上限）', () => {
-    expect(shipLevelCap(0)).toBe(0);
-    expect(shipLevelCap(1)).toBe(5);
-    expect(shipLevelCap(3)).toBe(15); // 对齐 B1 D7 主力15
-    expect(shipLevelCap(10)).toBe(50);
-    expect(shipLevelCap(11)).toBe(50); // 越级夹到 MAX
-    expect(shipLevelCap(-1)).toBe(0);
-    expect(driverLevelCap(7)).toBe(35); // 与船坞对称
-  });
+  // 取消建筑卡等级（Ron 2026-07-03）：船坞/训练舱不再给等级上限（上限只由阶级决定，见 s7_unit_tier_state.test），
+  //   shipLevelCap/driverLevelCap 已删除、升级暂无战斗外收益（第三块加成本折扣）——故此处无对应用例。
 
   it('居住舱：离线存储 36→48h、产率 +2%/级(lv1=0→lv10=18)', () => {
     expect(offlineStorageHours(0)).toBe(0);

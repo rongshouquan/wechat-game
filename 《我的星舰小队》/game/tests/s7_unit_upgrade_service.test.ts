@@ -41,9 +41,9 @@ describe('C1b 升级变强 步3 升级服务 S7UnitUpgradeService', () => {
     expect(getShipLevel(levels, 'shp01')).toBe(1); // 不提级
   });
 
-  it('满级：40 级再升 ok:false max_level,不扣不变', () => {
+  it('满级：100 级（绝对上限=SS/5★）再升 ok:false max_level,不扣不变', () => {
     const levels = createDefaultS7UnitLevelState();
-    setShipLevel(levels, 'shp01', 40);
+    setShipLevel(levels, 'shp01', 100); // 取消建筑卡等级后绝对上限 40→100
     const resources = res({ starOre: 99999, hullAlloy: 99999 });
     const r = upgradeShipOneLevel(levels, resources, COST, 'shp01');
     expect(r.ok).toBe(false);
@@ -74,22 +74,22 @@ describe('C1b 升级变强 步3 升级服务 S7UnitUpgradeService', () => {
     expect(resources.hullAlloy).toBe(1000 - 28);
   });
 
-  // J：建筑等级上限 gating
-  it('levelCap：到船坞上限再升 ok:false cap_reached,不扣不提级', () => {
+  // 阶级等级上限 gating（levelCap 由调用方按阶级传入·C20/B40/A60/S80/SS100）
+  it('levelCap：到阶级上限再升 ok:false cap_reached,不扣不提级', () => {
     const levels = createDefaultS7UnitLevelState();
-    setShipLevel(levels, 'shp01', 5); // 船坞 lv1 → 上限 5
+    setShipLevel(levels, 'shp01', 20); // C 阶上限 20
     const resources = res({ starOre: 9999, hullAlloy: 9999 });
-    const r = upgradeShipOneLevel(levels, resources, COST, 'shp01', 5);
+    const r = upgradeShipOneLevel(levels, resources, COST, 'shp01', 20);
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.reason).toBe('cap_reached');
     expect(resources.starOre).toBe(9999);
-    expect(getShipLevel(levels, 'shp01')).toBe(5);
+    expect(getShipLevel(levels, 'shp01')).toBe(20);
   });
   it('levelCap 未到上限：正常升', () => {
     const levels = createDefaultS7UnitLevelState();
     setShipLevel(levels, 'shp01', 4);
-    const r = upgradeShipOneLevel(levels, res({ starOre: 9999, hullAlloy: 9999 }), COST, 'shp01', 5);
+    const r = upgradeShipOneLevel(levels, res({ starOre: 9999, hullAlloy: 9999 }), COST, 'shp01', 20);
     expect(r.ok).toBe(true);
   });
 });
@@ -118,13 +118,13 @@ describe('J 驾驶员升级服务 upgradePilotOneLevel（花驾驶记录 pilotTo
     expect(resources.pilotToken).toBe(5);
   });
 
-  it('pilotToken 不足→insufficient；训练舱上限→cap_reached；满级→max_level', () => {
-    const bigCost: S7UpgradeCostParam[] = [{ schemaVersion: 's', rowId: 'p', targetType: 'pilot', bandId: 'p', maxLevel: 40, starOre: 0, hullAlloy: 0, shipBlueprint: 0, pilotToken: 50, sourceTagPolicy: 'persist', note: '' }];
+  it('pilotToken 不足→insufficient；星级上限→cap_reached；满级(100)→max_level', () => {
+    const bigCost: S7UpgradeCostParam[] = [{ schemaVersion: 's', rowId: 'p', targetType: 'pilot', bandId: 'p', maxLevel: 100, starOre: 0, hullAlloy: 0, shipBlueprint: 0, pilotToken: 50, sourceTagPolicy: 'persist', note: '' }];
     const levels = createDefaultS7UnitLevelState();
     expect(upgradePilotOneLevel(levels, res({ pilotToken: 1 }), bigCost, 'pil01')).toMatchObject({ ok: false, reason: 'insufficient' });
-    setPilotLevel(levels, 'pil02', 5);
-    expect(upgradePilotOneLevel(levels, res({ pilotToken: 999 }), bigCost, 'pil02', 5)).toMatchObject({ ok: false, reason: 'cap_reached' });
-    setPilotLevel(levels, 'pil03', 40);
+    setPilotLevel(levels, 'pil02', 20); // 1★ 星级上限 20
+    expect(upgradePilotOneLevel(levels, res({ pilotToken: 999 }), bigCost, 'pil02', 20)).toMatchObject({ ok: false, reason: 'cap_reached' });
+    setPilotLevel(levels, 'pil03', 100); // 绝对上限 40→100
     expect(upgradePilotOneLevel(levels, res({ pilotToken: 999 }), bigCost, 'pil03')).toMatchObject({ ok: false, reason: 'max_level' });
   });
 });

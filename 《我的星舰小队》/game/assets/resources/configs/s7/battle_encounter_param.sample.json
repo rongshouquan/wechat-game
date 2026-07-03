@@ -585,22 +585,28 @@
     "schemaVersion": "s7-0.1.0",
     "rowId": "enc_n030",
     "nodeRef": "n030",
-    "stageType": "normal",
-    "templateRef": "t01",
+    "stageType": "boss",
+    "templateRef": "t02",
     "problemTagRef": "swarm",
     "secondaryPressureTag": "none",
-    "pressureRef": "np_sf01",
+    "pressureRef": "bp_n030",
     "enemyUnitStatRefs": [
+      "bu_boss_n030",
       "bu_enemy_swarm"
     ],
     "spawnPlanRefs": [
-      "spawn_n030_w1"
+      "spawn_n030_boss",
+      "spawn_n030_adds"
     ],
-    "bossPhaseRefs": [],
+    "bossPhaseRefs": [
+      "phase_n030_start",
+      "phase_n030_mid",
+      "phase_n030_final"
+    ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n030 普通关·群怪主题(t01)，压力参照np_sf01"
+    "note": "n030 剧情首Boss·群怪主题(t02)·星盗头目放大(2x2)+海盗船长(复用群怪)·三阶段·压力 bp_n030（占位·比 n060 低·1艘S阶可胜）"
   },
   {
     "schemaVersion": "s7-0.1.0",

@@ -59,7 +59,7 @@ import { S7TutorialState, advanceStrongGuideStep, completeStrongGuide, hasSeenFi
 import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState, getBuildingLevel } from '../../core/s7/S7BuildingState';
 import { S7PopulationState, createDefaultS7Population, residentRateBonusPct, residentStorageExtensionHours, workerCostDiscountPct } from '../../core/s7/S7Population';
 import {
-  shipLevelCap, driverLevelCap, offlineStorageHours, offlineRateBonusPct,
+  offlineStorageHours, offlineRateBonusPct,
   salvageTeamCount, researchTeamBonusPct, merchantShopSlots, coreGalleryTeamBonusPct,
   coreGalleryPerTypeBonusPct,
 } from '../../core/s7/S7BuildingEffects';
@@ -125,6 +125,7 @@ import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
 import {
   createDefaultS7UnitTierState, getShipTier, getPilotStar, shipTierName,
   shipPluginSlotCap, shipCoreSlotOpen, SHIP_TIER_MAX, PILOT_STAR_MAX,
+  shipLevelCapForTier, pilotLevelCapForStar,
 } from '../../core/s7/S7UnitTierState';
 import { DEFAULT_S7_ASCEND_CONFIG, shipTierPowerPct, pilotStarPowerPct } from '../../core/s7/S7AscendConfig';
 import { ascendShip, starupPilot, convertUniversalToExclusive } from '../../core/s7/S7AscendService';
@@ -4255,8 +4256,8 @@ export class S7DemoController extends Component {
     const infoLabel = kind === 'ship' ? this.dockInfoLabel : this.trainingInfoLabel;
     if (!listNode) return;
     const bLv = getBuildingLevel(this.buildings, kind === 'ship' ? 'bld_dock' : 'bld_pilot_training_bay');
-    const cap = kind === 'ship' ? shipLevelCap(bLv) : driverLevelCap(bLv);
-    if (infoLabel) infoLabel.string = kind === 'ship' ? `船坞 Lv.${bLv} · 星舰等级上限 ${cap}` : `训练舱 Lv.${bLv} · 驾驶员等级上限 ${cap}`;
+    // 取消建筑卡等级（Ron 2026-07-03）：等级上限只由阶级决定，船坞/训练舱升级暂无战斗外收益（第三块加升级成本折扣）。
+    if (infoLabel) infoLabel.string = kind === 'ship' ? `船坞 Lv.${bLv} · 升级暂无战斗外收益（第三块加成本折扣）` : `训练舱 Lv.${bLv} · 升级暂无战斗外收益（第三块加成本折扣）`;
     listNode.removeAllChildren();
     for (const key of Array.from(this.manageRowBtns.keys())) { if (key.startsWith(`${kind}:`)) this.manageRowBtns.delete(key); }
     const units = kind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
@@ -4264,8 +4265,9 @@ export class S7DemoController extends Component {
     if (units.length === 0) this.mkPanelLabel(listNode, '（还没有拥有的单位）', 24, new Color(150, 160, 175), 0, y);
     for (const uid of units) {
       const lv = kind === 'ship' ? getShipLevel(this.playerState.unitLevels, uid) : getPilotLevel(this.playerState.unitLevels, uid);
+      const cap = kind === 'ship' ? shipLevelCapForTier(getShipTier(this.playerState.unitTiers, uid)) : pilotLevelCapForStar(getPilotStar(this.playerState.unitTiers, uid));
       const tierStr = kind === 'ship' ? `${shipTierName(getShipTier(this.playerState.unitTiers, uid))}阶` : `${getPilotStar(this.playerState.unitTiers, uid)}★`;
-      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  ${tierStr}·Lv.${lv}`, 24, new Color(225, 225, 235), -this.viewW * 0.20, y);
+      this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  ${tierStr}·Lv.${lv}/${cap}`, 24, new Color(225, 225, 235), -this.viewW * 0.20, y);
       const id = uid;
       const manageBtn = this.addBtn(listNode, '管理', 150, 56, new Color(80, 130, 160, 255), this.viewW * 0.34, y, () => this.openUnitManage(kind, id), 26);
       this.manageRowBtns.set(`${kind}:${id}`, manageBtn.node.parent as Node);
@@ -4277,17 +4279,18 @@ export class S7DemoController extends Component {
   private onUpgradeUnit(kind: 'ship' | 'pilot', unitId: string): void {
     if (!this.session || !this.playerState || !this.buildings) return;
     const resultLabel = kind === 'ship' ? this.dockResultLabel : this.trainingResultLabel;
-    const bLv = getBuildingLevel(this.buildings, kind === 'ship' ? 'bld_dock' : 'bld_pilot_training_bay');
     const name = this.unitName(kind, unitId);
     if (kind === 'ship') {
-      const r = upgradeShipOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, shipLevelCap(bLv));
+      const cap = shipLevelCapForTier(getShipTier(this.playerState.unitTiers, unitId));
+      const r = upgradeShipOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, cap);
       if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spent.starOre}星矿+${r.spent.hullAlloy}合金${r.spent.shipBlueprint ? `+${r.spent.shipBlueprint}舰碎片` : ''}`
-        : r.reason === 'cap_reached' ? `已达船坞上限（升船坞解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '资源不够（出战/回收攒）' : '暂无成本配置';
+        : r.reason === 'cap_reached' ? `已达当前阶级上限（升阶解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '资源不够（出战/回收攒）' : '暂无成本配置';
       if (r.ok) this.sound.playSfx('upgrade_level_up');
     } else {
-      const r = upgradePilotOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, driverLevelCap(bLv));
+      const cap = pilotLevelCapForStar(getPilotStar(this.playerState.unitTiers, unitId));
+      const r = upgradePilotOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, cap);
       if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spentPilotToken}驾驶记录`
-        : r.reason === 'cap_reached' ? `已达训练舱上限（升训练舱解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '驾驶记录不够' : '暂无成本配置';
+        : r.reason === 'cap_reached' ? `已达当前星级上限（升星解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '驾驶记录不够' : '暂无成本配置';
       if (r.ok) this.sound.playSfx('upgrade_level_up');
     }
     this.persist();
@@ -4399,7 +4402,7 @@ export class S7DemoController extends Component {
     if (kind === 'ship') {
       const lv = getShipLevel(this.playerState.unitLevels, uid);
       const tier = getShipTier(this.playerState.unitTiers, uid);
-      const cap = shipLevelCap(getBuildingLevel(this.buildings, 'bld_dock'));
+      const cap = shipLevelCapForTier(tier);
       const haveShard = getExclusiveShardCount(this.playerState.exclusiveShards, uid);
       const nextCost = tier < SHIP_TIER_MAX ? DEFAULT_S7_ASCEND_CONFIG.shipTierStepCost[tier].exclusiveShards : 0;
       const power = this.shipPower(uid);
@@ -4411,7 +4414,7 @@ export class S7DemoController extends Component {
     } else {
       const lv = getPilotLevel(this.playerState.unitLevels, uid);
       const star = getPilotStar(this.playerState.unitTiers, uid);
-      const cap = driverLevelCap(getBuildingLevel(this.buildings, 'bld_pilot_training_bay'));
+      const cap = pilotLevelCapForStar(star);
       const haveShard = getExclusiveShardCount(this.playerState.exclusiveShards, uid);
       const nextCost = star < PILOT_STAR_MAX ? DEFAULT_S7_ASCEND_CONFIG.pilotStarStepCost[star - 1].exclusiveShards : 0;
       this.unitManageInfoLabel.string =
@@ -6063,8 +6066,8 @@ export class S7DemoController extends Component {
   private effectSummary(buildingId: string, level: number): string {
     switch (buildingId) {
       case 'bld_habitat': return `离线${Math.round(offlineStorageHours(level))}h·产率+${Math.round(offlineRateBonusPct(level))}%`;
-      case 'bld_dock': return `旗舰等级上限${shipLevelCap(level)}`;
-      case 'bld_pilot_training_bay': return `驾驶员上限${driverLevelCap(level)}`;
+      case 'bld_dock': return `暂无战斗外收益（升级成本折扣待第三块）`;
+      case 'bld_pilot_training_bay': return `暂无战斗外收益（升级成本折扣待第三块）`;
       case 'bld_research_tower': return `全队血攻+${researchTeamBonusPct(level)}%`;
       case 'bld_rsv_core_gallery': return `每种星核收藏+${coreGalleryPerTypeBonusPct(level).toFixed(1)}%(×收集种数·封顶10%)`;
       case 'bld_salvage_port': return `打捞队${salvageTeamCount(level)}`;

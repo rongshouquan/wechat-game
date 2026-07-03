@@ -69,6 +69,20 @@ export function shipTierName(tier: number): string {
   return SHIP_TIER_NAMES[Math.max(0, Math.min(SHIP_TIER_NAMES.length - 1, Math.floor(tier)))] ?? 'C';
 }
 
+// ===== 等级上限（Ron 2026-07-03「取消建筑卡等级」拍板：等级上限只由阶级/星级决定，不再受船坞/训练舱楼级约束）=====
+/** 每阶/每星抬升的等级上限步长：C/1★=20、B/2★=40 … SS/5★=100（每级阶 +20）。 */
+export const UNIT_LEVEL_CAP_PER_RANK = 20;
+/** 星舰等级上限（按阶级）：C20 / B40 / A60 / S80 / SS100 =（tier+1）×20。 */
+export function shipLevelCapForTier(tier: number): number {
+  const t = Math.max(SHIP_TIER_MIN, Math.min(SHIP_TIER_MAX, Math.floor(Number.isFinite(tier) ? tier : SHIP_TIER_MIN)));
+  return (t + 1) * UNIT_LEVEL_CAP_PER_RANK;
+}
+/** 驾驶员等级上限（按星级·与星舰对称）：1★20 / 2★40 / 3★60 / 4★80 / 5★100 = star×20。 */
+export function pilotLevelCapForStar(star: number): number {
+  const s = Math.max(PILOT_STAR_MIN, Math.min(PILOT_STAR_MAX, Math.floor(Number.isFinite(star) ? star : PILOT_STAR_MIN)));
+  return s * UNIT_LEVEL_CAP_PER_RANK;
+}
+
 // ===== 开槽规则（v1.0 §5.3/§6「升阶阶段性开槽」·真开槽 Ron 2026-06-21）=====
 /** 插件槽数（每艘最多 3·§5.3）：C=1 / B=2 / A=3 /（S·SS 维持 3）。 */
 export function shipPluginSlotCap(tier: number): number {

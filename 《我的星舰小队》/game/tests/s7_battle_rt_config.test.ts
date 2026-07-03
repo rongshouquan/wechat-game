@@ -43,11 +43,13 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     // 2c关卡战斗内容批量生产（Codex产出，见 第二块-关卡战斗内容生产规范.md）：
     // 148个可战斗节点(150-n018/n019两个非战斗保护期节点)全部覆盖 encounter；
     // 新增4个通用敌人schema(backline/support/charge/summon_source) + 4个新Boss单位(n060/102/120/138)。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(29); // 第2.5块块2 +1：bu_commission_transport（护航运输船·prop 类）
+    // n030 首Boss（Ron 2026-07-03）：+bu_boss_n030（本体2x2）；enc_n030 就地由普通改Boss（encounter 数不变）；
+    //   spawn_n030_w1 拆成 spawn_n030_boss+spawn_n030_adds（净+1）；+phase_n030 三阶段（Boss 6→7 → 21 阶段）。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(30); // +bu_boss_n030（n030首Boss本体）；块2 +bu_commission_transport
     expect(readTable('battle_effect_param')).toHaveLength(20); // 块3 +eff_atomic_cannon；第2.5块块2 +eff_commission_transport_summon（护航开场召唤）
-    expect(readTable('battle_encounter_param')).toHaveLength(148);
-    expect(readTable('battle_spawn_param')).toHaveLength(215);
-    expect(readTable('battle_boss_phase_param')).toHaveLength(18); // 6个Boss x 3阶段
+    expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
+    expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）
+    expect(readTable('battle_boss_phase_param')).toHaveLength(21); // 7个Boss x 3阶段（+n030 首Boss 三阶段）
   });
 
   it('covers all 17 RT-01 effect types', () => {

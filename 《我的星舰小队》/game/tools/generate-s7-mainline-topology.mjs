@@ -32,8 +32,12 @@ function reuseTagsBefore(sf) {
   const idx = REGIONS.findIndex((r) => r.sf === sf);
   return ALL_TAGS_IN_ORDER.slice(0, idx);
 }
-const BOSS_NODES = REGIONS.map((r) => r.to); // [60,84,102,120,138,150]
-// 每个大Boss前一关=精英关；n006 是既有真实原型内容(C1b精英强化群怪)，保留其elite定位。
+const BOSS_NODES = REGIONS.map((r) => r.to); // [60,84,102,120,138,150] = 6 区域Boss「墙」
+// 首Boss（Ron 2026-07-03 拍板）：n030=第5章章末剧情首Boss（高潮点·非墙·"1艘S阶能打赢"·掉陨星弹·解锁星核展厅+深空回廊·强引导在此收尾）。
+//   它是"第7个 boss 类型节点"，但**不进** 6 墙的区域门/不看广告检查点/reward_boss_1~5（n060 仍是第一堵真墙，6墙数量不变）。
+const STORY_BOSS_NODES = [30];
+const ALL_BOSS_NODES = [...BOSS_NODES, ...STORY_BOSS_NODES]; // 所有 boss 类型节点（nodeTypeTag='boss'）
+// 每个大Boss前一关=精英关；n006 是既有真实原型内容(C1b精英强化群怪)，保留其elite定位。（n030 是剧情Boss·非墙·不铺前置精英关）
 const ELITE_NODES = [6, ...BOSS_NODES.map((n) => n - 1)];
 
 function regionOf(n) {
@@ -74,6 +78,7 @@ writeJson('star_region_config', REGIONS.map((r) => ({
 writeJson('chapter_config', CHAPTERS.map((c) => {
   const region = REGIONS.find((r) => r.sf === c.starfieldId);
   const isBossChapter = c.to === region.to;
+  const storyBossInChapter = STORY_BOSS_NODES.find((n) => n >= c.from && n <= c.to); // n030 落在 ch05
   return {
     schemaVersion: SCHEMA,
     chapterId: c.chapterId,
@@ -81,7 +86,7 @@ writeJson('chapter_config', CHAPTERS.map((c) => {
     nodeRangeTag: `${pad3(c.from)}_${pad3(c.to)}`,
     primaryTemplateTags: region.template,
     tutorialGoalTag: c.chapterId === 'ch01' ? 'first_battle_formation_clear' : 'none',
-    bossRef: isBossChapter ? pad3(region.to) : 'none',
+    bossRef: isBossChapter ? pad3(region.to) : storyBossInChapter ? pad3(storyBossInChapter) : 'none',
   };
 }));
 
@@ -94,15 +99,28 @@ const FORBIDDEN_MECHANIC_BY_INDEX = [
   'no_berserk',
   'all_mechanics_allowed',
 ];
-writeJson('boss_node_config', REGIONS.map((r, i) => ({
-  schemaVersion: SCHEMA,
-  bossNodeId: pad3(r.to),
-  mainProblemTag: r.tag,
-  templateRef: r.bossTemplate,
-  secondaryPressureTag: 'none',
-  previewTagRefs: [],
-  forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[i],
-})));
+writeJson('boss_node_config', [
+  ...REGIONS.map((r, i) => ({
+    schemaVersion: SCHEMA,
+    bossNodeId: pad3(r.to),
+    mainProblemTag: r.tag,
+    templateRef: r.bossTemplate,
+    secondaryPressureTag: 'none',
+    previewTagRefs: [],
+    forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[i],
+  })),
+  // n030 剧情首Boss（sf01 群怪Boss·复用海盗系机制放大·主模板 t02，与 n060 同区同族）。
+  //   最早期Boss=禁用表最严格（只允许群怪，护盾/后排/召唤/爆发/狂暴都不上），对齐 sf01。
+  {
+    schemaVersion: SCHEMA,
+    bossNodeId: pad3(30),
+    mainProblemTag: 'swarm',
+    templateRef: REGIONS[0].bossTemplate, // sf01 boss 模板 = t02
+    secondaryPressureTag: 'none',
+    previewTagRefs: [],
+    forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[0], // 'no_shield_backline_summon_burst_berserk'
+  },
+]);
 
 // ===== 5. tutorial_trigger_config（保留真实强引导覆盖的 n001-n005，5行，不再铺到后面）=====
 writeJson('tutorial_trigger_config', [
@@ -197,10 +215,10 @@ writeJson('no_ad_path_check_config', BOSS_NODES.map((n, i) => ({
 // ===== 9. risk_fallback_70_config（70回退机制作废，恒为空）=====
 writeJson('risk_fallback_70_config', []);
 
-// ===== 10. reward_pool_ref_config（简化为9个锚点：basic/elite/cargo旗舰味 + 5个区域Boss + 终Boss）=====
+// ===== 10. reward_pool_ref_config（10个锚点：basic/elite/cargo旗舰味 + n030剧情首Boss + 5个区域Boss + 终Boss）=====
 const basicNodes = [];
 const eliteSet = new Set(ELITE_NODES);
-const bossSet = new Set(BOSS_NODES);
+const bossSet = new Set(ALL_BOSS_NODES); // 所有 boss 类型节点（6墙 + n030 剧情首Boss）；basic 池 + isBoss 判定共用
 for (let n = 1; n <= 150; n++) {
   if (n === 9 || eliteSet.has(n) || bossSet.has(n)) continue;
   basicNodes.push(pad3(n));
@@ -209,6 +227,8 @@ writeJson('reward_pool_ref_config', [
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_mainline_basic', nodeRefs: basicNodes, sourceTag: 'source_mainline', poolRoleTag: 'mainline_basic', rewardParamRef: ['mainline_sf01_normal'], goodItemTag: 'none', noAdRequiredTag: true, notes: '基础主线包沿用既有普通节点参数行占位，精确逐节点数值留数值校准阶段。' },
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_elite_basic', nodeRefs: ELITE_NODES.map(pad3), sourceTag: 'source_mainline', poolRoleTag: 'elite_basic', rewardParamRef: ['mainline_sf01_normal'], goodItemTag: 'none', noAdRequiredTag: true, notes: '精英节点沿用普通包口径占位，不提供唯一通关物。' },
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_cargo_free_good', nodeRefs: ['n009'], sourceTag: 'source_star_cargo', poolRoleTag: 'cargo_intro', rewardParamRef: ['cargo_early'], goodItemTag: 'cargo_early_good_item_optional', noAdRequiredTag: true, notes: '星辉货舱首触节点，沿用既有 cargo_early 好东西标准。' },
+  // n030 剧情首Boss基础成长奖励；特殊大奖陨星弹(core07)走 F 块 resolveBossGrand 的"首Boss"判定(按节点顺序自动=n030)，不在此 anchor。
+  { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_first_boss', nodeRefs: [pad3(30)], sourceTag: 'source_boss', poolRoleTag: 'first_boss_clear', rewardParamRef: ['boss_story'], goodItemTag: 'no_unique_key_item', noAdRequiredTag: true, notes: 'n030 剧情首Boss（第5章章末）基础成长奖励；陨星弹另经首Boss大奖判定发放，占位数值留数值校准阶段。' },
   ...BOSS_NODES.slice(0, 5).map((n, i) => ({
     schemaVersion: SCHEMA,
     rewardAnchorRef: `reward_boss_${i + 1}`,
@@ -224,8 +244,9 @@ writeJson('reward_pool_ref_config', [
 ]);
 
 // ===== 11. reward_param：追加 6 个新 Boss 奖励行（不动其余既有行）=====
-const rewardParam = readJson('reward_param').filter((r) => !/^boss_n0(18|37|56|75)$/.test(r.rowId) && !/^boss_[1-5]$/.test(r.rowId) && r.rowId !== 'boss_final');
+const rewardParam = readJson('reward_param').filter((r) => !/^boss_n0(18|37|56|75)$/.test(r.rowId) && !/^boss_[1-5]$/.test(r.rowId) && r.rowId !== 'boss_final' && r.rowId !== 'boss_story');
 const BOSS_REWARD_STEPS = [
+  { id: 'boss_story', min: 200, max: 300 }, // n030 剧情首Boss（早于 n060·基础成长奖励占位·比 boss_1 低）
   { id: 'boss_1', min: 300, max: 450 },
   { id: 'boss_2', min: 500, max: 750 },
   { id: 'boss_3', min: 700, max: 1050 },
@@ -296,11 +317,13 @@ for (let n = 1; n <= 150; n++) {
   const noAdCheckTag = noAdEntry >= 0 ? NO_AD_CHECK_TAGS[noAdEntry] : 'none';
   const rewardAnchorRef = n === 9
     ? 'reward_cargo_free_good'
-    : isBoss
-      ? (n === 150 ? 'reward_final_boss_anchor' : `reward_boss_${BOSS_NODES.indexOf(n) + 1}`)
-      : isElite
-        ? 'reward_elite_basic'
-        : 'reward_mainline_basic';
+    : STORY_BOSS_NODES.includes(n)
+      ? 'reward_first_boss' // n030 剧情首Boss（先于下面的 isBoss 区域墙分支，避免落进 reward_boss_0）
+      : isBoss
+        ? (n === 150 ? 'reward_final_boss_anchor' : `reward_boss_${BOSS_NODES.indexOf(n) + 1}`)
+        : isElite
+          ? 'reward_elite_basic'
+          : 'reward_mainline_basic';
   const protectionPeriodTag = n <= 17 ? 'active' : n === 18 ? 'ending_notice' : 'closed';
   rows.push({
     schemaVersion: SCHEMA,
@@ -321,6 +344,6 @@ for (let n = 1; n <= 150; n++) {
 }
 writeJson('mainline_node_config', rows);
 
-console.log('生成完成：star_region_config(6) chapter_config(25) boss_node_config(6) tutorial_trigger_config(5)');
+console.log('生成完成：star_region_config(6) chapter_config(25) boss_node_config(' + (REGIONS.length + STORY_BOSS_NODES.length) + '=6墙+n030首Boss) tutorial_trigger_config(5)');
 console.log('protection_reset_config(2) unlock_checkpoint_config(' + (NODE_UNLOCKS.length + BUILDING_UNLOCKS.length) + ') no_ad_path_check_config(6) risk_fallback_70_config(0)');
-console.log('reward_pool_ref_config(9) reward_param(+6) mainline_node_config(150)');
+console.log('reward_pool_ref_config(10) reward_param(+' + BOSS_REWARD_STEPS.length + ') mainline_node_config(150·n030=boss)');

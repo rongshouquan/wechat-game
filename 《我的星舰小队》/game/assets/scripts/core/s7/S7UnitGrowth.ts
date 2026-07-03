@@ -33,7 +33,9 @@ export function unitPowerAtLevel(bands: S7GrowthBandParam[], targetType: 'ship' 
     band = lv < sorted[0].interpFromIndex ? sorted[0] : sorted[sorted.length - 1];
   }
   const span = band.toIndex - band.interpFromIndex;
-  const t = span === 0 ? 0 : (lv - band.interpFromIndex) / span;
+  // 段内线性插值；等级落在所有段之外时夹到最近段端点（t∈[0,1]、不外插）。
+  // 取消建筑卡等级后等级上限放到 100，而 growth_band 仅铺到 40 → 41-100 暂"持平在最高段末"(占位·不外插出离谱战力)，真实 41-100 曲线留第三块。
+  const t = span === 0 ? 0 : Math.max(0, Math.min(1, (lv - band.interpFromIndex) / span));
   return band.powerMin + (band.powerMax - band.powerMin) * t;
 }
 

@@ -477,7 +477,8 @@ const TIER_C = {
 const S7_MAINLINE_NODE_IDS = seq3('n', 1, 150);
 const S7_CHAPTER_IDS = seq('ch', 1, 25);
 const S7_STARFIELD_IDS = seq('sf', 1, 6);
-const S7_BOSS_NODE_IDS = ['n060', 'n084', 'n102', 'n120', 'n138', 'n150'];
+// n030=第5章章末剧情首Boss（Ron 2026-07-03，掉陨星弹/解锁展厅+回廊）；6 墙(n060/084/102/120/138/150) 数量不变，n030 是第7个 boss 类型节点。
+const S7_BOSS_NODE_IDS = ['n030', 'n060', 'n084', 'n102', 'n120', 'n138', 'n150'];
 // 真实强引导教程只覆盖 n001-n005（见 S7DemoController runTutorialStep）。
 const S7_TUTORIAL_STEP_IDS = seq('tut', 1, 5);
 const S7_NODE_TYPE_TAGS = [
@@ -749,9 +750,9 @@ for (const [name, idField] of Object.entries(TIER_D)) {
   for (const row of mainlineRows) mainlineById.set(row.nodeId, row);
   const rewardParamIds = new Set(tables.reward_param.map((r) => r.rowId));
 
-  // reward_pool_ref_config：9 个 rewardAnchorRef 与 mainline_node_config.rewardAnchorRef 双向覆盖（2026-07-02 简化）
+  // reward_pool_ref_config：10 个 rewardAnchorRef 与 mainline_node_config.rewardAnchorRef 双向覆盖（2026-07-02 简化 → 2026-07-03 +reward_first_boss=n030）
   const poolRows = tables.reward_pool_ref_config;
-  if (poolRows.length !== 9) fail('reward_pool_ref_config', '-', `必须为 9 行，实际 ${poolRows.length}`);
+  if (poolRows.length !== 10) fail('reward_pool_ref_config', '-', `必须为 10 行，实际 ${poolRows.length}`);
   const anchorRefsFromMainline = new Set(mainlineRows.map((r) => r.rewardAnchorRef));
   const seenAnchors = new Set();
   for (const row of poolRows) {

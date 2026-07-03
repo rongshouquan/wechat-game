@@ -6,10 +6,15 @@
 
 /** 单位等级下界（任何单位至少 1 级）。 */
 export const S7_UNIT_MIN_LEVEL = 1;
-/** 单位等级上界（v1.0 §6 / upgrade_cost_param：ship/pilot 上限 40）。 */
-export const S7_UNIT_MAX_LEVEL = 40;
+/**
+ * 单位等级绝对上界（Ron 2026-07-03「取消建筑卡等级」拍板：上限只由阶级/星级决定，SS/5★=100 为全局天花板）。
+ * 每个单位的实际上限由阶级算（S7UnitTierState.shipLevelCapForTier / pilotLevelCapForStar：C20/B40/A60/S80/SS100）；
+ * 这里的 100 只是"任何单位都不可能超过"的绝对红线（存档规范化 / setLevel 夹紧 / 成长曲线共用它防越界）。
+ * ⚠️ 遗留（第三块数值校准）：upgrade_cost_param 与 growth_band_param 目前只铺到 40 级，41-100 段成本/曲线待补。
+ */
+export const S7_UNIT_MAX_LEVEL = 100;
 
-/** 单位等级状态：星舰 / 驾驶员各一本"id→等级(1..40)"账本。不在表内 = 默认 1 级。 */
+/** 单位等级状态：星舰 / 驾驶员各一本"id→等级(1..100)"账本。不在表内 = 默认 1 级。 */
 export interface S7UnitLevelState {
   shipLevels: Record<string, number>;
   pilotLevels: Record<string, number>;
@@ -19,7 +24,7 @@ export function createDefaultS7UnitLevelState(): S7UnitLevelState {
   return { shipLevels: {}, pilotLevels: {} };
 }
 
-/** 规范化单本账本：只保留 key 非空字符串、等级为 [1,40] 内整数的项；越界/非整数/脏键/原型污染键丢弃。 */
+/** 规范化单本账本：只保留 key 非空字符串、等级为 [1,100] 内整数的项；越界/非整数/脏键/原型污染键丢弃。 */
 function normalizeLevelMap(raw: unknown): Record<string, number> {
   const out: Record<string, number> = {};
   const src = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -52,19 +57,19 @@ function setLevel(map: Record<string, number>, id: string, level: number): void 
   map[id] = clamped;
 }
 
-/** 取某星舰等级：有记录返回 1-40，无记录返回默认 1。 */
+/** 取某星舰等级：有记录返回 1-100，无记录返回默认 1。 */
 export function getShipLevel(state: S7UnitLevelState, shipId: string): number {
   return getLevel(state.shipLevels, shipId);
 }
-/** 取某驾驶员等级：有记录返回 1-40，无记录返回默认 1。 */
+/** 取某驾驶员等级：有记录返回 1-100，无记录返回默认 1。 */
 export function getPilotLevel(state: S7UnitLevelState, pilotId: string): number {
   return getLevel(state.pilotLevels, pilotId);
 }
-/** 设星舰等级（夹紧到 [1,40]、向下取整）。升级服务(步3)用;此处只改等级、不扣费。 */
+/** 设星舰等级（夹紧到 [1,100]、向下取整）。升级服务(步3)用;此处只改等级、不扣费。 */
 export function setShipLevel(state: S7UnitLevelState, shipId: string, level: number): void {
   setLevel(state.shipLevels, shipId, level);
 }
-/** 设驾驶员等级（夹紧到 [1,40]、向下取整）。 */
+/** 设驾驶员等级（夹紧到 [1,100]、向下取整）。 */
 export function setPilotLevel(state: S7UnitLevelState, pilotId: string, level: number): void {
   setLevel(state.pilotLevels, pilotId, level);
 }

@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createDefaultS7UnitTierState, normalizeS7UnitTierState, getShipTier, getPilotStar, setShipTier, setPilotStar,
   shipTierName, shipPluginSlotCap, shipCoreSlotOpen, SHIP_TIER_MAX, PILOT_STAR_MAX,
+  shipLevelCapForTier, pilotLevelCapForStar,
 } from '../assets/scripts/core/s7/S7UnitTierState';
 import { DEFAULT_S7_ASCEND_CONFIG, shipTierPowerPct, pilotStarPowerPct } from '../assets/scripts/core/s7/S7AscendConfig';
 import { ascendShip, starupPilot, convertUniversalToExclusive } from '../assets/scripts/core/s7/S7AscendService';
@@ -29,6 +30,18 @@ describe('升阶升星 · 阶级/星级状态 + 开槽规则（5 阶 C/B/A/S/SS�
   it('战力涨幅随阶级/星级递增(占位·5 阶)', () => {
     expect([0, 1, 2, 3, 4].map((t) => shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, t))).toEqual([0, 12, 28, 48, 72]);
     expect(pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, 5)).toBeGreaterThan(pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, 1));
+  });
+
+  it('等级上限只由阶级/星级决定（取消建筑卡等级·Ron 2026-07-03）：C20/B40/A60/S80/SS100', () => {
+    // 星舰按阶级 tier 0..4 = (tier+1)×20；驾驶员按星级 1..5 = star×20；两者对称。
+    expect([0, 1, 2, 3, 4].map(shipLevelCapForTier)).toEqual([20, 40, 60, 80, 100]);
+    expect([1, 2, 3, 4, 5].map(pilotLevelCapForStar)).toEqual([20, 40, 60, 80, 100]);
+    // 越界/脏参夹到合法阶级/星级区间（不越过 SS100 天花板、不低于起点 20）。
+    expect(shipLevelCapForTier(-3)).toBe(20); // <C 夹到 C
+    expect(shipLevelCapForTier(99)).toBe(100); // >SS 夹到 SS
+    expect(pilotLevelCapForStar(0)).toBe(20); // <1★ 夹到 1★
+    expect(pilotLevelCapForStar(99)).toBe(100); // >5★ 夹到 5★
+    expect(shipLevelCapForTier(Number.NaN)).toBe(20); // 脏参回退起点
   });
 });
 

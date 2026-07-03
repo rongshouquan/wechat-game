@@ -1,6 +1,6 @@
 // 建筑各级效果数值（块6b-3，纯 TS，不依赖 cc）：给定建筑等级 → 效果量。
 // 数值文档 建筑数值-6b3 v0.2（Ron 2026-06-19 拍板）；均为 v0.1 起步、原型再校准。
-// 本模块只算"等级→数值"，不接消费方：星舰升级用 shipLevelCap、离线用 offlineStorageHours/offlineRateBonusPct、
+// 本模块只算"等级→数值"，不接消费方：离线用 offlineStorageHours/offlineRateBonusPct、
 // 战斗用 researchTeamBonusPct/coreGalleryTeamBonusPct、抽卡用 supplyGachaTopRateBonusPct……各系统建好时各自取用。
 // 设计真源：数值以 B1、设计以 v1.0 为准（旧 Codex 配置不理）。建筑不进战力公式，研究塔/展厅为 minor_non_gate 小加成。
 //
@@ -14,19 +14,12 @@ function clampLevel(level: number): number {
   return Math.min(Math.floor(level), S7_BUILDING_MAX_LEVEL);
 }
 
-// ===== 船坞 dock：星舰等级上限 = 楼级 × 5 =====
-export const SHIP_LEVEL_CAP_PER_DOCK_LEVEL = 5;
-/** 星舰等级上限（船坞未解锁=0 → 星舰不能升）。船坞 1→上限5，10→上限50。 */
-export function shipLevelCap(dockLevel: number): number {
-  return clampLevel(dockLevel) * SHIP_LEVEL_CAP_PER_DOCK_LEVEL;
-}
-
-// ===== 驾驶员训练舱：驾驶员等级上限 = 楼级 × 5 =====
-export const DRIVER_LEVEL_CAP_PER_TRAINING_LEVEL = 5;
-/** 驾驶员等级上限（与船坞对称）。 */
-export function driverLevelCap(trainingLevel: number): number {
-  return clampLevel(trainingLevel) * DRIVER_LEVEL_CAP_PER_TRAINING_LEVEL;
-}
+// ===== 船坞 dock / 驾驶员训练舱 pilot_training_bay：暂无战斗外收益 =====
+// Ron 2026-07-03「取消建筑卡等级」拍板：星舰/驾驶员等级上限只由阶级/星级决定（C20/B40/A60/S80/SS100，
+//   见 S7UnitTierState.shipLevelCapForTier / pilotLevelCapForStar），废除旧的"楼级×5"硬门。
+//   因此船坞/训练舱升级目前【暂无战斗外收益】、不再导出 shipLevelCap/driverLevelCap。
+// TODO（第三块数值校准定）：给船坞/训练舱升级一条"升级成本折扣"线（方向：楼级越高、对应单位升级/升阶花费越省），
+//   让"升楼"重新有用。届时在此新增 dockUpgradeCostDiscountPct / trainingUpgradeCostDiscountPct 等函数并接消费方。
 
 // ===== 居住舱 habitat：离线存储上限 + 离线产率加成 =====
 /** 离线存储上限（小时）：lv1=36（1.5天）→ lv10=48（2天封顶，守 §12 红线）。未解锁=0。 */

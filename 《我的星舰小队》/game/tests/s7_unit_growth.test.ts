@@ -22,9 +22,12 @@ describe('C1b 升级变强 步2 成长积木 S7UnitGrowth', () => {
     expect(unitPowerAtLevel(BANDS, 'ship', 5)).toBeCloseTo(200, 5); // 120 + 180*(4/9)
   });
 
-  it('unitPowerAtLevel：等级夹紧 [1,40]', () => {
+  it('unitPowerAtLevel：等级夹紧 [1,100]，超出 growth_band 定义段(40)持平最高段末(不外插)', () => {
     expect(unitPowerAtLevel(BANDS, 'ship', 0)).toBe(120); // <1 → 1
-    expect(unitPowerAtLevel(BANDS, 'ship', 999)).toBe(2200); // >40 → 40
+    // 取消建筑卡等级后等级绝对上限 40→100；growth_band 仅铺到 40，故 41-100 持平在最高段末 2200（不外插·真实曲线留第三块）。
+    expect(unitPowerAtLevel(BANDS, 'ship', 999)).toBe(2200); // 夹到100 → 超最高段 → t夹到1 → 段末2200
+    expect(unitPowerAtLevel(BANDS, 'ship', 100)).toBe(2200); // 100(=SS/5★上限)同样持平
+    expect(unitPowerAtLevel(BANDS, 'ship', 41)).toBe(2200); // 刚过定义段即持平
   });
 
   it('shipGrowthBlocks：1 级无积木；高级按战力倍率给 maxHp+attack 同比 pct', () => {

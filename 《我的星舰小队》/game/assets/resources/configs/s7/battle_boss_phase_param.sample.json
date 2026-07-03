@@ -1,6 +1,52 @@
 [
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n030_start",
+    "bossNodeId": "n030",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_ult_clear_barrage"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_swarm"
+    ],
+    "summonCountCap": 3,
+    "note": "n030 首Boss开场：召唤海盗船长铺场(3只·比 n060 少)+清场弹幕（占位·1艘S阶可胜）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n030_mid",
+    "bossNodeId": "n030",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_ult_clear_barrage"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_swarm"
+    ],
+    "summonCountCap": 4,
+    "note": "n030 血量50%：补召海盗船长(4只·累计不超10)+清场弹幕（占位）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n030_final",
+    "bossNodeId": "n030",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 25,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "n030 残血(25%)：目标易伤，打输出窗口收尾（占位）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "phase_n060_final",
     "bossNodeId": "n060",
     "phaseTag": "final",

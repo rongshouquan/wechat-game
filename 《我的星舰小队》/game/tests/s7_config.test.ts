@@ -273,15 +273,17 @@ describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
     expect(ids).toEqual(expected);
   });
 
-  it('covers 25 chapters, 6 star regions and 6 boss nodes with correct boss bindings', () => {
+  it('covers 25 chapters, 6 star regions and 7 boss nodes (6墙+n030剧情首Boss) with correct boss bindings', () => {
     const chapters = readSample<Array<{ chapterId: string; bossRef: string }>>('chapter_config');
     expect(chapters).toHaveLength(25);
     const starRegions = readSample<Array<{ starfieldId: string }>>('star_region_config');
     expect(starRegions).toHaveLength(6);
     const bosses = readSample<Array<{ bossNodeId: string }>>('boss_node_config');
-    expect(bosses.map((r) => r.bossNodeId).sort()).toEqual(['n060', 'n084', 'n102', 'n120', 'n138', 'n150']);
+    // n030=第5章章末剧情首Boss（Ron 2026-07-03），6 墙(n060/084/102/120/138/150) 数量不变 → 7 个 boss 节点。
+    expect(bosses.map((r) => r.bossNodeId).sort()).toEqual(['n030', 'n060', 'n084', 'n102', 'n120', 'n138', 'n150']);
     const bossChapters = chapters.filter((c) => c.bossRef !== 'none');
-    expect(bossChapters.map((c) => c.chapterId).sort()).toEqual(['ch10', 'ch14', 'ch17', 'ch20', 'ch23', 'ch25']);
+    // ch05 挂 n030；6 区域末尾章节(ch10/14/17/20/23/25) 不变 → 7 个 boss 章节。
+    expect(bossChapters.map((c) => c.chapterId).sort()).toEqual(['ch05', 'ch10', 'ch14', 'ch17', 'ch20', 'ch23', 'ch25']);
   });
 
   it('marks the protection-period turning point at N018/N019（原N038/N039前移）', () => {
@@ -369,9 +371,10 @@ describe('s7 tier d bridge configs', () => {
     'no_ad_boss4_check', 'no_ad_boss5_check', 'no_ad_boss6_check',
   ];
 
-  it('covers all 9 reward pool anchors bidirectionally with mainline rewardAnchorRef, full 150-node coverage', () => {
+  it('covers all 10 reward pool anchors bidirectionally with mainline rewardAnchorRef, full 150-node coverage', () => {
     const rows = readSample<Array<{ rewardAnchorRef: string; nodeRefs: string[] }>>('reward_pool_ref_config');
-    expect(rows).toHaveLength(9);
+    // 9 个基础锚点 + reward_first_boss(n030 剧情首Boss) = 10（Ron 2026-07-03）。150 节点全覆盖不变（n030 从 basic 挪到 first_boss 锚点）。
+    expect(rows).toHaveLength(10);
     const mainline = readSample<Array<{ nodeId: string; rewardAnchorRef: string }>>('mainline_node_config');
 
     const anchorsFromMainline = new Set(mainline.map((r) => r.rewardAnchorRef));
@@ -407,9 +410,9 @@ describe('s7 tier d bridge configs', () => {
     expect(rows).toHaveLength(0);
   });
 
-  it('rejects a reward_pool_ref_config row count other than 9', () => {
+  it('rejects a reward_pool_ref_config row count other than 10', () => {
     const b = loadS7Bundle();
-    (b.reward_pool_ref_config as unknown[]).pop();
+    (b.reward_pool_ref_config as unknown[]).pop(); // 10 → 9，应被拒
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'reward_pool_ref_config' && e.id === '-')).toBe(true);
   });
 

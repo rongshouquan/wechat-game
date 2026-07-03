@@ -30,7 +30,6 @@
       "n027",
       "n028",
       "n029",
-      "n030",
       "n031",
       "n032",
       "n033",
@@ -184,6 +183,21 @@
     "goodItemTag": "cargo_early_good_item_optional",
     "noAdRequiredTag": true,
     "notes": "星辉货舱首触节点，沿用既有 cargo_early 好东西标准。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rewardAnchorRef": "reward_first_boss",
+    "nodeRefs": [
+      "n030"
+    ],
+    "sourceTag": "source_boss",
+    "poolRoleTag": "first_boss_clear",
+    "rewardParamRef": [
+      "boss_story"
+    ],
+    "goodItemTag": "no_unique_key_item",
+    "noAdRequiredTag": true,
+    "notes": "n030 剧情首Boss（第5章章末）基础成长奖励；陨星弹另经首Boss大奖判定发放，占位数值留数值校准阶段。"
   },
   {
     "schemaVersion": "s7-0.1.0",

@@ -52,5 +52,14 @@
     "secondaryPressureTag": "none",
     "previewTagRefs": [],
     "forbiddenMechanicTag": "all_mechanics_allowed"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n030",
+    "mainProblemTag": "swarm",
+    "templateRef": "t02",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "no_shield_backline_summon_burst_berserk"
   }
 ]

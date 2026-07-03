@@ -219,6 +219,16 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "bp_n030",
+    "scope": "boss",
+    "refKey": "n030",
+    "pressureRecommend": 800,
+    "pressureMin": 650,
+    "pressureMax": 1000,
+    "note": "n030 第5章章末剧情首Boss占位区间（比 n060 低·1艘S阶可胜），精确值留数值校准阶段"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "bp_n102",
     "scope": "boss",
     "refKey": "n102",
