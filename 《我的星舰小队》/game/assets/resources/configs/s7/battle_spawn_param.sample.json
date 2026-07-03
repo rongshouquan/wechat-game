@@ -1,16 +1,3724 @@
 [
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n001_w1","encounterRef":"enc_n001","waveIndex":1,"unitStatRef":"bu_enemy_swarm","count":7,"slotRefs":["r0c0","r0c1","r0c2","r0c3","r0c4","r0c5","r0c6"],"spawnDelaySec":0,"maxConcurrentOnField":14,"note":"第一批群怪铺满前排一行"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n001_w2","encounterRef":"enc_n001","waveIndex":2,"unitStatRef":"bu_enemy_swarm","count":7,"slotRefs":["r1c0","r1c1","r1c2","r1c3","r1c4","r1c5","r1c6"],"spawnDelaySec":5,"maxConcurrentOnField":14,"note":"第二批群怪分批增援，体现割草"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n002_w1","encounterRef":"enc_n002","waveIndex":1,"unitStatRef":"bu_enemy_swarm","count":7,"slotRefs":["r0c0","r0c1","r0c2","r0c3","r0c4","r0c5","r0c6"],"spawnDelaySec":0,"maxConcurrentOnField":14,"note":"单波群怪铺前排一行（一次性刷新，§8）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n003_w1","encounterRef":"enc_n003","waveIndex":1,"unitStatRef":"bu_enemy_swarm","count":7,"slotRefs":["r0c0","r0c1","r0c2","r0c3","r0c4","r0c5","r0c6"],"spawnDelaySec":0,"maxConcurrentOnField":14,"note":"单波群怪铺前排一行（一次性刷新，§8）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n004_w1","encounterRef":"enc_n004","waveIndex":1,"unitStatRef":"bu_enemy_swarm","count":7,"slotRefs":["r0c0","r0c1","r0c2","r0c3","r0c4","r0c5","r0c6"],"spawnDelaySec":0,"maxConcurrentOnField":14,"note":"单波群怪铺前排一行（一次性刷新，§8）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n005_w1","encounterRef":"enc_n005","waveIndex":1,"unitStatRef":"bu_enemy_swarm","count":7,"slotRefs":["r0c0","r0c1","r0c2","r0c3","r0c4","r0c5","r0c6"],"spawnDelaySec":0,"maxConcurrentOnField":14,"note":"单波群怪铺前排一行（一次性刷新，§8）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n006_w1","encounterRef":"enc_n006","waveIndex":1,"unitStatRef":"bu_enemy_swarm_tough","count":8,"slotRefs":["r0c0","r0c1","r0c2","r0c3","r1c0","r1c1","r1c2","r2c0"],"spawnDelaySec":0,"maxConcurrentOnField":14,"note":"强化群怪铺中前场(射程5·分摊3排打到3名玩家·超开场齐射上限8有漏网)"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n006_w2","encounterRef":"enc_n006","waveIndex":2,"unitStatRef":"bu_enemy_burst_raider","count":2,"slotRefs":["r0c5","r2c5"],"spawnDelaySec":3,"maxConcurrentOnField":14,"note":"爆发兵后排登场(射程6·延迟3秒·制造持续压力)"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n007_boss","encounterRef":"enc_n007","waveIndex":1,"unitStatRef":"bu_enemy_shield_warden","count":1,"slotRefs":["r0c0"],"spawnDelaySec":0,"maxConcurrentOnField":8,"note":"护盾头目占2x2(锚点r0c0展开r0c0/r0c1/r1c0/r1c1·远程压前排)"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n007_adds","encounterRef":"enc_n007","waveIndex":1,"unitStatRef":"bu_enemy_swarm","count":2,"slotRefs":["r2c0","r2c1"],"spawnDelaySec":0,"maxConcurrentOnField":8,"note":"头目随从(轻群怪·点缀火力·墙主要靠头目)"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n084_boss","encounterRef":"enc_n084","waveIndex":1,"unitStatRef":"bu_boss_n084","count":1,"slotRefs":["r0c2"],"spawnDelaySec":0,"maxConcurrentOnField":8,"note":"护盾 Boss 占 2x2（锚点 r0c2 展开 r0c2/r0c3/r1c2/r1c3）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n084_adds","encounterRef":"enc_n084","waveIndex":1,"unitStatRef":"bu_enemy_shield","count":2,"slotRefs":["r2c1","r2c5"],"spawnDelaySec":0,"maxConcurrentOnField":8,"note":"少量护盾附属单位"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n150_boss","encounterRef":"enc_n150","waveIndex":1,"unitStatRef":"bu_boss_n150","count":1,"slotRefs":["r0c2"],"spawnDelaySec":0,"maxConcurrentOnField":11,"note":"狂暴 Boss 占 3x3（锚点 r0c2 展开 r0c2..r2c4）"},
-  {"schemaVersion":"s7-0.1.0","rowId":"spawn_n150_adds","encounterRef":"enc_n150","waveIndex":1,"unitStatRef":"bu_enemy_boss_add","count":2,"slotRefs":["r0c0","r2c6"],"spawnDelaySec":0,"maxConcurrentOnField":11,"note":"开场附属，其余召唤由 boss phase summonCountCap 控制（上限 10）"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n001_w1",
+    "encounterRef": "enc_n001",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "第一批群怪铺满前排一行"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n001_w2",
+    "encounterRef": "enc_n001",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r1c0",
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5",
+      "r1c6"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "第二批群怪分批增援，体现割草"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n002_w1",
+    "encounterRef": "enc_n002",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "单波群怪铺前排一行（一次性刷新，§8）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n003_w1",
+    "encounterRef": "enc_n003",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "单波群怪铺前排一行（一次性刷新，§8）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n004_w1",
+    "encounterRef": "enc_n004",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "单波群怪铺前排一行（一次性刷新，§8）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n005_w1",
+    "encounterRef": "enc_n005",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "单波群怪铺前排一行（一次性刷新，§8）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n006_w1",
+    "encounterRef": "enc_n006",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm_tough",
+    "count": 8,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r1c0",
+      "r1c1",
+      "r1c2",
+      "r2c0"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "强化群怪铺中前场(射程5·分摊3排打到3名玩家·超开场齐射上限8有漏网)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n006_w2",
+    "encounterRef": "enc_n006",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c5",
+      "r2c5"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 14,
+    "note": "爆发兵后排登场(射程6·延迟3秒·制造持续压力)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n007_adds",
+    "encounterRef": "enc_n007",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 2,
+    "slotRefs": [
+      "r2c0",
+      "r2c1"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "头目随从(轻群怪·点缀火力·墙主要靠头目)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n007_boss",
+    "encounterRef": "enc_n007",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield_warden",
+    "count": 1,
+    "slotRefs": [
+      "r0c0"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "护盾头目占2x2(锚点r0c0展开r0c0/r0c1/r1c0/r1c1·远程压前排)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n008_w1",
+    "encounterRef": "enc_n008",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n008 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n009_w1",
+    "encounterRef": "enc_n009",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n009 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n009_w2",
+    "encounterRef": "enc_n009",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n009 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n010_w1",
+    "encounterRef": "enc_n010",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n010 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n011_w1",
+    "encounterRef": "enc_n011",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n011 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n011_w2",
+    "encounterRef": "enc_n011",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n011 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n012_w1",
+    "encounterRef": "enc_n012",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n012 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n013_w1",
+    "encounterRef": "enc_n013",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n013 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n013_w2",
+    "encounterRef": "enc_n013",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n013 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n014_w1",
+    "encounterRef": "enc_n014",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n014 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n015_w1",
+    "encounterRef": "enc_n015",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n015 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n015_w2",
+    "encounterRef": "enc_n015",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n015 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n016_w1",
+    "encounterRef": "enc_n016",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n016 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n017_w1",
+    "encounterRef": "enc_n017",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n017 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n017_w2",
+    "encounterRef": "enc_n017",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n017 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n020_w1",
+    "encounterRef": "enc_n020",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n020 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n021_w1",
+    "encounterRef": "enc_n021",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n021 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n021_w2",
+    "encounterRef": "enc_n021",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n021 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n022_w1",
+    "encounterRef": "enc_n022",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n022 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n023_w1",
+    "encounterRef": "enc_n023",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n023 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n023_w2",
+    "encounterRef": "enc_n023",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n023 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n024_w1",
+    "encounterRef": "enc_n024",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n024 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n025_w1",
+    "encounterRef": "enc_n025",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n025 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n025_w2",
+    "encounterRef": "enc_n025",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n025 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n026_w1",
+    "encounterRef": "enc_n026",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n026 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n027_w1",
+    "encounterRef": "enc_n027",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n027 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n027_w2",
+    "encounterRef": "enc_n027",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n027 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n028_w1",
+    "encounterRef": "enc_n028",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n028 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n029_w1",
+    "encounterRef": "enc_n029",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n029 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n029_w2",
+    "encounterRef": "enc_n029",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n029 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n030_w1",
+    "encounterRef": "enc_n030",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n030 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n031_w1",
+    "encounterRef": "enc_n031",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n031 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n031_w2",
+    "encounterRef": "enc_n031",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n031 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n032_w1",
+    "encounterRef": "enc_n032",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n032 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n033_w1",
+    "encounterRef": "enc_n033",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n033 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n033_w2",
+    "encounterRef": "enc_n033",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n033 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n034_w1",
+    "encounterRef": "enc_n034",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n034 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n035_w1",
+    "encounterRef": "enc_n035",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n035 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n035_w2",
+    "encounterRef": "enc_n035",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n035 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n036_w1",
+    "encounterRef": "enc_n036",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n036 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n037_w1",
+    "encounterRef": "enc_n037",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n037 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n037_w2",
+    "encounterRef": "enc_n037",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n037 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n038_w1",
+    "encounterRef": "enc_n038",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n038 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n039_w1",
+    "encounterRef": "enc_n039",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n039 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n039_w2",
+    "encounterRef": "enc_n039",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n039 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n040_w1",
+    "encounterRef": "enc_n040",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n040 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n041_w1",
+    "encounterRef": "enc_n041",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n041 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n041_w2",
+    "encounterRef": "enc_n041",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n041 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n042_w1",
+    "encounterRef": "enc_n042",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n042 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n043_w1",
+    "encounterRef": "enc_n043",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n043 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n043_w2",
+    "encounterRef": "enc_n043",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n043 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n044_w1",
+    "encounterRef": "enc_n044",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n044 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n045_w1",
+    "encounterRef": "enc_n045",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n045 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n045_w2",
+    "encounterRef": "enc_n045",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n045 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n046_w1",
+    "encounterRef": "enc_n046",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n046 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n047_w1",
+    "encounterRef": "enc_n047",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n047 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n047_w2",
+    "encounterRef": "enc_n047",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n047 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n048_w1",
+    "encounterRef": "enc_n048",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n048 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n049_w1",
+    "encounterRef": "enc_n049",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n049 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n049_w2",
+    "encounterRef": "enc_n049",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n049 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n050_w1",
+    "encounterRef": "enc_n050",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n050 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n051_w1",
+    "encounterRef": "enc_n051",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n051 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n051_w2",
+    "encounterRef": "enc_n051",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n051 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n052_w1",
+    "encounterRef": "enc_n052",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n052 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n053_w1",
+    "encounterRef": "enc_n053",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n053 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n053_w2",
+    "encounterRef": "enc_n053",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n053 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n054_w1",
+    "encounterRef": "enc_n054",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n054 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n055_w1",
+    "encounterRef": "enc_n055",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n055 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n055_w2",
+    "encounterRef": "enc_n055",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n055 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n056_w1",
+    "encounterRef": "enc_n056",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n056 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n057_w1",
+    "encounterRef": "enc_n057",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n057 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n057_w2",
+    "encounterRef": "enc_n057",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 5,
+    "slotRefs": [
+      "r1c1",
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n057 第2波：bu_enemy_swarm x5"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n058_w1",
+    "encounterRef": "enc_n058",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n058 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n059_w1",
+    "encounterRef": "enc_n059",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm_tough",
+    "count": 8,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r1c0",
+      "r1c1",
+      "r2c0",
+      "r2c1"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n059 第1波：bu_enemy_swarm_tough x8"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n059_w2",
+    "encounterRef": "enc_n059",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 4,
+    "slotRefs": [
+      "r1c2",
+      "r1c3",
+      "r1c4",
+      "r1c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n059 第2波：bu_enemy_swarm x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n060_adds",
+    "encounterRef": "enc_n060",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 6,
+    "slotRefs": [
+      "r2c0",
+      "r2c1",
+      "r2c2",
+      "r2c4",
+      "r2c5",
+      "r2c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 12,
+    "note": "enc_n060 第1波：bu_enemy_swarm x6"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n060_boss",
+    "encounterRef": "enc_n060",
+    "waveIndex": 1,
+    "unitStatRef": "bu_boss_n060",
+    "count": 1,
+    "slotRefs": [
+      "r0c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 12,
+    "note": "enc_n060 第1波：bu_boss_n060 x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n061_w1",
+    "encounterRef": "enc_n061",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n061 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n062_w1",
+    "encounterRef": "enc_n062",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r1c1",
+      "r1c3",
+      "r1c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n062 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n063_w1",
+    "encounterRef": "enc_n063",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n063 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n064_w1",
+    "encounterRef": "enc_n064",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n064 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n065_w1",
+    "encounterRef": "enc_n065",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r1c1",
+      "r1c3",
+      "r1c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n065 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n066_w1",
+    "encounterRef": "enc_n066",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n066 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n067_w1",
+    "encounterRef": "enc_n067",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n067 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n068_w1",
+    "encounterRef": "enc_n068",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n068 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n069_w1",
+    "encounterRef": "enc_n069",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n069 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n070_w1",
+    "encounterRef": "enc_n070",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n070 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n071_w1",
+    "encounterRef": "enc_n071",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r1c1",
+      "r1c3",
+      "r1c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n071 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n072_w1",
+    "encounterRef": "enc_n072",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n072 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n073_w1",
+    "encounterRef": "enc_n073",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n073 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n074_w1",
+    "encounterRef": "enc_n074",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r1c1",
+      "r1c3",
+      "r1c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n074 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n075_w1",
+    "encounterRef": "enc_n075",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n075 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n076_w1",
+    "encounterRef": "enc_n076",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n076 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n077_w1",
+    "encounterRef": "enc_n077",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r1c1",
+      "r1c3",
+      "r1c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n077 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n078_w1",
+    "encounterRef": "enc_n078",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n078 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n079_w1",
+    "encounterRef": "enc_n079",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n079 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n080_w1",
+    "encounterRef": "enc_n080",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n080 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n081_w1",
+    "encounterRef": "enc_n081",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n081 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n082_w1",
+    "encounterRef": "enc_n082",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n082 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n083_w1",
+    "encounterRef": "enc_n083",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield_warden",
+    "count": 1,
+    "slotRefs": [
+      "r0c1"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n083 第1波：bu_enemy_shield_warden x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n083_w2",
+    "encounterRef": "enc_n083",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 2,
+    "slotRefs": [
+      "r2c0",
+      "r2c5"
+    ],
+    "spawnDelaySec": 4,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n083 第2波：bu_enemy_shield x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n084_adds",
+    "encounterRef": "enc_n084",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 2,
+    "slotRefs": [
+      "r2c1",
+      "r2c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "少量护盾附属单位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n084_boss",
+    "encounterRef": "enc_n084",
+    "waveIndex": 1,
+    "unitStatRef": "bu_boss_n084",
+    "count": 1,
+    "slotRefs": [
+      "r0c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "护盾 Boss 占 2x2（锚点 r0c2 展开 r0c2/r0c3/r1c2/r1c3）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n085_w1",
+    "encounterRef": "enc_n085",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n085 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n085_w2",
+    "encounterRef": "enc_n085",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n085 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n086_w1",
+    "encounterRef": "enc_n086",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n086 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n087_w1",
+    "encounterRef": "enc_n087",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r4c1",
+      "r4c3",
+      "r4c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n087 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n087_w2",
+    "encounterRef": "enc_n087",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n087 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n088_w1",
+    "encounterRef": "enc_n088",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n088 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n089_w1",
+    "encounterRef": "enc_n089",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n089 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n089_w2",
+    "encounterRef": "enc_n089",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n089 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n090_w1",
+    "encounterRef": "enc_n090",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r4c1",
+      "r4c3",
+      "r4c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n090 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n091_w1",
+    "encounterRef": "enc_n091",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n091 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n091_w2",
+    "encounterRef": "enc_n091",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n091 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n092_w1",
+    "encounterRef": "enc_n092",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r1c1",
+      "r1c3",
+      "r1c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n092 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n093_w1",
+    "encounterRef": "enc_n093",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r4c1",
+      "r4c3",
+      "r4c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n093 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n093_w2",
+    "encounterRef": "enc_n093",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n093 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n094_w1",
+    "encounterRef": "enc_n094",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n094 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n095_w1",
+    "encounterRef": "enc_n095",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n095 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n095_w2",
+    "encounterRef": "enc_n095",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n095 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n096_w1",
+    "encounterRef": "enc_n096",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n096 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n097_w1",
+    "encounterRef": "enc_n097",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n097 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n097_w2",
+    "encounterRef": "enc_n097",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n097 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n098_w1",
+    "encounterRef": "enc_n098",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n098 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n099_w1",
+    "encounterRef": "enc_n099",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r4c1",
+      "r4c3",
+      "r4c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n099 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n099_w2",
+    "encounterRef": "enc_n099",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n099 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n100_w1",
+    "encounterRef": "enc_n100",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n100 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n101_w1",
+    "encounterRef": "enc_n101",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n101 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n101_w2",
+    "encounterRef": "enc_n101",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_support",
+    "count": 2,
+    "slotRefs": [
+      "r4c2",
+      "r4c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n101 第2波：bu_enemy_support x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n102_adds",
+    "encounterRef": "enc_n102",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r4c1",
+      "r4c3",
+      "r4c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n102 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n102_boss",
+    "encounterRef": "enc_n102",
+    "waveIndex": 1,
+    "unitStatRef": "bu_boss_n102",
+    "count": 1,
+    "slotRefs": [
+      "r0c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n102 第1波：bu_boss_n102 x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n103_w1",
+    "encounterRef": "enc_n103",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n103 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n103_w2",
+    "encounterRef": "enc_n103",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n103 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n104_w1",
+    "encounterRef": "enc_n104",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n104 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n105_w1",
+    "encounterRef": "enc_n105",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n105 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n105_w2",
+    "encounterRef": "enc_n105",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n105 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n106_w1",
+    "encounterRef": "enc_n106",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n106 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n106_w2",
+    "encounterRef": "enc_n106",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n106 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n107_w1",
+    "encounterRef": "enc_n107",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n107 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n107_w2",
+    "encounterRef": "enc_n107",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n107 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n108_w1",
+    "encounterRef": "enc_n108",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n108 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n109_w1",
+    "encounterRef": "enc_n109",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n109 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n109_w2",
+    "encounterRef": "enc_n109",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n109 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n110_w1",
+    "encounterRef": "enc_n110",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n110 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n110_w2",
+    "encounterRef": "enc_n110",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n110 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n111_w1",
+    "encounterRef": "enc_n111",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n111 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n111_w2",
+    "encounterRef": "enc_n111",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n111 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n112_w1",
+    "encounterRef": "enc_n112",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c0",
+      "r0c3",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n112 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n113_w1",
+    "encounterRef": "enc_n113",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n113 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n113_w2",
+    "encounterRef": "enc_n113",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n113 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n114_w1",
+    "encounterRef": "enc_n114",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n114 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n114_w2",
+    "encounterRef": "enc_n114",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n114 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n115_w1",
+    "encounterRef": "enc_n115",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n115 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n115_w2",
+    "encounterRef": "enc_n115",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n115 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n116_w1",
+    "encounterRef": "enc_n116",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n116 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n117_w1",
+    "encounterRef": "enc_n117",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n117 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n117_w2",
+    "encounterRef": "enc_n117",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n117 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n118_w1",
+    "encounterRef": "enc_n118",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n118 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n118_w2",
+    "encounterRef": "enc_n118",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n118 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n119_w1",
+    "encounterRef": "enc_n119",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n119 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n119_w2",
+    "encounterRef": "enc_n119",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n119 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n120_adds",
+    "encounterRef": "enc_n120",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r3c1",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n120 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n120_boss",
+    "encounterRef": "enc_n120",
+    "waveIndex": 1,
+    "unitStatRef": "bu_boss_n120",
+    "count": 1,
+    "slotRefs": [
+      "r0c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n120 第1波：bu_boss_n120 x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n121_w1",
+    "encounterRef": "enc_n121",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n121 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n121_w2",
+    "encounterRef": "enc_n121",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n121 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n122_w1",
+    "encounterRef": "enc_n122",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n122 第1波：bu_enemy_burst_raider x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n123_w1",
+    "encounterRef": "enc_n123",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n123 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n123_w2",
+    "encounterRef": "enc_n123",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n123 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n124_w1",
+    "encounterRef": "enc_n124",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_summon_source",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n124 第1波：bu_enemy_summon_source x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n124_w2",
+    "encounterRef": "enc_n124",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c4",
+      "r0c5"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n124 第2波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n125_w1",
+    "encounterRef": "enc_n125",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n125 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n125_w2",
+    "encounterRef": "enc_n125",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n125 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n126_w1",
+    "encounterRef": "enc_n126",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n126 第1波：bu_enemy_burst_raider x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n127_w1",
+    "encounterRef": "enc_n127",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n127 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n127_w2",
+    "encounterRef": "enc_n127",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n127 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n128_w1",
+    "encounterRef": "enc_n128",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n128 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n129_w1",
+    "encounterRef": "enc_n129",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n129 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n129_w2",
+    "encounterRef": "enc_n129",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n129 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n130_w1",
+    "encounterRef": "enc_n130",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n130 第1波：bu_enemy_burst_raider x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n131_w1",
+    "encounterRef": "enc_n131",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n131 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n131_w2",
+    "encounterRef": "enc_n131",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n131 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n132_w1",
+    "encounterRef": "enc_n132",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n132 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n133_w1",
+    "encounterRef": "enc_n133",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n133 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n133_w2",
+    "encounterRef": "enc_n133",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n133 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n134_w1",
+    "encounterRef": "enc_n134",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n134 第1波：bu_enemy_burst_raider x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n135_w1",
+    "encounterRef": "enc_n135",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n135 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n135_w2",
+    "encounterRef": "enc_n135",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n135 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n136_w1",
+    "encounterRef": "enc_n136",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n136 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n137_w1",
+    "encounterRef": "enc_n137",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_burst_raider",
+    "count": 2,
+    "slotRefs": [
+      "r0c1",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n137 第1波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n137_w2",
+    "encounterRef": "enc_n137",
+    "waveIndex": 2,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r1c2",
+      "r1c4"
+    ],
+    "spawnDelaySec": 3,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n137 第2波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n138_adds",
+    "encounterRef": "enc_n138",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_charge",
+    "count": 2,
+    "slotRefs": [
+      "r3c1",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 9,
+    "note": "enc_n138 第1波：bu_enemy_charge x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n138_boss",
+    "encounterRef": "enc_n138",
+    "waveIndex": 1,
+    "unitStatRef": "bu_boss_n138",
+    "count": 1,
+    "slotRefs": [
+      "r0c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 9,
+    "note": "enc_n138 第1波：bu_boss_n138 x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n139_w1",
+    "encounterRef": "enc_n139",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n139 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n140_w1",
+    "encounterRef": "enc_n140",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_swarm",
+    "count": 7,
+    "slotRefs": [
+      "r0c0",
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r0c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n140 第1波：bu_enemy_swarm x7"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n141_w1",
+    "encounterRef": "enc_n141",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n141 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n142_w1",
+    "encounterRef": "enc_n142",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n142 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n143_w1",
+    "encounterRef": "enc_n143",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n143 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n144_w1",
+    "encounterRef": "enc_n144",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_shield",
+    "count": 3,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n144 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n145_w1",
+    "encounterRef": "enc_n145",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n145 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n146_w1",
+    "encounterRef": "enc_n146",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n146 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n147_w1",
+    "encounterRef": "enc_n147",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 4,
+    "slotRefs": [
+      "r0c1",
+      "r0c3",
+      "r0c5",
+      "r1c3"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n147 第1波：bu_enemy_boss_add x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n148_w1",
+    "encounterRef": "enc_n148",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_backline",
+    "count": 3,
+    "slotRefs": [
+      "r3c1",
+      "r3c3",
+      "r3c5"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 8,
+    "note": "enc_n148 第1波：bu_enemy_backline x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n149_w1",
+    "encounterRef": "enc_n149",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 6,
+    "slotRefs": [
+      "r0c1",
+      "r0c2",
+      "r0c3",
+      "r0c4",
+      "r0c5",
+      "r1c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 10,
+    "note": "enc_n149 第1波：bu_enemy_boss_add x6"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n150_adds",
+    "encounterRef": "enc_n150",
+    "waveIndex": 1,
+    "unitStatRef": "bu_enemy_boss_add",
+    "count": 2,
+    "slotRefs": [
+      "r0c0",
+      "r2c6"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 11,
+    "note": "开场附属，其余召唤由 boss phase summonCountCap 控制（上限 10）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n150_boss",
+    "encounterRef": "enc_n150",
+    "waveIndex": 1,
+    "unitStatRef": "bu_boss_n150",
+    "count": 1,
+    "slotRefs": [
+      "r0c2"
+    ],
+    "spawnDelaySec": 0,
+    "maxConcurrentOnField": 11,
+    "note": "狂暴 Boss 占 3x3（锚点 r0c2 展开 r0c2..r2c4）"
+  }
 ]

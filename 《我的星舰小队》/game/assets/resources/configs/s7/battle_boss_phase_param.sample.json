@@ -1,8 +1,273 @@
 [
-  {"schemaVersion":"s7-0.1.0","rowId":"phase_n084_start","bossNodeId":"n084","phaseTag":"start","triggerType":"battle_start","triggerValue":0,"effectRefs":["eff_state_shield"],"summonUnitRefs":[],"summonCountCap":0,"note":"开场开盾"},
-  {"schemaVersion":"s7-0.1.0","rowId":"phase_n084_mid","bossNodeId":"n084","phaseTag":"mid","triggerType":"hp_pct_below","triggerValue":50,"effectRefs":["eff_state_shield_break","eff_state_vulnerable"],"summonUnitRefs":["bu_enemy_shield"],"summonCountCap":3,"note":"中段破盾窗口 + 少量护盾附属"},
-  {"schemaVersion":"s7-0.1.0","rowId":"phase_n084_final","bossNodeId":"n084","phaseTag":"final","triggerType":"hp_pct_below","triggerValue":20,"effectRefs":["eff_ult_burst_nuke"],"summonUnitRefs":[],"summonCountCap":0,"note":"残血爆发窗口"},
-  {"schemaVersion":"s7-0.1.0","rowId":"phase_n150_start","bossNodeId":"n150","phaseTag":"start","triggerType":"battle_start","triggerValue":0,"effectRefs":["eff_state_shield"],"summonUnitRefs":[],"summonCountCap":0,"note":"开场开盾"},
-  {"schemaVersion":"s7-0.1.0","rowId":"phase_n150_mid","bossNodeId":"n150","phaseTag":"mid","triggerType":"hp_pct_below","triggerValue":50,"effectRefs":["eff_state_summon","eff_ult_short_circuit_pulse"],"summonUnitRefs":["bu_enemy_boss_add"],"summonCountCap":10,"note":"中段召唤压场（上限 10）+ 短路窗口"},
-  {"schemaVersion":"s7-0.1.0","rowId":"phase_n150_final","bossNodeId":"n150","phaseTag":"final","triggerType":"hp_pct_below","triggerValue":20,"effectRefs":["eff_state_berserk","eff_ult_burst_nuke"],"summonUnitRefs":[],"summonCountCap":0,"note":"狂暴窗口 + 爆发"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n060_final",
+    "bossNodeId": "n060",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血：目标易伤，打输出窗口"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n060_mid",
+    "bossNodeId": "n060",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_ult_clear_barrage"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_swarm"
+    ],
+    "summonCountCap": 8,
+    "note": "血量50%：召唤星盗艇加量(8只，累计不超10)+清场弹幕爆发"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n060_start",
+    "bossNodeId": "n060",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_ult_clear_barrage"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_swarm"
+    ],
+    "summonCountCap": 6,
+    "note": "开场先召唤星盗艇铺场(6只)，配合清场弹幕"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n084_final",
+    "bossNodeId": "n084",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗口"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n084_mid",
+    "bossNodeId": "n084",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_shield_break",
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_shield"
+    ],
+    "summonCountCap": 3,
+    "note": "中段破盾窗口 + 少量护盾附属"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n084_start",
+    "bossNodeId": "n084",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_state_shield"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "开场开盾"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n102_final",
+    "bossNodeId": "n102",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血：目标易伤，打输出窗口"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n102_mid",
+    "bossNodeId": "n102",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_ult_backline_strike"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "血量50%：打后排重击窗口"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n102_start",
+    "bossNodeId": "n102",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_state_mark"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "开场先点名标记我方目标"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n120_final",
+    "bossNodeId": "n120",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_state_summon"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_boss_add"
+    ],
+    "summonCountCap": 8,
+    "note": "残血：召唤无人机加量(8只，累计不超10)兜底"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n120_mid",
+    "bossNodeId": "n120",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_mark",
+      "eff_ult_backline_strike"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "血量50%：转打后排点名(标记+后排重击)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n120_start",
+    "bossNodeId": "n120",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_state_summon"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_boss_add"
+    ],
+    "summonCountCap": 6,
+    "note": "开场先召唤无人机铺场(6只)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n138_final",
+    "bossNodeId": "n138",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血：爆发核弹收尾"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n138_mid",
+    "bossNodeId": "n138",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_ult_burst_nuke",
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_boss_add"
+    ],
+    "summonCountCap": 4,
+    "note": "血量50%：召唤污染体(4只)+爆发核弹+目标易伤叠加"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n138_start",
+    "bossNodeId": "n138",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "开场先放爆发核弹窗口"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n150_final",
+    "bossNodeId": "n150",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_state_berserk",
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "狂暴窗口 + 爆发"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n150_mid",
+    "bossNodeId": "n150",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_summon",
+      "eff_ult_short_circuit_pulse"
+    ],
+    "summonUnitRefs": [
+      "bu_enemy_boss_add"
+    ],
+    "summonCountCap": 10,
+    "note": "中段召唤压场（上限 10）+ 短路窗口"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n150_start",
+    "bossNodeId": "n150",
+    "phaseTag": "start",
+    "triggerType": "battle_start",
+    "triggerValue": 0,
+    "effectRefs": [
+      "eff_state_shield"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "开场开盾"
+  }
 ]

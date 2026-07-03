@@ -148,9 +148,13 @@ describe('S7BattleEncounterAssembler - context / encounter 校验 (#6,#7,#8)', (
     expect(codeOf(() => asm.assemble({ progress: progressAt('n018'), runSeed: 1, lineup: TRIO }))).toBe('battle_context_error');
   });
 
-  it('有 context 但缺 encounter 返回 missing_encounter（n008）(#7)', async () => {
-    const asm = await assemblerOf(loadBundle());
-    // 样例 battle_encounter_param 覆盖 n001-n007/n084/n150；n008 是合法 normal context 但暂无 encounter（原型内容缺口）。
+  it('有 context 但缺 encounter 返回 missing_encounter（人为摘掉 n008 的 encounter 行）(#7)', async () => {
+    // 2026-07-02 起 148 个可战斗节点已全部批量生产 encounter（见 第二块-关卡战斗内容生产规范.md），
+    // 样例表里不再天然存在"合法节点但缺 encounter"的缺口，改为人为摘掉一行来验证这条错误路径本身。
+    const b = cloneBundle(loadBundle());
+    b.battle_encounter_param = (b.battle_encounter_param as Row[]).filter((r) => r.nodeRef !== 'n008');
+    b.battle_spawn_param = (b.battle_spawn_param as Row[]).filter((r) => r.encounterRef !== 'enc_n008');
+    const asm = await assemblerOf(b);
     expect(codeOf(() => asm.assemble({ progress: progressAt('n008'), runSeed: 1, lineup: TRIO }))).toBe('missing_encounter');
   });
 

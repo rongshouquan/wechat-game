@@ -55,8 +55,22 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(r.view.recommendedPower).toBe(1500); // bp_n084 recommend
   });
 
-  it('n008 暂无遭遇：ok 但 hasEncounter=false、敌人空（仍给 stageType/推荐战力）', () => {
+  it('n008 现在已有遭遇（2c批量生产覆盖）：hasEncounter=true、敌情如实读出', () => {
+    // 2026-07-02起148个可战斗节点已全部批量生产encounter，n008不再是"暂无遭遇"的缺口样例。
     const r = buildPrebattleView(runtime, at('n008'), squad2());
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.view.hasEncounter).toBe(true);
+    expect(r.view.enemyCount).toBeGreaterThan(0);
+    expect(r.view.recommendedPower).toBeGreaterThan(0);
+  });
+
+  it('无遭遇场景：ok 但 hasEncounter=false、敌人空（仍给 stageType/推荐战力）——人为摘掉 n008 的 encounter 验证这条路径本身', async () => {
+    const b = loadBundle();
+    b.battle_encounter_param = (b.battle_encounter_param as Array<Record<string, unknown>>).filter((r) => r.nodeRef !== 'n008');
+    b.battle_spawn_param = (b.battle_spawn_param as Array<Record<string, unknown>>).filter((r) => r.encounterRef !== 'enc_n008');
+    const noEncounterRuntime = await S7ConfigRuntime.load(createInMemoryS7TableReader(b));
+    const r = buildPrebattleView(noEncounterRuntime, at('n008'), squad2());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.view.hasEncounter).toBe(false);

@@ -39,12 +39,15 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     expect(validateS7ConfigBundle(loadBundle())).toEqual([]);
   });
 
-  it('lands exactly the 5 new battle tables with first-round fixture rows', () => {
-    expect(readTable('battle_unit_stat_param')).toHaveLength(20); // C1b难度关卡：+swarm_tough/burst_raider/shield_warden(n006/n007 敌人)
-    expect(readTable('battle_effect_param')).toHaveLength(19); // 块3 新增 eff_atomic_cannon(过载核心原子炮)
-    expect(readTable('battle_encounter_param')).toHaveLength(9); // C1b难度关卡：+enc_n006(精英)/enc_n007(头目卡墙)
-    expect(readTable('battle_spawn_param')).toHaveLength(14); // C1b难度关卡：+spawn_n006_w1/w2 + spawn_n007_boss/adds
-    expect(readTable('battle_boss_phase_param')).toHaveLength(6);
+  it('lands the 5 battle tables with 2c批量production(2026-07-02)后的行数', () => {
+    // 2c关卡战斗内容批量生产（Codex产出，见 第二块-关卡战斗内容生产规范.md）：
+    // 148个可战斗节点(150-n018/n019两个非战斗保护期节点)全部覆盖 encounter；
+    // 新增4个通用敌人schema(backline/support/charge/summon_source) + 4个新Boss单位(n060/102/120/138)。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(28);
+    expect(readTable('battle_effect_param')).toHaveLength(19); // 块3 新增 eff_atomic_cannon(过载核心原子炮)；2c未新增effect类型
+    expect(readTable('battle_encounter_param')).toHaveLength(148);
+    expect(readTable('battle_spawn_param')).toHaveLength(215);
+    expect(readTable('battle_boss_phase_param')).toHaveLength(18); // 6个Boss x 3阶段
   });
 
   it('covers all 17 RT-01 effect types', () => {

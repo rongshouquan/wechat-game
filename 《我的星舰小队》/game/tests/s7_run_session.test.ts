@@ -114,10 +114,20 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     expect(s.resources.hullAlloy).toBe(125); // 5×25
   });
 
-  it('连续段边界：推进到 n008(暂无遭遇)→ playCurrentNode 抛错(不吞错)；记录原型内容缺口', async () => {
+  it('n008 现在已有遭遇（2c批量生产覆盖）：能正常开打，不再抛错', async () => {
+    // 2026-07-02起148个可战斗节点已全部批量生产encounter，n008不再是"暂无遭遇"的原型内容缺口。
     await ensure();
     const s = new S7RunSession(freshResources(), { currentNodeId: 'n008', clearedNodeIds: [] }, runtime, model);
-    // 难度关卡已补 n006(精英)/n007(头目卡墙)→连续可玩段延到 n007；n008 起仍无遭遇 → 组装器抛错(不吞错；表现层显示"暂无关卡")。
+    expect(() => s.playCurrentNode('r1')).not.toThrow();
+  });
+
+  it('缺遭遇场景：playCurrentNode 抛错(不吞错)——人为摘掉 n008 的 encounter 验证这条路径本身', async () => {
+    const b = loadBundle();
+    b.battle_encounter_param = (b.battle_encounter_param as Array<Record<string, unknown>>).filter((r) => r.nodeRef !== 'n008');
+    b.battle_spawn_param = (b.battle_spawn_param as Array<Record<string, unknown>>).filter((r) => r.encounterRef !== 'enc_n008');
+    const noEncounterRuntime = await S7ConfigRuntime.load(createInMemoryS7TableReader(b));
+    const noEncounterModel = S7MainlineModel.fromRuntime(noEncounterRuntime);
+    const s = new S7RunSession(freshResources(), { currentNodeId: 'n008', clearedNodeIds: [] }, noEncounterRuntime, noEncounterModel);
     expect(() => s.playCurrentNode('r1')).toThrow();
   });
 
