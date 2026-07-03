@@ -86,6 +86,11 @@ import {
   createDefaultS7TutorialState,
   normalizeS7TutorialState,
 } from '../core/s7/S7TutorialState';
+import {
+  S7AdDailyState,
+  createDefaultS7AdDaily,
+  normalizeS7AdDaily,
+} from '../core/s7/S7AdDailyCounter';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -108,8 +113,9 @@ import {
  * v16（阶段一 J·升阶升星）：playerState 增加 unitTiers(星舰阶级 C/B/A + 驾驶员星级 1-5★)；旧档加载补默认(全 C 阶/1★，加性迁移，无需重置)。
  * v17（阶段一 I·星核三渠道）：playerState 增加 expansionOpenedCount(扩张宝藏已开箱次数·判首次全池自选/之后随机三选一·§5.4/§10.5)；旧档加载补默认 0(加性迁移，无需重置)。
  * v18（阶段一 M·新手引导）：playerState 增加 tutorial(强引导步数+完成标记+弱引导首触已展示清单)；旧档加载补默认(全 0/未完成/空清单，加性迁移，无需重置)。
+ * v19（第2.5块·块1 回港报告）：playerState 增加 adDaily(广告点位每日次数计数·首用于回港翻倍每日2次)；旧档加载补默认空(加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 18;
+export const S7_CURRENT_SAVE_VERSION = 19;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -173,6 +179,8 @@ export interface S7PlayerState {
   expansionOpenedCount: number;
   /** 新手引导进度（阶段一 M）：强引导步数/完成标记 + 弱引导首触已展示清单，形状由 core/s7/S7TutorialState 拥有。 */
   tutorial: S7TutorialState;
+  /** 广告点位每日次数（第2.5块·块1）：点位→{dayKey,count}，形状由 core/s7/S7AdDailyCounter 拥有。 */
+  adDaily: S7AdDailyState;
 }
 
 export interface S7SaveData {
@@ -210,6 +218,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     unitTiers: createDefaultS7UnitTierState(),
     expansionOpenedCount: 0,
     tutorial: createDefaultS7TutorialState(),
+    adDaily: createDefaultS7AdDaily(),
   };
 }
 
@@ -268,6 +277,7 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     expansionOpenedCount: typeof src.expansionOpenedCount === 'number' && Number.isFinite(src.expansionOpenedCount) && src.expansionOpenedCount > 0
       ? Math.floor(src.expansionOpenedCount) : 0,
     tutorial: normalizeS7TutorialState(src.tutorial),
+    adDaily: normalizeS7AdDaily(src.adDaily),
   };
 }
 
@@ -349,41 +359,14 @@ export function loadS7Save(adapter: SaveStorageAdapter, now: number): S7LoadResu
 
 /**
  * S7 持久化入口：把当前 S7 关键状态序列化落盘到 S7_SAVE_STORAGE_KEY，并刷新 lastOnlineTime。
- * 落盘前规范化 资源，保证存储结构恒为合法 S7_RESOURCE_KEYS 键集。
+ * playerState 统一走 normalizeS7PlayerState——字段清单只活在 normalize 一处（第2.5块·块1 改法：
+ * 此前 persist 手抄全字段清单，两次踩"加字段漏列 → 落盘丢数据"坑（6b-2 丢插件库存、块1 丢 adDaily）；
+ * 现在新增字段若漏写 normalize，返回值缺属性直接编译错，这类 bug 结构性根除）。
  */
 export function persistS7Save(adapter: SaveStorageAdapter, data: S7SaveData, now: number): S7SaveData {
   const next: S7SaveData = {
     saveVersion: S7_CURRENT_SAVE_VERSION,
-    playerState: {
-      resources: normalizeS7ResourceState(data.playerState?.resources),
-      mainlineProgress: normalizeS7MainlineProgress(data.playerState?.mainlineProgress),
-      // 6b-2 修复：原 persist 漏写 pluginInventory（6d-1 加字段时遗漏），落盘会丢插件库存；现补 pluginInventory + buildings + population。
-      pluginInventory: normalizeS7PluginInventory(data.playerState?.pluginInventory),
-      buildings: normalizeS7BuildingState(data.playerState?.buildings),
-      population: normalizeS7Population(data.playerState?.population),
-      // 块6余项：persist 须显式列全字段（6b-2 教训：漏列会落盘丢字段）——补 exclusiveShards + chests。
-      exclusiveShards: normalizeS7ExclusiveShardInventory(data.playerState?.exclusiveShards),
-      chests: normalizeS7ChestInventory(data.playerState?.chests),
-      activityProgress: normalizeS7ActivityProgress(data.playerState?.activityProgress),
-      unitLevels: normalizeS7UnitLevelState(data.playerState?.unitLevels),
-      // 阶段一A：persist 须显式列全字段（6b-2 教训：漏列会落盘丢字段）——补 squad。
-      squad: normalizeS7Squad(data.playerState?.squad),
-      // 阶段一G2：补 mailbox。
-      mailbox: normalizeS7Mailbox(data.playerState?.mailbox),
-      // 阶段一C：补 gacha（抽卡三池状态）——显式列全，勿漏（6b-2 教训）。
-      gacha: normalizeS7GachaState(data.playerState?.gacha),
-      // 阶段一D：补 salvage（信标打捞状态）。
-      salvage: normalizeS7Salvage(data.playerState?.salvage),
-      // 阶段一E：补 merchant（商人小站状态）。
-      merchant: normalizeS7Merchant(data.playerState?.merchant),
-      // 阶段一J：补 unitTiers（星舰阶级/驾驶员星级）。
-      unitTiers: normalizeS7UnitTierState(data.playerState?.unitTiers),
-      // 阶段一I：补 expansionOpenedCount（扩张宝藏开箱次数·显式列全勿漏·6b-2 教训）。
-      expansionOpenedCount: typeof data.playerState?.expansionOpenedCount === 'number' && Number.isFinite(data.playerState.expansionOpenedCount) && data.playerState.expansionOpenedCount > 0
-        ? Math.floor(data.playerState.expansionOpenedCount) : 0,
-      // 阶段一M：补 tutorial（新手引导进度·显式列全勿漏·6b-2 教训）。
-      tutorial: normalizeS7TutorialState(data.playerState?.tutorial),
-    },
+    playerState: normalizeS7PlayerState(data.playerState),
     lastOnlineTime: now,
   };
   adapter.setString(S7_SAVE_STORAGE_KEY, JSON.stringify(next));

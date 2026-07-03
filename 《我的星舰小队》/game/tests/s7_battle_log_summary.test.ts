@@ -50,7 +50,7 @@ const FIVE = [
 
 // ---- 合成结果构造器（边界用例） ----
 function fu(unitId: string, side: S7AutoBattleSide, over: Partial<S7AutoBattleUnitFinalState> = {}): S7AutoBattleUnitFinalState {
-  return { unitId, side, unitStatRef: 'x', slotRef: 'p0c0', hp: 100, maxHp: 100, shield: 0, energy: 0, alive: true, ...over };
+  return { unitId, side, unitStatRef: 'x', slotRef: 'p0c0', hp: 100, maxHp: 100, shield: 0, alive: true, ...over }; // energy 字段随"技能制取消能量"从 FinalState 移除，此处曾残留
 }
 function res(
   winner: S7AutoBattleWinner,

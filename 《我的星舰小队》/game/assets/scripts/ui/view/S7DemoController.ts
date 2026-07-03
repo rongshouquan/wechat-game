@@ -27,10 +27,14 @@ import { upgradeShipOneLevel, upgradePilotOneLevel } from '../../core/s7/S7UnitU
 import { unitPowerAtLevel } from '../../core/s7/S7UnitGrowth';
 import { buildS7BattlePlayback, S7BattlePlayback, S7PlaybackFrame } from '../../core/s7/S7BattlePlayback';
 import {
-  computeS7OfflineSettlement,
-  applyOfflineGains,
-  S7OfflineSettlement,
-} from '../../core/s7/S7OfflineSettlement';
+  buildS7ReturnReport,
+  claimReturnReportCurrencies,
+  removeClaimedSalvageMissions,
+  S7ReturnReportData,
+  RETURN_REPORT_DOUBLE_AD_POINT,
+  RETURN_REPORT_DOUBLE_DAILY_LIMIT,
+} from '../../core/s7/S7ReturnReport';
+import { adDailyUsed, adDailyTryConsume } from '../../core/s7/S7AdDailyCounter';
 import {
   buildBuildingUpgradeView,
   upgradeBuildingWithDiscount,
@@ -242,9 +246,11 @@ export class S7DemoController extends Component {
   private model: S7MainlineModel | null = null;
   private buildings: S7BuildingState | null = null;
   private population: S7PopulationState | null = null;
-  /** 本次上线算出的未领离线收益（null=无）。 */
-  private offlinePending: S7OfflineSettlement | null = null;
-  private offlineBtn: Node | null = null;
+  /** 本次上线算出的未领回港报告（null=无；弹窗必领才关，防丢奖·块1）。 */
+  private reportPending: S7ReturnReportData | null = null;
+  private reportNode: Node | null = null;
+  private reportBodyLabel: Label | null = null;
+  private reportDoubleBtn: Node | null = null;
   /** 建筑面板叠加层 + 每行 Label（与 S7_DEMO_DEFAULT_BUILDINGS 等长平行）。 */
   private baseNode: Node | null = null;
   private baseRowLabels: Label[] = [];
@@ -577,10 +583,12 @@ export class S7DemoController extends Component {
     if (tutorial.strongGuideDone) {
       this.ensureDefaultBuildingsUnlocked(); // 就地解锁 buildings（同引用）
     }
-    const offline = computeS7OfflineSettlement(
-      model, buildings, population, this.playerState.mainlineProgress, loaded.data.lastOnlineTime, now,
+    // 块1 回港报告：离线+巡逻+已完成打捞 聚合成一份（S10.10）；打捞奖励确定性预掷（种子=任务id+endTime，重进不换奖）。
+    const report = buildS7ReturnReport(
+      model, buildings, population, this.playerState.mainlineProgress,
+      this.playerState.salvage, DEFAULT_S7_SALVAGE_CONFIG, loaded.data.lastOnlineTime, now,
     );
-    this.offlinePending = offline.hasGains ? offline : null;
+    this.reportPending = report.hasAny ? report : null;
 
     // C 抽卡：赞助补给看广告得券——首发接 mock 适配器（确定性·阶段五换真 SDK，玩法零改）。
     this.adGateway = new S7AdGateway(new S7MockAdAdapter());
@@ -588,9 +596,9 @@ export class S7DemoController extends Component {
     this.buildUi();
     this.tickActivities(); // G：加载时滚动活动周期·到期结算宝藏走邮件（离线期间到期的也补发）
     this.refresh();
-    // 上线即有离线收益：在结果行提示金额，引导点上方金色「领取」。
-    if (this.offlinePending) {
-      this.setResult(`离线攒了 ${this.offlineGainsText(this.offlinePending.gains)}，点上方「领取离线收益」`, new Color(235, 215, 130));
+    // 回港报告：开场唯一聚合弹窗（S13.1 五原则②：开场广告决策点 ≤1）；强引导期间不弹（防与锁屏遮罩打架），教程结束时补弹。
+    if (this.reportPending && !this.isStrongGuideActive()) {
+      this.openReturnReport();
     }
     // M1 强引导：新手没走完 → 归一冷启动恢复步 + 展示当前引导步（开场/续上次进度）。
     if (this.isStrongGuideActive()) {
@@ -750,6 +758,7 @@ export class S7DemoController extends Component {
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
+    this.buildReturnReportPopup(W, H); // 块1 回港报告聚合弹窗（上线自动弹·必领才关；教程遮罩在其后建、可盖住它）
     this.buildBuildingUnlockDialog(W, H); // 建筑解锁确认弹框（真功能·点未解锁建筑弹出）
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
     this.buildTutorialPopup(W, H); // M0 弱引导首触短教程弹窗（最后建→盖在所有面板之上）
@@ -820,8 +829,7 @@ export class S7DemoController extends Component {
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
 
     // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处留 离线/邮件/重置/跳过引导）——
-    this.offlineBtn = this.addBtn(this.node, '领离线', 168, 60, new Color(205, 165, 60, 255), -W * 0.36, botY + 56, () => this.onClaimOffline(), 26).node.parent;
-    if (this.offlineBtn) this.offlineBtn.active = false;
+    this.addBtn(this.node, '测回港', 168, 60, new Color(205, 165, 60, 255), -W * 0.36, botY + 56, () => this.devTestReturnReport(), 26); // DEV-TEMP·拨回8h重建回港报告弹窗（上线前删）
     this.addBtn(this.node, '发测试邮件', 168, 60, new Color(80, 120, 160, 255), -W * 0.12, botY + 56, () => this.devSendTestMail(), 24); // DEV-TEMP·验 G2 邮件领取
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
@@ -1620,9 +1628,9 @@ export class S7DemoController extends Component {
 
   /** 刷新升级弹框内容：等级 + 当前→下一级效果 + 花费星矿(工人折后)；满级/买不起→按钮灰。 */
   private refreshBuildingUpgrade(): void {
-    if (!this.buildings || !this.session || !this.population) return;
+    if (!this.buildings || !this.playerState || !this.population) return;
     const id = this.buildingUpgradeTarget;
-    const v = buildBuildingUpgradeView([id], this.buildings, this.session.resources, this.population)[0];
+    const v = buildBuildingUpgradeView([id], this.buildings, this.playerState.resources, this.population)[0];
     if (this.buUpTitleLabel) this.buUpTitleLabel.string = S7_BUILDING_NAMES[id] ?? id;
     const greyBtn = () => this.paintBtn(this.buUpBtn, new Color(70, 75, 90, 255), 240, 84);
     if (!this.buUpInfoLabel) return;
@@ -1636,9 +1644,9 @@ export class S7DemoController extends Component {
   }
 
   private onBuildingUpgradeConfirm(): void {
-    if (!this.buildings || !this.session || !this.population) return;
+    if (!this.buildings || !this.playerState || !this.population) return;
     const id = this.buildingUpgradeTarget;
-    const r = upgradeBuildingWithDiscount(this.buildings, this.session.resources, this.population, id);
+    const r = upgradeBuildingWithDiscount(this.buildings, this.playerState.resources, this.population, id);
     if (!r.ok) {
       if (this.buUpInfoLabel) this.buUpInfoLabel.string = r.code === 'max_level' ? '已满级' : r.code === 'insufficient_star_ore' ? '星矿不够（去出战/回收攒矿）' : '暂不可升级';
       return;
@@ -2661,6 +2669,7 @@ export class S7DemoController extends Component {
             this.hideTutorialStep();
             this.closeLoadout(); this.closeBoarding(); this.closeUnitPanelsToHub();
             this.refresh();
+            if (this.reportPending) this.openReturnReport(); // 块1：教程期间压住的回港报告补弹
           },
           '开始探索',
         );
@@ -5500,7 +5509,7 @@ export class S7DemoController extends Component {
     this.playerState.population = createDefaultS7Population();
     this.buildings = this.playerState.buildings;
     this.population = this.playerState.population;
-    this.offlinePending = null;
+    this.reportPending = null;
     this.playerState.gacha = createDefaultS7GachaState();
     this.playerState.salvage = createDefaultS7Salvage();
     this.playerState.merchant = createDefaultS7Merchant();
@@ -5561,29 +5570,146 @@ export class S7DemoController extends Component {
     this.persist();
     this.refresh();
     this.hubToast('已跳过新手引导（DEV·全量发货）');
+    if (this.reportPending) this.openReturnReport(); // 块1：跳过引导后补弹被压住的回港报告
   }
 
-  // ===== C 离线收益领取 =====
+  // ===== 块1 回港报告（离线+巡逻+打捞聚合 · GDD S10.10 / S13 #1）=====
 
-  /** 点「领取离线收益」：把离线进账入账 → 落盘(刷新 lastOnlineTime 关闭本次窗口) → 刷新。 */
-  private onClaimOffline(): void {
-    if (!this.session || this.playing || !this.offlinePending) return;
-    const cap = this.offlinePending.overflowed ? '（已达存储上限·升居住舱可扩）' : '';
-    applyOfflineGains(this.session.resources, this.offlinePending.gains);
-    const text = this.offlineGainsText(this.offlinePending.gains);
-    this.offlinePending = null;
-    this.setResult(`领取离线收益 ${text}${cap}`, new Color(235, 215, 130));
+  /** 搭回港报告弹窗（默认隐藏）：全屏吞触摸遮罩 + 卡片（标题/三段明细/两键并排）。必领才关（发奖类铁律，防丢奖）。 */
+  private buildReturnReportPopup(W: number, H: number): void {
+    const panel = new Node('S7ReturnReport');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(0, 0, 0, 180);
+    g.rect(-W / 2, -H / 2, W, H);
+    g.fill();
+    const dw = W * 0.92;
+    const dh = H * 0.52;
+    g.fillColor = new Color(22, 30, 48, 255);
+    g.roundRect(-dw / 2, -dh / 2, dw, dh, 20);
+    g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸：不点遮罩关（必领才关）
+    panel.active = false;
+    this.reportNode = panel;
+
+    const tn = new Node('t'); tn.layer = this.node.layer; panel.addChild(tn); tn.setPosition(0, dh * 0.40, 0);
+    const tl = tn.addComponent(Label);
+    tl.fontSize = 42; tl.lineHeight = 52; tl.color = new Color(150, 215, 255); tl.string = '⚓ 欢迎回港，指挥官';
+
+    const bn = new Node('b'); bn.layer = this.node.layer; panel.addChild(bn); bn.setPosition(0, dh * 0.04, 0);
+    this.reportBodyLabel = bn.addComponent(Label);
+    this.reportBodyLabel.fontSize = 26;
+    this.reportBodyLabel.lineHeight = 40;
+    this.reportBodyLabel.color = new Color(225, 230, 245);
+    this.reportBodyLabel.string = '';
+
+    // 两键并排同级（S13.1 五原则②：翻倍与直领并排可选、点哪个都立即走；广告键正常显示不放大不闪烁）。
+    this.addBtn(panel, '一键全领', 250, 96, new Color(90, 170, 95, 255), -W * 0.22, -dh * 0.38, () => this.onClaimReturnReport(false), 34);
+    this.reportDoubleBtn = this.addBtn(panel, '📺 全部翻倍', 270, 96, new Color(225, 150, 45, 255), W * 0.20, -dh * 0.38, () => this.onClaimReturnReport(true), 30).node.parent;
+  }
+
+  /** 弹回港报告（上线自动 / 强引导结束补弹 / DEV 测回港）。翻倍键超每日上限时不出现（非置灰·零红点，S13.1）。 */
+  private openReturnReport(): void {
+    if (!this.reportNode || !this.reportPending || !this.playerState) return;
+    const rep = this.reportPending;
+    const hrs = rep.elapsedSeconds / 3600;
+    const away = hrs >= 1 ? `${Math.floor(hrs)} 小时` : `${Math.max(1, Math.floor(rep.elapsedSeconds / 60))} 分钟`;
+    const lines: string[] = [];
+    lines.push(`离开了 ${away}${rep.offline.overflowed ? '（已达存储上限·升居住舱可扩）' : ''}`);
+    lines.push(`🏭 基地产出：${this.gainsText(rep.offline.gains) || '—'}`);
+    lines.push(`🛡 巡逻战报：${rep.patrol.hasGains ? this.gainsText(rep.patrol.gains) : '—（通关首个星域后舰队开始巡逻）'}`);
+    if (rep.salvage.length > 0) {
+      const tierZh: Record<string, string> = { common: '普通', rare: '稀有', epic: '史诗' };
+      lines.push('⚓ 打捞入港：');
+      for (const e of rep.salvage) {
+        lines.push(`· ${tierZh[e.tier] ?? e.tier}信标(${e.hours}h)：${e.rewards.map((rw) => this.salvagePreviewText(rw)).join('、')}`);
+      }
+    } else {
+      lines.push('⚓ 打捞入港：—');
+    }
+    if (this.reportBodyLabel) this.reportBodyLabel.string = lines.join('\n');
+    const softAny = rep.offline.hasGains || rep.patrol.hasGains;
+    const used = adDailyUsed(this.playerState.adDaily, RETURN_REPORT_DOUBLE_AD_POINT, Date.now());
+    if (this.reportDoubleBtn) this.reportDoubleBtn.active = softAny && used < RETURN_REPORT_DOUBLE_DAILY_LIMIT;
+    this.sound.playSfx('return_report');
+    this.reportNode.active = true;
+  }
+
+  /** 点「一键全领」/「全部翻倍」。翻倍：先看广告（看完才消耗每日次数）；广告失败不关窗，仍可直领。 */
+  private onClaimReturnReport(doubled: boolean): void {
+    if (!this.session || !this.playerState || !this.reportPending) return;
+    if (!doubled) {
+      this.finishReturnReportClaim(false, null);
+      return;
+    }
+    if (!this.adGateway) return;
+    this.adGateway.show('return_report_double').then((ad) => {
+      if (!ad.ok) { this.hubToast('广告没看完——也可以直接点「一键全领」'); return; }
+      const c = adDailyTryConsume(this.playerState!.adDaily, RETURN_REPORT_DOUBLE_AD_POINT, RETURN_REPORT_DOUBLE_DAILY_LIMIT, Date.now());
+      // 极端竞态（弹窗挂着跨天等）：翻倍失败退普通领取，绝不吞玩家基础奖励。
+      this.finishReturnReportClaim(c.ok, c.ok ? null : '今日翻倍次数已用完，已按普通领取');
+    }).catch(() => this.hubToast('广告加载失败——也可以直接点「一键全领」'));
+  }
+
+  /** 入账+关窗：软货币(离线+巡逻·可翻倍) + 打捞逐条入账(实物不翻·S13 #1) + 移除已收任务 + 喂活动 + persist(刷新 lastOnlineTime 关窗)。 */
+  private finishReturnReportClaim(doubled: boolean, note: string | null): void {
+    if (!this.session || !this.playerState || !this.reportPending) return;
+    const rep = this.reportPending;
+    const soft = claimReturnReportCurrencies(this.session.resources as Record<string, number>, rep, doubled);
+    const parts: string[] = [];
+    const softText = this.gainsText(soft);
+    if (softText) parts.push(doubled ? `${softText}（已翻倍）` : softText);
+    for (const e of rep.salvage) {
+      const texts = e.rewards.map((rw) => this.applySalvageReward(rw)).filter(Boolean);
+      if (texts.length > 0) parts.push(`打捞带回 ${texts.join('、')}`);
+      this.feedActivity(S7_ACTIVITY_ACTIONS.salvage); // 与打捞港收菜同口径：每收 1 单喂一次活动进度
+    }
+    removeClaimedSalvageMissions(this.playerState.salvage, rep.salvage.map((e) => e.missionId));
+    this.reportPending = null;
+    if (this.reportNode) this.reportNode.active = false;
     this.sound.playSfx('reward_claim');
+    this.setResult(`回港报告已领：${parts.join('；') || '（无进账）'}${note ? `（${note}）` : ''}`, new Color(235, 215, 130));
     this.persist();
     this.refresh();
+    this.refreshSalvage();
   }
 
-  /** 离线进账三币种的"+X名"串（仅正向）。 */
-  private offlineGainsText(g: Record<string, number>): string {
-    return (['starOre', 'hullAlloy', 'pilotToken'])
+  /** 通用进账串「+X名 …」（只列正向键）。 */
+  private gainsText(g: Record<string, number>): string {
+    return Object.keys(g)
       .filter((k) => (g[k] ?? 0) > 0)
-      .map((k) => `+${g[k]}${this.zhRes(k)}`)
-      .join(' ') || '（无）';
+      .map((k) => `+${this.fmtNum(g[k])}${this.zhRes(k)}`)
+      .join(' ');
+  }
+
+  /** 打捞奖励的只读预览文案（与 applySalvageReward 的入账文案同口径；同报告两只同艘未拥有舰时第二只实际折碎片，预览不细分——灰盒可接受）。 */
+  private salvagePreviewText(rw: S7SalvageReward): string {
+    switch (rw.kind) {
+      case 'resource': return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
+      case 'ship_body':
+        return this.squad && !this.squad.ownedShips.includes(rw.shipId)
+          ? `${this.unitName('ship', rw.shipId)}[C级]`
+          : `${this.unitName('ship', rw.shipId)}碎片×15`;
+      case 'plugin': return `${rw.quality === 'fine' ? '精良' : rw.quality === 'superior' ? '优秀' : '传奇'}插件`;
+      case 'chest': return `星辉货舱×${rw.amount}`;
+      case 'population': return rw.pop === 'resident' ? `居民×${rw.amount}` : `工人×${rw.amount}`;
+    }
+  }
+
+  /** DEV-TEMP：测回港——把离线窗口拨回 8 小时重建报告并弹窗（真机不可能干等离线/打捞）。上线前删。 */
+  private devTestReturnReport(): void {
+    if (!this.session || !this.playerState || !this.model || !this.buildings || !this.population) return;
+    const now = Date.now();
+    const rep = buildS7ReturnReport(
+      this.model, this.buildings, this.population, this.session.progress,
+      this.playerState.salvage, DEFAULT_S7_SALVAGE_CONFIG, now - 8 * 3600 * 1000, now,
+    );
+    if (!rep.hasAny) { this.hubToast('拨回8h也无收益（先解锁居住舱/通关星域/有完成的打捞）'); return; }
+    this.reportPending = rep;
+    this.openReturnReport();
   }
 
   // ===== C 建筑面板 =====
@@ -5603,13 +5729,13 @@ export class S7DemoController extends Component {
 
   /** 点某建筑行：升 1 级（花星矿，工人折扣）→ 落盘 + 刷新（含面板）。 */
   private onUpgradeBuilding(buildingId: string): void {
-    if (!this.session || !this.buildings || !this.population || this.playing) return;
-    const r = upgradeBuildingWithDiscount(this.buildings, this.session.resources, this.population, buildingId);
+    if (!this.playerState || !this.buildings || !this.population || this.playing) return;
+    const r = upgradeBuildingWithDiscount(this.buildings, this.playerState.resources, this.population, buildingId);
     const name = S7_BUILDING_NAMES[buildingId] ?? buildingId;
     if (r.ok) {
       this.setResult(`${name} 升到 Lv.${r.newLevel}！花 ${r.starOreSpent}星矿`, new Color(150, 235, 180));
     } else if (r.code === 'insufficient_star_ore') {
-      this.setResult(`${name} 星矿不够（先出战/领离线攒矿）`, new Color(235, 150, 150));
+      this.setResult(`${name} 星矿不够（去出战/回收攒矿）`, new Color(235, 150, 150));
     } else if (r.code === 'max_level') {
       this.setResult(`${name} 已满级（Lv.10）`, new Color(220, 210, 140));
     } else {
@@ -5622,8 +5748,8 @@ export class S7DemoController extends Component {
 
   /** 刷新建筑面板各行文案（等级/效果/折后成本/买不买得起）。 */
   private refreshBasePanel(): void {
-    if (!this.buildings || !this.session || !this.population) return;
-    const rows = buildBuildingUpgradeView(S7_DEMO_DEFAULT_BUILDINGS, this.buildings, this.session.resources, this.population);
+    if (!this.buildings || !this.playerState || !this.population) return;
+    const rows = buildBuildingUpgradeView(S7_DEMO_DEFAULT_BUILDINGS, this.buildings, this.playerState.resources, this.population);
     for (let i = 0; i < rows.length && i < this.baseRowLabels.length; i += 1) {
       const row = rows[i];
       const name = S7_BUILDING_NAMES[row.buildingId] ?? row.buildingId;
@@ -5677,11 +5803,10 @@ export class S7DemoController extends Component {
     if (this.hubOreLabel) this.hubOreLabel.string = `星矿\n${this.fmtNum(ore)}`;
     if (this.hubCargoLabel) this.hubCargoLabel.string = `星贝\n${this.fmtNum(Math.floor(r.starCargo ?? 0))}`;
     if (this.hubTicketLabel) this.hubTicketLabel.string = `补给券\n${this.fmtNum(Math.floor(r.supplyTicket ?? 0))}`;
-    // C：有未领离线收益才显示金色「领取」按钮。
-    if (this.offlineBtn) this.offlineBtn.active = this.offlinePending !== null;
+    // 块1：回港报告为弹窗生命周期（必领才关），无常驻领取按钮。
     // J：hub 建筑入口显等级 + 可升↑（买得起且未满级亮提示）。
     if (this.hubBuildingTracks.length > 0 && this.buildings && this.population) {
-      const views = buildBuildingUpgradeView(this.hubBuildingTracks.map((t) => t.id), this.buildings, r, this.population);
+      const views = buildBuildingUpgradeView(this.hubBuildingTracks.map((t) => t.id), this.buildings, this.playerState.resources, this.population);
       const byId = new Map(views.map((v) => [v.buildingId, v]));
       for (const t of this.hubBuildingTracks) {
         if (this.buildings && !isBuildingUnlocked(this.buildings, t.id)) { // 未解锁建筑显示「未解锁」(Ron 真机反馈)

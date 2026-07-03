@@ -16,6 +16,7 @@ export type SfxEvent =
   | 'upgrade_star_up'
   | 'chest_open'
   | 'reward_claim'
+  | 'return_report'
   | 'ui_click';
 
 /** 背景音乐场景（切换式，同一时刻只有一条在播）。 */
@@ -31,7 +32,8 @@ export const SFX_EVENT_NOTES: Readonly<Record<SfxEvent, string>> = {
   upgrade_ascend: '星舰升阶成功',
   upgrade_star_up: '驾驶员升星成功',
   chest_open: '宝箱开箱选中奖励',
-  reward_claim: '通用奖励领取（邮件/离线收益/兑换箱）',
+  reward_claim: '通用奖励领取（邮件/兑换箱）',
+  return_report: '回港报告弹窗弹出（舰队归港·包A 块1）',
   ui_click: '主要按钮点击',
 };
 
