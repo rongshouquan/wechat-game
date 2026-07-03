@@ -6,6 +6,7 @@
     "version": "3.8.8"
   },
   "scripts": {
+    "gate": "npm run test && npm run typecheck && npm run validate:configs:s7",
     "typecheck": "tsc --noEmit",
     "validate:configs": "node tools/validate-configs.mjs",
     "validate:configs:s7": "node tools/validate-s7-configs.mjs",
