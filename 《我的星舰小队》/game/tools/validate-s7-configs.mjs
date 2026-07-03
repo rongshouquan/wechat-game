@@ -879,7 +879,8 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
   }
 }
 {
-  const BATTLE_UNIT_TARGET_TYPES = ['ship', 'enemy', 'boss'];
+  // prop=场景道具单位（如委托护航运输船·第2.5块）：不属于任何实体真源表，unitRef 恒为 'none'。
+  const BATTLE_UNIT_TARGET_TYPES = ['ship', 'enemy', 'boss', 'prop'];
   const BATTLE_UNIT_TARGETING_TAGS = ['nearest_random_tie', 'backline_first', 'lowest_hp_ally', 'column_line', 'marked_first'];
   const BATTLE_EFFECT_KINDS = ['normal_attack', 'ultimate', 'core', 'state'];
   const BATTLE_EFFECT_TYPES = [
@@ -924,7 +925,9 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
   for (const row of unitRows) {
     const id = row.rowId;
     if (!BATTLE_UNIT_TARGET_TYPES.includes(row.targetType)) fail('battle_unit_stat_param', id, 'targetType 非法');
-    else {
+    else if (row.targetType === 'prop') {
+      if (row.unitRef !== 'none') fail('battle_unit_stat_param', id, 'prop 类单位 unitRef 必须为 none（不挂实体真源表）');
+    } else {
       const set = row.targetType === 'ship' ? shipIdSet : row.targetType === 'enemy' ? enemyIdSet : bossNodeIdSet;
       if (!set.has(row.unitRef)) fail('battle_unit_stat_param', id, `unitRef "${row.unitRef}" 不存在于对应实体表（${row.targetType}）`);
     }

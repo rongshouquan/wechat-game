@@ -586,5 +586,26 @@
     "ultimateCdSec": 9,
     "coreEffectRef": "none",
     "note": "n138 污染巨兽（SF05爆发Boss），占3x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_commission_transport",
+    "targetType": "prop",
+    "unitRef": "none",
+    "roleTag": "escort_cargo",
+    "maxHp": 900,
+    "attack": 1,
+    "armor": 20,
+    "attackIntervalSec": 9,
+    "attackRangeCells": 1,
+    "passiveEnergyPerSec": 0,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "none",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "每日委托·护航运输船（第2.5块块2）：normalEffectRef=none 永不攻击、可被打；运输船满血通关=完美护航小奖；数值 v0.1 占位"
   }
 ]

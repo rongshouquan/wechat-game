@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(19); // 第2.5块·块1 回港报告：v18→v19（adDaily 广告每日计数）
+    expect(data.saveVersion).toBe(20); // 第2.5块·块2 每日委托：v19→v20（commissions 护航/演习）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -60,6 +60,10 @@ describe('s7 save - resource skeleton', () => {
     expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} }); // 阶段一A：默认空阵容
     expect(data.playerState.mailbox).toEqual({ mails: [], nextSeq: 1 }); // 阶段一G2：默认空邮箱
     expect(data.playerState.adDaily).toEqual({ entries: {} }); // 块1：默认空广告每日计数
+    expect(data.playerState.commissions).toEqual({
+      escort: { stock: 0, lastAccrualDayKey: 0, watchedTiers: [] },
+      drill: { stock: 0, lastAccrualDayKey: 0, watchedTiers: [] },
+    }); // 块2：默认空委托（首次触达才发当日份）
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -192,7 +196,7 @@ describe('s7 save - independent storage domain', () => {
     expect(r.data.playerState.adDaily).toEqual({ entries: { return_report_double: { dayKey: 19676, count: 2 } } }); // 漏写会退回默认，此断言为防回归
   });
 
-  it('v18 旧档（无 adDaily 字段）加载：补默认空计数、migrated=true、版本升 19（加性迁移不重置）', () => {
+  it('v18 旧档（无 adDaily 字段）加载：补默认空计数、migrated=true、版本升到当前（加性迁移不重置）', () => {
     const adapter = new MemoryStorageAdapter();
     const old = createDefaultS7SaveData(NOW) as unknown as Record<string, unknown>;
     old.saveVersion = 18;
@@ -206,6 +210,38 @@ describe('s7 save - independent storage domain', () => {
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
     expect(r.data.playerState.adDaily).toEqual({ entries: {} }); // 加性补默认
     expect(r.data.playerState.resources.starOre).toBe(777); // 老数据不丢
+  });
+
+  it('round-trips commissions through persist + load（块2·防 persist 漏字段）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const data = createDefaultS7SaveData(NOW);
+    data.playerState.commissions = {
+      escort: { stock: 5, lastAccrualDayKey: 19680, watchedTiers: [0, 2] },
+      drill: { stock: 1, lastAccrualDayKey: 19680, watchedTiers: [] },
+    };
+    persistS7Save(adapter, data, NOW + 1000);
+
+    const r = loadS7Save(adapter, NOW + 2000);
+    expect(r.data.playerState.commissions).toEqual({
+      escort: { stock: 5, lastAccrualDayKey: 19680, watchedTiers: [0, 2] },
+      drill: { stock: 1, lastAccrualDayKey: 19680, watchedTiers: [] },
+    }); // 漏写会退回默认，此断言为防回归
+  });
+
+  it('v19 旧档（无 commissions 字段）加载：补默认空委托、migrated=true、版本升 20（加性迁移不重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const old = createDefaultS7SaveData(NOW) as unknown as Record<string, unknown>;
+    old.saveVersion = 19;
+    delete (old.playerState as Record<string, unknown>).commissions; // 模拟 v19 档没有该字段
+    (old.playerState as { resources: Record<string, number> }).resources.starOre = 555;
+    adapter.setString(S7_SAVE_STORAGE_KEY, JSON.stringify(old));
+
+    const r = loadS7Save(adapter, NOW + 2000);
+    expect(r.migrated).toBe(true);
+    expect(r.corrupted).toBe(false);
+    expect(r.data.saveVersion).toBe(20);
+    expect(r.data.playerState.commissions).toEqual(createDefaultS7PlayerState().commissions); // 加性补默认
+    expect(r.data.playerState.resources.starOre).toBe(555); // 老数据不丢
   });
 
   it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
@@ -750,7 +786,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(19); // 第2.5块·块1：v18→v19（adDaily 广告每日计数·加性迁移，同文件迁移测试已验）
+    expect(S7_CURRENT_SAVE_VERSION).toBe(20); // 第2.5块·块2：v19→v20（commissions 每日委托·加性迁移，同文件迁移测试已验）
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）

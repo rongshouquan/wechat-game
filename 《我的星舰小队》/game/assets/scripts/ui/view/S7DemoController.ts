@@ -36,6 +36,21 @@ import {
 } from '../../core/s7/S7ReturnReport';
 import { adDailyUsed, adDailyTryConsume } from '../../core/s7/S7AdDailyCounter';
 import {
+  S7CommissionType,
+  accrueCommissions,
+  consumeCommission,
+  isTierWatched,
+  markTierWatched,
+  commissionBattleNodeId,
+  commissionRewards,
+  commissionRunSeed,
+  commissionBacklogDays,
+  commissionStockCap,
+  escortTransportBlocks,
+  isPerfectEscort,
+} from '../../core/s7/S7DailyCommission';
+import { S7BattleRunService, S7BattleRunResult } from '../../core/s7/S7BattleRunService';
+import {
   buildBuildingUpgradeView,
   upgradeBuildingWithDiscount,
 } from '../../core/s7/S7BuildingUpgradeFlow';
@@ -251,6 +266,20 @@ export class S7DemoController extends Component {
   private reportNode: Node | null = null;
   private reportBodyLabel: Label | null = null;
   private reportDoubleBtn: Node | null = null;
+
+  // ===== 块2 每日委托（护航/演习·S10.8）=====
+  private commissionNode: Node | null = null;
+  private cmEscortLabel: Label | null = null;
+  private cmDrillLabel: Label | null = null;
+  private cmInfoLabel: Label | null = null;
+  /** 面板动态显隐按钮：key = fight_escort/adjust_escort/instant_escort/…/rush。 */
+  private cmBtns: Map<string, Node> = new Map();
+  private hubCommissionBtn: Node | null = null;
+  /** 备战处于"委托模式"（首打/调阵容进来的·出战改打该类委托）；null=正常主线备战。 */
+  private commissionPrep: S7CommissionType | null = null;
+  /** 正在演出/结算的委托战斗（结果窗按钮路由用）；null=主线战斗。 */
+  private commissionActive: S7CommissionType | null = null;
+  private battleRunService: S7BattleRunService = new S7BattleRunService();
   /** 建筑面板叠加层 + 每行 Label（与 S7_DEMO_DEFAULT_BUILDINGS 等长平行）。 */
   private baseNode: Node | null = null;
   private baseRowLabels: Label[] = [];
@@ -758,6 +787,7 @@ export class S7DemoController extends Component {
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
+    this.buildCommissionPanel(W, H); // 块2 每日委托面板（护航/演习·S10.8）
     this.buildReturnReportPopup(W, H); // 块1 回港报告聚合弹窗（上线自动弹·必领才关；教程遮罩在其后建、可盖住它）
     this.buildBuildingUnlockDialog(W, H); // 建筑解锁确认弹框（真功能·点未解锁建筑弹出）
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
@@ -824,6 +854,9 @@ export class S7DemoController extends Component {
     const mailEntry = this.makeHubEntry('邮件', '查看', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.openMail());
     this.hubMailSubLabel = mailEntry.getChildByName('s')?.getComponent(Label) ?? null; // 副标签 refresh() 显可领数
     this.hubSortieBtn = this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
+    // 块2：每日委托入口（出战正上方·关5 强引导结束后解锁，见 refresh()）。
+    this.hubCommissionBtn = this.makeButton('委托', 200, 80, new Color(70, 165, 150, 255), W * 0.20, botY + 266, () => this.openCommissions());
+    this.hubCommissionBtn.active = false;
 
     // —— 中央临时提示（默认空）——
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
@@ -1722,7 +1755,10 @@ export class S7DemoController extends Component {
       this.resultTitleLabel.color = won ? new Color(150, 235, 160) : new Color(255, 150, 150);
     }
     if (this.resultMsgLabel && this.pendingResult) this.resultMsgLabel.string = this.pendingResult.text;
-    if (this.resultRightLabel) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
+    if (this.resultRightLabel) {
+      // 块2：委托战斗的结果窗右键改走委托路由（胜→回委托列表；负→带阵容进备战重试）。
+      this.resultRightLabel.string = this.commissionActive ? (won ? '回委托' : '调阵容再试') : (won ? '下一关 ▶' : '再次挑战');
+    }
     this.resultPopupNode.active = true;
     // F：首通胜利且该档有奖 → 在结果弹窗之上弹「三选一发奖」（必须选完才回到结果弹窗）。
     if (won && this.pendingLevelReward) this.openLevelReward();
@@ -1740,15 +1776,25 @@ export class S7DemoController extends Component {
   }
   /** 结果窗·返回星港：收战斗画面 → 回基地主界面。 */
   private onResultGoHome(): void {
+    this.commissionActive = null; // 块2：清委托战斗标记
     this.dismissBattleScene();
   }
-  /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
+  /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。
+   *  块2 委托路由：胜 → 回委托列表；负 → 委托模式进备战（调完出战直接重打该委托）。 */
   private onResultGoPrebattle(): void {
+    const cm = this.commissionActive;
+    this.commissionActive = null;
     this.dismissBattleScene();
+    if (cm) {
+      if (this.pendingWon) this.openCommissions();
+      else { this.commissionPrep = cm; this.openPrebattle(); }
+      return;
+    }
     this.openPrebattle();
   }
   /** 结果窗·选择关卡：收战斗画面 → 进战前备战 → 弹选关浮层。 */
   private onResultGoLevelSelect(): void {
+    this.commissionActive = null; // 块2：走主线选关即离开委托上下文
     this.dismissBattleScene();
     this.openPrebattle();
     this.openLevelSelect();
@@ -3196,6 +3242,14 @@ export class S7DemoController extends Component {
    */
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
+    // 块2：备战处于委托模式（首打/调阵容进来）→ 出战改打委托（编队校验与加成组装在 runCommission 内同口径）。
+    if (this.commissionPrep) {
+      const t = this.commissionPrep;
+      this.commissionPrep = null;
+      this.closePrebattle();
+      this.launchCommission(t);
+      return;
+    }
     // 关4摆阵教程(step32)：晨星仍在前排→阻止出战并提示
     if (this.isStrongGuideActive() && this.playerState?.tutorial.strongGuideStep === 32) {
       const col = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId);
@@ -3294,13 +3348,18 @@ export class S7DemoController extends Component {
   }
 
   private closePrebattle(): void {
+    this.commissionPrep = null; // 块2：取消/离开备战即退出委托模式（出战路径在 onConfirmSortie 已先取走）
     if (this.prebattleNode) this.prebattleNode.active = false;
   }
 
   /** 刷新战前备战：信息行(节点/战力/敌情概要) + 敌情预览色块 + 9 格编队 + 选中船详情。 */
   private refreshPrebattle(): void {
     if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
-    const r = buildPrebattleView(this.runtime, this.session.progress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
+    // 块2：委托模式下敌情预览用委托敌阵节点（合成进度），不显示主线当前关。
+    const viewProgress = this.commissionPrep && this.model
+      ? { currentNodeId: commissionBattleNodeId(this.model, this.session.progress.clearedNodeIds) ?? this.session.progress.currentNodeId, clearedNodeIds: [] }
+      : this.session.progress;
+    const r = buildPrebattleView(this.runtime, viewProgress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
     const g = this.prebattleGfx;
     const W = this.viewW;
     const band = getS7UsableBand();
@@ -5712,6 +5771,238 @@ export class S7DemoController extends Component {
     this.openReturnReport();
   }
 
+  // ===== 块2 每日委托（护航/演习 · GDD S10.8）=====
+
+  /** 搭委托面板（默认隐藏）：两类各一行（库存+开打/调阵容/秒结算）+ 积压说明 + 速刷/关闭。 */
+  private buildCommissionPanel(W: number, H: number): void {
+    const panel = new Node('S7Commissions');
+    panel.layer = this.node.layer;
+    this.node.addChild(panel);
+    panel.setPosition(0, 0, 0);
+    const g = panel.addComponent(Graphics);
+    g.fillColor = new Color(0, 0, 0, 180);
+    g.rect(-W / 2, -H / 2, W, H);
+    g.fill();
+    const dw = W * 0.92;
+    const dh = H * 0.60;
+    g.fillColor = new Color(24, 34, 44, 255);
+    g.roundRect(-dw / 2, -dh / 2, dw, dh, 20);
+    g.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸
+    panel.active = false;
+    this.commissionNode = panel;
+
+    const tn = new Node('t'); tn.layer = this.node.layer; panel.addChild(tn); tn.setPosition(0, dh * 0.44, 0);
+    const tl = tn.addComponent(Label);
+    tl.fontSize = 40; tl.lineHeight = 50; tl.color = new Color(140, 220, 200); tl.string = '📋 每日委托';
+
+    const mkRow = (y: number): Label => {
+      const n = new Node('r'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(0, y, 0);
+      const l = n.addComponent(Label);
+      l.fontSize = 28; l.lineHeight = 38; l.color = new Color(225, 230, 245);
+      return l;
+    };
+    this.cmEscortLabel = mkRow(dh * 0.30);
+    this.cmDrillLabel = mkRow(dh * 0.02);
+
+    const mkBtns = (type: S7CommissionType, y: number): void => {
+      this.cmBtns.set(`fight_${type}`, this.addBtn(panel, '开打', 170, 80, new Color(90, 170, 95, 255), -W * 0.28, y, () => this.onCommissionFight(type), 30).node.parent!);
+      this.cmBtns.set(`adjust_${type}`, this.addBtn(panel, '调阵容', 170, 80, new Color(80, 130, 200, 255), 0, y, () => this.onCommissionAdjust(type), 28).node.parent!);
+      this.cmBtns.set(`instant_${type}`, this.addBtn(panel, '⚡秒结算', 180, 80, new Color(205, 165, 60, 255), W * 0.28, y, () => this.onCommissionInstant(type), 26).node.parent!);
+    };
+    mkBtns('escort', dh * 0.17);
+    mkBtns('drill', -dh * 0.11);
+
+    const infoN = new Node('i'); infoN.layer = this.node.layer; panel.addChild(infoN); infoN.setPosition(0, -dh * 0.27, 0);
+    this.cmInfoLabel = infoN.addComponent(Label);
+    this.cmInfoLabel.fontSize = 22; this.cmInfoLabel.lineHeight = 32; this.cmInfoLabel.color = new Color(165, 180, 205);
+
+    this.cmBtns.set('rush', this.addBtn(panel, '⚡ 一键速刷今日份', 340, 88, new Color(225, 150, 45, 255), -W * 0.18, -dh * 0.41, () => this.onCommissionRush(), 28).node.parent!);
+    this.addBtn(panel, '关闭', 170, 88, new Color(90, 95, 110, 255), W * 0.30, -dh * 0.41, () => { panel.active = false; }, 30);
+    this.addBtn(panel, '测隔天', 130, 56, new Color(150, 110, 70, 255), -W * 0.38, dh * 0.44, () => this.devCommissionNextDay(), 22); // DEV-TEMP·拨回1天验积压（上线前删）
+  }
+
+  /** 打开委托面板：懒结算发放（跨天补发·积压封顶）→ 落盘 → 刷新显示。解锁=关5 强引导结束（入口按钮同门槛）。 */
+  private openCommissions(): void {
+    if (!this.commissionNode || !this.session || !this.playerState || !this.model || this.playing) return;
+    if (!this.playerState.tutorial.strongGuideDone) { this.hubToast('完成新手引导后解锁每日委托'); return; }
+    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
+    const added = accrueCommissions(this.playerState.commissions, habitatLv, Date.now());
+    if (added > 0) this.persist();
+    this.refreshCommissions();
+    this.commissionNode.active = true;
+  }
+
+  /** 刷新委托面板：库存行 + 按钮显隐（秒结算=该档已看过 && 有库存；速刷=两类当前档都看过 && 总库存>0）。 */
+  private refreshCommissions(): void {
+    if (!this.session || !this.playerState || !this.model) return;
+    const st = this.playerState.commissions;
+    const tier = this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
+    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
+    if (this.cmEscortLabel) this.cmEscortLabel.string = `🛡 护航（星舰合金+星贝）　可打 ${st.escort.stock} 次`;
+    if (this.cmDrillLabel) this.cmDrillLabel.string = `🎯 演习（驾驶记录）　可打 ${st.drill.stock} 次`;
+    if (this.cmInfoLabel) {
+      this.cmInfoLabel.string =
+        `每类每日 +2 次·没打的自动积压（上限 ${commissionBacklogDays(habitatLv)} 天量 ${commissionStockCap(habitatLv)} 次/类·居住舱 Lv5/Lv10 延长）\n`
+        + `敌人打不过你（必赢）·护航把运输船护到满血 = ✨完美护航奖励 +25%\n`
+        + `每个星域档第一次要真打（新敌阵值得看）·之后可秒结算`;
+    }
+    let rushable = 0;
+    for (const type of ['escort', 'drill'] as S7CommissionType[]) {
+      const has = st[type].stock > 0;
+      const watched = isTierWatched(st, type, tier);
+      this.cmBtns.get(`fight_${type}`)!.active = has;
+      this.cmBtns.get(`adjust_${type}`)!.active = has;
+      this.cmBtns.get(`instant_${type}`)!.active = has && watched;
+      if (has && watched) rushable += st[type].stock;
+    }
+    this.cmBtns.get('rush')!.active = rushable > 0;
+  }
+
+  /** 点「开打」：该档首打 → 进主线同款备战摆阵（出战改打委托）；已看过 → 沿用当前阵容直接开打。 */
+  private onCommissionFight(type: S7CommissionType): void {
+    if (!this.session || !this.playerState || !this.model) return;
+    if (this.playerState.commissions[type].stock <= 0) return;
+    const tier = this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
+    if (!isTierWatched(this.playerState.commissions, type, tier)) {
+      this.commissionPrep = type;
+      if (this.commissionNode) this.commissionNode.active = false;
+      this.openPrebattle();
+      this.hubToast(`${type === 'escort' ? '护航' : '演习'}首打——先摆好阵，点「开始战斗」出发`);
+      return;
+    }
+    if (this.commissionNode) this.commissionNode.active = false;
+    this.launchCommission(type);
+  }
+
+  /** 点「调阵容」：进主线同款备战（Ron 2026-07-03 折中方案），出战即打该类委托。 */
+  private onCommissionAdjust(type: S7CommissionType): void {
+    if (!this.playerState || this.playerState.commissions[type].stock <= 0) return;
+    this.commissionPrep = type;
+    if (this.commissionNode) this.commissionNode.active = false;
+    this.openPrebattle();
+  }
+
+  /** 跑一场委托（不结算）：敌阵=已通关最高星域首个战斗节点（旧内容必赢）；护航附开场召唤运输船积木。 */
+  private runCommission(type: S7CommissionType): S7BattleRunResult | null {
+    if (!this.session || !this.playerState || !this.model || !this.runtime || !this.squad) return null;
+    const nodeId = commissionBattleNodeId(this.model, this.session.progress.clearedNodeIds);
+    if (!nodeId) { this.hubToast('暂无可用委托敌阵'); return null; }
+    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined);
+    if (!built.ok) { this.hubToast('编队不合法——先到备战把阵容配好'); return null; }
+    const team = this.teamBonusBlocks();
+    const lineup = built.lineup.map((u, i) => {
+      const extra = [
+        ...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId),
+        ...(type === 'escort' && i === 0 ? escortTransportBlocks() : []), // 护航：旗舰位开场召唤运输船
+      ];
+      return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
+    });
+    try {
+      return this.battleRunService.run({
+        runtime: this.runtime,
+        progress: { currentNodeId: nodeId, clearedNodeIds: [] }, // 合成进度：复用旧节点敌阵，不碰真实主线
+        runSeed: commissionRunSeed(type, Date.now(), this.playerState.commissions[type].stock),
+        lineup,
+      });
+    } catch (err) {
+      console.warn('[S7DemoController] 委托战斗启动失败', nodeId, err);
+      this.hubToast('委托敌阵暂不可用（原型内容缺口）');
+      return null;
+    }
+  }
+
+  /** 结算一场委托：胜→扣次数+发奖(完美护航×1.25)+记"该档已看"+落盘；负→不扣不发（零惩罚）。 */
+  private settleCommission(type: S7CommissionType, out: S7BattleRunResult): { won: boolean; rewards: Record<string, number>; perfect: boolean; text: string } {
+    const won = out.summary.winner === 'player';
+    const name = type === 'escort' ? '护航' : '演习';
+    if (!won || !this.session || !this.playerState || !this.model) {
+      return { won: false, rewards: {}, perfect: false, text: `${name}委托没打赢（罕见）——次数未扣，调下阵容再试` };
+    }
+    const st = this.playerState.commissions;
+    consumeCommission(st, type);
+    const tier = this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
+    const perfect = type === 'escort' && isPerfectEscort(out.result);
+    const rewards = commissionRewards(type, tier, perfect);
+    const res = this.session.resources as Record<string, number>;
+    for (const k of Object.keys(rewards)) res[k] = (res[k] ?? 0) + rewards[k];
+    markTierWatched(st, type, tier);
+    this.persist();
+    return { won, rewards, perfect, text: `${name}委托完成 ${this.gainsText(rewards)}${perfect ? '（✨完美护航 +25%）' : ''}` };
+  }
+
+  /** 真打一场（战斗演出走既有回放）：先结算后演出（与主线同口径），结果窗按钮走委托路由。 */
+  private launchCommission(type: S7CommissionType): void {
+    if (!this.playerState || this.playing) return;
+    if (this.playerState.commissions[type].stock <= 0) { this.hubToast('该委托次数用完了，明天再来（会自动积压）'); return; }
+    const out = this.runCommission(type);
+    if (!out) return;
+    const settled = this.settleCommission(type, out);
+    this.commissionActive = type;
+    this.pendingWon = settled.won;
+    this.pendingResult = { text: settled.text, color: settled.won ? new Color(150, 235, 180) : new Color(235, 150, 150) };
+    this.pendingLevelReward = null; // 委托无三选一
+    if (this.commissionNode) this.commissionNode.active = false;
+    if (this.prebattleNode) this.prebattleNode.active = true; // 战斗演出画布挂在备战层
+    this.sound.playBgm('bgm_battle');
+    this.startPlayback(buildS7BattlePlayback(out.result));
+  }
+
+  /** 秒结算一单（该档已看过才可见）：确定性引擎直接出结果入账，不播演出。 */
+  private onCommissionInstant(type: S7CommissionType): void {
+    if (!this.session || !this.playerState || !this.model || this.playing) return;
+    const st = this.playerState.commissions;
+    const tier = this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
+    if (st[type].stock <= 0 || !isTierWatched(st, type, tier)) return;
+    const out = this.runCommission(type);
+    if (!out) return;
+    const s = this.settleCommission(type, out);
+    if (!s.won) { this.hubToast(s.text); return; }
+    this.sound.playSfx('dispatch_done');
+    this.setResult(`⚡ ${s.text}`, new Color(235, 215, 130));
+    this.refreshCommissions();
+  }
+
+  /** 一键速刷今日份：把两类"已看过档"的剩余次数全部秒结算，汇总入账（S10.8 全档玩熟的日常主路径）。 */
+  private onCommissionRush(): void {
+    if (!this.session || !this.playerState || !this.model || this.playing) return;
+    const st = this.playerState.commissions;
+    const tier = this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
+    const total: Record<string, number> = {};
+    let done = 0;
+    let perfects = 0;
+    for (const type of ['escort', 'drill'] as S7CommissionType[]) {
+      while (st[type].stock > 0 && isTierWatched(st, type, tier)) {
+        const out = this.runCommission(type);
+        if (!out) break;
+        const s = this.settleCommission(type, out);
+        if (!s.won) break;
+        for (const k of Object.keys(s.rewards)) total[k] = (total[k] ?? 0) + s.rewards[k];
+        if (s.perfect) perfects += 1;
+        done += 1;
+      }
+    }
+    if (done === 0) { this.hubToast('没有可速刷的委托'); return; }
+    this.sound.playSfx('dispatch_done');
+    this.setResult(`⚡ 速刷 ${done} 单委托 ${this.gainsText(total)}${perfects > 0 ? `（✨完美护航×${perfects}）` : ''}`, new Color(235, 215, 130));
+    this.refreshCommissions();
+  }
+
+  /** DEV-TEMP：测隔天——两类发放日拨回 1 天再懒结算，验证跨天补发/积压封顶（真机不可能干等一天）。上线前删。 */
+  private devCommissionNextDay(): void {
+    if (!this.playerState) return;
+    const st = this.playerState.commissions;
+    for (const type of ['escort', 'drill'] as S7CommissionType[]) {
+      if (st[type].lastAccrualDayKey > 0) st[type].lastAccrualDayKey -= 1;
+    }
+    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
+    const added = accrueCommissions(st, habitatLv, Date.now());
+    this.persist();
+    this.refreshCommissions();
+    this.hubToast(`[DEV] 拨回1天：补发 ${added} 次`);
+  }
+
   // ===== C 建筑面板 =====
 
   /** 打开基地建筑面板（回放期间禁用）。 */
@@ -5804,6 +6095,8 @@ export class S7DemoController extends Component {
     if (this.hubCargoLabel) this.hubCargoLabel.string = `星贝\n${this.fmtNum(Math.floor(r.starCargo ?? 0))}`;
     if (this.hubTicketLabel) this.hubTicketLabel.string = `补给券\n${this.fmtNum(Math.floor(r.supplyTicket ?? 0))}`;
     // 块1：回港报告为弹窗生命周期（必领才关），无常驻领取按钮。
+    // 块2：委托入口=关5 强引导结束后解锁（S10.8）。
+    if (this.hubCommissionBtn) this.hubCommissionBtn.active = !!this.playerState?.tutorial.strongGuideDone;
     // J：hub 建筑入口显等级 + 可升↑（买得起且未满级亮提示）。
     if (this.hubBuildingTracks.length > 0 && this.buildings && this.population) {
       const views = buildBuildingUpgradeView(this.hubBuildingTracks.map((t) => t.id), this.buildings, this.playerState.resources, this.population);

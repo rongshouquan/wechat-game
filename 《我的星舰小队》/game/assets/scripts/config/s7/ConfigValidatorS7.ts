@@ -69,7 +69,8 @@ const TIER_BATTLE_TABLES: S7ConfigTableName[] = [
   'battle_unit_stat_param', 'battle_effect_param', 'battle_encounter_param',
   'battle_spawn_param', 'battle_boss_phase_param',
 ];
-const S7_BATTLE_UNIT_TARGET_TYPES = ['ship', 'enemy', 'boss'];
+// prop=场景道具单位（如委托护航运输船·第2.5块）：不属于任何实体真源表，unitRef 恒为 'none'。
+const S7_BATTLE_UNIT_TARGET_TYPES = ['ship', 'enemy', 'boss', 'prop'];
 const S7_BATTLE_UNIT_TARGETING_TAGS = ['nearest_random_tie', 'backline_first', 'lowest_hp_ally', 'column_line', 'marked_first'];
 const S7_BATTLE_EFFECT_KINDS = ['normal_attack', 'ultimate', 'core', 'state'];
 const S7_BATTLE_EFFECT_TYPES = [
@@ -1238,6 +1239,10 @@ function validateBattle(
     const tt = row.targetType;
     if (typeof tt !== 'string' || !S7_BATTLE_UNIT_TARGET_TYPES.includes(tt)) {
       errors.push({ table: 'battle_unit_stat_param', id, message: 'targetType 非法' });
+    } else if (tt === 'prop') {
+      if (row.unitRef !== 'none') {
+        errors.push({ table: 'battle_unit_stat_param', id, message: 'prop 类单位 unitRef 必须为 none（不挂实体真源表）' });
+      }
     } else {
       const validSet = tt === 'ship' ? shipIds : tt === 'enemy' ? enemyIds : bossNodeIds;
       if (typeof row.unitRef !== 'string' || !validSet.has(row.unitRef)) {
