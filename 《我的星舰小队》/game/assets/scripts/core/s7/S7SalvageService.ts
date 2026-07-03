@@ -12,13 +12,14 @@ import {
 } from './S7SalvageConfig';
 import { S7SalvageState, S7SalvageMission } from './S7SalvageState';
 import { salvageTeamCount } from './S7BuildingEffects';
+import { s7DayKey } from './S7AdDailyCounter';
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
-/** 当日 key（用于广告加速每日次数重置）。 */
+/** 当日 key（用于广告加速每日次数重置）——委托全游戏统一日界（北京时间凌晨 4 点重置）。 */
 export function salvageDayKey(now: number): number {
-  return Math.floor(now / DAY_MS);
+  return s7DayKey(now);
 }
 
 /** 打捞队上限（= 打捞港等级·§10.2 打捞队 1→3）。 */

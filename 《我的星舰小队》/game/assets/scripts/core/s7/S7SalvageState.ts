@@ -22,7 +22,7 @@ export interface S7SalvageMission {
 export interface S7SalvageState {
   missions: S7SalvageMission[];
   nextSeq: number;
-  /** 今日广告加速：dayKey(=floor(now/天)) + 当日已用次数。跨天自动重置。 */
+  /** 今日广告加速：dayKey(全游戏统一日界·北京凌晨4点重置，见 s7DayKey) + 当日已用次数。跨天自动重置。 */
   adSpeedup: { dayKey: number; count: number };
 }
 

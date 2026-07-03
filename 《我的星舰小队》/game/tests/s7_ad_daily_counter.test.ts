@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createDefaultS7AdDaily,
   normalizeS7AdDaily,
-  adDayKey,
+  s7DayKey,
   adDailyUsed,
   adDailyTryConsume,
 } from '../assets/scripts/core/s7/S7AdDailyCounter';
@@ -36,7 +36,7 @@ describe('块1 · S7AdDailyCounter', () => {
     const nextDay = NOW + DAY;
     expect(adDailyUsed(s, 'p', nextDay)).toBe(0);
     expect(adDailyTryConsume(s, 'p', 1, nextDay)).toEqual({ ok: true, usedToday: 1 });
-    expect(s.entries['p'].dayKey).toBe(adDayKey(nextDay));
+    expect(s.entries['p'].dayKey).toBe(s7DayKey(nextDay));
   });
 
   it('点位互不影响：A 用满不阻塞 B', () => {
@@ -72,9 +72,12 @@ describe('块1 · S7AdDailyCounter', () => {
     expect(n.entries.good).toEqual({ dayKey: 19676, count: 2 });
   });
 
-  it('adDayKey 边界：负数/NaN 归 0；正常值与"打捞加速 dayKey"同口径 floor(now/天)', () => {
-    expect(adDayKey(-5)).toBe(0);
-    expect(adDayKey(Number.NaN)).toBe(0);
-    expect(adDayKey(NOW)).toBe(Math.floor(NOW / DAY));
+  it('s7DayKey 边界：北京时间凌晨4点重置（UTC+8 时区−4h 重置点=+4h 移位）；负数/NaN 归 0', () => {
+    expect(s7DayKey(-5)).toBe(0);
+    expect(s7DayKey(Number.NaN)).toBe(0);
+    const SHIFT = 14_400_000; // +4h
+    expect(s7DayKey(20_000 * DAY - SHIFT - 1)).toBe(19_999); // 北京 03:59:59.999 → 仍算前一游戏日
+    expect(s7DayKey(20_000 * DAY - SHIFT)).toBe(20_000); // 北京 04:00:00.000 → 新一游戏日
+    expect(s7DayKey(NOW)).toBe(Math.floor((NOW + SHIFT) / DAY));
   });
 });

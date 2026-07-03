@@ -38,10 +38,11 @@ function cfg(overrides: Partial<S7GachaConfig> = {}): S7GachaConfig {
 const rng = () => new S7AutoBattleRng('gacha-test-seed');
 
 describe('C-step1 · 日序与专属轮换', () => {
-  it('gachaDayIndex：按 UTC 天数取整', () => {
+  it('gachaDayIndex：委托全游戏统一日界（北京凌晨4点重置=UTC+4h 移位）', () => {
+    const SHIFT = 14_400_000; // +4h
     expect(gachaDayIndex(0)).toBe(0);
-    expect(gachaDayIndex(DAY_MS - 1)).toBe(0);
-    expect(gachaDayIndex(DAY_MS)).toBe(1);
+    expect(gachaDayIndex(DAY_MS - SHIFT - 1)).toBe(0); // 北京 03:59:59.999
+    expect(gachaDayIndex(DAY_MS - SHIFT)).toBe(1); // 北京 04:00:00.000 起新一日
     expect(gachaDayIndex(DAY_MS * 7 + 123)).toBe(7);
   });
 

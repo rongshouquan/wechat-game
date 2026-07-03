@@ -183,15 +183,18 @@ describe('D-step1 · 广告加速', () => {
     expect(salvageAdSpeedup(s, c, id, 4, T)).toMatchObject({ ok: false, reason: 'daily_limit' });
   });
 
-  it('跨天重置加速次数', () => {
+  it('跨天重置加速次数（日界=北京凌晨4点·用日界函数构造边界，不写死重置时刻）', () => {
     const c = smallCut();
     const s = createDefaultS7Salvage();
-    const start = T + 20 * HOUR; // 当日(day=floor(T/DAY))内开打·24h 任务跨到次日仍在进行
+    const SHIFT = 14_400_000; // s7DayKey 的 +4h 移位（UTC+8 时区 − 4 点重置）
+    const boundary = (salvageDayKey(T) + 1) * DAY - SHIFT; // T 所在游戏日的"次日凌晨4点"真实时刻
+    const start = boundary - 4 * HOUR; // 日界前 4h 开打 24h 任务 → 跨日时仍在进行
     startSalvage(s, c, 'epic', 24, 1, start);
     const id = s.missions[0].id;
     for (let i = 0; i < 3; i += 1) salvageAdSpeedup(s, c, id, 1, start);
     expect(salvageAdSpeedup(s, c, id, 1, start).ok).toBe(false); // 当天满
-    const nextDay = T + DAY + HOUR; // 次日·任务(end≈start+24h)仍在进行
+    const nextDay = boundary + HOUR; // 次游戏日 1h·任务(end≈start+24h)仍在进行
+    expect(salvageDayKey(nextDay)).toBe(salvageDayKey(start) + 1); // 构造自检：确实恰好跨一日
     expect(salvageAdSpeedup(s, c, id, 1, nextDay).ok).toBe(true); // 次日重置
     expect(s.adSpeedup.count).toBe(1);
   });
@@ -204,10 +207,11 @@ describe('D-step1 · 广告加速', () => {
     expect(salvageAdSpeedup(s, DEFAULT_S7_SALVAGE_CONFIG, r.mission.id, 1, T + 3 * HOUR)).toMatchObject({ ok: false, reason: 'already_done' });
   });
 
-  it('salvageDayKey 按天取整', () => {
+  it('salvageDayKey 委托全游戏统一日界（北京凌晨4点重置=UTC+4h 移位）', () => {
+    const SHIFT = 14_400_000; // +4h
     expect(salvageDayKey(0)).toBe(0);
-    expect(salvageDayKey(DAY - 1)).toBe(0);
-    expect(salvageDayKey(DAY)).toBe(1);
+    expect(salvageDayKey(DAY - SHIFT - 1)).toBe(0); // 北京 03:59:59.999
+    expect(salvageDayKey(DAY - SHIFT)).toBe(1); // 北京 04:00:00.000 起新一日
   });
 });
 

@@ -10,12 +10,11 @@ import { S7AutoBattleRng } from './S7AutoBattleRng';
 import { S7MerchantConfig, S7ShopItem, S7ShopOfferTemplate } from './S7MerchantConfig';
 import { S7MerchantState, S7ShopOffer, shopItemKey } from './S7MerchantState';
 import { S7BeaconTier, BEACON_RESOURCE } from './S7SalvageConfig';
+import { s7DayKey } from './S7AdDailyCounter';
 
-const DAY_MS = 86_400_000;
-
-/** 周期 key（每日刷新）。 */
+/** 周期 key（每日刷新）——委托全游戏统一日界（北京时间凌晨 4 点重置）。 */
 export function merchantDayKey(now: number): number {
-  return Math.floor(now / DAY_MS);
+  return s7DayKey(now);
 }
 
 /** 轮换格数（随商人小站等级增多·§10.3"更多次/更多格"）。lv1→5、每 2 级 +1、封顶 8（占位）。 */

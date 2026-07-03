@@ -23,12 +23,11 @@ import { S7GachaState } from './S7GachaState';
 import { S7SquadState, grantShip, grantPilot, isShipOwned, isPilotOwned } from './S7Squad';
 import { S7ExclusiveShardInventoryState, addExclusiveShards } from './S7ExclusiveShardInventory';
 import { S7MailboxState, addMail, S7MailReward } from './S7Mailbox';
+import { s7DayKey } from './S7AdDailyCounter';
 
-const DAY_MS = 86_400_000;
-
-/** 由时间戳(ms)算「游戏日序号」(UTC 起算)。轮换以此为准；第二块/真机可再本地化。 */
+/** 由时间戳(ms)算「游戏日序号」——委托全游戏统一日界（北京时间凌晨 4 点重置）。轮换以此为准。 */
 export function gachaDayIndex(now: number): number {
-  return Math.floor(now / DAY_MS);
+  return s7DayKey(now);
 }
 
 /** 当前专属轮换期号(= floor(day/rotationDays))。 */
