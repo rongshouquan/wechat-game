@@ -27,6 +27,7 @@ import { S7AutoBattleRng } from './S7AutoBattleRng';
 import {
   S7AutoBattleSide,
   S7AutoBattleRunRequest,
+  S7AutoBattleInlineEnemyInput,
   S7AutoBattleResult,
   S7AutoBattleLogEntry,
   S7AutoBattleLogType,
@@ -187,10 +188,15 @@ class BattleRun {
     if (!enc) {
       throw new S7AutoBattleError('unknown_encounter', `battle_encounter_param 缺少 ${this.request.encounterRef}`);
     }
-    this.timeLimitSec = enc.timeLimitSec;
+    // 【回廊受控扩展】限时覆盖（>0 才生效）：闪电战 40s。主线/悬赏不设 → 用 encounter 限时（零行为变化）。
+    const tOverride = this.request.timeLimitSecOverride;
+    this.timeLimitSec = typeof tOverride === 'number' && tOverride > 0 ? tOverride : enc.timeLimitSec;
 
     this.placePlayerUnits();
-    this.loadSpawnPlans(enc);
+    // 【回廊受控扩展】内联敌阵：给了则用它一次性铺敌、忽略 encounter 出怪批次；否则走原 spawnPlans 路径（零行为变化）。
+    const inline = this.request.inlineEnemyUnits;
+    if (inline && inline.length > 0) this.placeInlineEnemies(inline);
+    else this.loadSpawnPlans(enc);
     this.loadPhases(enc);
 
     this.pushLog('battle_start', { note: enc.rowId });
@@ -330,6 +336,32 @@ class BattleRun {
         targetIds: created.map((u) => u.unitId),
         note: plan.rowId,
       });
+    }
+  }
+
+  /**
+   * 【深空回廊专用·受控入口】按内联敌阵一次性铺敌（开局全部就位·单波·不走 encounter 出怪批次）。
+   * 每个敌人应用 request.enemyEffectBlocks（随层缩放 + 敌方戏法：铁甲潮改护甲/护盾矩阵开局盾/蜂群变弱），
+   * 经 deriveUnit 合并成装配后属性（spawnUnit 对敌我同口径消费 derived）。占用/越界的格跳过。
+   * 主线/悬赏永不传 inlineEnemyUnits，永不进入此路径（零行为变化，与 processSpawnPlan 并行不交叉）。
+   */
+  private placeInlineEnemies(inline: readonly S7AutoBattleInlineEnemyInput[]): void {
+    const ebs = this.request.enemyEffectBlocks ?? [];
+    const created: RtUnit[] = [];
+    for (const item of inline) {
+      const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', item.unitStatRef);
+      if (!stat) throw new S7AutoBattleError('unknown_unit_stat', `battle_unit_stat_param 缺少 ${String(item.unitStatRef)}`);
+      const parsed = parseEnemySlot(item.slotRef);
+      if (!parsed) {
+        throw new S7AutoBattleError('bad_spawn_slot', `非法内联敌格 "${String(item.slotRef)}"（仅 r0c0..r${ENEMY_ROWS - 1}c${ENEMY_COLS - 1}）`);
+      }
+      if (!this.canPlace('enemy', parsed.row, parsed.col, stat.sizeRows, stat.sizeCols)) continue; // 占用/越界跳过该格
+      const derived = ebs.length > 0 ? deriveUnit(baseStatOf(stat), ebs) : null;
+      created.push(this.spawnUnit(stat, 'enemy', parsed.row, parsed.col, item.slotRef, derived));
+    }
+    if (created.length > 0) {
+      // t=0 记 spawn_wave 让敌人在战斗演出里登场（playback 靠 spawn_wave 点名·见 S7BattlePlayback）。
+      this.pushLog('spawn_wave', { side: 'enemy', waveIndex: 1, targetIds: created.map((u) => u.unitId), note: 'corridor_inline' });
     }
   }
 

@@ -24,6 +24,14 @@ export interface S7AutoBattlePlayerUnitInput {
   effectBlocks?: readonly S7EffectBlock[];
 }
 
+/** 内联敌方单位（【深空回廊专用·受控扩展】：按层号动态生成的敌阵落点）。 */
+export interface S7AutoBattleInlineEnemyInput {
+  /** 指向 battle_unit_stat_param.rowId（enemy 行）。 */
+  unitStatRef: string;
+  /** 敌方 5×7 锚点格：r0c0..r4c6。 */
+  slotRef: string;
+}
+
 /** 一场自动战斗的运行请求。 */
 export interface S7AutoBattleRunRequest {
   /** 指向 battle_encounter_param.rowId（enc_n001 / enc_n018 / enc_n075 ...）。 */
@@ -32,6 +40,20 @@ export interface S7AutoBattleRunRequest {
   battleSeed: string | number;
   /** 玩家上阵单位（首版最多 5 个）。 */
   playerUnits: S7AutoBattlePlayerUnitInput[];
+  // ===== 以下三项 = 【深空回廊专用·受控扩展·全部可选】=====
+  // 并行加法：主线/悬赏板战斗从不设这三项，缺省时引擎行为与扩展前逐字节一致（gate 零回归为机器验收）。
+  /**
+   * 内联敌阵：给了则用它一次性铺敌、**忽略** encounter 的 spawnPlanRefs（回廊按层动态生成敌阵）。
+   * 缺省/空 → 走 encounter 出怪批次（主线/悬赏原路径，零行为变化）。
+   */
+  inlineEnemyUnits?: readonly S7AutoBattleInlineEnemyInput[];
+  /**
+   * 施加到全体敌人的效果积木（随层缩放 + 敌方戏法：铁甲潮/护盾矩阵/蜂群变弱），经 deriveUnit 合并。
+   * 缺省 → 敌人按基线出场（主线/悬赏零行为变化）。
+   */
+  enemyEffectBlocks?: readonly S7EffectBlock[];
+  /** 限时覆盖秒数（>0 覆盖 encounter.timeLimitSec；闪电战=40）。缺省/≤0 → 用 encounter 的限时（零行为变化）。 */
+  timeLimitSecOverride?: number;
 }
 
 export type S7AutoBattleWinner = 'player' | 'enemy';
