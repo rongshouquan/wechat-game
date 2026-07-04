@@ -36,8 +36,28 @@ import {
 } from '../../core/s7/S7ReturnReport';
 import { adDailyUsed, adDailyTryConsume } from '../../core/s7/S7AdDailyCounter';
 // 星港悬赏板（第2.5块·块2）：整体取代旧每日委托。核心逻辑在 core/s7/S7StarportBounty + S7CommissionAffix；
-// 本控制器的旧委托面板/流程已拆除（步1），独立全屏悬赏板 view + 出战/词缀标记/遇袭/结算接线在步2 建。
-import { S7BattleRunService } from '../../core/s7/S7BattleRunService';
+// 界面在独立 view 文件 S7BountyBoardView（守工作流程⑧）；本控制器只做"挂 view + 悬赏战斗编排"。
+import { S7BountyBoardView, S7BountyHost } from './S7BountyBoardView';
+import {
+  S7BountyCard,
+  refreshBountyBoard,
+  findBountyCard,
+  settleBountyCard,
+  bountyBattleNodeId,
+  bountyRunSeed,
+  bountyAmbushTriggered,
+  claimBountyAmbushBonus,
+  escortTransportBlocks,
+  isPerfectEscort,
+} from '../../core/s7/S7StarportBounty';
+import {
+  commissionAffixBlocks,
+  matchedCommissionAffixes,
+  S7PositionType,
+  S7_POSITION_TYPES,
+  S7CommissionAffixDef,
+} from '../../core/s7/S7CommissionAffix';
+import { S7BattleRunService, S7BattleRunResult } from '../../core/s7/S7BattleRunService';
 import {
   buildBuildingUpgradeView,
   upgradeBuildingWithDiscount,
@@ -259,8 +279,16 @@ export class S7DemoController extends Component {
   private reportDoubleBtn: Node | null = null;
 
   // ===== 块2 星港悬赏板（GDD S10.8）=====
-  /** hub「悬赏」入口（关5 强引导结束后解锁）；步1 先占位、步2 接独立悬赏板 view。 */
+  /** hub「悬赏」入口（关5 强引导结束后解锁）。 */
   private hubBountyBtn: Node | null = null;
+  /** 独立全屏悬赏板 view（守工作流程⑧）。 */
+  private bountyView: S7BountyBoardView | null = null;
+  /** 备战处于"悬赏模式"（出战改打该卡·词缀标记按它）；null=正常主线备战。 */
+  private bountyPrepCardId: string | null = null;
+  /** 正在演出/结算的悬赏卡（结果窗单键返回路由用）；null=主线战斗。 */
+  private bountyActiveCardId: string | null = null;
+  /** 护航赢后待打的遇袭遭遇战卡（结果窗返回时接一场星盗战）；null=无遇袭。 */
+  private bountyAmbushPending: S7BountyCard | null = null;
   private battleRunService: S7BattleRunService = new S7BattleRunService();
   /** 建筑面板叠加层 + 每行 Label（与 S7_DEMO_DEFAULT_BUILDINGS 等长平行）。 */
   private baseNode: Node | null = null;
@@ -516,6 +544,8 @@ export class S7DemoController extends Component {
   private hubMerchantEntryNode: Node | null = null; // 「商人小站」入口（M3 商人引导高光）
   private prebattleSortieBtn: Node | null = null;
   private resultHomeBtn: Node | null = null;        // 结果弹窗「返回星港」（强引导 step3 高光）
+  private resultHomeLabel: Label | null = null;     // 「返回星港」文字（悬赏战斗改「返回悬赏板」）
+  private resultLevelBtn: Node | null = null;       // 结果弹窗「选择关卡」键（悬赏战斗时隐藏·单键返回）
   private unitManageUpgradeBtn: Node | null = null;  // 单位管理「升级」（强引导 step5/8 高光）
   /** F·关卡三选一发奖浮层（首通胜利后盖在结果弹窗之上·必须选 1 个才离开）。 */
   private levelRewardNode: Node | null = null;
@@ -778,7 +808,7 @@ export class S7DemoController extends Component {
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
-    // 块2 星港悬赏板：独立全屏 view（步2 建），此处不再搭旧委托面板。
+    this.bountyView = new S7BountyBoardView(this.node, this.makeBountyHost(), W, H); // 块2 星港悬赏板·独立全屏 view（守工作流程⑧）
     this.buildReturnReportPopup(W, H); // 块1 回港报告聚合弹窗（上线自动弹·必领才关；教程遮罩在其后建、可盖住它）
     this.buildBuildingUnlockDialog(W, H); // 建筑解锁确认弹框（真功能·点未解锁建筑弹出）
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
@@ -1732,8 +1762,10 @@ export class S7DemoController extends Component {
     // 三键：选择关卡(左) / 返回星港(中) / 下一关·再次挑战(右)。③终稿：奖励明细/广告键已全移到三选一屏，结算窗不再带它们。
     const lvlLbl = mkB(220, 92, new Color(70, 130, 180, 255), -W * 0.30, -dh * 0.30, () => this.onResultGoLevelSelect());
     lvlLbl.string = '选择关卡';
+    this.resultLevelBtn = lvlLbl.node.parent; // 块2：悬赏战斗时隐藏（单键返回）
     const homeLbl = mkB(220, 92, new Color(120, 90, 160, 255), 0, -dh * 0.30, () => this.onResultGoHome());
     homeLbl.string = '返回星港';
+    this.resultHomeLabel = homeLbl;
     this.resultHomeBtn = homeLbl.node.parent; // M1：强引导 step3 高光「返回星港」用
     this.resultRightLabel = mkB(220, 92, new Color(225, 150, 45, 255), W * 0.30, -dh * 0.30, () => this.onResultGoPrebattle());
   }
@@ -1747,9 +1779,12 @@ export class S7DemoController extends Component {
       this.resultTitleLabel.color = won ? new Color(150, 235, 160) : new Color(255, 150, 150);
     }
     if (this.resultMsgLabel && this.pendingResult) this.resultMsgLabel.string = this.pendingResult.text;
-    if (this.resultRightLabel) {
-      this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
-    }
+    // 块2：悬赏战斗结算=单键「返回悬赏板」（藏「选关」「下一关/再次挑战」·rule⑨）；主线保持三键。
+    const isBounty = this.bountyActiveCardId !== null;
+    if (this.resultLevelBtn) this.resultLevelBtn.active = !isBounty;
+    if (this.resultRightLabel?.node.parent) this.resultRightLabel.node.parent.active = !isBounty;
+    if (this.resultHomeLabel) this.resultHomeLabel.string = isBounty ? '返回悬赏板' : '返回星港';
+    if (this.resultRightLabel && !isBounty) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
     this.resultPopupNode.active = true;
     // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（必须选 1 才继续；精英/Boss 选完同屏浮现广告/继续、Boss 继续后弹大奖特写，才露出结算窗）。
     if (won && this.pendingLevelReward) this.openLevelReward();
@@ -1768,8 +1803,9 @@ export class S7DemoController extends Component {
     if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
     this.refresh();
   }
-  /** 结果窗·返回星港：收战斗画面 → 回基地主界面。 */
+  /** 结果窗·返回：悬赏战斗 → 单键回悬赏板（有遇袭先接遭遇战）；主线 → 收战斗画面回基地。 */
   private onResultGoHome(): void {
+    if (this.bountyActiveCardId !== null) { this.onBountyResultReturn(); return; }
     this.dismissBattleScene();
   }
   /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
@@ -3226,6 +3262,14 @@ export class S7DemoController extends Component {
    */
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
+    // 块2：备战处于悬赏模式（点卡进来）→ 出战改打该悬赏卡（词缀/运输船在 runBountyBattle 内组装）。
+    if (this.bountyPrepCardId) {
+      const id = this.bountyPrepCardId;
+      this.bountyPrepCardId = null;
+      this.closePrebattle();
+      this.launchBountyBattle(id);
+      return;
+    }
     // 关4摆阵教程(step32)：晨星仍在前排→阻止出战并提示
     if (this.isStrongGuideActive() && this.playerState?.tutorial.strongGuideStep === 32) {
       const col = this.shipSlotCol(S7_TUTORIAL_STARTER.shipId);
@@ -3324,13 +3368,17 @@ export class S7DemoController extends Component {
   }
 
   private closePrebattle(): void {
+    this.bountyPrepCardId = null; // 块2：取消/离开备战即退出悬赏模式（出战路径已先取走 id）
     if (this.prebattleNode) this.prebattleNode.active = false;
   }
 
   /** 刷新战前备战：信息行(节点/战力/敌情概要) + 敌情预览色块 + 9 格编队 + 选中船详情。 */
   private refreshPrebattle(): void {
     if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
-    const viewProgress = this.session.progress;
+    // 块2：悬赏模式下敌情预览用悬赏敌阵节点（已通关最高星域首个节点），不显示主线当前关。
+    const viewProgress = this.bountyPrepCardId && this.model
+      ? { currentNodeId: bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds) ?? this.session.progress.currentNodeId, clearedNodeIds: [] }
+      : this.session.progress;
     const r = buildPrebattleView(this.runtime, viewProgress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
     const g = this.prebattleGfx;
     const W = this.viewW;
@@ -3348,8 +3396,10 @@ export class S7DemoController extends Component {
       const stage = v.stageType === 'boss' ? 'Boss' : v.stageType === 'elite' ? '精英' : '普通';
       const enemyBrief = v.hasEncounter ? `敌${v.enemyCount}${v.hasBoss ? '·含Boss' : ''}` : '暂无遭遇';
       const trend = v.playerPower >= v.recommendedPower ? '↑' : '↓';
+      const bountyTag = this.bountyPrepCardId ? '【悬赏】' : '';
       this.prebattleInfoLabel.string =
-        `节点 ${v.nodeId}（${stage}）   敌情预览：${enemyBrief}\n我方战力 ${v.playerPower} ${trend}   VS   推荐战力 ${v.recommendedPower}`;
+        `${bountyTag}节点 ${v.nodeId}（${stage}）   敌情预览：${enemyBrief}\n我方战力 ${v.playerPower} ${trend}   VS   推荐战力 ${v.recommendedPower}`
+        + this.bountyPrepAffixInfo(); // 块2：悬赏本场词缀全文（作用于对应定位型的我方单位）
       // 敌情预览色块：按敌人站位摆到上半区(坐标=fieldEnemyPos·战斗站位)。
       this.drawEnemyPreview(g, v);
     }
@@ -5859,13 +5909,169 @@ export class S7DemoController extends Component {
     this.setResult(`已回档到 ${bossId} 待通关·移除陨星弹（去打赢 ${bossId} 验证掉落+结算显示）`, new Color(205, 165, 60));
   }
 
-  // ===== 块2 星港悬赏板（GDD S10.8）=====
+  // ===== 块2 星港悬赏板（GDD S10.8）：挂独立 view + 悬赏战斗编排 =====
 
-  /** hub「悬赏」入口：步1 占位 toast，步2 接独立全屏悬赏板 view（生成/词缀/出战/遇袭/结算）。 */
+  /** 悬赏板 view 宿主接口（数据只读 + 动作回调）。 */
+  private makeBountyHost(): S7BountyHost {
+    return {
+      layer: this.node.layer,
+      bountyState: () => this.playerState!.bounty,
+      affixDefs: () => this.runtime?.getAll<S7CommissionAffixDef>('commission_affix_param') ?? [],
+      starfieldTier: () => this.bountyTier(),
+      habitatLevel: () => (this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0),
+      gainsText: (r) => this.gainsText(r),
+      playCard: (id) => this.onBountyPlayCard(id),
+      onClose: () => this.closeBounty(),
+    };
+  }
+
+  /** 已通关最高星域档（产出/难度缩放）。 */
+  private bountyTier(): number {
+    if (!this.model || !this.session) return 0;
+    return this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
+  }
+
+  /** hub「悬赏」入口：日刷发卡（跨天补刷·封顶）→ 落盘 → 开独立悬赏板 view。解锁=关5 强引导结束。 */
   private openBounty(): void {
-    if (this.playing) return;
-    if (!this.playerState?.tutorial.strongGuideDone) { this.hubToast('完成新手引导后解锁星港悬赏'); return; }
-    this.hubToast('星港悬赏板 · 步2 接入中');
+    if (this.playing || !this.bountyView || !this.playerState || !this.session || !this.model) return;
+    if (!this.playerState.tutorial.strongGuideDone) { this.hubToast('完成新手引导后解锁星港悬赏'); return; }
+    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
+    const affixPool = (this.runtime?.getAll<{ rowId: string }>('commission_affix_param') ?? []).map((r) => r.rowId);
+    if (refreshBountyBoard(this.playerState.bounty, habitatLv, Date.now(), affixPool)) this.persist();
+    this.bountyView.open();
+  }
+
+  private closeBounty(): void { this.bountyView?.close(); }
+
+  /** 点卡「出战」：进主线同款备战（悬赏模式·出战改打该卡）；备战信息行挂本场词缀。 */
+  private onBountyPlayCard(cardId: string): void {
+    if (!this.playerState || this.playing) return;
+    if (!findBountyCard(this.playerState.bounty, cardId)) { this.hubToast('这张悬赏已失效'); return; }
+    this.bountyPrepCardId = cardId;
+    this.bountyView?.close();
+    this.openPrebattle();
+  }
+
+  /** shipId → 定位型（读 battle_unit_stat_param 的 ship 行 positionType·灰盒占位）。找不到/非法返回 null。 */
+  private bountyShipPositionType(shipId: string): S7PositionType | null {
+    const rows = this.runtime?.getAll<{ targetType: string; unitRef: string; positionType?: string }>('battle_unit_stat_param') ?? [];
+    const pt = rows.find((r) => r.targetType === 'ship' && r.unitRef === shipId)?.positionType;
+    return pt && (S7_POSITION_TYPES as readonly string[]).includes(pt) ? (pt as S7PositionType) : null;
+  }
+
+  /** 备战信息补充：悬赏模式下把本场词缀全文（按定位型作用）拼成一行，挂进备战信息（灰盒词缀标记）。 */
+  private bountyPrepAffixInfo(): string {
+    if (!this.bountyPrepCardId || !this.playerState || !this.runtime) return '';
+    const card = findBountyCard(this.playerState.bounty, this.bountyPrepCardId);
+    if (!card || card.affixIds.length === 0) return '';
+    const defs = this.runtime.getAll<S7CommissionAffixDef>('commission_affix_param');
+    const lines = card.affixIds.map((id) => {
+      const d = defs.find((x) => x.rowId === id);
+      return d ? `词缀·${d.affixName}：${d.effectText}` : '';
+    }).filter(Boolean);
+    return lines.length > 0 ? `\n${lines.join('\n')}` : '';
+  }
+
+  /** 跑一场悬赏战斗（不推主线）：敌阵=已通关最高星域首个节点；按卡词缀给对应定位型注积木；护航附运输船。 */
+  private runBountyBattle(card: S7BountyCard): S7BattleRunResult | null {
+    if (!this.playerState || !this.session || !this.model || !this.runtime || !this.squad) return null;
+    const nodeId = bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds);
+    if (!nodeId) { this.hubToast('暂无可用悬赏敌阵'); return null; }
+    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined);
+    if (!built.ok) { this.hubToast('先把阵容配好再出战'); return null; }
+    const defs = this.runtime.getAll<S7CommissionAffixDef>('commission_affix_param');
+    const lineupSize = built.lineup.length;
+    const team = this.teamBonusBlocks();
+    const lineup = built.lineup.map((u, i) => {
+      const pt = this.bountyShipPositionType(u.shipId);
+      const affixBlocks = pt ? commissionAffixBlocks(defs, card.affixIds, pt, lineupSize) : [];
+      const extra = [
+        ...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId), ...affixBlocks,
+        ...(card.theme === 'escort' && i === 0 ? escortTransportBlocks() : []), // 护航：旗舰位开场召唤运输船
+      ];
+      return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
+    });
+    try {
+      const progress = { currentNodeId: nodeId, clearedNodeIds: [] as string[] };
+      return this.battleRunService.run({ runtime: this.runtime, progress, runSeed: bountyRunSeed(card, Date.now()), lineup });
+    } catch (err) {
+      console.warn('[S7DemoController] 悬赏战斗启动失败', nodeId, err);
+      this.hubToast('悬赏敌阵暂不可用（原型内容缺口）');
+      return null;
+    }
+  }
+
+  /** 真打一场悬赏（先结算后演出·同主线口径）：胜→结算发奖(完美护航×1.25)+移除卡+遇袭判定；负→不罚·卡留板。 */
+  private launchBountyBattle(cardId: string): void {
+    if (!this.playerState) return;
+    const card = findBountyCard(this.playerState.bounty, cardId);
+    if (!card) { this.hubToast('这张悬赏已失效'); return; }
+    const out = this.runBountyBattle(card);
+    if (!out) return;
+    const won = out.result.winner === 'player';
+    const themeName = card.theme === 'escort' ? '护航' : '演习';
+    let text: string;
+    if (won) {
+      const perfect = card.theme === 'escort' && isPerfectEscort(out.result);
+      const settled = settleBountyCard(this.playerState.bounty, cardId, this.bountyTier(), perfect);
+      if (settled) this.creditGains(settled.rewards);
+      const ambush = card.theme === 'escort' && bountyAmbushTriggered(card);
+      this.bountyAmbushPending = ambush ? card : null;
+      text = `${themeName}悬赏完成 ${this.gainsText(settled?.rewards ?? {})}`
+        + (perfect ? '（✨完美护航 +25%）' : '')
+        + (ambush ? '\n⚠ 遭遇星盗！返回后接一场遭遇战' : '');
+    } else {
+      this.bountyAmbushPending = null;
+      text = `${themeName}没打赢——不扣不罚，卡还在板上，调下阵容再来`;
+    }
+    this.bountyActiveCardId = cardId;
+    this.pendingWon = won;
+    this.pendingResult = { text, color: won ? new Color(150, 235, 160) : new Color(255, 180, 150) };
+    this.pendingLevelReward = null; // 悬赏无三选一
+    this.persist();
+    this.startPlayback(buildS7BattlePlayback(out.result));
+  }
+
+  /** 遇袭遭遇战（护航赢后·结果窗返回时接一场）：赢=额外小包(轮换)，输=不罚。打完回悬赏板。 */
+  private launchBountyAmbush(card: S7BountyCard): void {
+    if (!this.playerState) { this.openBounty(); return; }
+    const out = this.runBountyBattle(card); // 灰盒复用同敌阵（真实星盗涂装留美术阶段）
+    if (!out) { this.openBounty(); return; }
+    const won = out.result.winner === 'player';
+    let text: string;
+    if (won) {
+      const bonus = claimBountyAmbushBonus(this.playerState.bounty);
+      this.creditGains(bonus);
+      text = `星盗遭遇战·胜！额外小包 ${this.gainsText(bonus)}`;
+    } else {
+      text = '星盗遭遇战·惜败——护航奖励照常，不扣不罚';
+    }
+    this.bountyActiveCardId = '__ambush__'; // 标记：结果窗返回直接回板（不再触发二次遇袭）
+    this.bountyAmbushPending = null;
+    this.pendingWon = won;
+    this.pendingResult = { text, color: won ? new Color(150, 235, 160) : new Color(255, 180, 150) };
+    this.pendingLevelReward = null;
+    this.persist();
+    this.startPlayback(buildS7BattlePlayback(out.result));
+  }
+
+  /** 结果窗单键「返回悬赏板」：护航有遇袭 → 接遭遇战；否则收场回悬赏板。 */
+  private onBountyResultReturn(): void {
+    const ambush = this.bountyAmbushPending;
+    this.bountyActiveCardId = null;
+    this.bountyAmbushPending = null;
+    this.dismissBattleScene();
+    if (ambush) { this.launchBountyAmbush(ambush); return; }
+    this.openBounty();
+  }
+
+  /** 把奖励 map 入账钱包（护栏：只加钱包键·非钱包键跳过）。 */
+  private creditGains(gains: Record<string, number>): void {
+    if (!this.session) return;
+    const res = this.session.resources as Record<string, number>;
+    for (const [key, amt] of Object.entries(gains)) {
+      if (res[key] !== undefined && amt > 0) res[key] += amt;
+    }
   }
 
   // ===== C 建筑面板 =====
