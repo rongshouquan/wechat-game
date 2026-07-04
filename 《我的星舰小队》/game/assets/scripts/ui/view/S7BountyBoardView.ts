@@ -93,7 +93,8 @@ export class S7BountyBoardView {
     const st = this.host.bountyState();
     const tier = this.host.starfieldTier();
     const cap = bountyBoardCap(this.host.habitatLevel());
-    this.headerLabel.string = `📋 星港悬赏板 · 星域档 ${tier} · 每天凌晨4点刷新`;
+    // 档位玩家侧从 1 起显示（内部 tier 0 起数是"已通关星域数"·真机④：别把程序员的 0 亮给玩家）。
+    this.headerLabel.string = `📋 星港悬赏板 · 星域档 ${tier + 1} · 每天凌晨4点刷新`;
     this.backlogLabel.string = `板上 ${st.cards.length} / ${cap} 张 —— 没做的攒着，星港帮你留（不催办）`;
 
     const pages = Math.max(1, Math.ceil(st.cards.length / CARDS_PER_PAGE));
@@ -131,18 +132,29 @@ export class S7BountyBoardView {
     this.mkLabel(badge, 0, 22, 30, new Color(255, 255, 255)).string = THEME_LABEL[card.theme];
     this.mkLabel(badge, 0, -20, 26, QUALITY_EDGE[card.quality]).string = `${QUALITY_LABEL[card.quality]}卡`;
 
-    // 中：词缀全文 + 产出预览（左对齐锚点）
+    // 中：词缀全文 + 产出预览——**锚定进卡片内容区**（真机①修复：原中心锚+无内容框导致文本悬出卡外/被截断）。
+    // 内容框 = 徽标右缘(-rowW/2+142)到出战键左缘(rowW/2-171)之间；左缘锚点(0,0.5) + SHRINK 自动缩排版，
+    // 银2条/金3条词缀+产出行在窄屏下也保证收进框内（超长自动缩字号，灰盒可接受）。
     const defs = this.host.affixDefs();
     const affixText = card.affixIds
       .map((id) => defs.find((d) => d.rowId === id)?.effectText ?? id)
       .map((t) => `· ${t}`)
       .join('\n');
     const rewards = bountyCardRewards(card, tier, false, goldIndex);
-    const perfectHint = card.theme === 'escort' ? '（运输船满血=完美护航+25%）' : '';
-    const mid = new Node('mid'); mid.layer = this.host.layer; row.addChild(mid); mid.setPosition(-rowW / 2 + 168, rowH / 2 - 30, 0);
-    const midL = mid.addComponent(Label); midL.fontSize = 22; midL.lineHeight = 28; midL.color = new Color(210, 220, 240);
-    (midL as unknown as { horizontalAlign: number }).horizontalAlign = 0; // LEFT
-    midL.string = `${affixText || '· （无词缀）'}\n产出：${this.host.gainsText(rewards)} ${perfectHint}`;
+    const perfectHint = card.theme === 'escort' ? '｜满血护航+25%' : '';
+    const midX = -rowW / 2 + 150;
+    const midW = rowW - 327; // = (rowW/2-177) - midX：右侧给出战键(左缘 rowW/2-171)留 6
+    const mid = new Node('mid'); mid.layer = this.host.layer; row.addChild(mid); mid.setPosition(midX, 0, 0);
+    const midL = mid.addComponent(Label);
+    midL.fontSize = 20; midL.lineHeight = 26; midL.color = new Color(210, 220, 240);
+    midL.horizontalAlign = Label.HorizontalAlign.LEFT;
+    midL.verticalAlign = Label.VerticalAlign.CENTER;
+    midL.overflow = Label.Overflow.SHRINK;
+    midL.enableWrapText = true;
+    const mut = mid.getComponent(UITransform)!;
+    mut.setAnchorPoint(0, 0.5);
+    mut.setContentSize(midW, rowH - 20);
+    midL.string = `${affixText || '· （无词缀）'}\n产出 ${this.host.gainsText(rewards)}${perfectHint}`;
 
     // 右：出战键
     this.mkBtn(row, '出战', 150, 74, new Color(235, 170, 50, 255), rowW / 2 - 96, 0, () => this.host.playCard(card.id), 30);

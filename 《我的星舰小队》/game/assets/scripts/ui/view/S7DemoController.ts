@@ -41,6 +41,9 @@ import { S7BountyBoardView, S7BountyHost } from './S7BountyBoardView';
 import {
   S7BountyCard,
   refreshBountyBoard,
+  generateDayCards,
+  bountyBoardCap,
+  PITY_DAYS,
   findBountyCard,
   settleBountyCard,
   bountyBattleNodeId,
@@ -289,6 +292,11 @@ export class S7DemoController extends Component {
   private bountyActiveCardId: string | null = null;
   /** 护航赢后待打的遇袭遭遇战卡（结果窗返回时接一场星盗战）；null=无遇袭。 */
   private bountyAmbushPending: S7BountyCard | null = null;
+  // DEV-TEMP（块2悬赏板真机验收批·上线前删）：必遇袭武装标志 + 重掷计数（均仅内存·不入档）。
+  // salt 绑启动时间避免"重启后重掷"与上次会话的 DEV 批撞卡 id（salt 仅内存、裸 0 起会复现同 fakeKey）。
+  private devBountyForceAmbush = false;
+  private devBountySalt = Math.floor(Date.now() % 997);
+  private devBountyLastBatchKey = 0;
   private battleRunService: S7BattleRunService = new S7BattleRunService();
   /** 建筑面板叠加层 + 每行 Label（与 S7_DEMO_DEFAULT_BUILDINGS 等长平行）。 */
   private baseNode: Node | null = null;
@@ -883,9 +891,12 @@ export class S7DemoController extends Component {
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
 
     // —— DEV-TEMP 工具行（小·演示用·正式版去掉；升级走船坞/训练舱·此处留 离线/邮件/重置/跳过引导）——
-    this.addBtn(this.node, '测回港', 168, 60, new Color(205, 165, 60, 255), -W * 0.36, botY + 56, () => this.devTestReturnReport(), 26); // DEV-TEMP·拨回8h重建回港报告弹窗（上线前删）
-    this.addBtn(this.node, '发测试邮件', 168, 60, new Color(80, 120, 160, 255), -W * 0.12, botY + 56, () => this.devSendTestMail(), 24); // DEV-TEMP·验 G2 邮件领取
-    this.addBtn(this.node, '回档n029', 168, 60, new Color(165, 90, 90, 255), W * 0.12, botY + 56, () => this.devRollbackToFirstBoss(), 24); // DEV-TEMP·拨主线回首Boss(n030)待通+清n030通关标记+移除core07陨星弹·反复验首Boss掉落/结算（上线前删）
+    // DEV-TEMP 工具行（5 槽·上线前整行删）：测回港=拨回8h重建回港报告 / 测试邮件=验G2邮件领取 / 回档n029=拨主线回首Boss待通·反复验掉落结算 / 刷悬赏=重掷今日4张验品质词缀分布与暗保底 / 必遇袭=武装下张护航必触发（15%小概率没法真机验收）。
+    this.addBtn(this.node, '测回港', 132, 60, new Color(205, 165, 60, 255), -W * 0.40, botY + 56, () => this.devTestReturnReport(), 22);
+    this.addBtn(this.node, '测试邮件', 132, 60, new Color(80, 120, 160, 255), -W * 0.20, botY + 56, () => this.devSendTestMail(), 22);
+    this.addBtn(this.node, '回档n029', 132, 60, new Color(165, 90, 90, 255), 0, botY + 56, () => this.devRollbackToFirstBoss(), 22);
+    this.addBtn(this.node, '刷悬赏', 132, 60, new Color(90, 150, 130, 255), W * 0.20, botY + 56, () => this.devRerollBounty(), 22);
+    this.addBtn(this.node, '必遇袭', 132, 60, new Color(170, 120, 70, 255), W * 0.40, botY + 56, () => this.devToggleForceAmbush(), 22);
     // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
     this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
     this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
@@ -3263,11 +3274,10 @@ export class S7DemoController extends Component {
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
     // 块2：备战处于悬赏模式（点卡进来）→ 出战改打该悬赏卡（词缀/运输船在 runBountyBattle 内组装）。
+    // 与主线同口径：**不关备战层**——战斗就地在备战舞台播放（startPlayback 只藏 prebattleUiNode）；
+    // 曾在此 closePrebattle() 把舞台整个藏掉 → 真机"跳回主界面、隔会弹结算"看不到战斗（块2真机灵魂bug）。
     if (this.bountyPrepCardId) {
-      const id = this.bountyPrepCardId;
-      this.bountyPrepCardId = null;
-      this.closePrebattle();
-      this.launchBountyBattle(id);
+      this.launchBountyBattle(this.bountyPrepCardId); // 成功进播放时内部才清悬赏模式标记（失败留在备战可重试）
       return;
     }
     // 关4摆阵教程(step32)：晨星仍在前排→阻止出战并提示
@@ -5976,9 +5986,9 @@ export class S7DemoController extends Component {
   private runBountyBattle(card: S7BountyCard): S7BattleRunResult | null {
     if (!this.playerState || !this.session || !this.model || !this.runtime || !this.squad) return null;
     const nodeId = bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds);
-    if (!nodeId) { this.hubToast('暂无可用悬赏敌阵'); return null; }
+    if (!nodeId) { this.bountyBattleError('暂无可用悬赏敌阵'); return null; }
     const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined);
-    if (!built.ok) { this.hubToast('先把阵容配好再出战'); return null; }
+    if (!built.ok) { this.bountyBattleError('有星舰缺驾驶员或没上阵——把阵容配好再出战'); return null; }
     const defs = this.runtime.getAll<S7CommissionAffixDef>('commission_affix_param');
     const lineupSize = built.lineup.length;
     const team = this.teamBonusBlocks();
@@ -5996,18 +6006,29 @@ export class S7DemoController extends Component {
       return this.battleRunService.run({ runtime: this.runtime, progress, runSeed: bountyRunSeed(card, Date.now()), lineup });
     } catch (err) {
       console.warn('[S7DemoController] 悬赏战斗启动失败', nodeId, err);
-      this.hubToast('悬赏敌阵暂不可用（原型内容缺口）');
+      this.bountyBattleError('悬赏敌阵暂不可用（原型内容缺口）');
       return null;
     }
   }
 
-  /** 真打一场悬赏（先结算后演出·同主线口径）：胜→结算发奖(完美护航×1.25)+移除卡+遇袭判定；负→不罚·卡留板。 */
+  /** 悬赏战斗失败提示：备战面板开着 → 写信息行（hubToast 被面板盖住看不见）；否则 hubToast。 */
+  private bountyBattleError(msg: string): void {
+    if (this.prebattleNode?.active && this.prebattleInfoLabel) {
+      this.prebattleInfoLabel.string = `⚠ ${msg}`;
+      this.prebattleInfoLabel.color = new Color(240, 200, 120);
+    } else {
+      this.hubToast(msg);
+    }
+  }
+
+  /** 真打一场悬赏（先结算后演出·同主线口径·就地在备战舞台播放）：胜→结算发奖(完美护航×1.25)+移除卡+遇袭判定；负→不罚·卡留板。 */
   private launchBountyBattle(cardId: string): void {
     if (!this.playerState) return;
     const card = findBountyCard(this.playerState.bounty, cardId);
-    if (!card) { this.hubToast('这张悬赏已失效'); return; }
+    if (!card) { this.bountyBattleError('这张悬赏已失效'); return; }
     const out = this.runBountyBattle(card);
-    if (!out) return;
+    if (!out) return; // 失败提示已由 runBountyBattle 写进备战信息行；悬赏标记保留，修好阵容可直接重试
+    this.bountyPrepCardId = null; // 确认能开播才退出悬赏备战模式
     const won = out.result.winner === 'player';
     const themeName = card.theme === 'escort' ? '护航' : '演习';
     let text: string;
@@ -6015,7 +6036,9 @@ export class S7DemoController extends Component {
       const perfect = card.theme === 'escort' && isPerfectEscort(out.result);
       const settled = settleBountyCard(this.playerState.bounty, cardId, this.bountyTier(), perfect);
       if (settled) this.creditGains(settled.rewards);
-      const ambush = card.theme === 'escort' && bountyAmbushTriggered(card);
+      // DEV-TEMP「必遇袭」：武装后下张护航打赢必触发（15% 小概率真机没法验收）·用掉即灭。上线前删。
+      const ambush = card.theme === 'escort' && (this.devBountyForceAmbush || bountyAmbushTriggered(card));
+      if (ambush) this.devBountyForceAmbush = false;
       this.bountyAmbushPending = ambush ? card : null;
       text = `${themeName}悬赏完成 ${this.gainsText(settled?.rewards ?? {})}`
         + (perfect ? '（✨完美护航 +25%）' : '')
@@ -6029,14 +6052,15 @@ export class S7DemoController extends Component {
     this.pendingResult = { text, color: won ? new Color(150, 235, 160) : new Color(255, 180, 150) };
     this.pendingLevelReward = null; // 悬赏无三选一
     this.persist();
+    this.sound.playBgm('bgm_battle'); // 与主线出战同口径
     this.startPlayback(buildS7BattlePlayback(out.result));
   }
 
-  /** 遇袭遭遇战（护航赢后·结果窗返回时接一场）：赢=额外小包(轮换)，输=不罚。打完回悬赏板。 */
+  /** 遇袭遭遇战（护航赢后·结果窗返回时在同一战斗舞台接着打）：赢=额外小包(轮换)，输=不罚。打完回悬赏板。 */
   private launchBountyAmbush(card: S7BountyCard): void {
-    if (!this.playerState) { this.openBounty(); return; }
+    if (!this.playerState) { this.dismissBattleScene(); this.openBounty(); return; }
     const out = this.runBountyBattle(card); // 灰盒复用同敌阵（真实星盗涂装留美术阶段）
-    if (!out) { this.openBounty(); return; }
+    if (!out) { this.dismissBattleScene(); this.openBounty(); return; } // 起不来就收舞台回板（别卡在黑舞台）
     const won = out.result.winner === 'player';
     let text: string;
     if (won) {
@@ -6055,13 +6079,17 @@ export class S7DemoController extends Component {
     this.startPlayback(buildS7BattlePlayback(out.result));
   }
 
-  /** 结果窗单键「返回悬赏板」：护航有遇袭 → 接遭遇战；否则收场回悬赏板。 */
+  /** 结果窗单键「返回悬赏板」：护航有遇袭 → **不收舞台**只收结果窗、同一舞台接遭遇战（看得见的追加战）；否则收场回悬赏板。 */
   private onBountyResultReturn(): void {
     const ambush = this.bountyAmbushPending;
     this.bountyActiveCardId = null;
     this.bountyAmbushPending = null;
+    if (ambush) {
+      if (this.resultPopupNode) this.resultPopupNode.active = false;
+      this.launchBountyAmbush(ambush);
+      return;
+    }
     this.dismissBattleScene();
-    if (ambush) { this.launchBountyAmbush(ambush); return; }
     this.openBounty();
   }
 
@@ -6072,6 +6100,35 @@ export class S7DemoController extends Component {
     for (const [key, amt] of Object.entries(gains)) {
       if (res[key] !== undefined && amt > 0) res[key] += amt;
     }
+  }
+
+  /** DEV-TEMP：重掷今日4张悬赏卡（换种子重抽·验品质/词缀分布与暗保底；不动更早积压；暗保底计数照常推进）。上线前删。 */
+  private devRerollBounty(): void {
+    if (!this.playerState || this.playing) return;
+    const st = this.playerState.bounty;
+    if (st.lastGenDayKey <= 0) { this.hubToast('[DEV] 先开一次悬赏板再重掷'); return; }
+    const batchKey = this.devBountyLastBatchKey > 0 ? this.devBountyLastBatchKey : st.lastGenDayKey;
+    st.cards = st.cards.filter((c) => c.genDayKey !== batchKey); // 只换当前批（更早积压留着）
+    this.devBountySalt += 1;
+    const fakeKey = st.lastGenDayKey * 1000 + this.devBountySalt; // 变种子重抽（确定性基建不动）
+    const pool = (this.runtime?.getAll<{ rowId: string }>('commission_affix_param') ?? []).map((r) => r.rowId);
+    const r = generateDayCards(fakeKey, st.noGoldDays, pool);
+    for (const c of r.cards) st.cards.push(c);
+    st.noGoldDays = r.noGoldDays;
+    this.devBountyLastBatchKey = fakeKey;
+    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
+    const cap = bountyBoardCap(habitatLv);
+    if (st.cards.length > cap) st.cards.splice(0, st.cards.length - cap);
+    this.persist();
+    if (this.bountyView?.isOpen) this.bountyView.refresh();
+    const golds = r.cards.filter((c) => c.quality === 'gold').length;
+    this.hubToast(`[DEV] 重掷4张：金×${golds}·连续无金${st.noGoldDays}批（满${PITY_DAYS - 1}批后下批必金）`);
+  }
+
+  /** DEV-TEMP：武装/解除「下张护航打赢必遇袭」（仅内存·用掉即灭；15% 概率打几次不中很正常、没法验收）。上线前删。 */
+  private devToggleForceAmbush(): void {
+    this.devBountyForceAmbush = !this.devBountyForceAmbush;
+    this.hubToast(this.devBountyForceAmbush ? '[DEV] 已武装：下张护航打赢必遇袭' : '[DEV] 已解除必遇袭');
   }
 
   // ===== C 建筑面板 =====
