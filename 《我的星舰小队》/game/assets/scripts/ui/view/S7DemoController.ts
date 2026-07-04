@@ -38,6 +38,16 @@ import { adDailyUsed, adDailyTryConsume } from '../../core/s7/S7AdDailyCounter';
 // 星港悬赏板（第2.5块·块2）：整体取代旧每日委托。核心逻辑在 core/s7/S7StarportBounty + S7CommissionAffix；
 // 界面在独立 view 文件 S7BountyBoardView（守工作流程⑧）；本控制器只做"挂 view + 悬赏战斗编排"。
 import { S7BountyBoardView, S7BountyHost } from './S7BountyBoardView';
+import { S7CorridorTowerView, S7CorridorHost, S7CorridorLayerCard, S7CorridorMilestoneCard } from './S7CorridorTowerView';
+import {
+  corridorLayerPlan, corridorBossNodeIds, nextCorridorLayer, clearCorridorLayer,
+  corridorLayerReward, corridorMilestoneReward, doubleCorridorReward,
+  availableCorridorMilestones, claimCorridorMilestone, canClaimCorridorMilestone, corridorUnlocked,
+  isEchoBossLayer, isMilestoneLayer, pickCorridorTrick,
+  S7CorridorEnemyPaletteEntry, S7CorridorLayerPlan,
+} from '../../core/s7/S7DeepCorridor';
+import { corridorTrickDef } from '../../core/s7/S7CorridorTricks';
+import { runCorridorBattle, bossNodeInlineEnemies, S7CorridorLineupCapError } from '../../core/s7/S7CorridorBattleService';
 import {
   S7BountyCard,
   refreshBountyBoard,
@@ -285,6 +295,14 @@ export class S7DemoController extends Component {
   // ===== 块2 星港悬赏板（GDD S10.8）=====
   /** hub「悬赏」入口（关5 强引导结束后解锁）。 */
   private hubBountyBtn: Node | null = null;
+  /** hub「回廊」入口（首Boss通关后解锁·refresh 门控）。 */
+  private hubCorridorBtn: Node | null = null;
+  /** 独立全屏深空回廊塔页 view（守工作流程⑧·块3）。 */
+  private corridorView: S7CorridorTowerView | null = null;
+  /** 备战处于"回廊模式"（出战改打该层·敌情/规则按它）；null=正常主线备战。 */
+  private corridorPrepLayer: number | null = null;
+  /** 正在演出/结算的回廊层（结果窗单键返回路由用）；null=非回廊战斗。 */
+  private corridorActiveLayer: number | null = null;
   /** 独立全屏悬赏板 view（守工作流程⑧）。 */
   private bountyView: S7BountyBoardView | null = null;
   /** 备战处于"悬赏模式"（出战改打该卡·词缀标记按它）；null=正常主线备战。 */
@@ -821,6 +839,7 @@ export class S7DemoController extends Component {
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
     this.bountyView = new S7BountyBoardView(this.node, this.makeBountyHost(), W, H); // 块2 星港悬赏板·独立全屏 view（守工作流程⑧）
+    this.corridorView = new S7CorridorTowerView(this.node, this.makeCorridorHost(), W, H); // 块3 深空回廊·独立全屏塔页 view（守工作流程⑧）
     this.buildReturnReportPopup(W, H); // 块1 回港报告聚合弹窗（上线自动弹·必领才关；教程遮罩在其后建、可盖住它）
     this.buildBuildingUnlockDialog(W, H); // 建筑解锁确认弹框（真功能·点未解锁建筑弹出）
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
@@ -890,6 +909,9 @@ export class S7DemoController extends Component {
     // 块2：星港悬赏板入口（出战正上方·关5 强引导结束后解锁，见 refresh()）。
     this.hubBountyBtn = this.makeButton('悬赏', 200, 80, new Color(70, 165, 150, 255), W * 0.20, botY + 266, () => this.openBounty());
     this.hubBountyBtn.active = false;
+    // 块3：深空回廊入口（左上·首Boss通关后解锁，见 refresh()）。
+    this.hubCorridorBtn = this.makeButton('回廊', 200, 80, new Color(95, 120, 190, 255), -W * 0.20, botY + 266, () => this.openCorridor());
+    this.hubCorridorBtn.active = false;
 
     // —— 中央临时提示（默认空）——
     this.hubToastLabel = this.makeLabel('', 30, new Color(255, 235, 160), 0, gy0 - gap * 3 - 100);
@@ -1796,14 +1818,17 @@ export class S7DemoController extends Component {
     if (this.resultMsgLabel && this.pendingResult) this.resultMsgLabel.string = this.pendingResult.text;
     // 块2：悬赏战斗结算=单键「返回悬赏板」（藏「选关」「下一关/再次挑战」·rule⑨）；主线保持三键。
     // 遇袭=风险抉择（Ron 2026-07-04 修订）：两键——中「🛡 躲避袭击」（零损失返航）/ 右「⚔ 正面迎战」（胜夺小包·败折本单）。
+    // 块3：回廊战斗结算=单键「返回回廊」（同悬赏藏「选关」「下一关/再次挑战」·rule⑨）。
     const isBounty = this.bountyActiveCardId !== null;
+    const isCorridor = this.corridorActiveLayer !== null;
+    const isSpecial = isBounty || isCorridor;
     const ambushChoice = isBounty && this.bountyAmbushPending !== null;
-    if (this.resultLevelBtn) this.resultLevelBtn.active = !isBounty;
-    if (this.resultRightLabel?.node.parent) this.resultRightLabel.node.parent.active = !isBounty || ambushChoice;
-    if (this.resultHomeLabel) this.resultHomeLabel.string = ambushChoice ? '🛡 躲避袭击' : isBounty ? '返回悬赏板' : '返回星港';
+    if (this.resultLevelBtn) this.resultLevelBtn.active = !isSpecial;
+    if (this.resultRightLabel?.node.parent) this.resultRightLabel.node.parent.active = !isSpecial || ambushChoice;
+    if (this.resultHomeLabel) this.resultHomeLabel.string = ambushChoice ? '🛡 躲避袭击' : isBounty ? '返回悬赏板' : isCorridor ? '返回回廊' : '返回星港';
     if (this.resultRightLabel) {
       if (ambushChoice) this.resultRightLabel.string = '⚔ 正面迎战';
-      else if (!isBounty) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
+      else if (!isSpecial) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
     }
     this.resultPopupNode.active = true;
     // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（必须选 1 才继续；精英/Boss 选完同屏浮现广告/继续、Boss 继续后弹大奖特写，才露出结算窗）。
@@ -1826,6 +1851,7 @@ export class S7DemoController extends Component {
   /** 结果窗·返回：悬赏战斗 → 单键回悬赏板（有遇袭先接遭遇战）；主线 → 收战斗画面回基地。 */
   private onResultGoHome(): void {
     if (this.bountyActiveCardId !== null) { this.onBountyResultReturn(); return; }
+    if (this.corridorActiveLayer !== null) { this.onCorridorResultReturn(); return; } // 块3：单键回塔
     this.dismissBattleScene();
   }
   /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
@@ -3285,6 +3311,11 @@ export class S7DemoController extends Component {
    */
   private onConfirmSortie(): void {
     if (!this.session || this.playing) return;
+    // 块3：备战处于回廊模式（点挑战进来）→ 出战改打该层（内联敌阵/戏法/限时在 runCorridorBattle 内组装）。
+    if (this.corridorPrepLayer !== null) {
+      this.launchCorridorBattle(this.corridorPrepLayer); // 成功进播放时内部才清回廊模式标记（失败留在备战可调阵）
+      return;
+    }
     // 块2：备战处于悬赏模式（点卡进来）→ 出战改打该悬赏卡（词缀/运输船在 runBountyBattle 内组装）。
     // 与主线同口径：**不关备战层**——战斗就地在备战舞台播放（startPlayback 只藏 prebattleUiNode）；
     // 曾在此 closePrebattle() 把舞台整个藏掉 → 真机"跳回主界面、隔会弹结算"看不到战斗（块2真机灵魂bug）。
@@ -3386,21 +3417,25 @@ export class S7DemoController extends Component {
     this.prebattleSelSlot = null;
     this.prebattleSelShip = null;
     const isBounty = this.bountyPrepCardId !== null;
-    if (this.prebattleLevelSelBtn) this.prebattleLevelSelBtn.active = !isBounty; // 选关=主线专属·悬赏不该跳主线关
-    if (this.prebattleBackLabel) this.prebattleBackLabel.string = isBounty ? '返回悬赏板' : '返回星港';
+    const isCorridor = this.corridorPrepLayer !== null; // 块3：回廊模式也藏「选择关卡」、返回改「返回回廊」
+    if (this.prebattleLevelSelBtn) this.prebattleLevelSelBtn.active = !isBounty && !isCorridor; // 选关=主线专属
+    if (this.prebattleBackLabel) this.prebattleBackLabel.string = isBounty ? '返回悬赏板' : isCorridor ? '返回回廊' : '返回星港';
     this.refreshPrebattle();
     this.prebattleNode.active = true;
   }
 
-  /** 备战「返回」：悬赏模式 → 回悬赏板；主线 → 回基地。 */
+  /** 备战「返回」：悬赏→回悬赏板 / 回廊→回塔 / 主线→回基地。 */
   private onPrebattleBack(): void {
     const wasBounty = this.bountyPrepCardId !== null;
-    this.closePrebattle(); // 内部清悬赏模式标记
+    const wasCorridor = this.corridorPrepLayer !== null;
+    this.closePrebattle(); // 内部清悬赏/回廊模式标记
     if (wasBounty) this.openBounty();
+    else if (wasCorridor) this.openCorridor();
   }
 
   private closePrebattle(): void {
     this.bountyPrepCardId = null; // 块2：取消/离开备战即退出悬赏模式（出战路径已先取走 id）
+    this.corridorPrepLayer = null; // 块3：同上·退出回廊模式
     if (this.prebattleNode) this.prebattleNode.active = false;
   }
 
@@ -3408,9 +3443,12 @@ export class S7DemoController extends Component {
   private refreshPrebattle(): void {
     if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
     // 块2：悬赏模式下敌情预览用悬赏敌阵节点（已通关最高星域首个节点），不显示主线当前关。
-    const viewProgress = this.bountyPrepCardId && this.model
-      ? { currentNodeId: bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds) ?? this.session.progress.currentNodeId, clearedNodeIds: [] }
-      : this.session.progress;
+    // 块3：回廊模式用 n001 为载体建玩家侧战力/9格（敌情另按回廊敌阵单画·见下）。
+    const viewProgress = this.corridorPrepLayer !== null
+      ? { currentNodeId: 'n001', clearedNodeIds: [] as string[] }
+      : this.bountyPrepCardId && this.model
+        ? { currentNodeId: bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds) ?? this.session.progress.currentNodeId, clearedNodeIds: [] }
+        : this.session.progress;
     const r = buildPrebattleView(this.runtime, viewProgress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
     const g = this.prebattleGfx;
     const W = this.viewW;
@@ -3423,6 +3461,11 @@ export class S7DemoController extends Component {
 
     if (!r.ok) {
       this.prebattleInfoLabel.string = '该节点非战斗节点';
+    } else if (this.corridorPrepLayer !== null) {
+      // 块3：回廊备战——信息行=层号/戏法规则/敌情；敌情预览=回廊生成敌阵（非主线关）。
+      const v = r.view;
+      this.prebattleInfoLabel.string = this.corridorPrepInfoText(this.corridorPrepLayer, v.playerPower);
+      this.drawCorridorEnemyPreview(g);
     } else {
       const v = r.view;
       const stage = v.stageType === 'boss' ? 'Boss' : v.stageType === 'elite' ? '精英' : '普通';
@@ -6128,6 +6171,241 @@ export class S7DemoController extends Component {
     this.launchBountyAmbush(ambush);
   }
 
+  // ===== 块3 深空回廊（塔页 view 宿主 + 出战流程 + 里程碑 + DEV）=====
+
+  private makeCorridorHost(): S7CorridorHost {
+    return {
+      layer: this.node.layer,
+      highestCleared: () => this.playerState?.corridor.highestClearedLayer ?? 0,
+      nextLayer: () => (this.playerState ? nextCorridorLayer(this.playerState.corridor) : 1),
+      layerCard: (L) => this.corridorLayerCard(L),
+      milestones: () => this.corridorMilestoneCards(),
+      challenge: () => this.onCorridorChallenge(),
+      openMilestone: (L) => this.onCorridorMilestoneOpen(L),
+      adDoubleMilestone: (L) => this.onCorridorMilestoneAdDouble(L),
+      onClose: () => this.closeCorridor(),
+      devJump: (L) => this.devCorridorJump(L),
+      devJumpLone: () => this.devCorridorJumpLone(),
+    };
+  }
+
+  /** 深空回廊是否已解锁（首个 Boss n030 通关后·S10.7）。 */
+  private corridorUnlockedNow(): boolean {
+    if (!this.session || !this.runtime) return false;
+    const allNodes = this.runtime.getAll<S7MainlineNodeConfig>('mainline_node_config').map((n) => ({ nodeId: n.nodeId, nodeTypeTag: n.nodeTypeTag }));
+    return corridorUnlocked(this.session.progress.clearedNodeIds, firstBossNodeId(allNodes));
+  }
+
+  /** 回廊敌阵调色板（1x1 常规敌人·排除 2x2 头目；灰盒占位·星舰内容块随真源统一校准）。 */
+  private corridorPalette(): S7CorridorEnemyPaletteEntry[] {
+    return (this.runtime?.getAll<{ targetType: string; rowId: string; roleTag: string; sizeRows: number; sizeCols: number }>('battle_unit_stat_param') ?? [])
+      .filter((r) => r.targetType === 'enemy' && r.sizeRows === 1 && r.sizeCols === 1)
+      .map((r) => ({ unitStatRef: r.rowId, roleTag: r.roleTag }));
+  }
+
+  private corridorBosses(): string[] {
+    return corridorBossNodeIds(this.runtime?.getAll<{ nodeId: string; nodeTypeTag: string }>('mainline_node_config') ?? []);
+  }
+
+  private corridorPlanFor(layer: number): S7CorridorLayerPlan {
+    return corridorLayerPlan(layer, this.corridorPalette(), this.corridorBosses());
+  }
+
+  /** 某层展示卡（塔页大卡/剪影用）。 */
+  private corridorLayerCard(layer: number): S7CorridorLayerCard {
+    const plan = this.corridorPlanFor(layer);
+    if (plan.echoBoss) {
+      return {
+        layer, kind: 'echo_boss',
+        title: `第${layer}层 · 回响Boss ${plan.echoBoss.bossNodeId}（第${plan.echoBoss.bossOrder}位·第${plan.echoBoss.cycle + 1}轮）`,
+        ruleText: `主线 Boss 强化变体 ×${plan.echoBoss.mult.toFixed(1)}`,
+        solveHint: '', enemyBrief: 'Boss 敌阵', isMilestone: isMilestoneLayer(layer),
+      };
+    }
+    if (plan.trickId) {
+      const def = corridorTrickDef(plan.trickId);
+      return {
+        layer, kind: 'trick', title: `第${layer}层 · 戏法：${def?.name ?? plan.trickId}`,
+        ruleText: def?.ruleText ?? '', solveHint: def?.solveHint ?? '',
+        enemyBrief: `敌 ${plan.formation?.units.length ?? 0}`, isMilestone: isMilestoneLayer(layer),
+      };
+    }
+    return {
+      layer, kind: 'normal', title: `第${layer}层`, ruleText: '', solveHint: '',
+      enemyBrief: `敌 ${plan.formation?.units.length ?? 0}`, isMilestone: isMilestoneLayer(layer),
+    };
+  }
+
+  /** 回廊备战信息行（层号/戏法规则/敌情/战力）。 */
+  private corridorPrepInfoText(layer: number, playerPower: number): string {
+    const card = this.corridorLayerCard(layer);
+    const ruleLine = card.ruleText ? `\n规则：${card.ruleText}${card.solveHint ? `　｜　解法：${card.solveHint}` : ''}` : '';
+    return `【回廊】${card.title}　　${card.enemyBrief}\n我方战力 ${playerPower}${ruleLine}`;
+  }
+
+  /** 回廊敌情预览（按回廊生成敌阵/Boss节点敌阵摆位·非主线关）。 */
+  private drawCorridorEnemyPreview(g: Graphics): void {
+    if (this.corridorPrepLayer === null || !this.runtime) return;
+    const plan = this.corridorPlanFor(this.corridorPrepLayer);
+    const enemies = plan.formation
+      ? plan.formation.units
+      : plan.echoBoss ? bossNodeInlineEnemies(this.runtime, plan.echoBoss.bossNodeId) : [];
+    const isBoss = plan.echoBoss !== null;
+    for (const e of enemies) {
+      const m = /^r(\d)c(\d)$/.exec(e.slotRef);
+      if (!m) continue;
+      const p = this.fieldEnemyPos(Number(m[1]), Number(m[2]));
+      const sz = isBoss ? 46 : 30;
+      g.fillColor = isBoss ? new Color(200, 90, 205, 255) : new Color(230, 110, 80, 255);
+      g.rect(p.x - sz / 2, p.y - sz / 2, sz, sz);
+      g.fill();
+    }
+  }
+
+  /** hub「回廊」入口：解锁校验 → 开塔页 view。 */
+  private openCorridor(): void {
+    if (this.playing || !this.corridorView || !this.playerState || !this.session || !this.model) return;
+    if (!this.corridorUnlockedNow()) { this.hubToast('通关首个 Boss（n030）后解锁深空回廊'); return; }
+    this.corridorView.open();
+  }
+
+  private closeCorridor(): void { this.corridorView?.close(); }
+
+  /** 塔页「挑战下一层」：进主线同款备战（回廊模式·不跳备战·每层都摆阵）。 */
+  private onCorridorChallenge(): void {
+    if (!this.playerState || this.playing) return;
+    this.corridorPrepLayer = nextCorridorLayer(this.playerState.corridor);
+    this.corridorView?.close();
+    this.openPrebattle();
+  }
+
+  /** 真打一层回廊（先结算后演出·同主线口径·就地在备战舞台播放）：胜→首通推进+发小奖+sfx；负→停留原层·不罚·给养成建议。 */
+  private launchCorridorBattle(layer: number): void {
+    if (!this.playerState || !this.runtime || !this.squad || !this.session) return;
+    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined);
+    if (!built.ok) { this.corridorBattleError('有星舰缺驾驶员或没上阵——把阵容配好再出战'); return; }
+    const plan = this.corridorPlanFor(layer);
+    const team = this.teamBonusBlocks();
+    const lineup = built.lineup.map((u) => {
+      const extra = [...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId)];
+      return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
+    });
+    let out: ReturnType<typeof runCorridorBattle>;
+    try {
+      out = runCorridorBattle({ runtime: this.runtime, plan, lineup, runSeed: `corridor_${layer}` });
+    } catch (err) {
+      if (err instanceof S7CorridorLineupCapError) { this.corridorBattleError(`本层限上阵 ${err.cap} 舰——请下阵多余星舰再出战`); return; }
+      console.warn('[S7DemoController] 回廊战斗启动失败', layer, err);
+      this.corridorBattleError('回廊敌阵暂不可用（原型内容缺口）');
+      return;
+    }
+    this.corridorPrepLayer = null; // 确认能开播才退出回廊备战模式
+    const won = out.result.winner === 'player';
+    let text: string;
+    if (won) {
+      const advanced = clearCorridorLayer(this.playerState.corridor, layer); // 只有首通"下一层"才推进+发小奖
+      const rewards = advanced ? corridorLayerReward(layer) : {};
+      if (advanced && Object.keys(rewards).length > 0) this.creditGains(rewards);
+      this.sound.playSfx('tower_up');
+      const msLine = advanced && isMilestoneLayer(layer) ? `\n🎁 第${layer}层里程碑已解锁——回塔手动开箱（可积攒）` : '';
+      text = advanced
+        ? `第 ${layer} 层通过！${this.gainsText(rewards)}${msLine}`
+        : `第 ${layer} 层已通过（重打零奖励·纯练手场）`;
+    } else {
+      text = `第 ${layer} 层未通过——不罚·免费无限重试\n${this.corridorAdvice(plan)}`;
+    }
+    this.corridorActiveLayer = layer;
+    this.pendingWon = won;
+    this.pendingResult = { text, color: won ? new Color(150, 235, 160) : new Color(255, 180, 150) };
+    this.pendingLevelReward = null; // 回廊无三选一
+    this.persist();
+    this.sound.playBgm('bgm_battle');
+    this.startPlayback(buildS7BattlePlayback(out.result));
+  }
+
+  /** 败后养成建议（B5.2·不推广告）：戏法层给解法提示，否则给通用养成方向。 */
+  private corridorAdvice(plan: S7CorridorLayerPlan): string {
+    if (plan.trickId) { const d = corridorTrickDef(plan.trickId); return d ? `试试：${d.solveHint}` : '换个搭配再来'; }
+    if (plan.echoBoss) return '升级星舰 / 凑克制阵容再来';
+    return '升级星舰、换更强驾驶员再来';
+  }
+
+  /** 回廊战斗失败提示（备战面板开着→写信息行；否则 hubToast）。 */
+  private corridorBattleError(msg: string): void {
+    if (this.prebattleNode?.active && this.prebattleInfoLabel) {
+      this.prebattleInfoLabel.string = `⚠ ${msg}`;
+      this.prebattleInfoLabel.color = new Color(240, 200, 120);
+    } else {
+      this.hubToast(msg);
+    }
+  }
+
+  /** 结果窗·单键「返回回廊」：收战斗画面 → 回塔页。 */
+  private onCorridorResultReturn(): void {
+    this.corridorActiveLayer = null;
+    this.dismissBattleScene();
+    this.openCorridor();
+  }
+
+  /** 当前可开里程碑（塔页用·带奖励短文案）。 */
+  private corridorMilestoneCards(): S7CorridorMilestoneCard[] {
+    if (!this.playerState) return [];
+    return availableCorridorMilestones(this.playerState.corridor).map((layer) => ({
+      layer, rewardText: this.gainsText(corridorMilestoneReward(layer)),
+    }));
+  }
+
+  /** 开一个里程碑宝箱（塔页手动开·可积攒）：直发货币 + sfx + 回执。 */
+  private onCorridorMilestoneOpen(layer: number): void {
+    if (!this.playerState) return;
+    const reward = claimCorridorMilestone(this.playerState.corridor, layer);
+    if (!reward) { this.hubToast('该里程碑已开或未通到'); return; }
+    this.creditGains(reward);
+    this.sound.playSfx('tower_milestone');
+    this.persist();
+    this.corridorView?.refresh();
+    this.corridorView?.notice(`🎁 第${layer}层里程碑：${this.gainsText(reward)} 已入账`);
+  }
+
+  /** 看广告翻倍开箱（广告点位 #10·mock）：先确认可开→看广告→翻倍入账。 */
+  private onCorridorMilestoneAdDouble(layer: number): void {
+    if (!this.playerState || !this.adGateway) { this.onCorridorMilestoneOpen(layer); return; }
+    if (!canClaimCorridorMilestone(this.playerState.corridor, layer)) { this.hubToast('该里程碑已开或未通到'); return; }
+    this.adGateway.show('corridor_milestone_double').then((res) => {
+      if (!this.playerState) return;
+      if (!res.ok) { this.hubToast('广告未看完·未翻倍'); return; }
+      const reward = claimCorridorMilestone(this.playerState.corridor, layer);
+      if (!reward) return;
+      const doubled = doubleCorridorReward(reward);
+      this.creditGains(doubled);
+      this.sound.playSfx('tower_milestone');
+      this.persist();
+      this.corridorView?.refresh();
+      this.corridorView?.notice(`🎁 第${layer}层里程碑×2✓：${this.gainsText(doubled)} 已入账`);
+    });
+  }
+
+  /** DEV-TEMP·回廊跳层（拨已通最高层到 targetLayer-1·下一层=target）：验戏法/回响Boss/深层。上线前删。 */
+  private devCorridorJump(targetLayer: number): void {
+    if (!this.playerState) return;
+    const t = Math.max(1, Math.floor(targetLayer));
+    this.playerState.corridor.highestClearedLayer = t - 1;
+    this.playerState.corridor.claimedMilestones = this.playerState.corridor.claimedMilestones.filter((L) => L <= t - 1); // 保持不预领未来
+    this.persist();
+    this.corridorView?.refresh();
+    this.corridorView?.notice(`DEV：已拨到 下一层 = 第 ${t} 层`);
+  }
+
+  /** DEV-TEMP·跳到下一个孤胆英雄层（深层专属·扫描）。上线前删。 */
+  private devCorridorJumpLone(): void {
+    if (!this.playerState) return;
+    const from = nextCorridorLayer(this.playerState.corridor);
+    for (let L = Math.max(from, 100); L <= from + 5000; L += 10) {
+      if (!isEchoBossLayer(L) && pickCorridorTrick(L) === 'lone_hero') { this.devCorridorJump(L); return; }
+    }
+    this.hubToast('DEV：附近没找到孤胆层');
+  }
+
   /** 把奖励 map 入账钱包（护栏：只加钱包键·非钱包键跳过）。 */
   private creditGains(gains: Record<string, number>): void {
     if (!this.session) return;
@@ -6269,6 +6547,8 @@ export class S7DemoController extends Component {
     // 块1：回港报告为弹窗生命周期（必领才关），无常驻领取按钮。
     // 块2：星港悬赏入口=关5 强引导结束后解锁（S10.8）。
     if (this.hubBountyBtn) this.hubBountyBtn.active = !!this.playerState?.tutorial.strongGuideDone;
+    // 块3：深空回廊入口=首个 Boss（n030）通关后解锁（S10.7）。
+    if (this.hubCorridorBtn) this.hubCorridorBtn.active = this.corridorUnlockedNow();
     // J：hub 建筑入口显等级 + 可升↑（买得起且未满级亮提示）。
     if (this.hubBuildingTracks.length > 0 && this.buildings && this.population) {
       const views = buildBuildingUpgradeView(this.hubBuildingTracks.map((t) => t.id), this.buildings, this.playerState.resources, this.population);

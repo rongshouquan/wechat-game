@@ -18,6 +18,8 @@ export type SfxEvent =
   | 'reward_claim'
   | 'return_report'
   | 'dispatch_done'
+  | 'tower_up'
+  | 'tower_milestone'
   | 'ui_click';
 
 /** 背景音乐场景（切换式，同一时刻只有一条在播）。 */
@@ -36,6 +38,8 @@ export const SFX_EVENT_NOTES: Readonly<Record<SfxEvent, string>> = {
   reward_claim: '通用奖励领取（邮件/兑换箱）',
   return_report: '回港报告弹窗弹出（舰队归港·包A 块1）',
   dispatch_done: '每日委托秒结算/速刷入账（包A 块2）',
+  tower_up: '深空回廊通过一层（包A·块3）',
+  tower_milestone: '深空回廊里程碑领取（包A·块3）',
   ui_click: '主要按钮点击',
 };
 

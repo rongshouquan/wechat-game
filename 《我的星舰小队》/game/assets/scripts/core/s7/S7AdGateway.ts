@@ -14,11 +14,12 @@ export type S7AdPoint =
   | 'clear_reward_double'   // 通关奖励翻倍：首通结算（包A 扩至全部关卡·改造在块5）
   | 'cargo_extra_pick'      // 星辉货舱多选：免费 1 + 看广告再 1
   | 'merchant_refresh'      // 商人每日刷新：看广告多刷 1 次
-  | 'return_report_double'; // 回港报告翻倍：离线+巡逻软货币 ×2（打捞实物不翻·包A 块1）
+  | 'return_report_double'  // 回港报告翻倍：离线+巡逻软货币 ×2（打捞实物不翻·包A 块1）
+  | 'corridor_milestone_double'; // 深空回廊里程碑翻倍：里程碑奖励全键 ×2（包A 块3·S13 #10·爬层自然限频·不设每日上限）
 
 export const S7_AD_POINTS: readonly S7AdPoint[] = Object.freeze([
   'sponsor_supply', 'salvage_speedup', 'clear_reward_double', 'cargo_extra_pick', 'merchant_refresh',
-  'return_report_double',
+  'return_report_double', 'corridor_milestone_double',
 ]);
 
 /** 广告结果：看完(ok) / 未看完被关 / 加载失败 / 无填充。仅 ok 时调用方才发奖。 */
