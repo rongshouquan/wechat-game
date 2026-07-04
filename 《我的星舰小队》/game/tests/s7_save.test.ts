@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(21); // 第2.5块·块2 星港悬赏板：v20→v21（commissions → bounty）
+    expect(data.saveVersion).toBe(22); // 第2.5块·块3 深空回廊：v21→v22（新增 corridor）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -61,6 +61,7 @@ describe('s7 save - resource skeleton', () => {
     expect(data.playerState.mailbox).toEqual({ mails: [], nextSeq: 1 }); // 阶段一G2：默认空邮箱
     expect(data.playerState.adDaily).toEqual({ entries: {} }); // 块1：默认空广告每日计数
     expect(data.playerState.bounty).toEqual({ cards: [], lastGenDayKey: 0, noGoldDays: 0, goldPhysicalCount: 0, ambushBonusCount: 0 }); // 块2：默认空悬赏板（首次进入才刷）
+    expect(data.playerState.corridor).toEqual({ highestClearedLayer: 0, claimedMilestones: [] }); // 块3：默认空塔（未通任何层）
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -244,7 +245,7 @@ describe('s7 save - independent storage domain', () => {
     const r = loadS7Save(adapter, NOW + 2000);
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
-    expect(r.data.saveVersion).toBe(21);
+    expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION); // 迁移后升到当前版本（块3 起=22）
     const b = r.data.playerState.bounty;
     expect(b.cards).toHaveLength(5); // 5 次积压 → 5 张铜卡
     expect(b.cards.every((c) => c.quality === 'bronze')).toBe(true);
@@ -264,6 +265,20 @@ describe('s7 save - independent storage domain', () => {
     const r = loadS7Save(adapter, NOW + 2000);
     expect(r.migrated).toBe(true);
     expect(r.data.playerState.bounty).toEqual({ cards: [], lastGenDayKey: 0, noGoldDays: 0, goldPhysicalCount: 0, ambushBonusCount: 0 }); // 加性补默认
+  });
+
+  it('v21 老档（无 corridor 字段）加载：补默认空塔、migrated=true、版本升 22（加性迁移不重置）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const old = createDefaultS7SaveData(NOW) as unknown as Record<string, unknown>;
+    old.saveVersion = 21;
+    delete (old.playerState as Record<string, unknown>).corridor; // v21 档没有 corridor 字段
+    adapter.setString(S7_SAVE_STORAGE_KEY, JSON.stringify(old));
+
+    const r = loadS7Save(adapter, NOW + 2000);
+    expect(r.migrated).toBe(true);
+    expect(r.data.saveVersion).toBe(22);
+    expect(r.data.playerState.corridor).toEqual({ highestClearedLayer: 0, claimedMilestones: [] }); // 加性补默认空塔
+    expect(r.data.playerState.bounty).toBeDefined(); // 其余字段不受影响
   });
 
   it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
@@ -808,7 +823,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(21); // 第2.5块·块2 星港悬赏板：v20→v21（commissions→bounty·真迁移折算铜卡，同文件迁移测试已验）
+    expect(S7_CURRENT_SAVE_VERSION).toBe(22); // 第2.5块·块3 深空回廊：v21→v22（新增 corridor·加性迁移，同文件迁移测试已验）
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）
