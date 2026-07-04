@@ -541,21 +541,27 @@ export class S7DemoController extends Component {
   /** F·关卡三选一发奖浮层（首通胜利后盖在结果弹窗之上·必须选 1 个才离开）。 */
   private levelRewardNode: Node | null = null;
   private levelRewardTitleLabel: Label | null = null;
-  private levelRewardFixedLabel: Label | null = null;  // 固定软货币 + Boss 大奖行
+  private levelRewardFixedLabel: Label | null = null;  // 固定奖励列表 + 必给大奖预告
   private levelRewardListNode: Node | null = null;      // 三张选项卡容器
   private levelRewardMsgLabel: Label | null = null;
-  /** 本次首通待发的三选一上下文（选完/入账后清空）。 */
+  /** ③(块2真机终稿·Ron真机拍板)三选一屏＝唯一奖励屏：玩家选完后同屏下方浮现的「看广告·固定奖励×2」(#3)+「继续」。 */
+  private levelRewardAdBtnNode: Node | null = null;
+  private levelRewardAdLabel: Label | null = null;
+  private levelRewardContinueBtnNode: Node | null = null;
+  /** 本次首通待发的三选一上下文（继续/离开后清空）。 */
   private pendingLevelReward: {
     nodeId: string; stage: S7LevelRewardStage; isBoss: boolean;
     choices: S7LevelReward[]; bossGrand: S7LevelReward | null;
-    softGrants: { resourceId: string; amount: number }[]; // 首通必得软货币（结算已发一份；两段式第二段看广告可再翻一份）
-    showAdDouble: boolean; // 精英/Boss 首通→选完后结果窗浮现「看广告·必得软货币×2」(#3)
+    softGrants: { resourceId: string; amount: number }[]; // 首通必得(固定)软货币（结算已发一份；选完看广告可再翻一份）
+    showAdDouble: boolean; // 精英/Boss 首通→选完后同屏浮现「看广告·固定奖励×2」(#3)+继续
     forcedPickIndex?: number; // M1 关1强引导：写死三选一、强制选此索引（星矿），其余仅展示
+    pickedIndex: number | null; // null=未选；≥0=已选（锁卡+浮现广告/继续，仅精英/Boss 停留同屏）
+    softDoubled: boolean;       // 已看广告把固定奖励翻倍（就地×2、防重复）
   } | null = null;
-  /** ③(块2真机)两段式结算·第二段「看广告·必得软货币×2」(#3)：结果窗上的广告键 + 上下文。三选一选完(onPickLevelChoice)后设、返回星港/下一关(dismissBattleScene)时清。 */
-  private resultAdBtnNode: Node | null = null;
-  private resultAdLabel: Label | null = null;
-  private pendingClearAd: { softGrants: { resourceId: string; amount: number }[]; doubled: boolean } | null = null;
+  /** ②(块2真机)Boss 首通大奖特写弹窗（陨星弹/星辉货舱·大字名+图标占位+效果说明+收下·三选一确认后·结算窗前）。 */
+  private grandRewardNode: Node | null = null;
+  private grandRewardTitleLabel: Label | null = null;
+  private grandRewardDescLabel: Label | null = null;
 
   /** 由 MainSceneController 在 S7 配置预载成功后调用：注入 runtime + 存储适配器，建会话 + 搭色块 UI。 */
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
@@ -787,6 +793,7 @@ export class S7DemoController extends Component {
     this.buildBackpackPanel(W, H); // 升阶升星 step2 背包·通用碎片转换
     this.buildMailPanel(W, H); // 阶段一 G2 邮件界面（领取入账）
     this.buildLevelRewardPanel(W, H); // 阶段一 F 关卡三选一发奖浮层（最后建 → 盖在结果弹窗之上）
+    this.buildGrandRewardPopup(W, H); // ②块2真机 Boss首通大奖特写弹窗（盖在三选一屏/结算窗之上）
     this.buildChestOpenPanel(W, H); // 阶段一 H 星辉货舱开箱浮层（盖在背包之上）
     this.buildActivityPanel(W, H); // 阶段一 G 活动界面（3天行动/7天扩张）
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
@@ -1715,7 +1722,7 @@ export class S7DemoController extends Component {
     dim.rect(-W / 2, -H / 2, W, H);
     dim.fill();
     const dw = W * 0.9;
-    const dh = H * 0.46; // 块2真机：结算窗多了第二段「看广告·必得软货币×2」行→整体加高，5 行(标题/战报/📊/广告/三键)排开不重叠
+    const dh = H * 0.32; // ③终稿：奖励明细/广告键全移到三选一屏、结算窗瘦身(banner+📊+三键)，还原原高度
     dim.fillColor = new Color(28, 24, 40, 255);
     dim.roundRect(-dw / 2, -dh / 2, dw, dh, 20);
     dim.fill();
@@ -1725,10 +1732,10 @@ export class S7DemoController extends Component {
     panel.active = false;
     this.resultPopupNode = panel;
 
-    const titleN = new Node('t'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, dh * 0.36, 0);
+    const titleN = new Node('t'); titleN.layer = this.node.layer; panel.addChild(titleN); titleN.setPosition(0, dh * 0.30, 0);
     this.resultTitleLabel = titleN.addComponent(Label);
     this.resultTitleLabel.fontSize = 50; this.resultTitleLabel.lineHeight = 60; this.resultTitleLabel.string = '';
-    const msgN = new Node('m'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, dh * 0.13, 0);
+    const msgN = new Node('m'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, dh * 0.02, 0);
     this.resultMsgLabel = msgN.addComponent(Label);
     this.resultMsgLabel.fontSize = 30; this.resultMsgLabel.lineHeight = 40; this.resultMsgLabel.color = new Color(225, 228, 240); this.resultMsgLabel.string = '';
 
@@ -1742,19 +1749,14 @@ export class S7DemoController extends Component {
       return l;
     };
     // L 反馈4：伤害统计键（胜负都有·点开看双方 top5）。
-    mkB(260, 64, new Color(90, 100, 130, 255), 0, -dh * 0.05, () => this.openBattleStats()).string = '📊 伤害统计';
-    // ③(块2真机)两段式结算·第二段「看广告·必得软货币×2」(#3)：单独一行居中、在下排三键之上；默认隐藏，onPickLevelChoice 选完精英/Boss 三选一后才亮。
-    this.resultAdLabel = mkB(440, 76, new Color(60, 130, 90, 255), 0, -dh * 0.19, () => this.onResultClearAdDouble());
-    this.resultAdLabel.string = '📺 看广告·必得软货币×2';
-    this.resultAdBtnNode = this.resultAdLabel.node.parent;
-    if (this.resultAdBtnNode) this.resultAdBtnNode.active = false;
-    // 三键：选择关卡(左) / 返回星港(中) / 下一关·再次挑战(右)。
-    const lvlLbl = mkB(220, 92, new Color(70, 130, 180, 255), -W * 0.30, -dh * 0.35, () => this.onResultGoLevelSelect());
+    mkB(260, 64, new Color(90, 100, 130, 255), 0, -dh * 0.06, () => this.openBattleStats()).string = '📊 伤害统计';
+    // 三键：选择关卡(左) / 返回星港(中) / 下一关·再次挑战(右)。③终稿：奖励明细/广告键已全移到三选一屏，结算窗不再带它们。
+    const lvlLbl = mkB(220, 92, new Color(70, 130, 180, 255), -W * 0.30, -dh * 0.30, () => this.onResultGoLevelSelect());
     lvlLbl.string = '选择关卡';
-    const homeLbl = mkB(220, 92, new Color(120, 90, 160, 255), 0, -dh * 0.35, () => this.onResultGoHome());
+    const homeLbl = mkB(220, 92, new Color(120, 90, 160, 255), 0, -dh * 0.30, () => this.onResultGoHome());
     homeLbl.string = '返回星港';
     this.resultHomeBtn = homeLbl.node.parent; // M1：强引导 step3 高光「返回星港」用
-    this.resultRightLabel = mkB(220, 92, new Color(225, 150, 45, 255), W * 0.30, -dh * 0.35, () => this.onResultGoPrebattle());
+    this.resultRightLabel = mkB(220, 92, new Color(225, 150, 45, 255), W * 0.30, -dh * 0.30, () => this.onResultGoPrebattle());
   }
 
   /** 弹结果窗（背景保留战斗画面：不隐藏 stage、不切场景）。 */
@@ -1770,17 +1772,17 @@ export class S7DemoController extends Component {
       // 块2：委托战斗的结果窗右键改走委托路由（胜→回委托列表；负→带阵容进备战重试）。
       this.resultRightLabel.string = this.commissionActive ? (won ? '回委托' : '调阵容再试') : (won ? '下一关 ▶' : '再次挑战');
     }
-    if (this.resultAdBtnNode) this.resultAdBtnNode.active = false; // ③第二段广告键默认隐藏：仅精英/Boss 三选一选完后由 onPickLevelChoice 亮起
     this.resultPopupNode.active = true;
-    // F：首通胜利且该档有奖 → 在结果弹窗之上弹「三选一发奖」（必须选完才回到结果弹窗）。
+    // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（必须选 1 才继续；精英/Boss 选完同屏浮现广告/继续、Boss 继续后弹大奖特写，才露出结算窗）。
     if (won && this.pendingLevelReward) this.openLevelReward();
   }
 
   /** 收起就地战斗画面 + 结果窗（玩家选完才切场景）：复位备战 UI、隐藏备战面板、回主界面状态。 */
   private dismissBattleScene(): void {
     this.sound.playBgm('bgm_hub');
-    this.pendingClearAd = null; // ③两段式：离开结果窗清第二段「看广告·必得软货币×2」上下文
-    if (this.resultAdBtnNode) this.resultAdBtnNode.active = false;
+    this.pendingLevelReward = null; // ③终稿·防御：离开结算即清三选一上下文（正常路径已由「继续」/普通关选完清空）
+    if (this.levelRewardNode) this.levelRewardNode.active = false;
+    if (this.grandRewardNode) this.grandRewardNode.active = false;
     if (this.resultPopupNode) this.resultPopupNode.active = false;
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = false;
     if (this.prebattleUiNode) this.prebattleUiNode.active = true; // 复位（下次进备战正常显示）
@@ -3785,7 +3787,7 @@ export class S7DemoController extends Component {
       })));
     });
     // ③ 星核（暂无品质/等级 → 仅"已装备靠前"）
-    header('星核（现仅过载核心有效果）');
+    header('星核（现仅陨星弹有效果）');
     placeItems(Object.keys(this.squad.ownedCores).map((coreId) => ({
       ref: { kind: 'core' as const, id: coreId },
       top: `${coreId}${coreBlocks(coreId).length > 0 ? '·有效果' : '·占位'}`,
@@ -4006,13 +4008,10 @@ export class S7DemoController extends Component {
     const totHp = players.reduce((s, u) => s + Math.max(0, u.hp), 0);
     const hpTag = `[全队残血 ${totMax > 0 ? Math.round((totHp / totMax) * 100) : 0}%]`;
     if (outcome.won && outcome.settlement && outcome.settlement.ok) {
-      const grants = outcome.settlement.grants.map((g) => `+${g.amount}${this.zhRes(g.resourceId)}`).join(' ');
       const tail = outcome.settlement.finished ? '（已通关最终节点）' : `→ 推进到 ${outcome.settlement.nextNodeId}`;
       const rescue = this.pendingRescueText ? `\n${this.pendingRescueText}` : ''; // K：主线救回人口
-      // ②b(块2真机)：Boss 首通结算显示特殊大奖名(陨星弹/星辉货舱)，不只列软货币。bossGrand 由 captureLevelReward(先于本函数跑) 备好；
-      //   对所有 Boss 通用(n030=陨星弹/其余=星辉货舱)，非 Boss 关 bossGrand 为空→不显示。
-      const grand = this.pendingLevelReward?.bossGrand ? `\n🎁 特殊大奖：${this.levelRewardText(this.pendingLevelReward.bossGrand)}` : '';
-      return { text: `${nodeId} 胜！${hpTag} ${grants || '（无软货币）'} ${tail}${rescue}${grand}`, color: new Color(160, 235, 160) };
+      // ③终稿(块2真机·Ron真机拍板)：奖励明细全在"三选一屏(唯一奖励屏)"展示，结算窗不再重复——只留 胜利+残血+推进(+救回人口)。
+      return { text: `${nodeId} 胜！${hpTag} ${tail}${rescue}`, color: new Color(160, 235, 160) };
     }
     if (outcome.won) {
       return { text: `${nodeId} 胜（重复挑战，不再发奖）${hpTag}`, color: new Color(220, 210, 140) };
@@ -5278,8 +5277,15 @@ export class S7DemoController extends Component {
     this.levelRewardFixedLabel = this.mkPanelLabel(panel, '', 24, new Color(200, 230, 200), 0, dh * 0.28);
     const list = new Node('lvlRewardList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
     this.levelRewardListNode = list;
-    // ③(块2真机)两段式：三选一面板不再带广告键——第一段只出三选一(必选才离开)；「看广告·必得软货币×2」(#3)移到第二段结果窗(见 buildResultPopup)。
-    this.levelRewardMsgLabel = this.mkPanelLabel(panel, '', 22, new Color(180, 200, 230), 0, -dh * 0.42);
+    // ③(块2真机终稿·Ron真机拍板)三选一屏＝唯一奖励屏：玩家选完后同屏下方浮现「看广告·固定奖励×2」(#3·仅精英/Boss)+「继续」。
+    //   默认隐藏，refreshLevelReward 按 pickedIndex 控显（普通关无此、选完直接关；#3普通关待2.5块⑤广告网关补齐再套此结构）。
+    const adBtn = this.addBtn(panel, '📺 看广告·固定奖励×2', 440, 76, new Color(60, 130, 90, 255), 0, -dh * 0.20, () => this.onLevelRewardAdDouble(), 28);
+    this.levelRewardAdLabel = adBtn;
+    this.levelRewardAdBtnNode = adBtn.node.parent;
+    if (this.levelRewardAdBtnNode) this.levelRewardAdBtnNode.active = false;
+    this.levelRewardContinueBtnNode = this.addBtn(panel, '继续 ▶', 280, 84, new Color(225, 150, 45, 255), 0, -dh * 0.33, () => this.onContinueLevelReward(), 30).node.parent;
+    if (this.levelRewardContinueBtnNode) this.levelRewardContinueBtnNode.active = false;
+    this.levelRewardMsgLabel = this.mkPanelLabel(panel, '', 22, new Color(255, 225, 150), 0, -dh * 0.43); // 翻倍飘字/反馈行
   }
 
   /** K：首通胜利→按配置救回 居民/工人（§7/§11·非首通不救回）。就地加人口、拼结果文案。 */
@@ -5368,6 +5374,8 @@ export class S7DemoController extends Component {
       softGrants,
       showAdDouble: stage === 'elite' || stage === 'boss',
       forcedPickIndex,
+      pickedIndex: null,
+      softDoubled: false,
     };
   }
 
@@ -5389,18 +5397,20 @@ export class S7DemoController extends Component {
     return stage === 'boss' ? 'Boss关' : stage === 'elite' ? '精英关' : '普通关';
   }
 
-  /** 刷新发奖浮层：标题/固定行/Boss大奖行 + 重建三张选项卡 + 看广告×2 键状态。 */
+  /** 刷新三选一屏(唯一奖励屏)：标题 + 固定奖励列表(可×2) + 必给大奖预告 + 三张选卡(未选可点/已选锁定) + 选完浮现广告/继续。 */
   private refreshLevelReward(): void {
     const p = this.pendingLevelReward;
     if (!p || !this.levelRewardListNode) return;
+    const picked = p.pickedIndex !== null;
+    const x2 = p.softDoubled;
     if (this.levelRewardTitleLabel) this.levelRewardTitleLabel.string = `🎁 ${p.nodeId} · ${this.stageName(p.stage)}首通奖励`;
-    // 固定软货币 + Boss 大奖（恒发·非三选一）。③两段式：此处按基础量显示，「看广告·必得软货币×2」移到第二段结果窗、只翻软货币。
+    // 固定奖励列表（必得软货币·看广告可×2·就地显示翻倍值）+ 必给大奖预告（精英/Boss）。
     const fixedParts: string[] = [];
-    const soft = p.softGrants.map((g) => `${this.zhRes(g.resourceId)}×${g.amount}`).join(' ');
-    if (soft) fixedParts.push(`固定：${soft}`);
-    if (p.bossGrand) fixedParts.push(`必给：${this.levelRewardText(p.bossGrand)}`);
-    if (this.levelRewardFixedLabel) this.levelRewardFixedLabel.string = fixedParts.join('　');
-    // 三张选项卡（点选→入账→离开）。
+    const soft = p.softGrants.map((g) => `${this.zhRes(g.resourceId)}×${x2 ? g.amount * 2 : g.amount}`).join('　');
+    if (soft) fixedParts.push(`固定奖励${x2 ? '(已×2)' : ''}：${soft}`);
+    if (p.bossGrand) fixedParts.push(`必给大奖：${this.levelRewardText(p.bossGrand)}`);
+    if (this.levelRewardFixedLabel) this.levelRewardFixedLabel.string = fixedParts.join('\n');
+    // 三张选卡：未选→可点「选这个」；已选→锁定(选中高亮✓/其余灰·无按钮)。
     this.levelRewardListNode.removeAllChildren();
     const n = p.choices.length;
     const cardW = Math.min(this.viewW * 0.27, 230);
@@ -5409,13 +5419,21 @@ export class S7DemoController extends Component {
     for (let i = 0; i < n; i++) {
       const c = p.choices[i];
       const x = startX + i * gap;
+      const isPicked = p.pickedIndex === i;
       const card = new Node('lvlCard'); card.layer = this.node.layer; this.levelRewardListNode.addChild(card); card.setPosition(x, this.viewH * 0.02, 0);
       card.addComponent(UITransform).setContentSize(cardW, 180);
-      const bg = card.addComponent(Graphics); bg.fillColor = new Color(48, 58, 84, 255); bg.roundRect(-cardW / 2, -90, cardW, 180, 14); bg.fill();
-      const tl = this.mkPanelLabel(card, this.levelRewardText(c), 24, new Color(230, 236, 250), 0, 26);
+      const cardColor = !picked ? new Color(48, 58, 84, 255) : isPicked ? new Color(70, 112, 82, 255) : new Color(38, 42, 52, 255);
+      const bg = card.addComponent(Graphics); bg.fillColor = cardColor; bg.roundRect(-cardW / 2, -90, cardW, 180, 14); bg.fill();
+      const tl = this.mkPanelLabel(card, `${isPicked ? '✓ ' : ''}${this.levelRewardText(c)}`, 24, picked && !isPicked ? new Color(120, 130, 148) : new Color(230, 236, 250), 0, 26);
       tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(cardW - 16, 110);
-      this.addBtn(card, '选这个', cardW - 40, 56, new Color(225, 150, 45, 255), 0, -56, () => this.onPickLevelChoice(i), 24);
+      if (!picked) this.addBtn(card, '选这个', cardW - 40, 56, new Color(225, 150, 45, 255), 0, -56, () => this.onPickLevelChoice(i), 24);
     }
+    // 选完后浮现：看广告(固定奖励×2·仅精英/Boss)+继续。
+    if (this.levelRewardAdBtnNode) {
+      this.levelRewardAdBtnNode.active = picked && p.showAdDouble;
+      if (this.levelRewardAdLabel) this.levelRewardAdLabel.string = x2 ? '✓ 固定奖励已翻倍' : '📺 看广告·固定奖励×2';
+    }
+    if (this.levelRewardContinueBtnNode) this.levelRewardContinueBtnNode.active = picked;
   }
 
   /** 一笔关卡奖励的中文短描述。 */
@@ -5434,60 +5452,126 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** 选定一个三选一选项：入账 选中项 + Boss大奖 + (×2时)再补一份固定软货币 → 清空 → 关浮层（露出结果弹窗）。 */
+  /** ③终稿·选一个三选一选项：入账 选中项+Boss大奖(基础量)。精英/Boss→锁卡+同屏浮现广告/继续(停留同屏)；普通关→选完直接关(现状不动)。 */
   private onPickLevelChoice(index: number): void {
     const p = this.pendingLevelReward;
     if (!p || !this.playerState || !this.session) return;
+    if (p.pickedIndex !== null) return; // 已选·锁定（防重复点）
     // 教程强制三选一：只允许点高亮那张（其余点了没反应·提示再点高亮的）。
     if (this.tutorialForcedPickIndex !== null && index !== this.tutorialForcedPickIndex) {
       this.hubToast('点闪烁高亮的那张'); return;
     }
     const chosen = p.choices[index];
     if (!chosen) return;
-    // ③两段式·第一段：只入账 选中项 + Boss大奖（基础量·不在此翻倍）；「看广告·必得软货币×2」移到第二段(结果窗)、只翻必得软货币。
+    // 入账 选中项 + Boss大奖（基础量）。固定软货币结算已发一份；「看广告·固定奖励×2」在"选完浮现"的广告键里补第二份。
     const texts: string[] = [];
     texts.push(this.applyLevelReward(chosen));
     if (p.bossGrand) texts.push(this.applyLevelReward(p.bossGrand));
-    // 精英/Boss：备好第二段「看广告·必得软货币×2」上下文并亮起结果窗广告键；普通关 showAdDouble=false → 无第二段广告(普通关不变)。
-    this.pendingClearAd = p.showAdDouble ? { softGrants: p.softGrants, doubled: false } : null;
-    this.pendingLevelReward = null;
-    if (this.levelRewardNode) this.levelRewardNode.active = false;
-    this.refreshResultAdBtn();
     this.persist();
     this.refresh();
     this.setResult(`关卡奖励到手：${texts.filter((t) => t).join('、')}`, new Color(150, 220, 160));
+    if (p.showAdDouble) {
+      // 精英/Boss：锁卡 + 同屏浮现「看广告·固定奖励×2」+「继续」（三选一屏=唯一奖励屏·不立即关）。
+      p.pickedIndex = index;
+      this.refreshLevelReward();
+    } else {
+      // 普通关(含教程)：现状不动——选完直接关三选一（结算窗瘦身·不重复奖励明细）。
+      this.pendingLevelReward = null;
+      if (this.levelRewardNode) this.levelRewardNode.active = false;
+    }
   }
 
-  /** ③两段式·第二段：结果窗「看广告·必得软货币×2」(#3)按钮显隐——有待翻软货币且未翻→亮，否则收起。 */
-  private refreshResultAdBtn(): void {
-    if (!this.resultAdBtnNode) return;
-    const p = this.pendingClearAd;
-    this.resultAdBtnNode.active = !!p && !p.doubled;
-    if (this.resultAdLabel) this.resultAdLabel.string = '📺 看广告·必得软货币×2';
+  /** ③终稿·选完「继续」：关三选一屏 → (Boss)弹大奖特写弹窗[②] → 结算窗(已在底下·瘦身)。仅精英/Boss 走此(普通关选完已直接关)。 */
+  private onContinueLevelReward(): void {
+    const p = this.pendingLevelReward;
+    if (!p || p.pickedIndex === null) return;
+    const grand = p.bossGrand;
+    this.pendingLevelReward = null;
+    if (this.levelRewardNode) this.levelRewardNode.active = false;
+    if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '';
+    // ②Boss首通：结算窗出现前弹大奖特写(陨星弹/星辉货舱)。精英无 bossGrand → 直接露出底下的结算窗。
+    if (grand) this.openGrandRewardPopup(grand);
   }
 
-  /** ③两段式·第二段(#3)：看广告×2——只把"首通必得软货币"(结算软货币+固定补充)再补一份(合计×2)；
-   *  唯一核/三选一选中项/Boss星辉货舱均不翻(口径以 Ron 拍板"翻首通必得软货币、唯一核不翻"为准)。每次首通一次。 */
-  private onResultClearAdDouble(): void {
-    const p = this.pendingClearAd;
-    if (!p || p.doubled || !this.adGateway || !this.session) return;
+  /** ③终稿·选完「看广告·固定奖励×2」(#3)：只把首通必得(固定)软货币再补一份(合计×2)；唯一核/三选一选中项/Boss星辉货舱均不翻。
+   *  就地把固定奖励行刷成翻倍值 + 飘字"+X→+2X" + 广告键变"已翻倍✓"（每次首通一次）。 */
+  private onLevelRewardAdDouble(): void {
+    const p = this.pendingLevelReward;
+    if (!p || p.pickedIndex === null || !p.showAdDouble || p.softDoubled || !this.adGateway || !this.session) return;
     this.adGateway.show('clear_reward_double').then((res) => {
-      const cur = this.pendingClearAd;
-      if (!cur || cur.doubled || !this.session) return;
-      if (!res.ok) { this.setResult('广告没看完，未翻倍', new Color(235, 200, 140)); return; }
-      cur.doubled = true;
+      const cur = this.pendingLevelReward;
+      if (!cur || cur.softDoubled || !this.session) return;
+      if (!res.ok) { if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '广告没看完，未翻倍'; return; }
+      cur.softDoubled = true;
       const resmap = this.session.resources as Record<string, number>;
-      const texts: string[] = [];
+      const parts: string[] = [];
       for (const g of cur.softGrants) {
         if (resmap[g.resourceId] === undefined) continue; // 非钱包键护栏
         resmap[g.resourceId] += g.amount; // 结算已发一份 → 再补一份 = 合计×2
-        texts.push(`${this.zhRes(g.resourceId)}×${g.amount}`);
+        parts.push(`${this.zhRes(g.resourceId)} +${g.amount}→+${g.amount * 2}`);
       }
       this.persist();
       this.refresh();
-      this.refreshResultAdBtn(); // doubled=true → 收起广告键
-      this.setResult(`必得软货币已翻倍：${texts.join(' ')}`, new Color(150, 220, 160));
-    }).catch(() => { this.setResult('广告加载失败', new Color(235, 200, 140)); });
+      this.refreshLevelReward(); // 固定奖励行就地显示翻倍值 + 广告键变「已翻倍✓」
+      if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = `固定奖励已翻倍：${parts.join('，')}`;
+    }).catch(() => { if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '广告加载失败'; });
+  }
+
+  // ===== ②(块2真机) Boss 首通大奖特写弹窗（陨星弹/星辉货舱·仪式感·灰盒·正式演出随战斗演出块升级）=====
+
+  /** 搭大奖特写弹窗（默认隐藏）：★首通大奖★ + 图标占位 + 大字奖名 + 效果说明 + 收下。 */
+  private buildGrandRewardPopup(W: number, H: number): void {
+    const panel = new Node('S7GrandReward'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 220); dim.rect(-W / 2, -H / 2, W, H); dim.fill();
+    const dw = W * 0.82, dh = H * 0.44;
+    dim.fillColor = new Color(42, 34, 22, 255); dim.roundRect(-dw / 2, -dh / 2, dw, dh, 24); dim.fill(); // 金调·仪式感
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸·必须点收下
+    panel.active = false;
+    this.grandRewardNode = panel;
+    this.mkPanelLabel(panel, '★ 首通大奖 ★', 32, new Color(255, 220, 140), 0, dh * 0.34);
+    // 图标占位（色块方框·正式图标随美术/演出块接）。
+    const icon = new Node('gicon'); icon.layer = this.node.layer; panel.addChild(icon); icon.setPosition(0, dh * 0.10, 0);
+    icon.addComponent(UITransform).setContentSize(148, 148);
+    const ig = icon.addComponent(Graphics); ig.fillColor = new Color(212, 152, 62, 255); ig.roundRect(-74, -74, 148, 148, 18); ig.fill();
+    this.mkPanelLabel(icon, '图标', 22, new Color(60, 45, 24), 0, 0);
+    this.grandRewardTitleLabel = this.mkPanelLabel(panel, '', 46, new Color(255, 238, 184), 0, -dh * 0.16);
+    this.grandRewardDescLabel = this.mkPanelLabel(panel, '', 24, new Color(232, 224, 200), 0, -dh * 0.28);
+    this.addBtn(panel, '收下', 260, 84, new Color(212, 152, 62, 255), 0, -dh * 0.40, () => this.onGrandRewardClaim(), 30);
+  }
+
+  /** 弹大奖特写（置顶盖在三选一屏/结算窗之上）：设奖名+效果说明。由「继续」触发（仅 Boss 有 bossGrand）。 */
+  private openGrandRewardPopup(grand: S7LevelReward): void {
+    if (!this.grandRewardNode) return;
+    if (this.grandRewardTitleLabel) this.grandRewardTitleLabel.string = this.grandRewardName(grand);
+    if (this.grandRewardDescLabel) this.grandRewardDescLabel.string = this.grandRewardEffectText(grand);
+    const parent = this.grandRewardNode.parent;
+    if (parent) this.grandRewardNode.setSiblingIndex(parent.children.length - 1); // 置顶
+    this.grandRewardNode.active = true;
+    this.sound.playSfx('reward_claim');
+  }
+
+  /** 收下大奖：关特写弹窗 → 露出底下已 active 的结算窗（瘦身版）。 */
+  private onGrandRewardClaim(): void {
+    if (this.grandRewardNode) this.grandRewardNode.active = false;
+  }
+
+  /** 大奖奖名（核/宝箱取配置名·陨星弹=core07 已改名）。 */
+  private grandRewardName(grand: S7LevelReward): string {
+    if (grand.kind === 'core') return this.coreName(grand.coreId);
+    if (grand.kind === 'chest') return this.chestName(grand.chestId);
+    return this.levelRewardText(grand);
+  }
+
+  /** 大奖效果说明（核取 core_config.roleNote·如陨星弹"新手核·普攻质变为原子炮"·取自星核真源；宝箱给开箱提示）。 */
+  private grandRewardEffectText(grand: S7LevelReward): string {
+    if (grand.kind === 'core') {
+      const role = this.runtime?.getById<{ roleNote?: string }>('core_config', grand.coreId)?.roleNote;
+      return role && role.length > 0 ? role : '装上直接质变战斗';
+    }
+    if (grand.kind === 'chest') return '开启获得随机星辉奖励（去「背包·宝箱」开）';
+    return '';
   }
 
   /** 把一笔关卡奖励入账（复用 applyMailReward/applySalvageReward 同款·返回中文短描述）。 */

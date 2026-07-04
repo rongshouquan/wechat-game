@@ -244,7 +244,7 @@
     "maxTargets": 16,
     "stateTag": "none",
     "summonUnitRef": "none",
-    "note": "过载核心：普攻变原子炮，开局即放、约半个5×7战场AoE巨量伤害；占位数值(power/maxTargets)第二块定"
+    "note": "陨星弹(原过载核心/core07)：普攻变原子炮，开局即放、约半个5×7战场AoE巨量伤害；占位数值(power/maxTargets)第二块定"
   },
   {
     "schemaVersion": "s7-0.1.0",
