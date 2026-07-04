@@ -21,6 +21,7 @@ const TABLE_NAMES: S7ConfigTableName[] = [
   'reward_pool_ref_config', 'no_ad_path_check_config', 'risk_fallback_70_config',
   'battle_unit_stat_param', 'battle_effect_param', 'battle_encounter_param',
   'battle_spawn_param', 'battle_boss_phase_param',
+  'commission_affix_param',
 ];
 
 function readSample<T>(table: S7ConfigTableName): T {
@@ -438,5 +439,38 @@ describe('s7 tier d bridge configs', () => {
       fallbackReasonTag: 'test_injected', replacementRef: 'n005_test', criticalPathTag: false,
     });
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'risk_fallback_70_config')).toBe(true);
+  });
+});
+
+describe('s7 commission_affix_param + positionType validation (第2.5块·块2 悬赏词缀)', () => {
+  it('rejects commission_affix_param with illegal positionType', () => {
+    const b = loadS7Bundle();
+    (b.commission_affix_param[0] as { positionType: string }).positionType = 'tank';
+    expect(validateS7ConfigBundle(b).some((e) => e.table === 'commission_affix_param' && e.message.includes('positionType'))).toBe(true);
+  });
+
+  it('rejects commission_affix_param stat mod with unknown stat key', () => {
+    const b = loadS7Bundle();
+    (b.commission_affix_param[0] as { mods: Array<Record<string, unknown>> }).mods = [{ channel: 'stat', key: 'luck', op: 'pct', value: 0.3 }];
+    expect(validateS7ConfigBundle(b).some((e) => e.table === 'commission_affix_param' && e.message.includes('stat mod.key'))).toBe(true);
+  });
+
+  it('rejects commission_affix_param affix mod with unknown affix key', () => {
+    const b = loadS7Bundle();
+    (b.commission_affix_param[0] as { mods: Array<Record<string, unknown>> }).mods = [{ channel: 'affix', key: 'lifesteal', value: 0.3 }];
+    expect(validateS7ConfigBundle(b).some((e) => e.table === 'commission_affix_param' && e.message.includes('affix mod.key'))).toBe(true);
+  });
+
+  it('rejects commission_affix_param with empty mods', () => {
+    const b = loadS7Bundle();
+    (b.commission_affix_param[0] as { mods: unknown[] }).mods = [];
+    expect(validateS7ConfigBundle(b).some((e) => e.table === 'commission_affix_param' && e.message.includes('mods'))).toBe(true);
+  });
+
+  it('rejects battle_unit_stat_param ship row missing positionType', () => {
+    const b = loadS7Bundle();
+    const ship = (b.battle_unit_stat_param as Array<Record<string, unknown>>).find((r) => r.targetType === 'ship')!;
+    delete ship.positionType;
+    expect(validateS7ConfigBundle(b).some((e) => e.table === 'battle_unit_stat_param' && e.message.includes('positionType'))).toBe(true);
   });
 });

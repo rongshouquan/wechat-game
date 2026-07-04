@@ -1,0 +1,157 @@
+[
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_frenzy_ammo",
+    "affixName": "狂热弹药",
+    "positionType": "assault",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "stat", "key": "attack", "op": "pct", "value": 0.3 },
+      { "channel": "stat", "key": "maxHp", "op": "pct", "value": -0.3 }
+    ],
+    "effectText": "突击攻击+30% / 血量-30%",
+    "note": "突击特化·占位数值·阶段三校准"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_overload_engine",
+    "affixName": "过载引擎",
+    "positionType": "assault",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "stat", "key": "attackIntervalSec", "op": "pct", "value": -0.3333 },
+      { "channel": "stat", "key": "armor", "op": "pct", "value": -0.4 }
+    ],
+    "effectText": "突击攻速+50% / 防御-40%",
+    "note": "攻速+50%=攻击间隔pct-0.3333（间隔空间等效）·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_hunter_instinct",
+    "affixName": "猎手直觉",
+    "positionType": "assault",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "affix", "key": "critRate", "value": 0.4 },
+      { "channel": "stat", "key": "armor", "op": "pct", "value": -0.3 }
+    ],
+    "effectText": "突击暴击率+40% / 防御-30%",
+    "note": "暴击率走 affix 词条·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_emergency_overclock",
+    "affixName": "应急超频",
+    "positionType": "guard",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "affix", "key": "skillHaste", "value": 1.0 },
+      { "channel": "stat", "key": "armor", "op": "pct", "value": -0.5 }
+    ],
+    "effectText": "护卫技能冷却-50% / 防御-50%",
+    "note": "CD-50%=skillHaste+1.0（CD/(1+haste)=0.5）·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_forward_balance",
+    "affixName": "重心前移",
+    "positionType": "guard",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "stat", "key": "attack", "op": "pct", "value": 0.5 },
+      { "channel": "stat", "key": "maxHp", "op": "pct", "value": -0.25 }
+    ],
+    "effectText": "护卫攻击+50% / 血量-25%",
+    "note": "护卫转攻·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_heavy_loading",
+    "affixName": "烈性装填",
+    "positionType": "artillery",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "stat", "key": "attack", "op": "pct", "value": 0.4 },
+      { "channel": "stat", "key": "attackIntervalSec", "op": "pct", "value": 0.3333 }
+    ],
+    "effectText": "炮击伤害+40% / 攻速-25%",
+    "note": "伤害+40%用攻代表·攻速-25%=间隔pct+0.3333·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_precision_calibration",
+    "affixName": "精密校准",
+    "positionType": "artillery",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "affix", "key": "critRate", "value": 1.0 },
+      { "channel": "stat", "key": "attackIntervalSec", "op": "pct", "value": 0.6667 }
+    ],
+    "effectText": "炮击必暴击 / 攻速-40%",
+    "note": "必暴击=critRate+1.0（累加后≥1恒暴）·攻速-40%=间隔pct+0.6667·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_guardian_field",
+    "affixName": "加护力场",
+    "positionType": "support",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "affix", "key": "healPower", "value": 0.5 },
+      { "channel": "stat", "key": "maxHp", "op": "pct", "value": -0.4 }
+    ],
+    "effectText": "支援治疗量+50% / 自身血量-40%",
+    "note": "Ron 改写版：治疗量走 healPower 活旋钮（原护盾量真旋钮记遗留）·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_swarm_protocol",
+    "affixName": "蜂群协议",
+    "positionType": "engineer",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "affix", "key": "skillHaste", "value": 0.6667 },
+      { "channel": "stat", "key": "armor", "op": "pct", "value": -0.4 }
+    ],
+    "effectText": "工程技能冷却-40% / 防御-40%",
+    "note": "Ron 改写版：召唤挂技能上·CD快=召唤更勤（skillHaste 活旋钮）；原召唤上限+1真旋钮记遗留·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_swarming",
+    "affixName": "蜂拥而上",
+    "positionType": "engineer",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "affix", "key": "skillHaste", "value": 0.5 },
+      { "channel": "stat", "key": "maxHp", "op": "pct", "value": -0.3 }
+    ],
+    "effectText": "工程召唤速度+50% / 本体血量-30%",
+    "note": "召唤速度走 skillHaste（召唤挂技能·CD快=召唤更勤）·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_berserk_core",
+    "affixName": "暴走核心",
+    "positionType": "all",
+    "condLineupMax": 0,
+    "mods": [
+      { "channel": "stat", "key": "attack", "op": "pct", "value": 0.2 },
+      { "channel": "stat", "key": "armor", "op": "pct", "value": -0.2 }
+    ],
+    "effectText": "全体攻击+20% / 防御-20%",
+    "note": "全队词缀(positionType=all)·占位"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "aff_lone_contract",
+    "affixName": "孤胆合约",
+    "positionType": "all",
+    "condLineupMax": 3,
+    "mods": [
+      { "channel": "stat", "key": "attack", "op": "pct", "value": 0.4 }
+    ],
+    "effectText": "上阵≤3舰时·全队攻击+40%",
+    "note": "条件词缀：上阵≤3舰生效(condLineupMax=3)·占位"
+  }
+]

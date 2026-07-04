@@ -46,7 +46,7 @@ describe('s7 save - resource skeleton', () => {
   it('default save data uses S7 current version and a fresh player state + default mainline progress + 空插件库存 + 空建筑', () => {
     const data = createDefaultS7SaveData(NOW);
     expect(data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(data.saveVersion).toBe(20); // 第2.5块·块2 每日委托：v19→v20（commissions 护航/演习）
+    expect(data.saveVersion).toBe(21); // 第2.5块·块2 星港悬赏板：v20→v21（commissions → bounty）
     expect(data.playerState.pluginInventory).toEqual({ plugins: [], nextInstanceSeq: 1, nextActionSeq: 0 }); // 6d-1/6d-2：默认空库存
     expect(data.playerState.buildings).toEqual({ levels: {} }); // 6b-2：默认空建筑
     expect(data.playerState.population).toEqual({ residents: 0, workers: 0 }); // 6b-4b：默认 0 人口
@@ -60,10 +60,7 @@ describe('s7 save - resource skeleton', () => {
     expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} }); // 阶段一A：默认空阵容
     expect(data.playerState.mailbox).toEqual({ mails: [], nextSeq: 1 }); // 阶段一G2：默认空邮箱
     expect(data.playerState.adDaily).toEqual({ entries: {} }); // 块1：默认空广告每日计数
-    expect(data.playerState.commissions).toEqual({
-      escort: { stock: 0, lastAccrualDayKey: 0, watchedTiers: [] },
-      drill: { stock: 0, lastAccrualDayKey: 0, watchedTiers: [] },
-    }); // 块2：默认空委托（首次触达才发当日份）
+    expect(data.playerState.bounty).toEqual({ cards: [], lastGenDayKey: 0, noGoldDays: 0, goldPhysicalCount: 0, ambushBonusCount: 0 }); // 块2：默认空悬赏板（首次进入才刷）
     expect(data.lastOnlineTime).toBe(NOW);
     expect(Object.keys(data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
     expect(createDefaultS7PlayerState().resources.starOre).toBe(0);
@@ -212,36 +209,61 @@ describe('s7 save - independent storage domain', () => {
     expect(r.data.playerState.resources.starOre).toBe(777); // 老数据不丢
   });
 
-  it('round-trips commissions through persist + load（块2·防 persist 漏字段）', () => {
+  it('round-trips bounty through persist + load（块2·防 persist 漏字段）', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
-    data.playerState.commissions = {
-      escort: { stock: 5, lastAccrualDayKey: 19680, watchedTiers: [0, 2] },
-      drill: { stock: 1, lastAccrualDayKey: 19680, watchedTiers: [] },
+    data.playerState.bounty = {
+      cards: [
+        { id: '19680_0', genDayKey: 19680, theme: 'escort', quality: 'gold', affixIds: ['aff_frenzy_ammo', 'aff_berserk_core', 'aff_lone_contract'] },
+        { id: '19680_1', genDayKey: 19680, theme: 'drill', quality: 'bronze', affixIds: ['aff_hunter_instinct'] },
+      ],
+      lastGenDayKey: 19680,
+      noGoldDays: 2,
+      goldPhysicalCount: 4,
+      ambushBonusCount: 1,
     };
     persistS7Save(adapter, data, NOW + 1000);
 
     const r = loadS7Save(adapter, NOW + 2000);
-    expect(r.data.playerState.commissions).toEqual({
-      escort: { stock: 5, lastAccrualDayKey: 19680, watchedTiers: [0, 2] },
-      drill: { stock: 1, lastAccrualDayKey: 19680, watchedTiers: [] },
-    }); // 漏写会退回默认，此断言为防回归
+    expect(r.data.playerState.bounty).toEqual(data.playerState.bounty); // 漏写会退回默认，此断言为防回归
   });
 
-  it('v19 旧档（无 commissions 字段）加载：补默认空委托、migrated=true、版本升 20（加性迁移不重置）', () => {
+  it('v20 老档（commissions 积压）加载：折算成等量铜卡进悬赏板、migrated=true、版本升 21（真迁移）', () => {
     const adapter = new MemoryStorageAdapter();
     const old = createDefaultS7SaveData(NOW) as unknown as Record<string, unknown>;
-    old.saveVersion = 19;
-    delete (old.playerState as Record<string, unknown>).commissions; // 模拟 v19 档没有该字段
-    (old.playerState as { resources: Record<string, number> }).resources.starOre = 555;
+    old.saveVersion = 20;
+    const ps = old.playerState as Record<string, unknown>;
+    delete ps.bounty; // v20 档没有 bounty 字段
+    ps.commissions = { // v20 旧结构：护航积压 3 + 演习积压 2 = 5 次
+      escort: { stock: 3, lastAccrualDayKey: 19680, watchedTiers: [] },
+      drill: { stock: 2, lastAccrualDayKey: 19680, watchedTiers: [] },
+    };
+    (ps.resources as Record<string, number>).starOre = 555;
     adapter.setString(S7_SAVE_STORAGE_KEY, JSON.stringify(old));
 
     const r = loadS7Save(adapter, NOW + 2000);
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
-    expect(r.data.saveVersion).toBe(20);
-    expect(r.data.playerState.commissions).toEqual(createDefaultS7PlayerState().commissions); // 加性补默认
+    expect(r.data.saveVersion).toBe(21);
+    const b = r.data.playerState.bounty;
+    expect(b.cards).toHaveLength(5); // 5 次积压 → 5 张铜卡
+    expect(b.cards.every((c) => c.quality === 'bronze')).toBe(true);
+    expect(b.cards.every((c) => c.affixIds.length === 0)).toBe(true); // 折算卡无词缀（避免迁移依赖配置）
+    expect(b.lastGenDayKey).toBe(0); // 下次进入再刷今日份
     expect(r.data.playerState.resources.starOre).toBe(555); // 老数据不丢
+    expect((r.data.playerState as unknown as Record<string, unknown>).commissions).toBeUndefined(); // 旧字段不再持久化
+  });
+
+  it('老档无 bounty 也无 commissions 加载：补默认空悬赏板（加性）', () => {
+    const adapter = new MemoryStorageAdapter();
+    const old = createDefaultS7SaveData(NOW) as unknown as Record<string, unknown>;
+    old.saveVersion = 19;
+    delete (old.playerState as Record<string, unknown>).bounty;
+    adapter.setString(S7_SAVE_STORAGE_KEY, JSON.stringify(old));
+
+    const r = loadS7Save(adapter, NOW + 2000);
+    expect(r.migrated).toBe(true);
+    expect(r.data.playerState.bounty).toEqual({ cards: [], lastGenDayKey: 0, noGoldDays: 0, goldPhysicalCount: 0, ambushBonusCount: 0 }); // 加性补默认
   });
 
   it('restoreS7KeyState returns normalized 13-resource state + timestamp', () => {
@@ -786,7 +808,7 @@ describe('s7 save - 流程版 SaveService isolation', () => {
   });
 
   it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
-    expect(S7_CURRENT_SAVE_VERSION).toBe(20); // 第2.5块·块2：v19→v20（commissions 每日委托·加性迁移，同文件迁移测试已验）
+    expect(S7_CURRENT_SAVE_VERSION).toBe(21); // 第2.5块·块2 星港悬赏板：v20→v21（commissions→bounty·真迁移折算铜卡，同文件迁移测试已验）
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
     // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
     // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）

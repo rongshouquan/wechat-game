@@ -11,6 +11,12 @@ import {
 } from './ConfigTypesS7';
 // 战场网格尺寸单一真源（敌方 5×7）；锚点格上界由此派生，改尺寸只改 S7BattleGrid.ts。
 import { S7_ENEMY_ROWS, S7_ENEMY_COLS } from '../../core/s7/S7BattleGrid';
+// 悬赏词缀定位型真源（5 定位型 + 'all'）；positionType/词缀 positionType 校验共用（第2.5块·块2）。
+import { S7_POSITION_TYPES, S7_AFFIX_TARGET_TYPES } from '../../core/s7/S7CommissionAffix';
+
+// 词缀 mod 的合法 stat/affix 键（镜像 core/s7/S7BattleEffectBlock.ts 的 S7StatKey/S7AffixKey）。
+const S7_STAT_KEYS = ['maxHp', 'attack', 'armor', 'attackIntervalSec', 'attackRangeCells', 'passiveEnergyPerSec'];
+const S7_AFFIX_KEYS = ['critRate', 'critDmg', 'shieldBreak', 'skillHaste', 'healPower', 'controlResist', 'dmgVsSwarm', 'dmgVsBoss'];
 
 export interface S7ValidationError {
   table: string;
@@ -51,6 +57,7 @@ const TIER_B_TABLES: S7ConfigTableName[] = [
   'source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param',
   'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param',
   'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check',
+  'commission_affix_param',
 ];
 
 // 成长段位参数表（CC-07E-1）：rowId 主键，与 Tier B 参数表同族；逐表数值/口径由 validateGrowth 校验。
@@ -1250,6 +1257,10 @@ function validateBattle(
         errors.push({ table: 'battle_unit_stat_param', id, message: `unitRef "${String(row.unitRef)}" 不存在于对应实体表（${tt}）` });
       }
     }
+    // positionType（第2.5块·块2 悬赏词缀）：仅 ship 行必填、∈ 5 定位型（灰盒占位·星舰内容块随真源校准）。
+    if (tt === 'ship' && (typeof row.positionType !== 'string' || !S7_POSITION_TYPES.includes(row.positionType as never))) {
+      errors.push({ table: 'battle_unit_stat_param', id, message: `positionType "${String(row.positionType)}" 非法（玩家星舰必填，允许：${S7_POSITION_TYPES.join('/')}）` });
+    }
     for (const f of ['maxHp', 'attack', 'armor', 'attackIntervalSec', 'attackRangeCells'] as const) {
       const v = num(row[f]);
       if (v === null || v <= 0) errors.push({ table: 'battle_unit_stat_param', id, message: `${f} 必须为正数` });
@@ -1427,6 +1438,40 @@ function validateBattle(
   }
 }
 
+// 悬赏词缀表（第2.5块·块2 星港悬赏板，GDD S10.8）：positionType/条件/修正积木逐条契约校验。
+function validateCommissionAffix(
+  errors: S7ValidationError[], rowsByTable: Record<string, Record<string, unknown>[]>,
+): void {
+  for (const row of rowsByTable.commission_affix_param ?? []) {
+    const id = String(row.rowId);
+    if (typeof row.affixName !== 'string' || row.affixName.length === 0) errors.push({ table: 'commission_affix_param', id, message: 'affixName 不能为空' });
+    if (typeof row.effectText !== 'string' || row.effectText.length === 0) errors.push({ table: 'commission_affix_param', id, message: 'effectText 不能为空' });
+    if (typeof row.positionType !== 'string' || !S7_AFFIX_TARGET_TYPES.includes(row.positionType)) {
+      errors.push({ table: 'commission_affix_param', id, message: `positionType "${String(row.positionType)}" 非法（允许：${S7_AFFIX_TARGET_TYPES.join('/')}）` });
+    }
+    const cond = num(row.condLineupMax);
+    if (cond === null || !Number.isInteger(cond) || cond < 0) errors.push({ table: 'commission_affix_param', id, message: 'condLineupMax 必须为 >=0 的整数（0=无条件）' });
+    if (!Array.isArray(row.mods) || row.mods.length === 0) {
+      errors.push({ table: 'commission_affix_param', id, message: 'mods 必须为非空数组' });
+      continue;
+    }
+    for (const raw of row.mods) {
+      const mod = asRow(raw);
+      if (!mod) { errors.push({ table: 'commission_affix_param', id, message: 'mods 含非对象项' }); continue; }
+      const ch = mod.channel;
+      if (num(mod.value) === null) errors.push({ table: 'commission_affix_param', id, message: 'mod.value 必须为数值' });
+      if (ch === 'stat') {
+        if (typeof mod.key !== 'string' || !S7_STAT_KEYS.includes(mod.key)) errors.push({ table: 'commission_affix_param', id, message: `stat mod.key "${String(mod.key)}" 非法（允许：${S7_STAT_KEYS.join('/')}）` });
+        if (mod.op !== undefined && mod.op !== 'flat' && mod.op !== 'pct') errors.push({ table: 'commission_affix_param', id, message: 'stat mod.op 仅允许 flat/pct（缺省 pct；词缀不用 set）' });
+      } else if (ch === 'affix') {
+        if (typeof mod.key !== 'string' || !S7_AFFIX_KEYS.includes(mod.key)) errors.push({ table: 'commission_affix_param', id, message: `affix mod.key "${String(mod.key)}" 非法（允许：${S7_AFFIX_KEYS.join('/')}）` });
+      } else {
+        errors.push({ table: 'commission_affix_param', id, message: `mod.channel "${String(ch)}" 非法（允许 stat/affix）` });
+      }
+    }
+  }
+}
+
 export function validateS7ConfigBundle(
   bundle: Record<S7ConfigTableName, unknown[]>,
 ): S7ValidationError[] {
@@ -1555,6 +1600,7 @@ export function validateS7ConfigBundle(
   validateTierC(errors, rowsByTable);
   validateTierD(errors, rowsByTable);
   validateBattle(errors, rowsByTable);
+  validateCommissionAffix(errors, rowsByTable);
 
   // 全局：powerIndex 仅允许出现在 power_reference_param
   for (const [table, rows] of Object.entries(rowsByTable)) {

@@ -33,7 +33,12 @@ const TIER_A = {
   core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
   plugin_config: { idField: 'pluginId', count: 18, ids: seq('plg', 1, 18) },
 };
-const TIER_B = ['source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param', 'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param', 'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check'];
+const TIER_B = ['source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param', 'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param', 'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check', 'commission_affix_param'];
+// 悬赏词缀定位型/键真源（镜像 core/s7/S7CommissionAffix.ts 与 S7BattleEffectBlock.ts）：改这些两处校验器都要改。
+const POSITION_TYPES = ['assault', 'guard', 'artillery', 'support', 'engineer'];
+const AFFIX_TARGET_TYPES = [...POSITION_TYPES, 'all'];
+const STAT_KEYS = ['maxHp', 'attack', 'armor', 'attackIntervalSec', 'attackRangeCells', 'passiveEnergyPerSec'];
+const AFFIX_KEYS = ['critRate', 'critDmg', 'shieldBreak', 'skillHaste', 'healPower', 'controlResist', 'dmgVsSwarm', 'dmgVsBoss'];
 const TIER_B_REL = {
   enemy_schema_config: 'enemyId',
   boss_skeleton_config: 'bossId',
@@ -932,6 +937,8 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const set = row.targetType === 'ship' ? shipIdSet : row.targetType === 'enemy' ? enemyIdSet : bossNodeIdSet;
       if (!set.has(row.unitRef)) fail('battle_unit_stat_param', id, `unitRef "${row.unitRef}" 不存在于对应实体表（${row.targetType}）`);
     }
+    // positionType（第2.5块·块2 悬赏词缀）：仅 ship 行必填、∈ 5 定位型（灰盒占位·星舰内容块随真源校准）。
+    if (row.targetType === 'ship' && !POSITION_TYPES.includes(row.positionType)) fail('battle_unit_stat_param', id, `positionType "${row.positionType}" 非法（玩家星舰必填，允许：${POSITION_TYPES.join('/')}）`);
     for (const f of ['maxHp', 'attack', 'armor', 'attackIntervalSec', 'attackRangeCells']) {
       const v = num(row[f]); if (v === null || v <= 0) fail('battle_unit_stat_param', id, `${f} 必须为正数`);
     }
@@ -1037,6 +1044,29 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
   }
 }
 
+// ---- 悬赏词缀（第2.5块·块2 星港悬赏板，GDD S10.8）：positionType/条件/修正积木逐条契约 ----
+for (const row of tables.commission_affix_param ?? []) {
+  const id = row.rowId;
+  if (typeof row.affixName !== 'string' || !row.affixName) fail('commission_affix_param', id, 'affixName 不能为空');
+  if (typeof row.effectText !== 'string' || !row.effectText) fail('commission_affix_param', id, 'effectText 不能为空');
+  if (!AFFIX_TARGET_TYPES.includes(row.positionType)) fail('commission_affix_param', id, `positionType "${row.positionType}" 非法（允许：${AFFIX_TARGET_TYPES.join('/')}）`);
+  const cond = num(row.condLineupMax);
+  if (cond === null || !Number.isInteger(cond) || cond < 0) fail('commission_affix_param', id, 'condLineupMax 必须为 >=0 的整数（0=无条件）');
+  if (!Array.isArray(row.mods) || row.mods.length === 0) { fail('commission_affix_param', id, 'mods 必须为非空数组'); continue; }
+  for (const mod of row.mods) {
+    if (!mod || typeof mod !== 'object') { fail('commission_affix_param', id, 'mods 含非对象项'); continue; }
+    if (num(mod.value) === null) fail('commission_affix_param', id, 'mod.value 必须为数值');
+    if (mod.channel === 'stat') {
+      if (!STAT_KEYS.includes(mod.key)) fail('commission_affix_param', id, `stat mod.key "${mod.key}" 非法`);
+      if (mod.op !== undefined && mod.op !== 'flat' && mod.op !== 'pct') fail('commission_affix_param', id, 'stat mod.op 仅允许 flat/pct');
+    } else if (mod.channel === 'affix') {
+      if (!AFFIX_KEYS.includes(mod.key)) fail('commission_affix_param', id, `affix mod.key "${mod.key}" 非法`);
+    } else {
+      fail('commission_affix_param', id, `mod.channel "${mod.channel}" 非法（允许 stat/affix）`);
+    }
+  }
+}
+
 // 全局：powerIndex 仅允许出现在 power_reference_param
 for (const [name, rows] of Object.entries(tables)) {
   if (name === 'power_reference_param') continue;
@@ -1050,4 +1080,4 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log('all s7 configs valid (43 tables: tier A 5 + tier B 12 params + 1 growth + 5 relation/schema + 5 building + tier C 7 mainline/tutorial/unlock + tier D 3 bridge tables + 5 realtime battle tables)');
+console.log('all s7 configs valid (44 tables: tier A 5 + tier B 12 params + 1 growth + 5 relation/schema + 5 building + tier C 7 mainline/tutorial/unlock + tier D 3 bridge tables + 5 realtime battle tables + 1 commission affix table)');

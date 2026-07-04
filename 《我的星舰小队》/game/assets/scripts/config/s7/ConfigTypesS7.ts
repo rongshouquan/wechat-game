@@ -644,6 +644,12 @@ export interface S7BattleUnitStatParam {
   /** ship→ship_config.shipId；enemy→enemy_schema_config.enemyId；boss→boss_node_config.bossNodeId。 */
   unitRef: string;
   roleTag: string;
+  /**
+   * 星舰 5 定位型（突击/护卫/炮击/支援/工程）：仅 targetType='ship' 行必填、取值 ∈ S7_POSITION_TYPES；
+   * 悬赏词缀按此过滤我方单位（第2.5块·块2）。**灰盒占位**——按 roleNote 语义先归类，星舰内容块随真源统一校准。
+   * 非 ship 行（enemy/boss/prop）不填或忽略。
+   */
+  positionType?: string;
   maxHp: number;
   attack: number;
   armor: number;
@@ -765,6 +771,32 @@ export interface S7BattleBossPhaseParam {
   note: string;
 }
 
+// ===== 悬赏词缀（第2.5块·块2 星港悬赏板，GDD S10.8）=====
+/** 单条词缀修正：channel=stat → 改基础属性(modifier 积木)；channel=affix → 改定向词条(affix 积木)。 */
+export interface S7CommissionAffixMod {
+  channel: 'stat' | 'affix';
+  /** channel=stat: S7StatKey（maxHp/attack/armor/attackIntervalSec/attackRangeCells/passiveEnergyPerSec）；channel=affix: S7AffixKey（critRate/critDmg/shieldBreak/skillHaste/healPower/controlResist/dmgVsSwarm/dmgVsBoss）。 */
+  key: string;
+  /** 仅 channel=stat 用；缺省 pct。词缀不用 set（那是质变覆盖）。 */
+  op?: 'flat' | 'pct';
+  value: number;
+}
+/** 悬赏词缀定义（战斗开始时对我方指定定位型施加 buff+debuff·确定性·配置表驱动）。结构与 core/s7/S7CommissionAffix.ts 应用层兼容。 */
+export interface S7CommissionAffixParam {
+  schemaVersion: string;
+  /** = affixId（卡携带的 affixIds 指向它）。 */
+  rowId: string;
+  affixName: string;
+  /** 目标定位型 ∈ S7_POSITION_TYPES(5 定位型) 或 'all'（全队）。 */
+  positionType: string;
+  /** 0=无条件；>0=仅当我方上阵数 ≤ 此值时生效（孤胆合约=3）。 */
+  condLineupMax: number;
+  mods: S7CommissionAffixMod[];
+  /** 一句效果（卡面全文可见 / 备战词缀标记）。 */
+  effectText: string;
+  note: string;
+}
+
 export interface S7ConfigBundle {
   battle_template_config: S7BattleTemplateConfig[];
   ship_config: S7ShipConfig[];
@@ -809,6 +841,7 @@ export interface S7ConfigBundle {
   battle_encounter_param: S7BattleEncounterParam[];
   battle_spawn_param: S7BattleSpawnParam[];
   battle_boss_phase_param: S7BattleBossPhaseParam[];
+  commission_affix_param: S7CommissionAffixParam[];
 }
 
 export type S7ConfigTableName = keyof S7ConfigBundle;
@@ -858,6 +891,7 @@ export const S7_ID_FIELD: Record<S7ConfigTableName, string> = {
   battle_encounter_param: 'rowId',
   battle_spawn_param: 'rowId',
   battle_boss_phase_param: 'rowId',
+  commission_affix_param: 'rowId',
 };
 
 /** 各表资源文件名（不含扩展名，供运行时 cc.resources 加载使用）。 */
@@ -905,4 +939,5 @@ export const S7_TABLE_FILES: Record<S7ConfigTableName, string> = {
   battle_encounter_param: 's7/battle_encounter_param.sample',
   battle_spawn_param: 's7/battle_spawn_param.sample',
   battle_boss_phase_param: 's7/battle_boss_phase_param.sample',
+  commission_affix_param: 's7/commission_affix_param.sample',
 };

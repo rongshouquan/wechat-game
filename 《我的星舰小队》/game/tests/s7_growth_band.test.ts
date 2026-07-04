@@ -25,6 +25,7 @@ const TABLE_NAMES: S7ConfigTableName[] = [
   'reward_pool_ref_config', 'no_ad_path_check_config', 'risk_fallback_70_config',
   'battle_unit_stat_param', 'battle_effect_param', 'battle_encounter_param',
   'battle_spawn_param', 'battle_boss_phase_param',
+  'commission_affix_param',
 ];
 
 function readTable<T>(name: S7ConfigTableName): T {

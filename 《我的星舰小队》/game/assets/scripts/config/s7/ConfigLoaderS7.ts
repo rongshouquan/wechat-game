@@ -54,6 +54,7 @@ const S7_TABLE_NAMES: S7ConfigTableName[] = [
   'battle_encounter_param',
   'battle_spawn_param',
   'battle_boss_phase_param',
+  'commission_affix_param',
 ];
 
 export class S7ConfigLoadError extends Error {

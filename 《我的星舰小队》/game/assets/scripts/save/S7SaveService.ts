@@ -92,10 +92,10 @@ import {
   normalizeS7AdDaily,
 } from '../core/s7/S7AdDailyCounter';
 import {
-  S7CommissionState,
-  createDefaultS7Commissions,
-  normalizeS7Commissions,
-} from '../core/s7/S7DailyCommission';
+  S7BountyState,
+  createDefaultS7Bounty,
+  normalizeS7Bounty,
+} from '../core/s7/S7StarportBounty';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -119,9 +119,11 @@ import {
  * v17（阶段一 I·星核三渠道）：playerState 增加 expansionOpenedCount(扩张宝藏已开箱次数·判首次全池自选/之后随机三选一·§5.4/§10.5)；旧档加载补默认 0(加性迁移，无需重置)。
  * v18（阶段一 M·新手引导）：playerState 增加 tutorial(强引导步数+完成标记+弱引导首触已展示清单)；旧档加载补默认(全 0/未完成/空清单，加性迁移，无需重置)。
  * v19（第2.5块·块1 回港报告）：playerState 增加 adDaily(广告点位每日次数计数·首用于回港翻倍每日2次)；旧档加载补默认空(加性迁移，无需重置)。
- * v20（第2.5块·块2 每日委托）：playerState 增加 commissions(护航/演习 库存+发放日+已看档)；旧档加载补默认空(加性迁移，无需重置)。
+ * v20（第2.5块·块2 每日委托·已作废）：曾有 commissions(护航/演习 库存)；v21 起整体重构为星港悬赏板、字段替换。
+ * v21（第2.5块·块2 星港悬赏板）：commissions → bounty(悬赏卡板 + 生成日 + 暗保底计数)；**真迁移**——
+ *   v20 老档的 commissions 积压次数(护航+演习 stock 之和)折算成等量铜卡进新板(见 S7StarportBounty.normalizeS7Bounty)。
  */
-export const S7_CURRENT_SAVE_VERSION = 20;
+export const S7_CURRENT_SAVE_VERSION = 21;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -187,8 +189,8 @@ export interface S7PlayerState {
   tutorial: S7TutorialState;
   /** 广告点位每日次数（第2.5块·块1）：点位→{dayKey,count}，形状由 core/s7/S7AdDailyCounter 拥有。 */
   adDaily: S7AdDailyState;
-  /** 每日委托（第2.5块·块2）：护航/演习 库存+发放日+已看档，形状由 core/s7/S7DailyCommission 拥有。 */
-  commissions: S7CommissionState;
+  /** 星港悬赏板（第2.5块·块2）：悬赏卡板 + 生成日 + 暗保底计数，形状由 core/s7/S7StarportBounty 拥有。 */
+  bounty: S7BountyState;
 }
 
 export interface S7SaveData {
@@ -227,7 +229,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     expansionOpenedCount: 0,
     tutorial: createDefaultS7TutorialState(),
     adDaily: createDefaultS7AdDaily(),
-    commissions: createDefaultS7Commissions(),
+    bounty: createDefaultS7Bounty(),
   };
 }
 
@@ -287,7 +289,8 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
       ? Math.floor(src.expansionOpenedCount) : 0,
     tutorial: normalizeS7TutorialState(src.tutorial),
     adDaily: normalizeS7AdDaily(src.adDaily),
-    commissions: normalizeS7Commissions(src.commissions),
+    // v21 真迁移：优先读 bounty；无 bounty 但有旧 commissions(v20 老档) → 积压次数折算成等量铜卡进新板。
+    bounty: normalizeS7Bounty(src.bounty, src.commissions),
   };
 }
 
