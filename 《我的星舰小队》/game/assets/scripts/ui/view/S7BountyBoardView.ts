@@ -50,6 +50,7 @@ export class S7BountyBoardView {
   private readonly listNode: Node;
   private readonly headerLabel: Label;
   private readonly backlogLabel: Label;
+  private readonly noticeLabel: Label;
   private readonly pageLabel: Label;
   private readonly prevBtn: Node;
   private readonly nextBtn: Node;
@@ -69,6 +70,7 @@ export class S7BountyBoardView {
     const title = this.mkLabel(root, 0, band.usableTopY - 44, 40, new Color(150, 220, 200));
     this.headerLabel = title;
     this.backlogLabel = this.mkLabel(root, 0, band.usableTopY - 92, 24, new Color(195, 210, 235));
+    this.noticeLabel = this.mkLabel(root, 0, band.usableTopY - 122, 22, new Color(170, 225, 190)); // 一次性提示行（躲避返航等·refresh 清）
 
     const list = new Node('list'); list.layer = host.layer; root.addChild(list); list.setPosition(0, 0, 0);
     this.listNode = list;
@@ -88,6 +90,9 @@ export class S7BountyBoardView {
   close(): void { this.root.active = false; }
   get isOpen(): boolean { return this.root.active; }
 
+  /** 一次性提示行（如躲避袭击的"舰队绕道返航"）：显示到下次 refresh 自动清。在 open()/refresh() 之后调。 */
+  notice(text: string): void { this.noticeLabel.string = text; }
+
   /** 重刷：说明行 + 积压行 + 当前页卡片 + 分页控件。数据每次从 host 现取（出战返回后自动反映消耗）。 */
   refresh(): void {
     const st = this.host.bountyState();
@@ -95,6 +100,7 @@ export class S7BountyBoardView {
     const cap = bountyBoardCap(this.host.habitatLevel());
     // 档位玩家侧从 1 起显示（内部 tier 0 起数是"已通关星域数"·真机④：别把程序员的 0 亮给玩家）。
     this.headerLabel.string = `📋 星港悬赏板 · 星域档 ${tier + 1} · 每天凌晨4点刷新`;
+    this.noticeLabel.string = ''; // 一次性提示行随刷新清空
     this.backlogLabel.string = `板上 ${st.cards.length} / ${cap} 张 —— 没做的攒着，星港帮你留（不催办）`;
 
     const pages = Math.max(1, Math.ceil(st.cards.length / CARDS_PER_PAGE));

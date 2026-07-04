@@ -50,6 +50,7 @@ import {
   bountyRunSeed,
   bountyAmbushTriggered,
   claimBountyAmbushBonus,
+  ambushLossPenalty,
   escortTransportBlocks,
   isPerfectEscort,
 } from '../../core/s7/S7StarportBounty';
@@ -290,8 +291,11 @@ export class S7DemoController extends Component {
   private bountyPrepCardId: string | null = null;
   /** 正在演出/结算的悬赏卡（结果窗单键返回路由用）；null=主线战斗。 */
   private bountyActiveCardId: string | null = null;
-  /** 护航赢后待打的遇袭遭遇战卡（结果窗返回时接一场星盗战）；null=无遇袭。 */
-  private bountyAmbushPending: S7BountyCard | null = null;
+  /** 护航赢后待抉择的遇袭上下文（卡 + 本单刚结算的入账·迎战失败按它折损）；null=无遇袭。 */
+  private bountyAmbushPending: { card: S7BountyCard; settledRewards: Record<string, number> } | null = null;
+  /** 备战底部「选择关卡」键（悬赏备战隐藏·主线专属）+「返回」键文字（悬赏备战改「返回悬赏板」）。 */
+  private prebattleLevelSelBtn: Node | null = null;
+  private prebattleBackLabel: Label | null = null;
   // DEV-TEMP（块2悬赏板真机验收批·上线前删）：必遇袭武装标志 + 重掷计数（均仅内存·不入档）。
   // salt 绑启动时间避免"重启后重掷"与上次会话的 DEV 批撞卡 id（salt 仅内存、裸 0 起会复现同 fakeKey）。
   private devBountyForceAmbush = false;
@@ -1791,11 +1795,16 @@ export class S7DemoController extends Component {
     }
     if (this.resultMsgLabel && this.pendingResult) this.resultMsgLabel.string = this.pendingResult.text;
     // 块2：悬赏战斗结算=单键「返回悬赏板」（藏「选关」「下一关/再次挑战」·rule⑨）；主线保持三键。
+    // 遇袭=风险抉择（Ron 2026-07-04 修订）：两键——中「🛡 躲避袭击」（零损失返航）/ 右「⚔ 正面迎战」（胜夺小包·败折本单）。
     const isBounty = this.bountyActiveCardId !== null;
+    const ambushChoice = isBounty && this.bountyAmbushPending !== null;
     if (this.resultLevelBtn) this.resultLevelBtn.active = !isBounty;
-    if (this.resultRightLabel?.node.parent) this.resultRightLabel.node.parent.active = !isBounty;
-    if (this.resultHomeLabel) this.resultHomeLabel.string = isBounty ? '返回悬赏板' : '返回星港';
-    if (this.resultRightLabel && !isBounty) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
+    if (this.resultRightLabel?.node.parent) this.resultRightLabel.node.parent.active = !isBounty || ambushChoice;
+    if (this.resultHomeLabel) this.resultHomeLabel.string = ambushChoice ? '🛡 躲避袭击' : isBounty ? '返回悬赏板' : '返回星港';
+    if (this.resultRightLabel) {
+      if (ambushChoice) this.resultRightLabel.string = '⚔ 正面迎战';
+      else if (!isBounty) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
+    }
     this.resultPopupNode.active = true;
     // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（必须选 1 才继续；精英/Boss 选完同屏浮现广告/继续、Boss 继续后弹大奖特写，才露出结算窗）。
     if (won && this.pendingLevelReward) this.openLevelReward();
@@ -1821,6 +1830,8 @@ export class S7DemoController extends Component {
   }
   /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
   private onResultGoPrebattle(): void {
+    // 块2遇袭风险抉择：悬赏结算窗右键=「⚔ 正面迎战」（仅遇袭时该键可见）。
+    if (this.bountyActiveCardId !== null) { this.onBountyAmbushFight(); return; }
     this.dismissBattleScene();
     this.openPrebattle();
   }
@@ -3129,9 +3140,10 @@ export class S7DemoController extends Component {
       }
     }
 
-    // 底部三键：选择关卡(左) / 返回星港(中·回基地) / 开始战斗(右)。
-    mkBtn('选择关卡', 230, 88, new Color(70, 130, 180, 255), -W * 0.32, botY + 58, () => this.openLevelSelect());
-    mkBtn('返回星港', 230, 88, new Color(120, 90, 160, 255), 0, botY + 58, () => this.closePrebattle());
+    // 底部三键：选择关卡(左·主线专属) / 返回(中) / 开始战斗(右)。悬赏备战=两键（藏选关·返回改「返回悬赏板」·openPrebattle 里切）。
+    this.prebattleLevelSelBtn = mkBtn('选择关卡', 230, 88, new Color(70, 130, 180, 255), -W * 0.32, botY + 58, () => this.openLevelSelect());
+    const backBtn = mkBtn('返回星港', 230, 88, new Color(120, 90, 160, 255), 0, botY + 58, () => this.onPrebattleBack());
+    this.prebattleBackLabel = backBtn.getComponentInChildren(Label);
     this.prebattleSortieBtn = mkBtn('🚀 开始战斗', 330, 112, new Color(225, 150, 45, 255), W * 0.30, botY + 58, () => this.onConfirmSortie());
 
     // 备战内嵌战斗的「跳过」键（挂面板·不在 ui 容器内，开战时单独显示）。
@@ -3368,13 +3380,23 @@ export class S7DemoController extends Component {
 
   // ===== A-step2 战前备战界面交互 =====
 
-  /** 打开战前备战层（回放期间禁用）：刷新内容后显示。 */
+  /** 打开战前备战层（回放期间禁用）：刷新内容后显示。悬赏备战=两键（藏「选择关卡」·返回改「返回悬赏板」，真机批②①）。 */
   private openPrebattle(): void {
     if (this.playing || !this.prebattleNode) return;
     this.prebattleSelSlot = null;
     this.prebattleSelShip = null;
+    const isBounty = this.bountyPrepCardId !== null;
+    if (this.prebattleLevelSelBtn) this.prebattleLevelSelBtn.active = !isBounty; // 选关=主线专属·悬赏不该跳主线关
+    if (this.prebattleBackLabel) this.prebattleBackLabel.string = isBounty ? '返回悬赏板' : '返回星港';
     this.refreshPrebattle();
     this.prebattleNode.active = true;
+  }
+
+  /** 备战「返回」：悬赏模式 → 回悬赏板；主线 → 回基地。 */
+  private onPrebattleBack(): void {
+    const wasBounty = this.bountyPrepCardId !== null;
+    this.closePrebattle(); // 内部清悬赏模式标记
+    if (wasBounty) this.openBounty();
   }
 
   private closePrebattle(): void {
@@ -6039,10 +6061,11 @@ export class S7DemoController extends Component {
       // DEV-TEMP「必遇袭」：武装后下张护航打赢必触发（15% 小概率真机没法验收）·用掉即灭。上线前删。
       const ambush = card.theme === 'escort' && (this.devBountyForceAmbush || bountyAmbushTriggered(card));
       if (ambush) this.devBountyForceAmbush = false;
-      this.bountyAmbushPending = ambush ? card : null;
+      // 遇袭=风险抉择（Ron 2026-07-04 修订）：带上本单刚结算的入账，迎战失败按它折损（绝不碰存量）。
+      this.bountyAmbushPending = ambush ? { card, settledRewards: settled?.rewards ?? {} } : null;
       text = `${themeName}悬赏完成 ${this.gainsText(settled?.rewards ?? {})}`
         + (perfect ? '（✨完美护航 +25%）' : '')
-        + (ambush ? '\n⚠ 遭遇星盗！返回后接一场遭遇战' : '');
+        + (ambush ? '\n⚠ 遭遇星盗拦路——迎战：胜得额外小包·败折本单部分收益；躲避：零损失' : '');
     } else {
       this.bountyAmbushPending = null;
       text = `${themeName}没打赢——不扣不罚，卡还在板上，调下阵容再来`;
@@ -6056,11 +6079,11 @@ export class S7DemoController extends Component {
     this.startPlayback(buildS7BattlePlayback(out.result));
   }
 
-  /** 遇袭遭遇战（护航赢后·结果窗返回时在同一战斗舞台接着打）：赢=额外小包(轮换)，输=不罚。打完回悬赏板。 */
-  private launchBountyAmbush(card: S7BountyCard): void {
+  /** 遇袭遭遇战（选「正面迎战」后·同一战斗舞台接着打）：赢=额外小包(轮换)；败=折损本单护航入账的一部分（占位30%·绝不碰存量）。打完回悬赏板。 */
+  private launchBountyAmbush(ctx: { card: S7BountyCard; settledRewards: Record<string, number> }): void {
     if (!this.playerState) { this.dismissBattleScene(); this.openBounty(); return; }
-    const out = this.runBountyBattle(card); // 灰盒复用同敌阵（真实星盗涂装留美术阶段）
-    if (!out) { this.dismissBattleScene(); this.openBounty(); return; } // 起不来就收舞台回板（别卡在黑舞台）
+    const out = this.runBountyBattle(ctx.card); // 灰盒复用同敌阵（真实星盗涂装留美术阶段）
+    if (!out) { this.dismissBattleScene(); this.openBounty(); return; } // 起不来就收舞台回板（别卡在黑舞台·不罚）
     const won = out.result.winner === 'player';
     let text: string;
     if (won) {
@@ -6068,7 +6091,13 @@ export class S7DemoController extends Component {
       this.creditGains(bonus);
       text = `星盗遭遇战·胜！额外小包 ${this.gainsText(bonus)}`;
     } else {
-      text = '星盗遭遇战·惜败——护航奖励照常，不扣不罚';
+      // 败=只回收"本单刚入账"的一部分（floor 30%·恒 ≤ 刚入账量 → 数学上碰不到既有存量；量小实物 floor 后免扣）。
+      const loss = ambushLossPenalty(ctx.settledRewards);
+      this.deductGains(loss);
+      const lossText = Object.keys(loss).map((k) => `${this.zhRes(k)} -${loss[k]}`).join('、');
+      text = lossText.length > 0
+        ? `星盗遭遇战·败——遇袭损失 ${lossText}（只折本单护航收益·库存未动）`
+        : '星盗遭遇战·败——本单收益无可折损项，未受损失';
     }
     this.bountyActiveCardId = '__ambush__'; // 标记：结果窗返回直接回板（不再触发二次遇袭）
     this.bountyAmbushPending = null;
@@ -6079,18 +6108,24 @@ export class S7DemoController extends Component {
     this.startPlayback(buildS7BattlePlayback(out.result));
   }
 
-  /** 结果窗单键「返回悬赏板」：护航有遇袭 → **不收舞台**只收结果窗、同一舞台接遭遇战（看得见的追加战）；否则收场回悬赏板。 */
+  /** 结果窗中键：无遇袭=「返回悬赏板」收场回板；有遇袭=「🛡 躲避袭击」——不打、零损失、中性文案返航（风险抉择之退路）。 */
   private onBountyResultReturn(): void {
+    const dodged = this.bountyAmbushPending !== null;
+    this.bountyActiveCardId = null;
+    this.bountyAmbushPending = null;
+    this.dismissBattleScene();
+    this.openBounty();
+    if (dodged) this.bountyView?.notice('🛡 舰队绕道返航，本单收益已入账（零损失）');
+  }
+
+  /** 结果窗右键「⚔ 正面迎战」（仅遇袭抉择时可见）：不收舞台只收结果窗，同一舞台接打星盗遭遇战。 */
+  private onBountyAmbushFight(): void {
     const ambush = this.bountyAmbushPending;
     this.bountyActiveCardId = null;
     this.bountyAmbushPending = null;
-    if (ambush) {
-      if (this.resultPopupNode) this.resultPopupNode.active = false;
-      this.launchBountyAmbush(ambush);
-      return;
-    }
-    this.dismissBattleScene();
-    this.openBounty();
+    if (!ambush) { this.dismissBattleScene(); this.openBounty(); return; } // 防御：无上下文就当普通返回
+    if (this.resultPopupNode) this.resultPopupNode.active = false;
+    this.launchBountyAmbush(ambush);
   }
 
   /** 把奖励 map 入账钱包（护栏：只加钱包键·非钱包键跳过）。 */
@@ -6099,6 +6134,15 @@ export class S7DemoController extends Component {
     const res = this.session.resources as Record<string, number>;
     for (const [key, amt] of Object.entries(gains)) {
       if (res[key] !== undefined && amt > 0) res[key] += amt;
+    }
+  }
+
+  /** 从钱包扣减（遇袭折损用）：按设计只回收"本单刚入账"的部分（恒 ≤ 刚入账量·动不到存量），防御钳到 0。 */
+  private deductGains(loss: Record<string, number>): void {
+    if (!this.session) return;
+    const res = this.session.resources as Record<string, number>;
+    for (const [key, amt] of Object.entries(loss)) {
+      if (res[key] !== undefined && amt > 0) res[key] = Math.max(0, res[key] - amt);
     }
   }
 

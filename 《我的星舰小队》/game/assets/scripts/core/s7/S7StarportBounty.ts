@@ -314,6 +314,23 @@ export function bountyAmbushTriggered(card: S7BountyCard): boolean {
   return new S7AutoBattleRng(`ambush_${card.id}`).next() < AMBUSH_RATE;
 }
 
+/** 遇袭迎战失败折损比例（Ron 2026-07-04 风险抉择修订·占位 30% 挂数值细表）。 */
+export const AMBUSH_LOSS_PENALTY_RATE = 0.3;
+
+/**
+ * 遇袭迎战失败的折损表（纯函数）：逐键 floor(本单入账 × 比例)。**只作用于本单护航刚结算的入账**——
+ * 调用方拿它从钱包回收刚发的那部分，数学上恒 ≤ 本单入账、绝不触碰玩家既有存量；
+ * 量少的实物（金卡信标×1 等）floor 后为 0 → 不进折损表（天然免扣）。
+ */
+export function ambushLossPenalty(settledRewards: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const key of Object.keys(settledRewards)) {
+    const cut = Math.floor(settledRewards[key] * AMBUSH_LOSS_PENALTY_RATE);
+    if (cut > 0) out[key] = cut;
+  }
+  return out;
+}
+
 /** 遇袭小包产出（纯函数）：按 ambushBonusIndex 轮换（通用碎片/加速券·占位量）。 */
 export function bountyAmbushBonus(ambushBonusIndex: number): Record<string, number> {
   return { [ambushBonusItem(ambushBonusIndex)]: AMBUSH_BONUS_AMOUNT };

@@ -19,6 +19,8 @@ import {
   bountyAmbushTriggered,
   bountyAmbushBonus,
   claimBountyAmbushBonus,
+  ambushLossPenalty,
+  AMBUSH_LOSS_PENALTY_RATE,
   completeBountyCard,
   findBountyCard,
   seedBountyFromLegacyCommissions,
@@ -284,6 +286,30 @@ describe('S7StarportBounty - 结算（获得次数轮换推进·确定性）', (
     expect(st.ambushBonusCount).toBe(1);
     expect(claimBountyAmbushBonus(st)).toEqual({ supplyTicket: 2 });
     expect(st.ambushBonusCount).toBe(2);
+  });
+});
+
+describe('S7StarportBounty - 遇袭风险抉择·迎战失败折损（Ron 2026-07-04 修订·占位30%）', () => {
+  it('折损=逐键 floor(本单入账×30%)（80→24、10→3）', () => {
+    expect(AMBUSH_LOSS_PENALTY_RATE).toBe(0.3); // 占位比例挂细表·防无声改动
+    expect(ambushLossPenalty({ hullAlloy: 80, starCargo: 10 })).toEqual({ hullAlloy: 24, starCargo: 3 });
+  });
+
+  it('量小实物 floor 后免扣（金卡信标×1 不进折损表）', () => {
+    expect(ambushLossPenalty({ hullAlloy: 80, beaconCommon: 1 })).toEqual({ hullAlloy: 24 });
+  });
+
+  it('折损恒 ≤ 本单入账（"绝不触碰存量"的数学保证：回收量不超过刚发放量）', () => {
+    const settled: Record<string, number> = { hullAlloy: 133, starCargo: 17, shipBlueprint: 2, supplyTicket: 1 };
+    const loss = ambushLossPenalty(settled);
+    for (const k of Object.keys(loss)) {
+      expect(loss[k]).toBeGreaterThan(0);
+      expect(loss[k]).toBeLessThanOrEqual(settled[k]);
+    }
+  });
+
+  it('空入账 → 空折损（防御边界）', () => {
+    expect(ambushLossPenalty({})).toEqual({});
   });
 });
 
