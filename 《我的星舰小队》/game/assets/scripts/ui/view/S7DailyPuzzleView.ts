@@ -14,6 +14,8 @@
  */
 import { Node, Label, Color, Graphics, UITransform } from 'cc';
 import { getS7UsableBand } from '../S7UiLayout';
+// 战场朝向唯一真源（B0.7·B0.6#13）：敌阵沙盘/我方摆位一律走它换算，禁止自写。
+import { s7FieldVisualCell, s7FieldUniformPos, S7_FIELD_DEPTH, S7_FIELD_LATERAL } from '../S7BattleFieldOrient';
 
 /** 一个候选战队包的展示数据（舰+员固定绑定·可选核/插件）。 */
 export interface S7PuzzlePackView {
@@ -185,24 +187,23 @@ export class S7DailyPuzzleView {
   }
 
   /**
-   * 敌阵沙盘（真机修复批②·转向对齐实际战斗演出 fieldEnemyPos）：**纵深=竖轴、横向=行**。
-   * 敌 7 列纵深(c0 前排贴近你=最下 → c6 最深后排=最上)、5 行横向(r0 左 → r4 右)。故画成 7 高 × 5 宽、c0 在底。
+   * 敌阵沙盘（朝向走唯一真源 s7FieldUniformPos·B0.7）：纵深=竖轴、横向=行；敌前排(c0)在下贴近你、c6 最深在上。
    * 只画被占用格（威胁高亮）。区高 height 内自适应缩放（永不越区）。
    */
   private buildEnemySandbox(cells: readonly S7PuzzleEnemyCell[], topY: number, height: number): void {
     const gap = 3;
-    const chE = Math.max(12, Math.min(24, (height - 6 * gap) / 7)); // 7 列纵深占竖向
-    const cwE = Math.min(chE * 1.4, (this.W * 0.7 - 4 * gap) / 5);   // 5 行横向
-    const gridW = 5 * (cwE + gap) - gap, gridH = 7 * (chE + gap) - gap;
-    const xL = -gridW / 2 + cwE / 2;              // r0 最左
-    const yBottom = topY - height + chE / 2 + 4;  // c0(前排)在底
+    const depth = S7_FIELD_DEPTH.enemy, lateral = S7_FIELD_LATERAL.enemy; // 7 深 × 5 横
+    const chE = Math.max(12, Math.min(24, (height - (depth - 1) * gap) / depth)); // 深度占竖向
+    const cwE = Math.min(chE * 1.4, (this.W * 0.7 - (lateral - 1) * gap) / lateral);
+    const gridW = lateral * (cwE + gap) - gap, gridH = depth * (chE + gap) - gap;
+    const anchorX = -gridW / 2 + cwE / 2;      // visualCol0 = 最左
+    const anchorY = topY - chE / 2 - 4;         // visualRow0 = 最上
     const frame = new Node('efrm'); frame.layer = this.host.layer; this.bodyNode.addChild(frame); frame.setPosition(0, topY - height / 2, 0);
     const fg = frame.addComponent(Graphics); fg.fillColor = new Color(16, 20, 32, 255); fg.roundRect(-gridW / 2 - 8, -gridH / 2 - 8, gridW + 16, gridH + 16, 8); fg.fill();
     const occ = new Map(cells.map((c) => [c.slotRef, c]));
-    for (let r = 0; r < 5; r += 1) for (let c = 0; c < 7; c += 1) {
-      const cell = occ.get(`r${r}c${c}`);
-      const x = xL + r * (cwE + gap);      // 横向=行
-      const y = yBottom + c * (chE + gap); // 纵深=列（c0 在底·贴近你）
+    for (let row = 0; row < lateral; row += 1) for (let col = 0; col < depth; col += 1) {
+      const cell = occ.get(`r${row}c${col}`);
+      const { x, y } = s7FieldUniformPos('enemy', row, col, anchorX, anchorY, cwE, chE, gap);
       const n = new Node('ec'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
       const g = n.addComponent(Graphics);
       g.fillColor = cell ? (cell.threat ? new Color(200, 70, 70, 255) : new Color(120, 80, 80, 255)) : new Color(30, 36, 50, 255);
@@ -249,21 +250,22 @@ export class S7DailyPuzzleView {
   }
 
   /**
-   * 我方 3×3 选摆格（真机修复批②·转向对齐实际战斗 fieldPlayerPos）：**纵深=竖轴、横向=行**。
-   * 视觉上一行(vr=0)=前排(引擎 c2·贴近敌)、下一行(vr=2)=后排(引擎 c0)；视觉列 vc=引擎 row(横向)。
-   * 故视觉(vr,vc) → 引擎格 p{vc}c{2-vr}（引擎坐标/题库/验解器全不动·纯视觉映射）。自适应高度缩放。
+   * 我方 3×3 选摆格（朝向走唯一真源 s7FieldUniformPos·B0.7）：纵深=竖轴、横向=行；我方前排(c2)在上贴近敌。
+   * 遍历引擎格 p{row}c{col}，由 helper 定屏幕位置（引擎坐标/题库/验解器全不动·纯视觉）。自适应高度缩放。
    * 点空位放当前选中包、点已放格拿回。
    */
   private buildPlayerGrid(packs: readonly S7PuzzlePackView[], topY: number, height: number): void {
     const nameOf = new Map(packs.map((p) => [p.packId, p]));
     const gap = 10;
-    const cell = Math.max(64, Math.min(100, Math.min((height - 2 * gap) / 3, (this.W * 0.72 - 2 * gap) / 3)));
-    const gridW = 3 * (cell + gap) - gap;
-    const xL = -gridW / 2 + cell / 2, yTop = topY - cell / 2 - 2;
-    for (let vr = 0; vr < 3; vr += 1) for (let vc = 0; vc < 3; vc += 1) {
-      const engCol = 2 - vr;          // 上行=前排=引擎 c2
-      const slot = `p${vc}c${engCol}`; // 视觉列=引擎 row
-      const x = xL + vc * (cell + gap), y = yTop - vr * (cell + gap);
+    const depth = S7_FIELD_DEPTH.player, lateral = S7_FIELD_LATERAL.player; // 3 深 × 3 横
+    const cell = Math.max(64, Math.min(100, Math.min((height - (depth - 1) * gap) / depth, (this.W * 0.72 - (lateral - 1) * gap) / lateral)));
+    const gridW = lateral * (cell + gap) - gap;
+    const anchorX = -gridW / 2 + cell / 2, anchorY = topY - cell / 2 - 2;
+    for (let row = 0; row < lateral; row += 1) for (let col = 0; col < depth; col += 1) {
+      const slot = `p${row}c${col}`;
+      const { x, y } = s7FieldUniformPos('player', row, col, anchorX, anchorY, cell, cell, gap);
+      const isFront = s7FieldVisualCell('player', row, col).visualRow === 0;
+      const isBack = s7FieldVisualCell('player', row, col).visualRow === depth - 1;
       const pid = this.placement.get(slot);
       const pack = pid ? nameOf.get(pid) : undefined;
       const n = new Node('gc'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
@@ -279,7 +281,7 @@ export class S7DailyPuzzleView {
         l.string = pack.shipName;
         this.mkLabel(n, 0, -cell / 2 + 13, 13, new Color(150, 175, 205)).string = pack.pilotName;
       } else {
-        this.mkLabel(n, 0, 0, 15, new Color(90, 105, 130)).string = vr === 0 ? '前排' : vr === 2 ? '后排' : '·';
+        this.mkLabel(n, 0, 0, 15, new Color(90, 105, 130)).string = isFront ? '前排' : isBack ? '后排' : '·';
       }
       n.on(Node.EventType.TOUCH_END, () => this.onTapCell(slot), this);
     }

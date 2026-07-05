@@ -97,6 +97,7 @@ import {
 } from '../../core/s7/S7BuildingEffects';
 import { S7EffectBlock } from '../../core/s7/S7BattleEffectBlock';
 import { getS7UsableBand } from '../S7UiLayout';
+import { s7FieldVisualCell } from '../S7BattleFieldOrient'; // 战场朝向唯一真源（B0.7·所有阵位换算走它）
 import {
   S7SquadState, grantShip, grantPilot, grantCore, assignSlot, clearSlot, moveOrSwapFormationSlot, buildSquadLineup,
   isShipDeployed, findPilotShip, findCoreShip, findPluginShip,
@@ -795,15 +796,18 @@ export class S7DemoController extends Component {
   }
 
   // ===== 战场/备战 共用坐标（上下对称·中间留隙；备战看到的站位 = 战斗站位）=====
-  /** 我方格位屏幕坐标：row(0-2)=横向左右、col(0-2)=纵深(c2前排靠中线·在上)。我方占下半。 */
+  // 朝向 = 唯一真源 s7FieldVisualCell（B0.7·纵轴深度/横轴横排/我方前排在上·敌方前排在下）；本处只套战斗场的分数间距。
+  /** 我方格位屏幕坐标：row=横排、col=纵深（前排 c2 在上贴中线）。我方占下半。 */
   private fieldPlayerPos(row: number, col: number): { x: number; y: number } {
     const W = this.viewW, H = this.viewH;
-    return { x: (row - 1) * (W * 0.235), y: -H * 0.05 - ((2 - col) / 2) * (H * 0.20) };
+    const { visualRow, visualCol } = s7FieldVisualCell('player', row, col);
+    return { x: (visualCol - 1) * (W * 0.235), y: -H * 0.05 - visualRow * (H * 0.10) };
   }
-  /** 敌方格位屏幕坐标：row(0-4)=横向、col(0-6)=纵深(c0前排靠中线·在下)。敌方占上半。 */
+  /** 敌方格位屏幕坐标：row=横排、col=纵深（前排 c0 在下贴中线）。敌方占上半。 */
   private fieldEnemyPos(row: number, col: number): { x: number; y: number } {
     const W = this.viewW, H = this.viewH;
-    return { x: -W * 0.42 + ((row + 0.5) / 5) * (W * 0.84), y: H * 0.05 + (col / 6) * (H * 0.26) };
+    const { visualRow, visualCol } = s7FieldVisualCell('enemy', row, col);
+    return { x: -W * 0.42 + ((visualCol + 0.5) / 5) * (W * 0.84), y: H * 0.05 + (H * 0.26) - visualRow * (H * 0.26 / 6) };
   }
   /** 我方九宫格格子边长。 */
   private get fieldCell(): number { return this.viewW * 0.18; }
