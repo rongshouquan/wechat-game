@@ -18,6 +18,10 @@ export const S7_MAX_FORMATION_SLOTS = 5;
 /** 玩家阵位格 p0c0..p2c2。 */
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 
+/** 分玩法阵容记忆的四把钥匙（Ron 2026-07-05·真机修复批③b）：各记各的上次编队摆位，跨玩法不串。推演不适用（每题标准舰队）。 */
+export type S7GameplayLineupKey = 'mainline' | 'corridor' | 'escort' | 'drill';
+export const S7_GAMEPLAY_LINEUP_KEYS: readonly S7GameplayLineupKey[] = ['mainline', 'corridor', 'escort', 'drill'];
+
 /** 一个上阵位的配置（只管"哪艘船在哪格"；驾驶员/装备都跟船记忆，见 shipLoadouts）。 */
 export interface S7FormationSlot {
   slotRef: string;
@@ -43,10 +47,41 @@ export interface S7SquadState {
   formation: S7FormationSlot[];
   /** shipId → 该舰装配（星核/插件）。与编队解耦：船下场/换格，装配仍保留。 */
   shipLoadouts: Record<string, S7Loadout>;
+  /**
+   * 分玩法阵容记忆（③b·Ron 2026-07-05）：主线/回廊/护航/演习各记各的上次编队摆位（仅 {slotRef,shipId}·跨玩法不串）。
+   * 装配(驾驶员/核/插件)仍跟船全局记忆(shipLoadouts·一船一套)，不随玩法分叉。老档无此字段→空(加性)，首进各玩法从当前 formation 播种再分叉。
+   */
+  lineups: Partial<Record<S7GameplayLineupKey, S7FormationSlot[]>>;
 }
 
 export function createDefaultS7Squad(): S7SquadState {
-  return { ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} };
+  return { ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {}, lineups: {} };
+}
+
+/** 校验一份编队摆位（去重去空·≤5·仅 {slotRef,shipId}·无装配迁移）。供分玩法记忆规范化。 */
+function normFormationSlots(raw: unknown): S7FormationSlot[] {
+  const out: S7FormationSlot[] = [];
+  const seenSlots = new Set<string>();
+  const seenShips = new Set<string>();
+  if (Array.isArray(raw)) {
+    for (const r of raw) {
+      if (out.length >= S7_MAX_FORMATION_SLOTS) break;
+      const row = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+      const slotRef = row.slotRef;
+      const shipId = row.shipId;
+      if (typeof slotRef !== 'string' || !PLAYER_SLOT_PATTERN.test(slotRef) || seenSlots.has(slotRef)) continue;
+      if (typeof shipId !== 'string' || shipId.length === 0 || seenShips.has(shipId)) continue;
+      seenSlots.add(slotRef);
+      seenShips.add(shipId);
+      out.push({ slotRef, shipId });
+    }
+  }
+  return out;
+}
+
+/** 深拷贝一份编队摆位。 */
+function cloneFormation(f: readonly S7FormationSlot[]): S7FormationSlot[] {
+  return f.map((s) => ({ slotRef: s.slotRef, shipId: s.shipId }));
 }
 
 /** 取某船装配（不存在返回 null·只读）。 */
@@ -153,13 +188,42 @@ export function normalizeS7Squad(raw: unknown): S7SquadState {
       }
     }
   }
+  // ③b 分玩法阵容记忆：按四把钥匙收合法编队摆位；老档无 lineups → 空（加性·首进各玩法再播种）。
+  const lineups: Partial<Record<S7GameplayLineupKey, S7FormationSlot[]>> = {};
+  if (src.lineups && typeof src.lineups === 'object' && !Array.isArray(src.lineups)) {
+    for (const k of S7_GAMEPLAY_LINEUP_KEYS) {
+      const v = (src.lineups as Record<string, unknown>)[k];
+      if (v !== undefined) lineups[k] = normFormationSlots(v);
+    }
+  }
   return {
     ownedShips: normStrArray(src.ownedShips),
     ownedPilots: normStrArray(src.ownedPilots),
     ownedCores: normCores(src.ownedCores),
     formation,
     shipLoadouts,
+    lineups,
   };
+}
+
+// ===== 分玩法阵容记忆（③b·Ron 2026-07-05）：主线/回廊/护航/演习各记各的编队摆位 =====
+
+/**
+ * 载入某玩法的编队记忆到 squad.formation（有状态·进该玩法备战时调）：
+ *  - 该玩法已有记忆 → squad.formation = 记忆深拷贝（回到上次该玩法的阵型）；
+ *  - 首次(无记忆·含老档) → 从当前 squad.formation 播种该玩法记忆（"先回退当前全局记忆再各自分叉"），squad.formation 不变。
+ * 装配跟船全局(shipLoadouts)不受影响。返回载入后的 squad.formation。
+ */
+export function loadGameplayLineup(squad: S7SquadState, key: S7GameplayLineupKey): S7FormationSlot[] {
+  const mem = squad.lineups[key];
+  if (mem) squad.formation = cloneFormation(mem);
+  else squad.lineups[key] = cloneFormation(squad.formation); // 首次播种(迁移)
+  return squad.formation;
+}
+
+/** 把当前 squad.formation 存进某玩法的编队记忆（有状态·每次编队改动后调）。 */
+export function saveGameplayLineup(squad: S7SquadState, key: S7GameplayLineupKey): void {
+  squad.lineups[key] = cloneFormation(squad.formation);
 }
 
 // ===== 拥有（获取侧调用：抽卡/发奖/打捞接好后由它们调；A-step2 demo 先 seed 默认拥有）=====

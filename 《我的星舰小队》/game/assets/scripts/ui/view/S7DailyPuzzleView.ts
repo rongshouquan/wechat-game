@@ -72,13 +72,6 @@ export interface S7DailyPuzzleHost {
   devPuzzleIds(): string[];
 }
 
-/** 我方 3×3 九格（p{0-2}c{0-2}·c0=后排 c2=前排，与引擎一致）。 */
-const PLAYER_SLOTS: string[] = (() => {
-  const out: string[] = [];
-  for (let r = 0; r < 3; r += 1) for (let c = 0; c < 3; c += 1) out.push(`p${r}c${c}`);
-  return out;
-})();
-
 export class S7DailyPuzzleView {
   private readonly root: Node;
   private readonly bodyNode: Node;
@@ -89,6 +82,7 @@ export class S7DailyPuzzleView {
   private readonly startBtn: Node;
   private readonly startLabel: Label;
   private readonly topY: number;
+  private readonly bottomY: number;
 
   /** 选摆瞬态（UI 状态·不入档）：slotRef→packId + 当前选中待放的包。 */
   private placement = new Map<string, string>();
@@ -103,6 +97,7 @@ export class S7DailyPuzzleView {
   ) {
     const band = getS7UsableBand();
     this.topY = opts.topY ?? band.usableTopY;
+    this.bottomY = band.usableBottomY;
     const root = new Node('S7DailyPuzzle'); root.layer = host.layer; parent.addChild(root); root.setPosition(0, 0, 0);
     const bg = root.addComponent(Graphics); bg.fillColor = new Color(10, 16, 30, 252); bg.rect(-W / 2, -H / 2, W, H); bg.fill();
     root.addComponent(UITransform).setContentSize(W, H);
@@ -159,24 +154,29 @@ export class S7DailyPuzzleView {
     this.noticeLabel.string = d.solved
       ? `🎉 今日已解 · 奖励 ${d.solvedRewardText} · 明日再会（可重温·不重复发奖）`
       : this.selectedPackId
-        ? `已选中一个战队包 —— 点下方九宫格空位放上去`
+        ? '已选中一个战队包 —— 点下方九宫格空位放上去'
         : `点候选包选中 → 点九宫格摆位 · 已摆 ${this.placement.size}/${d.lineupSize}（点已摆的格可拿回）`;
 
-    let y = this.topY - 158;
-    // 敌阵沙盘（缩略）。
-    this.mkLabel(this.bodyNode, 0, y, 20, new Color(200, 150, 150)).string = '── 敌阵沙盘（威胁高亮）──';
-    y -= 26;
-    this.buildEnemySandbox(d.enemyCells, y);
-    y -= 150;
-    // 候选战队包横排。
-    this.mkLabel(this.bodyNode, 0, y, 20, new Color(150, 200, 220)).string = `── 候选战队包（选 ${d.lineupSize} 个·归一 C 阶 Lv10）──`;
-    y -= 26;
-    this.buildCandidateRow(d.candidatePacks, y);
-    y -= 132;
-    // 我方 3×3 选摆。
-    this.mkLabel(this.bodyNode, 0, y, 20, new Color(150, 220, 180)).string = '── 我方摆位（c0=后排 · c2=前排）──';
-    y -= 20;
-    this.buildPlayerGrid(d.candidatePacks, y);
+    // 四区顺排（自适应高度·区间零重叠·守 B0.6 ②·真机修复批①）：题头 → 敌阵沙盘 → 候选包 → 我方摆位。
+    // 每区 = 分隔标题(DIV) + 内容(自适应)；总高按可用竖向空间三区按比例分，格子随之缩放，永不叠。
+    const DIV = 26, GAP = 12;
+    const headerBottom = this.topY - 138;       // 题头块(含威胁提示/notice)之下
+    const floor = this.bottomY + 168;           // 内容底（开打大钮之上，留呼吸）
+    const contentH = Math.max(240, headerBottom - floor - 3 * DIV - 3 * GAP);
+    const hEnemy = contentH * 0.26, hCand = contentH * 0.36, hGrid = contentH * 0.38;
+    let y = headerBottom;
+    const divider = (text: string, color: Color): void => {
+      this.mkLabel(this.bodyNode, 0, y - DIV / 2, 19, color).string = text;
+      y -= DIV;
+    };
+    divider('── 敌阵沙盘（下＝敌前排·贴近你 · 威胁高亮）──', new Color(210, 150, 150));
+    this.buildEnemySandbox(d.enemyCells, y, hEnemy);
+    y -= hEnemy + GAP;
+    divider(`── 候选战队包（选 ${d.lineupSize} 个·归一 C 阶 Lv10）──`, new Color(150, 200, 220));
+    this.buildCandidateRow(d.candidatePacks, y, hCand);
+    y -= hCand + GAP;
+    divider('── 我方摆位（上＝我前排·贴近敌 · 下＝后排）──', new Color(150, 220, 180));
+    this.buildPlayerGrid(d.candidatePacks, y, hGrid);
 
     // 开打态：满 5 才可开（未满置灰·B0.6 ④⑥）。
     const ready = this.placement.size === d.lineupSize;
@@ -184,37 +184,47 @@ export class S7DailyPuzzleView {
     this.redrawBtnBg(this.startBtn, ready ? new Color(235, 170, 50, 255) : new Color(90, 90, 96, 255));
   }
 
-  /** 敌阵沙盘：5 行 × 7 列缩略网格，只画被占用格（威胁高亮）。列越大越深（c6 最深后排）。 */
-  private buildEnemySandbox(cells: readonly S7PuzzleEnemyCell[], topCy: number): void {
-    const cw = Math.min(38, (this.W * 0.9) / 7), ch = 26, gap = 3;
-    const gridW = 7 * (cw + gap) - gap, gridH = 5 * (ch + gap) - gap;
-    const x0 = -gridW / 2 + cw / 2, y0 = topCy - ch / 2;
-    // 底板框。
-    const frame = new Node('efrm'); frame.layer = this.host.layer; this.bodyNode.addChild(frame); frame.setPosition(0, topCy - gridH / 2, 0);
+  /**
+   * 敌阵沙盘（真机修复批②·转向对齐实际战斗演出 fieldEnemyPos）：**纵深=竖轴、横向=行**。
+   * 敌 7 列纵深(c0 前排贴近你=最下 → c6 最深后排=最上)、5 行横向(r0 左 → r4 右)。故画成 7 高 × 5 宽、c0 在底。
+   * 只画被占用格（威胁高亮）。区高 height 内自适应缩放（永不越区）。
+   */
+  private buildEnemySandbox(cells: readonly S7PuzzleEnemyCell[], topY: number, height: number): void {
+    const gap = 3;
+    const chE = Math.max(12, Math.min(24, (height - 6 * gap) / 7)); // 7 列纵深占竖向
+    const cwE = Math.min(chE * 1.4, (this.W * 0.7 - 4 * gap) / 5);   // 5 行横向
+    const gridW = 5 * (cwE + gap) - gap, gridH = 7 * (chE + gap) - gap;
+    const xL = -gridW / 2 + cwE / 2;              // r0 最左
+    const yBottom = topY - height + chE / 2 + 4;  // c0(前排)在底
+    const frame = new Node('efrm'); frame.layer = this.host.layer; this.bodyNode.addChild(frame); frame.setPosition(0, topY - height / 2, 0);
     const fg = frame.addComponent(Graphics); fg.fillColor = new Color(16, 20, 32, 255); fg.roundRect(-gridW / 2 - 8, -gridH / 2 - 8, gridW + 16, gridH + 16, 8); fg.fill();
     const occ = new Map(cells.map((c) => [c.slotRef, c]));
     for (let r = 0; r < 5; r += 1) for (let c = 0; c < 7; c += 1) {
       const cell = occ.get(`r${r}c${c}`);
-      const x = x0 + c * (cw + gap), y = y0 - r * (ch + gap);
+      const x = xL + r * (cwE + gap);      // 横向=行
+      const y = yBottom + c * (chE + gap); // 纵深=列（c0 在底·贴近你）
       const n = new Node('ec'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
       const g = n.addComponent(Graphics);
       g.fillColor = cell ? (cell.threat ? new Color(200, 70, 70, 255) : new Color(120, 80, 80, 255)) : new Color(30, 36, 50, 255);
-      g.roundRect(-cw / 2, -ch / 2, cw, ch, 4); g.fill();
-      if (cell) this.mkLabel(n, 0, 0, 16, new Color(255, 255, 255)).string = cell.mark;
+      g.roundRect(-cwE / 2, -chE / 2, cwE, chE, 4); g.fill();
+      if (cell) { const l = this.mkLabel(n, 0, 0, Math.min(15, chE - 8), new Color(255, 255, 255)); l.string = cell.mark; }
     }
   }
 
-  /** 候选战队包横排（分行铺·点选高亮·已上阵置灰）。 */
-  private buildCandidateRow(packs: readonly S7PuzzlePackView[], topCy: number): void {
-    const perRow = 4;
-    const cardW = Math.min(174, (this.W * 0.94) / perRow - 8), cardH = 108, gap = 8;
+  /** 候选战队包横排（2 行铺·自适应高度不压缩·点选高亮·已上阵置灰·真机修复批①·守 B0.6 ②）。 */
+  private buildCandidateRow(packs: readonly S7PuzzlePackView[], topY: number, height: number): void {
+    const perRow = 4, gap = 8, rowGap = 10;
+    const rows = Math.max(1, Math.ceil(packs.length / perRow));
+    const cardW = Math.min(174, (this.W * 0.94) / perRow - gap);
+    const cardH = Math.max(76, Math.min(112, (height - (rows - 1) * rowGap) / rows));
+    const topRowY = topY - cardH / 2 - 2;
     const placedPacks = new Set(this.placement.values());
     packs.forEach((p, i) => {
       const rowN = Math.floor(i / perRow), col = i % perRow;
       const rowCount = Math.min(perRow, packs.length - rowN * perRow);
       const rowW = rowCount * (cardW + gap) - gap;
       const x = -rowW / 2 + cardW / 2 + col * (cardW + gap);
-      const y = topCy - rowN * (cardH + 10);
+      const y = topRowY - rowN * (cardH + rowGap);
       const placed = placedPacks.has(p.packId);
       const selected = this.selectedPackId === p.packId;
       const n = new Node('pk'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
@@ -225,30 +235,35 @@ export class S7DailyPuzzleView {
       g.lineWidth = selected ? 5 : 2;
       g.strokeColor = selected ? new Color(240, 205, 90, 255) : placed ? new Color(70, 75, 85, 255) : new Color(90, 120, 165, 255);
       g.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 8); g.stroke();
-      const nameL = this.mkLabel(n, 0, cardH / 2 - 20, 20, placed ? new Color(120, 125, 135) : new Color(225, 232, 245));
+      // 卡内自上而下：舰·员 / [定位型]·核插件 / 状态行（按卡高比例排·小卡不撞）。
+      const nameL = this.mkLabel(n, 0, cardH * 0.30, 19, placed ? new Color(120, 125, 135) : new Color(225, 232, 245));
       nameL.overflow = Label.Overflow.SHRINK; nameL.enableWrapText = false; nameL.node.getComponent(UITransform)!.setContentSize(cardW - 12, 24);
       nameL.string = `${p.shipName}·${p.pilotName}`;
-      this.mkLabel(n, 0, cardH / 2 - 46, 16, new Color(150, 180, 150)).string = `[${p.posType}]`;
-      if (p.extra) {
-        const ex = this.mkLabel(n, 0, -cardH / 2 + 30, 15, new Color(200, 180, 120));
-        ex.overflow = Label.Overflow.SHRINK; ex.enableWrapText = true; ex.node.getComponent(UITransform)!.setContentSize(cardW - 12, 30);
-        ex.string = p.extra;
-      }
-      this.mkLabel(n, 0, -cardH / 2 + 12, 15, placed ? new Color(150, 155, 165) : selected ? new Color(240, 205, 90) : new Color(130, 155, 190))
-        .string = placed ? '已上阵（点九宫格拿回）' : selected ? '✓ 已选·点格子放' : '点选';
+      const midL = this.mkLabel(n, 0, cardH * 0.03, 15, new Color(170, 190, 160));
+      midL.overflow = Label.Overflow.SHRINK; midL.enableWrapText = false; midL.node.getComponent(UITransform)!.setContentSize(cardW - 12, 22);
+      midL.string = p.extra ? `[${p.posType}] ${p.extra}` : `[${p.posType}]`;
+      this.mkLabel(n, 0, -cardH * 0.32, 15, placed ? new Color(150, 155, 165) : selected ? new Color(240, 205, 90) : new Color(130, 155, 190))
+        .string = placed ? '已上阵·点格拿回' : selected ? '✓已选·点格放' : '点选';
       if (!placed) n.on(Node.EventType.TOUCH_END, () => this.onPickPack(p.packId), this);
     });
   }
 
-  /** 我方 3×3 选摆格：点空位放当前选中包、点已放格拿回。 */
-  private buildPlayerGrid(packs: readonly S7PuzzlePackView[], topCy: number): void {
+  /**
+   * 我方 3×3 选摆格（真机修复批②·转向对齐实际战斗 fieldPlayerPos）：**纵深=竖轴、横向=行**。
+   * 视觉上一行(vr=0)=前排(引擎 c2·贴近敌)、下一行(vr=2)=后排(引擎 c0)；视觉列 vc=引擎 row(横向)。
+   * 故视觉(vr,vc) → 引擎格 p{vc}c{2-vr}（引擎坐标/题库/验解器全不动·纯视觉映射）。自适应高度缩放。
+   * 点空位放当前选中包、点已放格拿回。
+   */
+  private buildPlayerGrid(packs: readonly S7PuzzlePackView[], topY: number, height: number): void {
     const nameOf = new Map(packs.map((p) => [p.packId, p]));
-    const cell = 96, gap = 10;
+    const gap = 10;
+    const cell = Math.max(64, Math.min(100, Math.min((height - 2 * gap) / 3, (this.W * 0.72 - 2 * gap) / 3)));
     const gridW = 3 * (cell + gap) - gap;
-    const x0 = -gridW / 2 + cell / 2, y0 = topCy - cell / 2;
-    PLAYER_SLOTS.forEach((slot) => {
-      const r = Number(slot[1]), c = Number(slot[3]);
-      const x = x0 + c * (cell + gap), y = y0 - r * (cell + gap);
+    const xL = -gridW / 2 + cell / 2, yTop = topY - cell / 2 - 2;
+    for (let vr = 0; vr < 3; vr += 1) for (let vc = 0; vc < 3; vc += 1) {
+      const engCol = 2 - vr;          // 上行=前排=引擎 c2
+      const slot = `p${vc}c${engCol}`; // 视觉列=引擎 row
+      const x = xL + vc * (cell + gap), y = yTop - vr * (cell + gap);
       const pid = this.placement.get(slot);
       const pack = pid ? nameOf.get(pid) : undefined;
       const n = new Node('gc'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
@@ -259,15 +274,15 @@ export class S7DailyPuzzleView {
       g.lineWidth = 2; g.strokeColor = pack ? new Color(120, 175, 235, 255) : new Color(60, 72, 96, 255);
       g.roundRect(-cell / 2, -cell / 2, cell, cell, 8); g.stroke();
       if (pack) {
-        const l = this.mkLabel(n, 0, 6, 17, new Color(230, 238, 250));
-        l.overflow = Label.Overflow.SHRINK; l.enableWrapText = true; l.node.getComponent(UITransform)!.setContentSize(cell - 10, cell - 24);
+        const l = this.mkLabel(n, 0, cell * 0.08, Math.min(16, cell * 0.19), new Color(230, 238, 250));
+        l.overflow = Label.Overflow.SHRINK; l.enableWrapText = true; l.node.getComponent(UITransform)!.setContentSize(cell - 10, cell * 0.5);
         l.string = pack.shipName;
-        this.mkLabel(n, 0, -cell / 2 + 14, 14, new Color(150, 175, 205)).string = pack.pilotName;
+        this.mkLabel(n, 0, -cell / 2 + 13, 13, new Color(150, 175, 205)).string = pack.pilotName;
       } else {
-        this.mkLabel(n, 0, 0, 16, new Color(90, 105, 130)).string = c === 0 ? '后排' : c === 2 ? '前排' : '·';
+        this.mkLabel(n, 0, 0, 15, new Color(90, 105, 130)).string = vr === 0 ? '前排' : vr === 2 ? '后排' : '·';
       }
       n.on(Node.EventType.TOUCH_END, () => this.onTapCell(slot), this);
-    });
+    }
   }
 
   private onPickPack(packId: string): void {

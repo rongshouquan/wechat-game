@@ -57,7 +57,7 @@ describe('s7 save - resource skeleton', () => {
       expansion7: { progress: 0, claimedMilestones: [], completionClaimed: false, cycleStartTime: 0, settlementCount: 0 },
     }); // 块7a/7b：默认空活动进度（含周期字段）
     expect(data.playerState.unitLevels).toEqual({ shipLevels: {}, pilotLevels: {} }); // C1b 升级变强：默认空(全1级)
-    expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} }); // 阶段一A：默认空阵容
+    expect(data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {}, lineups: {} }); // 阶段一A：默认空阵容
     expect(data.playerState.mailbox).toEqual({ mails: [], nextSeq: 1 }); // 阶段一G2：默认空邮箱
     expect(data.playerState.adDaily).toEqual({ entries: {} }); // 块1：默认空广告每日计数
     expect(data.playerState.bounty).toEqual({ cards: [], lastGenDayKey: 0, noGoldDays: 0, goldPhysicalCount: 0, ambushBonusCount: 0 }); // 块2：默认空悬赏板（首次进入才刷）
@@ -601,7 +601,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.migrated).toBe(true);
     expect(r.corrupted).toBe(false);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(r.data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {} }); // 新字段补默认空
+    expect(r.data.playerState.squad).toEqual({ ownedShips: [], ownedPilots: [], ownedCores: {}, formation: [], shipLoadouts: {}, lineups: {} }); // 新字段补默认空
     expect(r.data.playerState.unitLevels.shipLevels.shp01).toBe(8); // 旧字段保留
     expect(r.data.playerState.resources.starOre).toBe(4200);
     expect(r.data.playerState.mainlineProgress.currentNodeId).toBe('n006');

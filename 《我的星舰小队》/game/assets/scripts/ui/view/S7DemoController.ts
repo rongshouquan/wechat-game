@@ -100,6 +100,7 @@ import { getS7UsableBand } from '../S7UiLayout';
 import {
   S7SquadState, grantShip, grantPilot, grantCore, assignSlot, clearSlot, moveOrSwapFormationSlot, buildSquadLineup,
   isShipDeployed, findPilotShip, findCoreShip, findPluginShip,
+  S7GameplayLineupKey, loadGameplayLineup, saveGameplayLineup, // ③b 分玩法阵容记忆
 } from '../../core/s7/S7Squad';
 import { buildPrebattleView, shipPowerOf, S7PrebattleView } from '../../core/s7/S7PrebattleView';
 import { equipPlugin, unequipPlugin, equipCore, unequipCore, equipPilot, unequipPilot } from '../../core/s7/S7ShipLoadout';
@@ -328,6 +329,8 @@ export class S7DemoController extends Component {
   /** 备战底部「选择关卡」键（悬赏备战隐藏·主线专属）+「返回」键文字（悬赏备战改「返回悬赏板」）。 */
   private prebattleLevelSelBtn: Node | null = null;
   private prebattleBackLabel: Label | null = null;
+  /** 当前备战所属玩法（③b 分玩法阵容记忆·四把钥匙：主线/回廊/护航/演习）。openPrebattle 按模式设、编队改动后据它存记忆。 */
+  private prebattleGameplay: S7GameplayLineupKey = 'mainline';
   // DEV-TEMP（块2悬赏板真机验收批·上线前删）：必遇袭武装标志 + 重掷计数（均仅内存·不入档）。
   // salt 绑启动时间避免"重启后重掷"与上次会话的 DEV 批撞卡 id（salt 仅内存、裸 0 起会复现同 fakeKey）。
   private devBountyForceAmbush = false;
@@ -3437,8 +3440,25 @@ export class S7DemoController extends Component {
     const isCorridor = this.corridorPrepLayer !== null; // 块3：回廊模式也藏「选择关卡」、返回改「返回回廊」
     if (this.prebattleLevelSelBtn) this.prebattleLevelSelBtn.active = !isBounty && !isCorridor; // 选关=主线专属
     if (this.prebattleBackLabel) this.prebattleBackLabel.string = isBounty ? '返回悬赏板' : isCorridor ? '返回回廊' : '返回星港';
+    // ③b：定当前玩法（护航/演习按悬赏卡主题分）+ 载入该玩法的编队记忆（首进从当前全局 formation 播种再分叉）。
+    this.prebattleGameplay = isCorridor ? 'corridor' : isBounty ? this.bountyThemeKey() : 'mainline';
+    if (this.squad) loadGameplayLineup(this.squad, this.prebattleGameplay);
     this.refreshPrebattle();
     this.prebattleNode.active = true;
+  }
+
+  /** 当前悬赏卡主题 → 阵容记忆钥匙（护航=escort / 演习=drill；缺卡兜底 escort）。 */
+  private bountyThemeKey(): S7GameplayLineupKey {
+    if (this.bountyPrepCardId && this.playerState) {
+      const card = findBountyCard(this.playerState.bounty, this.bountyPrepCardId);
+      if (card) return card.theme === 'drill' ? 'drill' : 'escort';
+    }
+    return 'escort';
+  }
+
+  /** 把当前编队存进当前玩法的阵容记忆（③b·编队改动后调：上/下场、拖动换位）。 */
+  private saveGameplayLineup(): void {
+    if (this.squad) saveGameplayLineup(this.squad, this.prebattleGameplay);
   }
 
   /** 备战「返回」：悬赏→回悬赏板 / 回廊→回塔 / 主线→回基地。 */
@@ -3567,6 +3587,7 @@ export class S7DemoController extends Component {
     const target = this.cellAtLocal(lx, ly) ?? startSlot;
     if (this.squad && target !== startSlot && this.slotOf(startSlot)) {
       moveOrSwapFormationSlot(this.squad, startSlot, target); // 拖动：有船→移动/互换
+      this.saveGameplayLineup(); // ③b：换位后存进当前玩法阵容记忆
       this.persist();
       this.refreshPrebattle();
     } else {
@@ -3595,7 +3616,8 @@ export class S7DemoController extends Component {
       return;
     }
     const ship = this.prebattleSelShip;
-    if (isShipDeployed(this.squad, ship)) {
+    const wasDeployed = isShipDeployed(this.squad, ship);
+    if (wasDeployed) {
       const cell = this.squad.formation.find((s) => s.shipId === ship)?.slotRef;
       if (cell) clearSlot(this.squad, cell); // 下场（驾驶员/装备跟船记忆保留）
     } else {
@@ -3605,9 +3627,12 @@ export class S7DemoController extends Component {
       }
       assignSlot(this.squad, this.prebattleSelSlot, ship, null); // 上场（保留本舰已记忆的驾驶员）
     }
+    this.saveGameplayLineup(); // ③b：把本次编队改动存进当前玩法的阵容记忆
     this.persist();
-    this.refreshBoarding();
     this.refreshPrebattle();
+    // ③a（真机修复批·Ron 2026-07-05）：上场后底部「上阵界面」自动收起；下场保持开着可继续调阵。
+    if (wasDeployed) this.refreshBoarding();
+    else this.closeBoarding();
   }
 
   /** 备战信息行提示（橙色警示）。 */
