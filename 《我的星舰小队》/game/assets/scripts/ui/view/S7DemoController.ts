@@ -1501,7 +1501,7 @@ export class S7DemoController extends Component {
         if (adSt.kind !== 'hidden') {
           const base = '📺 看广告立即完成';
           const label = adSt.kind === 'ticket' ? adTicketButtonLabel(base, adSt.tickets) : base;
-          this.clampBtnLabel(this.addBtn(this.salvageListNode, label, 280, 64, new Color(200, 130, 70, 255), this.viewW * 0.22, y, () => this.onSalvageAdComplete(mid), 22));
+          this.clampBtnLabel(this.addBtn(this.salvageListNode, label, 260, 64, new Color(200, 130, 70, 255), this.viewW * 0.19, y, () => this.onSalvageAdComplete(mid), 22));
         }
         this.addBtn(this.salvageListNode, '秒成', 110, 64, new Color(110, 90, 140, 255), this.viewW * 0.44, y, () => this.devFinishSalvage(mid), 24); // DEV-TEMP
       }
@@ -2045,7 +2045,7 @@ export class S7DemoController extends Component {
     if (this.prebattleNode) this.prebattleNode.active = false;
     if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
     this.refresh();
-    this.maybeShowAnecdote(); // 块5 星港趣事：回 hub 是触发时机之一（每日≤1·低概率·确定性）
+    // 趣事触发不放这里：本函数也被悬赏/回廊/推演"单键返回"链路调用（落点是大厅/塔页非 hub）——触发点在 onResultGoHome 主线分支。
   }
   /** 结果窗·返回：悬赏战斗 → 单键回悬赏板（有遇袭先接遭遇战）；主线 → 收战斗画面回基地。 */
   private onResultGoHome(): void {
@@ -2053,6 +2053,7 @@ export class S7DemoController extends Component {
     if (this.corridorActiveLayer !== null) { this.onCorridorResultReturn(); return; } // 块3：单键回塔
     if (this.puzzleActiveId !== null) { this.onPuzzleResultReturn(); return; } // 块4：单键回推演页
     this.dismissBattleScene();
+    this.maybeShowAnecdote(); // 块5 星港趣事：主线战斗返回=真正"进 hub"（悬赏/回廊/推演返回落点是大厅/塔页·不触发）
   }
   /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
   private onResultGoPrebattle(): void {
@@ -5917,10 +5918,15 @@ export class S7DemoController extends Component {
     if (grand) this.openGrandRewardPopup(grand);
   }
 
-  /** ③终稿·选完「继续」（有广告键浮现时走此；无键时首选后已直接 finish）。 */
+  /** ③终稿·选完「继续」（有广告键浮现时走此；无键时首选后已直接 finish）。
+   *  #4 已看广告但还没再选 → 拦下（广告已花·别让玩家一键跳过丢掉再选机会——与首选"必须选1"同精神）。 */
   private onContinueLevelReward(): void {
     const p = this.pendingLevelReward;
     if (!p || p.pickedIndex === null) return;
+    if (p.extraPickArmed && p.extraPickedIndex === null) {
+      if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '广告已看完——先从剩下两张里再选一张，别浪费';
+      return;
+    }
     this.finishLevelReward();
   }
 
