@@ -6176,7 +6176,6 @@ export class S7DemoController extends Component {
   private makeCorridorHost(): S7CorridorHost {
     return {
       layer: this.node.layer,
-      highestCleared: () => this.playerState?.corridor.highestClearedLayer ?? 0,
       nextLayer: () => (this.playerState ? nextCorridorLayer(this.playerState.corridor) : 1),
       layerCard: (L) => this.corridorLayerCard(L),
       milestones: () => this.corridorMilestoneCards(),

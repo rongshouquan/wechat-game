@@ -39,8 +39,6 @@ export interface S7CorridorMilestoneCard {
 /** 控制器提供给塔页 view 的宿主接口（数据只读 + 动作回调）。 */
 export interface S7CorridorHost {
   readonly layer: number;
-  /** 历史最高已通层。 */
-  highestCleared(): number;
   /** 下一层（只能打下一层）。 */
   nextLayer(): number;
   /** 某层的展示卡（当前挑战层 + 上方剪影层）。 */
@@ -107,9 +105,8 @@ export class S7CorridorTowerView {
 
   /** 重刷：层数牌 + 挑战大卡 + 上方剪影 + 里程碑宝箱区。数据每次从 host 现取（战斗返回后自动反映）。 */
   refresh(): void {
-    const highest = this.host.highestCleared();
     const next = this.host.nextLayer();
-    this.headerLabel.string = `🗼 深空回廊 · 下一层 第 ${next} 层 · 历史最高 ${highest} 层`;
+    this.headerLabel.string = `🗼 深空回廊 · 下一层 第 ${next} 层`;
     this.noticeLabel.string = '';
     this.bodyNode.removeAllChildren();
 
