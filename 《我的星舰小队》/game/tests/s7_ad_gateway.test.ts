@@ -8,10 +8,12 @@ import {
 } from '../assets/scripts/core/s7/S7AdGateway';
 
 describe('G1 · 广告网关', () => {
-  it('点位清单齐全（S13.2 十点位·第2.5块随块补齐，块1 回港翻倍 + 块3 回廊里程碑翻倍后现 7 个）', () => {
-    expect([...S7_AD_POINTS].sort()).toEqual(
-      ['cargo_extra_pick', 'clear_reward_double', 'corridor_milestone_double', 'merchant_refresh', 'return_report_double', 'salvage_speedup', 'sponsor_supply'],
-    );
+  it('点位清单齐全（S13.2 十点位·块5 补齐 10/10：+今日补给箱/三选一再选一/战败安慰双倍）', () => {
+    expect([...S7_AD_POINTS].sort()).toEqual([
+      'cargo_extra_pick', 'clear_reward_double', 'corridor_milestone_double', 'daily_supply_chest',
+      'defeat_consolation_double', 'merchant_refresh', 'return_report_double', 'salvage_speedup',
+      'sponsor_supply', 'triple_pick_extra',
+    ]);
   });
 
   it('mock 默认"看完" → 各点位 show 返回 ok', async () => {

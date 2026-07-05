@@ -17,11 +17,12 @@ export type SfxEvent =
   | 'chest_open'
   | 'reward_claim'
   | 'return_report'
-  | 'dispatch_done'
   | 'tower_up'
   | 'tower_milestone'
   | 'puzzle_start'
   | 'puzzle_solve'
+  | 'supply_chest_open'
+  | 'trivia_pop'
   | 'ui_click';
 
 /** 背景音乐场景（切换式，同一时刻只有一条在播）。 */
@@ -37,15 +38,17 @@ export const SFX_EVENT_NOTES: Readonly<Record<SfxEvent, string>> = {
   upgrade_ascend: '星舰升阶成功',
   upgrade_star_up: '驾驶员升星成功',
   chest_open: '宝箱开箱选中奖励',
-  reward_claim: '通用奖励领取（邮件/兑换箱）',
+  reward_claim: '通用奖励领取（邮件/兑换箱/安慰双倍等通用入账）',
   return_report: '回港报告弹窗弹出（舰队归港·包A 块1）',
-  dispatch_done: '每日委托秒结算/速刷入账（包A 块2）',
   tower_up: '深空回廊通过一层（包A·块3）',
   tower_milestone: '深空回廊里程碑领取（包A·块3）',
   puzzle_start: '每日推演开始推演（包A·块4）',
   puzzle_solve: '每日推演解开（首胜·包A·块4）',
+  supply_chest_open: '今日补给箱开箱入账（包A·块5）',
+  trivia_pop: '星港趣事弹泡出现（轻快·包A·块5）',
   ui_click: '主要按钮点击',
 };
+// 块5 清理：dispatch_done（每日委托秒结算/速刷）随"委托→悬赏板"重构作废——秒结算机制已删、事件成孤儿，一并移除（附录C 同步）。
 
 export const BGM_SCENE_NOTES: Readonly<Record<BgmScene, string>> = {
   bgm_hub: '主界面/星港等非战斗场景',

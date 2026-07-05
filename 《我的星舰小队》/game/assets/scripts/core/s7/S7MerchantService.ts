@@ -56,14 +56,13 @@ export function generateMerchantStock(state: S7MerchantState, config: S7Merchant
   state.offers = offers;
 }
 
-/** 每日自动刷新：跨周期则重铺货 + 清零购买量/刷新计数。返回是否发生刷新。进商店/抽取前调。 */
+/** 每日自动刷新：跨周期则重铺货 + 清零购买量/免费刷新计数（跨天=全清·含 keepBoughtOnRefresh 商品）。返回是否发生刷新。进商店/抽取前调。 */
 export function refreshMerchantToCycle(state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, now: number): boolean {
   const cycle = merchantDayKey(now);
   if (state.cycleKey === cycle && state.offers.length > 0) return false;
   generateMerchantStock(state, config, merchantLevel, rng);
   state.dailyBought = {};
   state.freeRefreshRemaining = config.refresh.freePerCycle; // 每周期重置为基础免费刷新次数
-  state.adRefreshRemaining = config.refresh.adPerCycle;
   state.cycleKey = cycle;
   return true;
 }
@@ -93,17 +92,38 @@ export function buyMerchantOffer(state: S7MerchantState, wallet: Record<string, 
   return { ok: true, item: offer.item, spent: offer.price };
 }
 
-// ===== 刷新（免费 / 付费 / 广告）=====
+// ===== 刷新（免费 / 广告）=====
 
 export type S7RefreshMode = 'free' | 'ad';
 export type S7RefreshResult =
   | { ok: true; mode: S7RefreshMode; remaining: number }
   | { ok: false; reason: 'cap_reached' };
 
+/** 手动刷新时应保留已购计数的商品 key 集（keepBoughtOnRefresh·块5 广告券每日限购防绕过）。 */
+function keepBoughtKeys(config: S7MerchantConfig): Set<string> {
+  const keys = new Set<string>();
+  for (const t of config.alwaysOffers.concat(config.rollPool)) {
+    if (t.keepBoughtOnRefresh) keys.add(shopItemKey(t.item));
+  }
+  return keys;
+}
+
+/** 清"新一茬店"的购买计数：默认全清（可重新买）；keepBoughtOnRefresh 商品保留（只在跨天重置）。 */
+function resetBoughtForNewStock(state: S7MerchantState, config: S7MerchantConfig): void {
+  const keep = keepBoughtKeys(config);
+  const preserved: Record<string, number> = {};
+  for (const k of Object.keys(state.dailyBought)) {
+    if (keep.has(k)) preserved[k] = state.dailyBought[k];
+  }
+  state.dailyBought = preserved;
+}
+
 /**
- * 手动刷新货架（全新一茬店：重铺一批轮换货 + **同时清零购买次数**·Ron 2026-06-21）。消耗一次"剩余刷新次数"。
- *  - free：剩余次数 = 每周期基础(freePerCycle) + 商人升级一次性赠送(见 grantMerchantFreeRefresh)；ad：每周期基础(adPerCycle)。（无付费刷新·Ron）
- *  - 防套利：刷新次数本身有限 + 回收折损。
+ * 手动刷新货架（全新一茬店：重铺一批轮换货 + **同时清零购买次数**·Ron 2026-06-21；
+ * keepBoughtOnRefresh 商品的已购保留——块5 广告券"每日限购 1"不被刷新绕过）。
+ *  - free：消耗一次剩余免费次数 = 每周期基础(freePerCycle) + 商人升级一次性赠送(见 grantMerchantFreeRefresh)。
+ *  - ad：**无内部上限**（块5 起每日 1 次由 S7AdPointPolicy + S7AdDailyCounter 在调用侧收口·本函数只管重铺货）。
+ *  - 防套利：免费次数有限 + 广告统一政策限次 + keepBought 保留 + 回收折损。
  */
 export function refreshMerchantShop(
   state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng, mode: S7RefreshMode,
@@ -112,15 +132,13 @@ export function refreshMerchantShop(
     if (state.freeRefreshRemaining <= 0) return { ok: false, reason: 'cap_reached' };
     state.freeRefreshRemaining -= 1;
     generateMerchantStock(state, config, merchantLevel, rng);
-    state.dailyBought = {}; // 刷新连购买次数一起清（新一茬店·可重新买）
+    resetBoughtForNewStock(state, config);
     return { ok: true, mode, remaining: state.freeRefreshRemaining };
   }
-  // ad
-  if (state.adRefreshRemaining <= 0) return { ok: false, reason: 'cap_reached' };
-  state.adRefreshRemaining -= 1;
+  // ad：上限在调用侧（统一政策），这里恒可刷。
   generateMerchantStock(state, config, merchantLevel, rng);
-  state.dailyBought = {}; // 同上
-  return { ok: true, mode, remaining: state.adRefreshRemaining };
+  resetBoughtForNewStock(state, config);
+  return { ok: true, mode, remaining: 0 };
 }
 
 /** 商人小站升级时调：当场 +n 次免费刷新（一次性·非永久抬上限·Ron 2026-06-21）。 */

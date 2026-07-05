@@ -12,15 +12,8 @@ import {
 } from './S7SalvageConfig';
 import { S7SalvageState, S7SalvageMission } from './S7SalvageState';
 import { salvageTeamCount } from './S7BuildingEffects';
-import { s7DayKey } from './S7AdDailyCounter';
 
 const HOUR_MS = 3_600_000;
-const DAY_MS = 86_400_000;
-
-/** 当日 key（用于广告加速每日次数重置）——委托全游戏统一日界（北京时间凌晨 4 点重置）。 */
-export function salvageDayKey(now: number): number {
-  return s7DayKey(now);
-}
 
 /** 打捞队上限（= 打捞港等级·§10.2 打捞队 1→3）。 */
 export function salvageTeamLimit(salvageLevel: number): number {
@@ -150,32 +143,25 @@ export function collectSalvage(
   return { ok: true, rewards };
 }
 
-// ===== 广告加速 =====
+// ===== 广告完成（块5 改行为：S13 #5 原"减2小时"作废 → 看广告=直接完成当前打捞）=====
 
-export type S7SalvageSpeedupResult =
-  | { ok: true; remainingMs: number; usedToday: number; dailyLimit: number }
-  | { ok: false; reason: 'not_found' | 'already_done' | 'daily_limit' };
+export type S7SalvageAdCompleteResult =
+  | { ok: true }
+  | { ok: false; reason: 'not_found' | 'already_done' };
 
 /**
- * 看广告加速（调用方在广告"看完"后调）：按时长档固定减时(§10.2)，每日次数上限(打捞港高级提升)。跨天自动重置计数。
- *  - 任务不存在→not_found；已到点→already_done；当日次数用尽→daily_limit。
- *  减时把 endTime 提前；夹到不早于 now(到点即可收，不产生负剩余)。
+ * 看广告立即完成当前打捞（调用方在广告"看完"后调·Ron 2026-07-05 决策④）：
+ * 不论品质、不论剩余时长，endTime 直接置为 now → 到点可收菜。
+ *  - 任务不存在→not_found；已到点→already_done（按钮不该出现·防御）。
+ * 每日次数不在此管——块5 起统一走 S7AdDailyCounter + S7AdPointPolicy（点位 salvage_speedup·每日 1 次），
+ * 旧 state.adSpeedup 内部计数器已随之移除。
  */
-export function salvageAdSpeedup(
-  state: S7SalvageState, config: S7SalvageConfig, missionId: string, salvageLevel: number, now: number,
-): S7SalvageSpeedupResult {
-  // 跨天重置。
-  const dayKey = salvageDayKey(now);
-  if (state.adSpeedup.dayKey !== dayKey) state.adSpeedup = { dayKey, count: 0 };
-  const limit = salvageLevel >= config.adSpeedup.highLevelAt ? config.adSpeedup.dailyLimitHigh : config.adSpeedup.dailyLimitBase;
-
+export function salvageAdComplete(
+  state: S7SalvageState, missionId: string, now: number,
+): S7SalvageAdCompleteResult {
   const mission = state.missions.find((m) => m.id === missionId);
   if (!mission) return { ok: false, reason: 'not_found' };
   if (isSalvageDone(mission, now)) return { ok: false, reason: 'already_done' };
-  if (state.adSpeedup.count >= limit) return { ok: false, reason: 'daily_limit' };
-
-  const reduceMin = config.adSpeedup.reduceMinutesByHours[mission.hours] ?? 0;
-  mission.endTime = Math.max(now, mission.endTime - reduceMin * 60_000);
-  state.adSpeedup.count += 1;
-  return { ok: true, remainingMs: salvageRemainingMs(mission, now), usedToday: state.adSpeedup.count, dailyLimit: limit };
+  mission.endTime = now;
+  return { ok: true };
 }

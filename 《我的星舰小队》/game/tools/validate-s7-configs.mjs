@@ -13,8 +13,8 @@ const PROBLEM_TAGS = ['swarm', 'shield', 'backline', 'burst', 'berserk', 'summon
 const STAGE_TYPES = ['normal', 'elite', 'boss'];
 const SHIP_TYPES = ['free', 'stream'];
 const PLUGIN_SLOTS = ['weapon', 'skill', 'tactical'];
-// 资源词表（钱包全集）：奖励发放按此校验，与 S7SaveService.S7_RESOURCE_KEYS 对齐。块6余项 +starGem/pilotShardUniversal、信标拆 3 档（撤 beacon）。
-const RESOURCE_VOCAB = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken', 'coreFrag', 'fullCore', 'starGem', 'supplyTicket', 'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo'];
+// 资源词表（钱包全集）：奖励发放按此校验，与 S7SaveService.S7_RESOURCE_KEYS 对齐。块6余项 +starGem/pilotShardUniversal、信标拆 3 档（撤 beacon）；块5 +adTicket（广告券）。
+const RESOURCE_VOCAB = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken', 'coreFrag', 'fullCore', 'starGem', 'supplyTicket', 'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo', 'adTicket'];
 // 免费毕业预算追踪子集（anchor 表列集）：只盯核心软货币，与钱包全集解耦——扩钱包不被逼填预算数值（信标经济交第二块）。
 const ANCHOR_BUDGET_KEYS = ['starOre', 'hullAlloy', 'shipBlueprint', 'pilotToken', 'coreFrag', 'fullCore', 'supplyTicket', 'starCargo'];
 const REWARD_SOURCE_TYPES = ['mainline', 'boss', 'action3', 'expansion7', 'salvage', 'range', 'supply', 'beacon', 'star_cargo'];

@@ -1,7 +1,10 @@
 // 商人小站存档子状态（阶段一 E-step1，纯 TS，不依赖 cc）：v1.0 §10.3 的持久化载体。
 //
-// 存「当前上架的货 + 本周期已购量 + 刷新次数 + 周期标记」：货架按周期(每日)刷、跨会话保留当期货；
-//   购买上限按周期算(dailyBought 跨手动/广告刷新保留、只在跨天重置)，守住"周期购买上限"防套利。
+// 存「当前上架的货 + 本周期已购量 + 免费刷新次数 + 周期标记」：货架按周期(每日)刷、跨会话保留当期货；
+//   购买上限按周期算——手动刷新默认清零重买（"新一茬店"·Ron 2026-06-21），
+//   仅 keepBoughtOnRefresh 商品（块5 广告券）跨刷新保留、只在跨天重置。
+// 块5：原 adRefreshRemaining（广告刷新内部次数）字段移除——统一走 playerState.adDaily + S7AdPointPolicy
+//   （点位 merchant_refresh·每日 1 次）；老档遗留字段由 normalize 静默丢弃（加性收缩·不升版）。
 // 与 S7Mailbox/S7Salvage 同构：本模块拥有形状 + createDefault/normalize；S7SaveService 组合(v14→v15)。
 
 import { S7ShopItem } from './S7MerchantConfig';
@@ -25,12 +28,10 @@ export interface S7MerchantState {
   cycleKey: number;
   /** 剩余免费刷新次数（每周期重置为基础值；商人升级当场 +1·一次性·Ron 2026-06-21）。 */
   freeRefreshRemaining: number;
-  /** 剩余广告刷新次数（每周期重置为基础值）。 */
-  adRefreshRemaining: number;
 }
 
 export function createDefaultS7Merchant(): S7MerchantState {
-  return { offers: [], dailyBought: {}, cycleKey: -1, freeRefreshRemaining: 0, adRefreshRemaining: 0 };
+  return { offers: [], dailyBought: {}, cycleKey: -1, freeRefreshRemaining: 0 };
 }
 
 /** 商品在 dailyBought / 购买上限里的归并 key：资源用 resourceId，插件用 `plugin:<品质>`。 */
@@ -79,6 +80,5 @@ export function normalizeS7Merchant(raw: unknown): S7MerchantState {
   }
   out.cycleKey = typeof src.cycleKey === 'number' && Number.isInteger(src.cycleKey) ? src.cycleKey : -1;
   out.freeRefreshRemaining = nonNegInt(src.freeRefreshRemaining);
-  out.adRefreshRemaining = nonNegInt(src.adRefreshRemaining);
   return out;
 }

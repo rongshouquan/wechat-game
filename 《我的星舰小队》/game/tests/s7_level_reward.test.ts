@@ -16,6 +16,7 @@ import {
   resolveBossGrand,
   doubleLevelReward,
   doubleLevelRewards,
+  canPickExtra,
   S7UnitCandidates,
 } from '../assets/scripts/core/s7/S7LevelRewardService';
 
@@ -168,6 +169,19 @@ describe('S7 关卡发奖 · 看广告×2', () => {
       { kind: 'resource', resourceId: 'supplyTicket', amount: 20 },
       { kind: 'core', coreId: 'core07' },
     ]);
+  });
+});
+
+describe('S7 关卡发奖 · 三选一再选一（S13 #4·块5）', () => {
+  it('canPickExtra：只从剩下两张发——重选已选那张/越界/非整数一律拒', () => {
+    // 已选 index=1，三张卡：只有 0/2 合法。
+    expect(canPickExtra(1, 0, 3)).toBe(true);
+    expect(canPickExtra(1, 2, 3)).toBe(true);
+    expect(canPickExtra(1, 1, 3)).toBe(false); // 重选已选 → 拒（"只从剩两项发"的钉子）
+    expect(canPickExtra(1, 3, 3)).toBe(false); // 越界
+    expect(canPickExtra(1, -1, 3)).toBe(false);
+    expect(canPickExtra(3, 0, 3)).toBe(false); // 首选本身越界（脏态防御）
+    expect(canPickExtra(1, 0.5, 3)).toBe(false);
   });
 });
 

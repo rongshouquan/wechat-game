@@ -33,11 +33,11 @@ describe('s7 save - resource skeleton', () => {
     for (const k of S7_RESOURCE_KEYS) expect(res[k]).toBe(0);
   });
 
-  it('enumerates the exact canonical resource keys（块6余项：+starGem/pilotShardUniversal、信标拆 3 档、撤 beacon）', () => {
+  it('enumerates the exact canonical resource keys（块6余项：+starGem/pilotShardUniversal、信标拆 3 档、撤 beacon；块5：+adTicket 广告券）', () => {
     expect([...S7_RESOURCE_KEYS]).toEqual([
       'starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken',
       'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
-      'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo',
+      'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo', 'adTicket',
     ]);
     // 笼统 beacon 已撤、不在键集内（拆成 3 档）。
     expect([...S7_RESOURCE_KEYS]).not.toContain('beacon');
@@ -717,25 +717,24 @@ describe('s7 save - corruption / structure fallback', () => {
     const r = loadS7Save(adapter, NOW + 5);
     expect(r.migrated).toBe(true);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(r.data.playerState.salvage).toEqual({ missions: [], nextSeq: 1, adSpeedup: { dayKey: -1, count: 0 } }); // 新字段补默认空
+    expect(r.data.playerState.salvage).toEqual({ missions: [], nextSeq: 1 }); // 新字段补默认空（块5：adSpeedup 已从形状移除）
     expect(r.data.playerState.resources.beaconCommon).toBe(5); // 旧字段保留
     expect(r.data.playerState.gacha.exclusiveShipId).toBe('shp10');
   });
 
-  it('round-trips salvage through persist + load（防 persist 漏字段）', () => {
+  it('round-trips salvage through persist + load（防 persist 漏字段；块5：老档 adSpeedup 字段落盘即被丢弃）', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
     data.playerState.salvage = {
       missions: [{ id: 'sv1', tier: 'rare', hours: 8, startTime: NOW, endTime: NOW + 8 * 3_600_000 }],
       nextSeq: 2,
-      adSpeedup: { dayKey: 123, count: 2 },
     };
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
     expect(r.data.playerState.salvage.missions).toHaveLength(1);
     expect(r.data.playerState.salvage.missions[0]).toMatchObject({ id: 'sv1', tier: 'rare', hours: 8 });
     expect(r.data.playerState.salvage.nextSeq).toBe(2);
-    expect(r.data.playerState.salvage.adSpeedup).toEqual({ dayKey: 123, count: 2 });
+    expect(r.data.playerState.salvage).not.toHaveProperty('adSpeedup'); // 块5：计数统一走 adDaily
   });
 
   it('迁移 v14 旧档到当前：补默认空商人状态 merchant，保留旧字段（加性迁移，无需重置）', () => {
@@ -747,24 +746,24 @@ describe('s7 save - corruption / structure fallback', () => {
         lastOnlineTime: NOW,
         playerState: {
           resources: { starCargo: 5000 },
-          salvage: { missions: [], nextSeq: 1, adSpeedup: { dayKey: -1, count: 0 } },
+          salvage: { missions: [], nextSeq: 1 },
         },
       }),
     );
     const r = loadS7Save(adapter, NOW + 5);
     expect(r.migrated).toBe(true);
     expect(r.data.saveVersion).toBe(S7_CURRENT_SAVE_VERSION);
-    expect(r.data.playerState.merchant).toEqual({ offers: [], dailyBought: {}, cycleKey: -1, freeRefreshRemaining: 0, adRefreshRemaining: 0 }); // 新字段补默认空
+    expect(r.data.playerState.merchant).toEqual({ offers: [], dailyBought: {}, cycleKey: -1, freeRefreshRemaining: 0 }); // 新字段补默认空（块5：adRefreshRemaining 已移除）
     expect(r.data.playerState.resources.starCargo).toBe(5000); // 旧字段保留
   });
 
-  it('round-trips merchant through persist + load（防 persist 漏字段）', () => {
+  it('round-trips merchant through persist + load（防 persist 漏字段；块5：老档 adRefreshRemaining 落盘即被丢弃）', () => {
     const adapter = new MemoryStorageAdapter();
     const data = createDefaultS7SaveData(NOW);
     data.playerState.merchant = {
       offers: [{ offerId: 'o0', item: { kind: 'resource', resourceId: 'beaconCommon', amount: 1 }, price: 200, purchaseLimit: 5, rare: false }],
       dailyBought: { 'res:beaconCommon': 2 },
-      cycleKey: 321, freeRefreshRemaining: 1, adRefreshRemaining: 0,
+      cycleKey: 321, freeRefreshRemaining: 1,
     };
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
@@ -773,6 +772,30 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.merchant.dailyBought).toEqual({ 'res:beaconCommon': 2 });
     expect(r.data.playerState.merchant.cycleKey).toBe(321);
     expect(r.data.playerState.merchant.freeRefreshRemaining).toBe(1);
+    expect(r.data.playerState.merchant).not.toHaveProperty('adRefreshRemaining'); // 块5：内部广告计数移除
+  });
+
+  it('钱包扩键 adTicket（块5·不升版验证）：v23 无 adTicket 的档加载=0（migrated=false）·有值 round-trip 保留', () => {
+    // ① 无 adTicket 的既有 v23 档：normalize 兜底补 0，版本号一致 → 不触发迁移（这是"不升版"成立的证据）。
+    const adapter = new MemoryStorageAdapter();
+    adapter.setString(
+      S7_SAVE_STORAGE_KEY,
+      JSON.stringify({
+        saveVersion: S7_CURRENT_SAVE_VERSION,
+        lastOnlineTime: NOW,
+        playerState: { resources: { starOre: 7, starCargo: 300 } },
+      }),
+    );
+    const r1 = loadS7Save(adapter, NOW + 5);
+    expect(r1.migrated).toBe(false);
+    expect(r1.data.playerState.resources.adTicket).toBe(0);
+    expect(r1.data.playerState.resources.starOre).toBe(7);
+    // ② 有值 round-trip：买了 3 张券 → persist → load 不丢（防 persist 漏字段·normalize 单点收口）。
+    const data = createDefaultS7SaveData(NOW);
+    data.playerState.resources.adTicket = 3;
+    persistS7Save(adapter, data, NOW + 10);
+    const r2 = loadS7Save(adapter, NOW + 20);
+    expect(r2.data.playerState.resources.adTicket).toBe(3);
   });
 
   it('迁移 v15 旧档到当前：补默认空 unitTiers，保留旧字段（加性迁移，无需重置）', () => {

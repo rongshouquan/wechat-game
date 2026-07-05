@@ -122,3 +122,14 @@ export function doubleLevelReward(r: S7LevelReward): S7LevelReward {
 export function doubleLevelRewards(rewards: S7LevelReward[]): S7LevelReward[] {
   return rewards.map(doubleLevelReward);
 }
+
+/**
+ * 「三选一·再选一个」第二选合法性（S13 #4·块5）：只能从**剩下两张**里选——
+ * 不能重选已选那张、不能越界。纯函数供 UI 守门 + 单测钉死"只从剩两项发"。
+ */
+export function canPickExtra(pickedIndex: number, extraIndex: number, choiceCount: number): boolean {
+  if (!Number.isInteger(pickedIndex) || !Number.isInteger(extraIndex)) return false;
+  if (pickedIndex < 0 || pickedIndex >= choiceCount) return false;
+  if (extraIndex < 0 || extraIndex >= choiceCount) return false;
+  return extraIndex !== pickedIndex;
+}

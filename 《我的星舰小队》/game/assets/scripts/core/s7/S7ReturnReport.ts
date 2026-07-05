@@ -8,7 +8,7 @@
 // - 翻倍规则（S13 #1）：只翻 离线+巡逻 的软货币；打捞收益（含其中的资源行）一律不翻。
 // - 报告"必领才关"（UI 铁律，防丢奖）；领取后调用方 persist（persist 会把 lastOnlineTime 刷成 now 关窗），
 //   同一窗口不会重复结算。
-// - 每日翻倍上限走 S7AdDailyCounter（点位常量本模块自持，S13.2 #1：每日 2 次·v0.1 可校准）。
+// - 每日翻倍上限/按钮三态/广告券：块5 起统一走 S7AdPointPolicy（S13 决策①：每日 1 次），本模块只持点位 id。
 
 import { S7MainlineModel, S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BuildingState, getBuildingLevel } from './S7BuildingState';
@@ -20,10 +20,8 @@ import { S7BeaconTier, S7SalvageConfig, S7SalvageReward } from './S7SalvageConfi
 import { isSalvageDone, rollSalvageRewards } from './S7SalvageService';
 import { S7AutoBattleRng } from './S7AutoBattleRng';
 
-/** 回港报告翻倍广告点位 id（S13.2 #1）。 */
+/** 回港报告翻倍广告点位 id（S13.2 #1；每日上限见 S7AdPointPolicy.S7_AD_POINT_DAILY_LIMITS）。 */
 export const RETURN_REPORT_DOUBLE_AD_POINT = 'return_report_double';
-/** 回港报告翻倍每日上限（S13.2 #1：2 次；v0.1，数值校准可调）。 */
-export const RETURN_REPORT_DOUBLE_DAILY_LIMIT = 2;
 
 /** 报告里一条已完成打捞（奖励已预掷·确定性）。 */
 export interface S7ReturnReportSalvageEntry {

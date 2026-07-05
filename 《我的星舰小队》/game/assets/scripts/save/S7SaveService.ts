@@ -134,6 +134,9 @@ import {
  *   v20 老档的 commissions 积压次数(护航+演习 stock 之和)折算成等量铜卡进新板(见 S7StarportBounty.normalizeS7Bounty)。
  * v22（第2.5块·块3 深空回廊）：playerState 增加 corridor(已通最高层 + 里程碑领取状态)；旧档加载补默认空(加性迁移，无需重置)。
  * v23（第2.5块·块4 每日推演）：playerState 增加 dailyPuzzle(当日题号 + 已解标记 + 尝试计数)；旧档加载补默认空(加性迁移，无需重置)。
+ * v23 追加（第2.5块·块5 广告券）：钱包扩键 adTicket(广告券·商人星贝购买·恢复已用完广告点位)。**不升版**——
+ *   normalizeS7ResourceState 对缺失键一律补 0（与 v6 扩键不同：无旧键合并语义），新老 v23 档互相加载零歧义；
+ *   已用 s7_save 测试验证（无 adTicket 的 v23 档加载=0 + 有值 round-trip 保留）。
  */
 export const S7_CURRENT_SAVE_VERSION = 23;
 
@@ -147,14 +150,15 @@ export const S7_SAVE_STORAGE_KEY = 'starship_squad_s7_save_v1';
  * S7 首发 资源键（顺序与 03-04 v0.2 §2.2 free_resource_anchor_param 字段一致）。
  * 作为 资源状态的唯一键集真源。
  */
-// 货币键（6a-2 重构 + 块6余项扩键）：
+// 货币键（6a-2 重构 + 块6余项扩键 + 块5 广告券）：
 //   6a-2 删 battleLog/pluginMat/coreMat（升级额外消耗/插件强化料/星核强化料，均已废弃）。
 //   块6余项：新增 starGem(星空宝石)/pilotShardUniversal(通用驾驶员碎片)；信标拆 3 档 beaconCommon/Rare/Epic（撤笼统 beacon）。
+//   块5：新增 adTicket(广告券·S13 决策③——商人星贝购买、恢复"当日已用完"的广告点位按钮、失败退券)。
 // 注：新键不进"免费毕业预算表"（那张表只盯核心软货币，见 ConfigValidatorS7.ANCHOR_BUDGET_KEYS），故扩钱包不再被逼填预算数值。
 export const S7_RESOURCE_KEYS = [
   'starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken',
   'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
-  'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo',
+  'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo', 'adTicket',
 ] as const;
 
 export type S7ResourceKey = (typeof S7_RESOURCE_KEYS)[number];

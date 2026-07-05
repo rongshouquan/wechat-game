@@ -51,6 +51,8 @@ export interface S7CorridorHost {
   openMilestone(layer: number): void;
   /** 看广告翻倍开箱（广告点位 #10·mock）。 */
   adDoubleMilestone(layer: number): void;
+  /** 「开箱×2 📺」键三态（块5 统一收口：每日1次·用尽即隐·券态标「广告券×N」·新手期隐）。 */
+  milestoneAdButton(): { visible: boolean; label: string };
   /** 返回星港。 */
   onClose(): void;
   /** DEV 跳层：把已通最高层拨到 targetLayer-1（下一层=targetLayer）。上线前删。 */
@@ -162,17 +164,29 @@ export class S7CorridorTowerView {
     il.string = `${ruleLine}   ｜   ${card.enemyBrief}${hintLine}`;
   }
 
-  /** 一个里程碑宝箱行：奖励文案 + 「开箱」 + 「开箱×2 📺」。 */
+  /** 一个里程碑宝箱行：奖励文案 + 「开箱」 + 「开箱×2 📺」（块5 三态：每日已用&无券→广告键不出现·非置灰）。 */
   private buildMilestoneRow(m: S7CorridorMilestoneCard, cy: number): void {
     const rowW = this.W * 0.9;
+    const ad = this.host.milestoneAdButton();
     const label = this.mkLabel(this.bodyNode, -rowW / 2 + 8, cy, 20, new Color(235, 220, 170));
     label.horizontalAlign = Label.HorizontalAlign.LEFT;
     label.node.getComponent(UITransform)!.setAnchorPoint(0, 0.5);
-    label.node.getComponent(UITransform)!.setContentSize(rowW * 0.52, 56);
+    label.node.getComponent(UITransform)!.setContentSize(ad.visible ? rowW * 0.52 : rowW * 0.66, 56);
     label.overflow = Label.Overflow.SHRINK; label.enableWrapText = true;
     label.string = `第${m.layer}层：${m.rewardText}`;
-    this.mkBtn(this.bodyNode, '开箱', 120, 56, new Color(90, 160, 110, 255), rowW / 2 - 210, cy, () => this.host.openMilestone(m.layer), 24);
-    this.mkBtn(this.bodyNode, '开箱×2 📺', 170, 56, new Color(215, 155, 55, 255), rowW / 2 - 92, cy, () => this.host.adDoubleMilestone(m.layer), 22);
+    this.mkBtn(this.bodyNode, '开箱', 120, 56, new Color(90, 160, 110, 255), rowW / 2 - (ad.visible ? 210 : 68), cy, () => this.host.openMilestone(m.layer), 24);
+    if (ad.visible) {
+      const btn = this.mkBtn(this.bodyNode, ad.label, 170, 56, new Color(215, 155, 55, 255), rowW / 2 - 92, cy, () => this.host.adDoubleMilestone(m.layer), 18);
+      // 券态文案（「…｜广告券×N」）变长：锚进按钮内框、超长缩字（B0.6 #2）。
+      const al = btn.getComponentInChildren(Label);
+      if (al) {
+        let lt = al.node.getComponent(UITransform);
+        if (!lt) lt = al.node.addComponent(UITransform);
+        lt.setContentSize(160, 48);
+        al.overflow = Label.Overflow.SHRINK;
+        al.enableWrapText = false;
+      }
+    }
   }
 
   /** DEV：跳到下一个戏法层(10 的倍数非25) / 回响Boss层(25 的倍数)。 */

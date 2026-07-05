@@ -7,6 +7,7 @@ import {
   s7DayKey,
   adDailyUsed,
   adDailyTryConsume,
+  adDailyRecord,
 } from '../assets/scripts/core/s7/S7AdDailyCounter';
 
 const DAY = 86_400_000;
@@ -44,6 +45,16 @@ describe('块1 · S7AdDailyCounter', () => {
     adDailyTryConsume(s, 'a', 1, NOW);
     expect(adDailyTryConsume(s, 'a', 1, NOW)).toEqual({ ok: false, reason: 'daily_limit' });
     expect(adDailyTryConsume(s, 'b', 1, NOW)).toEqual({ ok: true, usedToday: 1 });
+  });
+
+  it('adDailyRecord（块5）：无上限记数——超过 tryConsume 拒绝线仍能 +1（券路径/不限次点位记账），跨天从 1 重计', () => {
+    const s = createDefaultS7AdDaily();
+    adDailyTryConsume(s, 'p', 1, NOW);
+    expect(adDailyTryConsume(s, 'p', 1, NOW)).toEqual({ ok: false, reason: 'daily_limit' }); // 上限已到
+    expect(adDailyRecord(s, 'p', NOW)).toBe(2); // 券路径照记 → 2
+    expect(adDailyRecord(s, 'p', NOW)).toBe(3);
+    expect(adDailyUsed(s, 'p', NOW)).toBe(3);
+    expect(adDailyRecord(s, 'p', NOW + DAY)).toBe(1); // 跨天重置后从 1 记
   });
 
   it('adDailyUsed 是只读查询：跨天读取不落盘副作用（entries 不被改写）', () => {

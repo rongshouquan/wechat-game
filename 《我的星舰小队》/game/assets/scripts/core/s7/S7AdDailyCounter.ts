@@ -1,9 +1,9 @@
 // 广告点位每日次数计数器（第2.5块·块1，纯 TS，不依赖 cc）：GDD S13.2 各点位"每日上限"的通用载体。
 // 分工：S7AdGateway 只管"广告看没看完"，每日上限由各玩法块配合本模块实现（网关注释既定分工）。
 // 本模块另持有全游戏统一日界 s7DayKey（Ron 2026-07-03 拍板：北京时间凌晨 4 点重置）——
-//   salvageDayKey / merchantDayKey / gachaDayIndex 均委托它，"每天"只有一个口径。
-// 块1 先服务「回港报告翻倍」(return_report_double·每日 2 次)；块3/5 新点位直接复用，不再各自造轮子。
-// 上限数值属 S13/数值细表（各点位自持常量），本模块只做计数，不写死限额。
+//   merchantDayKey / gachaDayIndex 等均委托它，"每天"只有一个口径（旧 salvageDayKey 已随块5 打捞计数统一而移除）。
+// 块5 起十点位每日上限统一收口：上限表/按钮三态/广告券见 S7AdPointPolicy，本模块只做通用计数，不写死限额。
+// 非广告的每日计数（安慰包发放数/趣事已展示）也复用本载体（键不与点位冲突即可），不再各自造轮子。
 // UI 铁律呼应（S13.1）：到上限时按钮"不出现"而非置灰——查询用 adDailyUsed，不产生副作用。
 
 export interface S7AdDailyEntry {
@@ -72,4 +72,17 @@ export function adDailyTryConsume(
   if (usedToday >= dailyLimit) return { ok: false, reason: 'daily_limit' };
   state.entries[point] = { dayKey, count: usedToday + 1 };
   return { ok: true, usedToday: usedToday + 1 };
+}
+
+/**
+ * 无上限记一次（跨天自动重置后再计），返回今日累计次数（含本次）。
+ * 用途（块5）：①广告券路径看完广告后也记账（券绕过每日上限、但计数照记——补给箱重开的确定性掷奖序号靠它）；
+ * ②不限次点位（货舱多选）与非广告每日计数（安慰包发放数/趣事已展示）复用同一载体，不再各自造轮子。
+ */
+export function adDailyRecord(state: S7AdDailyState, point: string, now: number): number {
+  const dayKey = s7DayKey(now);
+  const entry = state.entries[point];
+  const usedToday = entry && entry.dayKey === dayKey ? entry.count : 0;
+  state.entries[point] = { dayKey, count: usedToday + 1 };
+  return usedToday + 1;
 }
