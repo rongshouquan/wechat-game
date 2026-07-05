@@ -17,14 +17,17 @@
 | `upgrade_ascend` | 星舰升阶成功 | `onAscendUnit`（ship 分支） |
 | `upgrade_star_up` | 驾驶员升星成功 | `onAscendUnit`（pilot 分支） |
 | `chest_open` | 宝箱开箱选中一个奖励 | `onPickChestOption` |
-| `reward_claim` | 通用奖励领取（邮件单领/一键领、离线收益领取、专属兑换箱非高光分支） | `onClaimMail`、`onClaimOffline`、`onGachaClaim` |
+| `reward_claim` | 通用奖励领取（邮件单领/一键领、回港报告领取、专属兑换箱非高光分支、大奖特写、**安慰双倍成功**〔块5·与 battle_defeat 分时刻不叠音，基础包入账与败音同刻不另配〕） | `onClaimMail`、`finishReturnReportClaim`、`onGachaClaim`、`onConsolationDouble` |
 | `ui_click` | 主要按钮点击（预留，暂未全局接，避免高频点击噪音先于素材定调前过度铺开） | 预留 |
-| `return_report` | 回港报告弹窗弹出（舰队归港，2026-07-02 包A） | 第2.5块建（回港报告） |
-| `dispatch_done` | 每日委托秒结算/速刷入账（包A） | 第2.5块建（每日委托） |
-| `tower_up` | 深空回廊通过一层（包A） | 第2.5块建（深空回廊） |
-| `tower_milestone` | 深空回廊里程碑领取（包A） | 第2.5块建（深空回廊） |
-| `puzzle_solve` | 每日推演解开（"妙手"高光，包A） | 第2.5块建（每日推演） |
-| `trivia_pop` | 星港趣事弹泡出现（轻快，包A） | 第2.5块建（星港趣事） |
+| `return_report` | 回港报告弹窗弹出（舰队归港，2026-07-02 包A） | `openReturnReport`（块1 已接） |
+| `tower_up` | 深空回廊通过一层（包A） | 块3 已接 |
+| `tower_milestone` | 深空回廊里程碑领取（含 ×2）（包A） | 块3 已接 |
+| `puzzle_start` | 每日推演开始推演（包A·代码侧块4 已有，本表补登记） | 块4 已接 |
+| `puzzle_solve` | 每日推演解开（"妙手"高光，包A） | 块4 已接 |
+| `supply_chest_open` | 今日补给箱开箱入账（包A·块5 新登记） | 块5 已接（`onOpenSupplyChest`） |
+| `trivia_pop` | 星港趣事弹泡出现（轻快，包A） | 块5 已接（`showAnecdote`） |
+
+> 块5 清理：`dispatch_done`（每日委托秒结算/速刷入账）随"委托→星港悬赏板"重构作废——秒结算机制已删、事件成孤儿，代码与本表同步移除。
 
 ### 背景音乐（场景切换式，同一时刻只播一条）
 
