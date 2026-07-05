@@ -86,17 +86,17 @@ export class S7CorridorTowerView {
     const body = new Node('body'); body.layer = host.layer; root.addChild(body); body.setPosition(0, 0, 0);
     this.bodyNode = body;
     this.bodyTopY = band.usableTopY - 108;
-    this.bodyBottomY = band.usableBottomY + 210;
+    this.bodyBottomY = band.usableBottomY + 232;
 
-    // 底部固定：挑战大钮 + 返回 + DEV 行。
-    this.mkBtn(root, '⚔ 挑战下一层', 340, 86, new Color(235, 170, 50, 255), 0, band.usableBottomY + 150, () => this.host.challenge(), 32);
-    this.mkBtn(root, '返回星港', 220, 72, new Color(120, 90, 160, 255), 0, band.usableBottomY + 66, () => this.host.onClose(), 28);
+    // 底部固定：挑战大钮 + 返回 + DEV 行。巡检批 #15：三行热区各留 ≥8px（原 返回×挑战 5px·DEV×返回 重叠 2px 且 DEV 越出安全区下沿）。
+    this.mkBtn(root, '⚔ 挑战下一层', 340, 86, new Color(235, 170, 50, 255), 0, band.usableBottomY + 176, () => this.host.challenge(), 32);
+    this.mkBtn(root, '返回星港', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 92, () => this.host.onClose(), 28);
     // DEV 行（明显区分·上线前整行删）。
-    const devY = band.usableBottomY + 8;
-    this.mkBtn(root, 'DEV跳戏法', 150, 48, new Color(70, 70, 78, 255), -W * 0.34, devY, () => this.devJumpKind('trick'), 20);
-    this.mkBtn(root, 'DEV跳Boss', 150, 48, new Color(70, 70, 78, 255), -W * 0.12, devY, () => this.devJumpKind('boss'), 20);
-    this.mkBtn(root, 'DEV跳孤胆', 150, 48, new Color(70, 70, 78, 255), W * 0.12, devY, () => this.host.devJumpLone(), 20);
-    this.mkBtn(root, 'DEV+25层', 150, 48, new Color(70, 70, 78, 255), W * 0.34, devY, () => this.host.devJump(this.host.nextLayer() + 25), 20);
+    const devY = band.usableBottomY + 26;
+    this.mkBtn(root, 'DEV跳戏法', 150, 44, new Color(70, 70, 78, 255), -W * 0.34, devY, () => this.devJumpKind('trick'), 20);
+    this.mkBtn(root, 'DEV跳Boss', 150, 44, new Color(70, 70, 78, 255), -W * 0.12, devY, () => this.devJumpKind('boss'), 20);
+    this.mkBtn(root, 'DEV跳孤胆', 150, 44, new Color(70, 70, 78, 255), W * 0.12, devY, () => this.host.devJumpLone(), 20);
+    this.mkBtn(root, 'DEV+25层', 150, 44, new Color(70, 70, 78, 255), W * 0.34, devY, () => this.host.devJump(this.host.nextLayer() + 25), 20);
   }
 
   open(): void { this.refresh(); this.root.active = true; }
@@ -174,15 +174,16 @@ export class S7CorridorTowerView {
     label.node.getComponent(UITransform)!.setContentSize(ad.visible ? rowW * 0.52 : rowW * 0.66, 56);
     label.overflow = Label.Overflow.SHRINK; label.enableWrapText = true;
     label.string = `第${m.layer}层：${m.rewardText}`;
-    this.mkBtn(this.bodyNode, '开箱', 120, 56, new Color(90, 160, 110, 255), rowW / 2 - (ad.visible ? 210 : 68), cy, () => this.host.openMilestone(m.layer), 24);
+    // 巡检批 #15：广告键在场时「开箱」左移+双键缩窄——原两键热区重叠 27px → 间距 10px。
+    this.mkBtn(this.bodyNode, '开箱', 110, 56, new Color(90, 160, 110, 255), rowW / 2 - (ad.visible ? 232 : 68), cy, () => this.host.openMilestone(m.layer), 24);
     if (ad.visible) {
-      const btn = this.mkBtn(this.bodyNode, ad.label, 170, 56, new Color(215, 155, 55, 255), rowW / 2 - 92, cy, () => this.host.adDoubleMilestone(m.layer), 18);
+      const btn = this.mkBtn(this.bodyNode, ad.label, 160, 56, new Color(215, 155, 55, 255), rowW / 2 - 87, cy, () => this.host.adDoubleMilestone(m.layer), 18);
       // 券态文案（「…｜广告券×N」）变长：锚进按钮内框、超长缩字（B0.6 #2）。
       const al = btn.getComponentInChildren(Label);
       if (al) {
         let lt = al.node.getComponent(UITransform);
         if (!lt) lt = al.node.addComponent(UITransform);
-        lt.setContentSize(160, 48);
+        lt.setContentSize(146, 48);
         al.overflow = Label.Overflow.SHRINK;
         al.enableWrapText = false;
       }

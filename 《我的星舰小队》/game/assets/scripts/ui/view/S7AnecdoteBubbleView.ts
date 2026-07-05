@@ -15,6 +15,7 @@ import { getS7UsableBand } from '../S7UiLayout';
 export class S7AnecdoteBubbleView {
   private readonly root: Node;
   private readonly avatarLabel: Label;
+  private readonly speakerLabel: Label;
   private readonly textLabel: Label;
   private readonly rewardLabel: Label;
 
@@ -45,12 +46,19 @@ export class S7AnecdoteBubbleView {
     this.avatarLabel = av.addComponent(Label);
     this.avatarLabel.fontSize = 56; this.avatarLabel.lineHeight = 60;
 
+    // 说话人显示名（巡检批·正式池：驾驶员名/居民职业名·种子叙述体空着不占位感）。
+    const sp = new Node('speaker'); sp.layer = parent.layer; root.addChild(sp); sp.setPosition(52, 56, 0);
+    this.speakerLabel = sp.addComponent(Label);
+    this.speakerLabel.fontSize = 20; this.speakerLabel.lineHeight = 26; this.speakerLabel.color = new Color(255, 220, 140);
+    this.speakerLabel.overflow = Label.Overflow.SHRINK; this.speakerLabel.enableWrapText = false;
+    sp.addComponent(UITransform).setContentSize(bw - 150, 28);
+
     // 趣话正文（锚定内容框·SHRINK 防溢出）。
-    const tx = new Node('text'); tx.layer = parent.layer; root.addChild(tx); tx.setPosition(52, 14, 0);
+    const tx = new Node('text'); tx.layer = parent.layer; root.addChild(tx); tx.setPosition(52, 4, 0);
     this.textLabel = tx.addComponent(Label);
     this.textLabel.fontSize = 22; this.textLabel.lineHeight = 30; this.textLabel.color = new Color(230, 238, 250);
     this.textLabel.overflow = Label.Overflow.SHRINK; this.textLabel.enableWrapText = true;
-    tx.addComponent(UITransform).setContentSize(bw - 150, 96);
+    tx.addComponent(UITransform).setContentSize(bw - 150, 72);
 
     // 奖励回执 + 收下提示。
     const rw = new Node('reward'); rw.layer = parent.layer; root.addChild(rw); rw.setPosition(52, -52, 0);
@@ -62,9 +70,10 @@ export class S7AnecdoteBubbleView {
 
   get isOpen(): boolean { return this.root.active; }
 
-  /** 弹一条趣事（奖励已由控制器入账·此处只展示）。 */
-  show(avatar: string, text: string, rewardText: string): void {
+  /** 弹一条趣事（奖励已由控制器入账·此处只展示）。speaker=显示名（空串=叙述体不署名）。 */
+  show(avatar: string, speaker: string, text: string, rewardText: string): void {
     this.avatarLabel.string = avatar;
+    this.speakerLabel.string = speaker;
     this.textLabel.string = text;
     this.rewardLabel.string = rewardText ? `${rewardText} 已入账 · 点一下收好` : '点一下收好';
     const parent = this.root.parent;

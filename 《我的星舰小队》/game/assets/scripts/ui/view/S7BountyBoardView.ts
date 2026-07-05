@@ -83,7 +83,7 @@ export class S7BountyBoardView {
     const list = new Node('list'); list.layer = host.layer; root.addChild(list); list.setPosition(0, 0, 0);
     this.listNode = list;
     this.listTopY = topY - 140;
-    const listBottomY = band.usableBottomY + 150;
+    const listBottomY = band.usableBottomY + 174; // 巡检批 #15：给分页行让位（原短屏多页时末张卡与翻页键热区重叠 10px）
     this.rowH = Math.min(230, (this.listTopY - listBottomY) / CARDS_PER_PAGE);
 
     // 分页行（仅多页时显示）

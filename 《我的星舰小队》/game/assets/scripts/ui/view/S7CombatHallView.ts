@@ -42,14 +42,15 @@ export class S7CombatHallView {
     this.root = root;
 
     // 内容区顶 Y（让出顶部标题 + 页签栏）。两子 view 先建（在底层）。
-    const contentTopY = band.usableTopY - 116;
+    // 巡检批 #15：页签栏下移（原「返回星港」与「悬赏板」页签热区重叠 10px）→ 返回/页签/内容各留 ≥8px。
+    const contentTopY = band.usableTopY - 130;
     this.bounty = new S7BountyBoardView(root, bountyHost, W, H, { topY: contentTopY, hideClose: true });
     this.puzzle = new S7DailyPuzzleView(root, puzzleHost, W, H, { topY: contentTopY });
 
-    // 大厅框（标题 + 返回 + 页签栏）后建 → 在子 view 之上，触摸优先。
-    this.mkLabel(root, 0, band.usableTopY - 28, 32, new Color(210, 180, 245)).string = '⚔ 作战大厅';
-    this.mkBtn(root, '← 返回星港', 168, 56, new Color(120, 90, 160, 255), -this.W * 0.34, band.usableTopY - 28, () => this.host.onClose(), 22);
-    const tabY = band.usableTopY - 76;
+    // 大厅框（标题 + 返回 + 页签栏）后建 → 在子 view 之上，触摸优先。#16：退路统一叫「返回星港」（去箭头前缀）。
+    this.mkLabel(root, this.W * 0.05, band.usableTopY - 28, 32, new Color(210, 180, 245)).string = '⚔ 作战大厅';
+    this.mkBtn(root, '返回星港', 160, 48, new Color(120, 90, 160, 255), -this.W * 0.22, band.usableTopY - 26, () => this.host.onClose(), 22);
+    const tabY = band.usableTopY - 88;
     this.bountyTab = this.mkBtn(root, '悬赏板', 220, 60, new Color(70, 165, 150, 255), -this.W * 0.24, tabY, () => this.select('bounty'), 26);
     this.puzzleTab = this.mkBtn(root, '每日推演', 220, 60, new Color(120, 150, 210, 255), this.W * 0.24, tabY, () => this.select('puzzle'), 26);
   }

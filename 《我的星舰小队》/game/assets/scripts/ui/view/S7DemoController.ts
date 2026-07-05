@@ -47,7 +47,7 @@ import {
   CONSOLATION_ENCOURAGE_TEXT, defeatConsolationPack,
 } from '../../core/s7/S7DefeatConsolation';
 import {
-  ANECDOTE_SHOWN_COUNTER_KEY, anecdoteForDay, anecdoteByIndex, S7AnecdoteLine,
+  ANECDOTE_SHOWN_COUNTER_KEY, anecdoteForDay, anecdoteByIndex, anecdoteSpeakerDisplay, S7AnecdoteLine,
 } from '../../core/s7/S7StarportAnecdote';
 import { S7AnecdoteBubbleView } from './S7AnecdoteBubbleView';
 // 星港悬赏板（第2.5块·块2）：整体取代旧每日委托。核心逻辑在 core/s7/S7StarportBounty + S7CommissionAffix；
@@ -922,9 +922,10 @@ export class S7DemoController extends Component {
     bar.layer = this.node.layer;
     this.node.addChild(bar);
     bar.setPosition(0, 0, 0);
-    const x = -W / 2 + 100, y = band.usableTopY - 30;
-    this.addBtn(bar, '重置教程', 150, 56, new Color(120, 70, 70, 220), x, y, () => this.onReset(), 22);
-    this.addBtn(bar, '跳过引导', 150, 56, new Color(70, 110, 90, 220), x, y - 64, () => this.devSkipGuide(), 22);
+    // 巡检批 #15/#11：缩小成左上角窄条（108×32×2·上下 8px 间距），热区不再压到 hub 星矿货币条/作战大厅返回键。
+    const x = -W / 2 + 64, y = band.usableTopY - 18;
+    this.addBtn(bar, '重置教程', 108, 32, new Color(120, 70, 70, 220), x, y, () => this.onReset(), 14);
+    this.addBtn(bar, '跳过引导', 108, 32, new Color(70, 110, 90, 220), x, y - 40, () => this.devSkipGuide(), 14);
     this.tutorialDevBarNode = bar;
   }
 
@@ -943,8 +944,9 @@ export class S7DemoController extends Component {
     const botY = band.usableBottomY;
 
     // —— 顶部：标题 + 货币栏（星矿/星贝/补给券·设计§10.5 主界面只常驻这 3 个）——
-    this.makeLabel('⭐ 星港', 48, new Color(255, 232, 120), -W * 0.34, topY - 34);
-    const cy = topY - 108;
+    // 巡检批 #15：标题右移让出左上角（教程 DEV 测试键专用道）；货币条下移 10px 与 DEV 键热区拉开 ≥8px。
+    this.makeLabel('⭐ 星港', 48, new Color(255, 232, 120), -W * 0.18, topY - 34);
+    const cy = topY - 118;
     this.hubOreLabel = this.makeHubChip('星矿', -W * 0.30, cy, new Color(150, 90, 210, 255), '星矿：建筑升级主货币·出战/离线产出（点建筑升级看花费）');
     this.hubCargoLabel = this.makeHubChip('星贝', 0, cy, new Color(210, 170, 60, 255), '星贝：商人交易/回收货币·出战获得（去商人小站买卖）');
     this.hubTicketLabel = this.makeHubChip('补给券', W * 0.30, cy, new Color(70, 150, 200, 255), '补给券：抽卡货币·商人每日供应/赞助补给/活动获得（去补给站抽卡）');
@@ -955,7 +957,7 @@ export class S7DemoController extends Component {
     this.makeHubEntry('7天扩张', '进度/领奖', new Color(120, 110, 180, 255), W * 0.24, ay, 290, 88, () => this.openActivity('expansion7'));
     // —— 今日补给箱（S13 #2·块5）：活动区旁小礼盒岛（B1.1）。每日1次看广告开；当日已开→隐（券态恢复·统一三态）；零红点。
     const chest = new Node('S7SupplyChest'); chest.layer = this.node.layer; this.node.addChild(chest);
-    chest.setPosition(0, topY - 277, 0);
+    chest.setPosition(0, topY - 285, 0); // 巡检批 #15：与活动行/建筑格各留 8px 热区间距（原上 0px 下 1px）
     chest.addComponent(UITransform).setContentSize(340, 46);
     const cg = chest.addComponent(Graphics);
     cg.fillColor = new Color(190, 140, 55, 235); cg.roundRect(-170, -23, 340, 46, 12); cg.fill();
@@ -968,9 +970,9 @@ export class S7DemoController extends Component {
     this.hubSupplyChestNode = chest;
     this.hubSupplyChestSubLabel = cl;
 
-    // —— 7 建筑入口岛（2 列网格）——
-    const gy0 = topY - 360;
-    const gap = 150;
+    // —— 7 建筑入口岛（2 列网格）——（巡检批 #15：起点下移 15/行距 145 → 补给箱条上下各 8px、总底沿不变 topY-869）
+    const gy0 = topY - 375;
+    const gap = 145;
     const lx = -W * 0.24, rx = W * 0.24, ew = 300, eh = 118;
     this.hubDockEntryNode = this.makeHubEntry('船坞', '养成', new Color(80, 130, 200, 255), lx, gy0, ew, eh, () => this.openDock(), 'bld_dock');
     this.hubSalvageEntryNode = this.makeHubEntry('打捞港', '打捞', new Color(70, 160, 190, 255), rx, gy0, ew, eh, () => this.openSalvage(), 'bld_salvage_port');
@@ -981,16 +983,16 @@ export class S7DemoController extends Component {
     this.makeHubEntry('星核展厅', '收藏', new Color(120, 100, 150, 255), lx, gy0 - gap * 3, ew, eh, () => this.openGallery(), 'bld_rsv_core_gallery');
     this.hubTrainingEntryNode = this.makeHubEntry('训练舱', '养成', new Color(110, 140, 90, 255), rx, gy0 - gap * 3, ew, eh, () => this.openTraining(), 'bld_pilot_training_bay');
 
-    // —— 底部：背包 / 邮件（左）+ 出战（右·大）——
-    this.makeHubEntry('背包', '资源/宝箱', new Color(110, 115, 130, 255), -W * 0.33, botY + 170, 160, 96, () => this.openBackpack());
-    const mailEntry = this.makeHubEntry('邮件', '查看', new Color(110, 115, 130, 255), -W * 0.11, botY + 170, 160, 96, () => this.openMail());
+    // —— 底部：背包 / 邮件（左）+ 出战（右·大）——（巡检批 #15：邮件左移——原与出战热区重叠 7.5px；各相邻 ≥8px）
+    this.makeHubEntry('背包', '资源/宝箱', new Color(110, 115, 130, 255), -W * 0.377, botY + 170, 160, 96, () => this.openBackpack());
+    const mailEntry = this.makeHubEntry('邮件', '查看', new Color(110, 115, 130, 255), -W * 0.153, botY + 170, 160, 96, () => this.openMail());
     this.hubMailSubLabel = mailEntry.getChildByName('s')?.getComponent(Label) ?? null; // 副标签 refresh() 显可领数
-    this.hubSortieBtn = this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
+    this.hubSortieBtn = this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 160, () => this.openPrebattle());
     // 块2：星港悬赏板入口（出战正上方·关5 强引导结束后解锁，见 refresh()）。
-    this.hubCombatHallBtn = this.makeButton('作战大厅', 200, 80, new Color(120, 110, 175, 255), W * 0.20, botY + 266, () => this.openCombatHall('bounty'));
+    this.hubCombatHallBtn = this.makeButton('作战大厅', 200, 80, new Color(120, 110, 175, 255), W * 0.20, botY + 274, () => this.openCombatHall('bounty'));
     this.hubCombatHallBtn.active = false;
     // 块3：深空回廊入口（左上·首Boss通关后解锁，见 refresh()）。
-    this.hubCorridorBtn = this.makeButton('回廊', 200, 80, new Color(95, 120, 190, 255), -W * 0.20, botY + 266, () => this.openCorridor());
+    this.hubCorridorBtn = this.makeButton('回廊', 200, 80, new Color(95, 120, 190, 255), -W * 0.20, botY + 274, () => this.openCorridor());
     this.hubCorridorBtn.active = false;
 
     // —— 中央临时提示（默认空）——
@@ -1002,17 +1004,32 @@ export class S7DemoController extends Component {
     // +5券=发5张广告券验券态恢复与失败退券 / 重置广告=清今日全部每日计数（否则每日1次没法反复真机验） / 触发趣事=必触发趣事弹泡（15%概率没法验收）。
     const devX = (i: number): number => -W * 0.4025 + i * W * 0.115;
     const devY = botY + 56;
-    this.addBtn(this.node, '测回港', 82, 60, new Color(205, 165, 60, 255), devX(0), devY, () => this.devTestReturnReport(), 16);
-    this.addBtn(this.node, '测邮件', 82, 60, new Color(80, 120, 160, 255), devX(1), devY, () => this.devSendTestMail(), 16);
-    this.addBtn(this.node, '回n029', 82, 60, new Color(165, 90, 90, 255), devX(2), devY, () => this.devRollbackToFirstBoss(), 16);
-    this.addBtn(this.node, '刷悬赏', 82, 60, new Color(90, 150, 130, 255), devX(3), devY, () => this.devRerollBounty(), 16);
-    this.addBtn(this.node, '必遇袭', 82, 60, new Color(170, 120, 70, 255), devX(4), devY, () => this.devToggleForceAmbush(), 16);
-    this.addBtn(this.node, '+5券', 82, 60, new Color(120, 140, 90, 255), devX(5), devY, () => this.devGrantAdTickets(), 16);
-    this.addBtn(this.node, '重置广告', 82, 60, new Color(140, 100, 150, 255), devX(6), devY, () => this.devResetAdDaily(), 16);
-    this.addBtn(this.node, '触发趣事', 82, 60, new Color(90, 130, 170, 255), devX(7), devY, () => this.devForceAnecdote(), 16);
-    // 状态行（DEV·细字·旗舰等级/节点等）+ 结果行（操作反馈）：保留供 refresh()/setResult() 用。
-    this.statusLabel = this.makeLabel('', 22, new Color(150, 165, 190), 0, botY + 108);
-    this.resultLabel = this.makeLabel('点「出战」推进主线', 24, new Color(170, 220, 175), 0, botY + 134);
+    this.addBtn(this.node, '测回港', 76, 60, new Color(205, 165, 60, 255), devX(0), devY, () => this.devTestReturnReport(), 16);
+    this.addBtn(this.node, '测邮件', 76, 60, new Color(80, 120, 160, 255), devX(1), devY, () => this.devSendTestMail(), 16);
+    this.addBtn(this.node, '回n029', 76, 60, new Color(165, 90, 90, 255), devX(2), devY, () => this.devRollbackToFirstBoss(), 16);
+    this.addBtn(this.node, '刷悬赏', 76, 60, new Color(90, 150, 130, 255), devX(3), devY, () => this.devRerollBounty(), 16);
+    this.addBtn(this.node, '必遇袭', 76, 60, new Color(170, 120, 70, 255), devX(4), devY, () => this.devToggleForceAmbush(), 16);
+    this.addBtn(this.node, '+5券', 76, 60, new Color(120, 140, 90, 255), devX(5), devY, () => this.devGrantAdTickets(), 16);
+    this.addBtn(this.node, '重置广告', 76, 60, new Color(140, 100, 150, 255), devX(6), devY, () => this.devResetAdDaily(), 16);
+    this.addBtn(this.node, '触发趣事', 76, 60, new Color(90, 130, 170, 255), devX(7), devY, () => this.devForceAnecdote(), 16);
+    // 状态行（DEV·细字）挪进 DEV 工具行正下方（#11 DEV 同区、不再横穿「出战」）；
+    // 结果行（操作反馈）左半区左对齐锚框（#2/#15：右缘止于「出战」左缘 8px 外，不再压主按钮）。
+    this.statusLabel = this.makeLabel('', 18, new Color(150, 165, 190), 0, botY + 14);
+    {
+      const st = this.labelBox(this.statusLabel);
+      st.setContentSize(W * 0.94, 26);
+      this.statusLabel.overflow = Label.Overflow.SHRINK;
+      this.statusLabel.enableWrapText = false;
+    }
+    this.resultLabel = this.makeLabel('点「出战」推进主线', 22, new Color(170, 220, 175), -W / 2 + 12, botY + 104);
+    {
+      const rt = this.labelBox(this.resultLabel);
+      rt.setAnchorPoint(0, 0.5);
+      rt.setContentSize(W * 0.46, 32);
+      this.resultLabel.overflow = Label.Overflow.SHRINK;
+      this.resultLabel.enableWrapText = false;
+      this.resultLabel.horizontalAlign = Label.HorizontalAlign.LEFT;
+    }
   }
 
   /** 货币 chip：圆角底 + 「名 值」标签 + 点击看说明（§10.6 顶部货币栏上下文）。返回值标签（refresh 更新数字）。 */
@@ -1082,8 +1099,12 @@ export class S7DemoController extends Component {
     tl.horizontalAlign = Label.HorizontalAlign.CENTER;
     tN.addComponent(UITransform).setContentSize(cardW * 0.88, 160); tl.overflow = Label.Overflow.RESIZE_HEIGHT;
     this.buildingUnlockDialogTextLabel = tl;
-    this.addBtn(panel, '取消', 220, 84, new Color(110, 90, 150, 255), -cardW * 0.24, -cardH * 0.30, () => this.onCancelBuildingUnlock(), 30);
-    this.buildingUnlockConfirmBtn = this.addBtn(panel, '确认', 220, 84, new Color(70, 150, 110, 255), cardW * 0.24, -cardH * 0.30, () => this.onConfirmBuildingUnlock(), 30).node.parent;
+    // B0.6 #14：两键走统一孔位（取消左/确认右·等宽等高对称）。
+    const [, unlockConfirm] = this.addDialogBtnPair(
+      panel, '取消', new Color(110, 90, 150, 255), () => this.onCancelBuildingUnlock(),
+      '确认', new Color(70, 150, 110, 255), () => this.onConfirmBuildingUnlock(), -cardH * 0.30, 220, 88,
+    );
+    this.buildingUnlockConfirmBtn = unlockConfirm.node.parent;
   }
 
   /** 点未解锁建筑 → 弹「花XX星矿解锁至Lv1？」确认框。 */
@@ -1160,28 +1181,35 @@ export class S7DemoController extends Component {
     this.mkGachaTab(panel, 'exclusive', '专属补给\n限定专属', 0, tabY);
     this.mkGachaTab(panel, 'refit', '舰船补给\n星舰', W * 0.30, tabY);
 
-    // 当前池说明 + 保底进度（多行）。
+    // 当前池说明 + 保底进度（多行）。#2：锚容器框（今日开放类目名可能拼很长）。
     this.gachaInfoLabel = this.mkPanelLabel(panel, '', 28, new Color(220, 230, 245), 0, topY - 230);
+    this.labelBox(this.gachaInfoLabel).setContentSize(W * 0.94, 130);
+    this.gachaInfoLabel.overflow = Label.Overflow.SHRINK;
+    this.gachaInfoLabel.enableWrapText = true;
     // 专属池兑换进度 + 领箱按钮（仅专属池显示）。
     this.gachaExchangeLabel = this.mkPanelLabel(panel, '', 26, new Color(255, 215, 140), 0, topY - 330);
     const claim = this.addBtn(panel, '领兑换箱', 280, 80, new Color(220, 150, 60, 255), 0, topY - 400, () => this.onGachaClaim(), 30);
     this.gachaClaimBtn = claim.node.parent; // addBtn 返回 Label，其父节点 = 按钮节点
     if (this.gachaClaimBtn) this.gachaClaimBtn.active = false;
 
-    // 出货明细（多行·居中偏下）。
+    // 出货明细（多行·居中偏下）。#2：十连 10 行长名锚进容器框自动缩。
     this.gachaResultLabel = this.mkPanelLabel(panel, '点下方抽卡', 26, new Color(180, 230, 190), 0, -H * 0.04);
+    this.labelBox(this.gachaResultLabel).setContentSize(W * 0.92, H * 0.30);
+    this.gachaResultLabel.overflow = Label.Overflow.SHRINK;
+    this.gachaResultLabel.enableWrapText = true;
 
     // 单抽 / 十连（券不足时变灰·点了没反应，见 refreshGacha + onGachaDraw 守门）。
-    const single = this.addBtn(panel, '单抽\n(1券)', 260, 110, new Color(70, 130, 200, 255), -W * 0.22, botY + 230, () => this.onGachaDraw(1), 32);
+    const single = this.addBtn(panel, '单抽\n(1券)', 260, 110, new Color(70, 130, 200, 255), -W * 0.22, botY + 238, () => this.onGachaDraw(1), 32);
     this.gachaSingleBtn = single.node.parent;
-    const ten = this.addBtn(panel, '十连\n(10券)', 260, 110, new Color(80, 160, 120, 255), W * 0.22, botY + 230, () => this.onGachaDraw(10), 32);
+    const ten = this.addBtn(panel, '十连\n(10券)', 260, 110, new Color(80, 160, 120, 255), W * 0.22, botY + 238, () => this.onGachaDraw(10), 32);
     this.gachaTenBtn = ten.node.parent;
     // 赞助补给（看广告得券×10·S13 #6）：块5 统一三态（每日1次·用尽即隐·券态恢复），refreshGacha 控显。
-    const sponsor = this.addBtn(panel, '', 460, 80, new Color(200, 120, 70, 255), 0, botY + 120, () => this.onGachaSponsorAd(), 28);
+    // 巡检批 #15：底部三行（抽卡键/赞助/返回）相邻热区各拉开 ≥8px（原 4/5px），返回键收进安全区。
+    const sponsor = this.addBtn(panel, '', 460, 80, new Color(200, 120, 70, 255), 0, botY + 130, () => this.onGachaSponsorAd(), 28);
     this.gachaSponsorLabel = sponsor;
     this.gachaSponsorBtn = sponsor.node.parent;
     // 返回星港。
-    const back = this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 36, () => this.closeGacha(), 30);
+    const back = this.addBtn(panel, '返回星港', 240, 80, new Color(120, 90, 160, 255), 0, botY + 42, () => this.closeGacha(), 30);
     this.gachaBackBtn = back.node.parent;
   }
 
@@ -1396,6 +1424,9 @@ export class S7DemoController extends Component {
 
     this.mkPanelLabel(panel, '打捞港', 40, new Color(150, 220, 240), -W * 0.30, topY - 30);
     this.salvageInfoLabel = this.mkPanelLabel(panel, '', 24, new Color(210, 230, 245), 0, topY - 92);
+    this.labelBox(this.salvageInfoLabel).setContentSize(W * 0.94, 34); // #2：信标存量行超长自动缩
+    this.salvageInfoLabel.overflow = Label.Overflow.SHRINK;
+    this.salvageInfoLabel.enableWrapText = false;
 
     // 选信标档。
     this.mkPanelLabel(panel, '选信标档', 24, new Color(170, 190, 210), -W * 0.36, topY - 150);
@@ -1502,12 +1533,13 @@ export class S7DemoController extends Component {
         if (btn.node.parent) this.salvageCollectBtns.set(mid, btn.node.parent);
       } else {
         // S13 #5 改行为（决策④）：看广告=直接完成当前打捞（不论品质/剩余时长）；DEV「秒成」并存不混淆（工具style·上线删）。
+        // 巡检批 #15：广告键与 DEV「秒成」热区间距拉到 ≥8px（块5 只把 35px 重叠收到 2.5px 间距·未达标）。
         if (adSt.kind !== 'hidden') {
           const base = '📺 看广告立即完成';
           const label = adSt.kind === 'ticket' ? adTicketButtonLabel(base, adSt.tickets) : base;
-          this.clampBtnLabel(this.addBtn(this.salvageListNode, label, 260, 64, new Color(200, 130, 70, 255), this.viewW * 0.19, y, () => this.onSalvageAdComplete(mid), 22));
+          this.clampBtnLabel(this.addBtn(this.salvageListNode, label, 250, 64, new Color(200, 130, 70, 255), this.viewW * 0.185, y, () => this.onSalvageAdComplete(mid), 22));
         }
-        this.addBtn(this.salvageListNode, '秒成', 110, 64, new Color(110, 90, 140, 255), this.viewW * 0.44, y, () => this.devFinishSalvage(mid), 24); // DEV-TEMP
+        this.addBtn(this.salvageListNode, '秒成', 96, 64, new Color(110, 90, 140, 255), this.viewW * 0.43, y, () => this.devFinishSalvage(mid), 22); // DEV-TEMP
       }
       y -= 92;
     }
@@ -1703,7 +1735,8 @@ export class S7DemoController extends Component {
       this.mkPanelLabel(this.merchantListNode, `${tag}${nameStr}  ${offer.price}星贝  (剩${remain}/${offer.purchaseLimit})`, 24, remain > 0 ? new Color(225, 220, 200) : new Color(140, 140, 140), -this.viewW * 0.16, y);
       const oid = offer.offerId;
       const canBuy = remain > 0 && Math.floor(this.session.resources.starCargo ?? 0) >= offer.price;
-      const btn = this.addBtn(this.merchantListNode, '买', 110, 56, canBuy ? new Color(70, 150, 110, 255) : new Color(70, 75, 90, 255), this.viewW * 0.38, y, () => this.onMerchantBuy(oid), 26);
+      // 巡检批 #15：行距 60 − 键高 52 = 相邻行「买」键垂直间距 8px（原 56 高只剩 4px）。
+      const btn = this.addBtn(this.merchantListNode, '买', 110, 52, canBuy ? new Color(70, 150, 110, 255) : new Color(70, 75, 90, 255), this.viewW * 0.38, y, () => this.onMerchantBuy(oid), 26);
       // 补给券是 alwaysOffers[0]→offerId='o0'，固定在第一行，捕获以便强引导 case43 锁步高亮。
       if (offer.offerId === 'o0') this.merchantTicketBuyBtn = btn.node.parent;
       y -= 60;
@@ -1819,9 +1852,12 @@ export class S7DemoController extends Component {
     this.addModalDismiss(panel, () => this.closeBuildingUpgrade(), cw, ch, 0, 0);
     this.buUpTitleLabel = this.mkPanelLabel(panel, '', 40, new Color(255, 225, 140), 0, ch * 0.33);
     this.buUpInfoLabel = this.mkPanelLabel(panel, '', 26, new Color(225, 230, 245), 0, ch * 0.02);
-    // 统一：左关闭 · 右升级（与战斗结果弹窗等一致：正向操作在右）。
-    this.addBtn(panel, '关闭', 200, 84, new Color(110, 90, 150, 255), -W * 0.17, -ch * 0.34, () => this.closeBuildingUpgrade(), 30);
-    this.buUpBtn = this.addBtn(panel, '升级', 240, 84, new Color(80, 160, 110, 255), W * 0.17, -ch * 0.34, () => this.onBuildingUpgradeConfirm(), 32).node.parent;
+    // B0.6 #14：左关闭 · 右升级，统一孔位等宽等高（巡检批修：原 200/240 不等宽）。
+    const [, buUp] = this.addDialogBtnPair(
+      panel, '关闭', new Color(110, 90, 150, 255), () => this.closeBuildingUpgrade(),
+      '升级', new Color(80, 160, 110, 255), () => this.onBuildingUpgradeConfirm(), -ch * 0.34, 220, 88,
+    );
+    this.buUpBtn = buUp.node.parent;
   }
 
   private openBuildingUpgrade(buildingId: string): void {
@@ -1842,14 +1878,14 @@ export class S7DemoController extends Component {
     const id = this.buildingUpgradeTarget;
     const v = buildBuildingUpgradeView([id], this.buildings, this.playerState.resources, this.population)[0];
     if (this.buUpTitleLabel) this.buUpTitleLabel.string = S7_BUILDING_NAMES[id] ?? id;
-    const greyBtn = () => this.paintBtn(this.buUpBtn, new Color(70, 75, 90, 255), 240, 84);
+    const greyBtn = () => this.paintBtn(this.buUpBtn, new Color(70, 75, 90, 255), 220, 88);
     if (!this.buUpInfoLabel) return;
     if (v.atMax) {
       this.buUpInfoLabel.string = `已满级 Lv.${v.level}\n效果：${this.effectSummary(id, v.level)}`;
       greyBtn();
     } else {
       this.buUpInfoLabel.string = `Lv.${v.level} → Lv.${v.level + 1}\n现：${this.effectSummary(id, v.level)}\n升后：${this.effectSummary(id, v.level + 1)}\n花费：${v.discountedCost} 星矿`;
-      this.paintBtn(this.buUpBtn, v.canAfford ? new Color(80, 160, 110, 255) : new Color(70, 75, 90, 255), 240, 84);
+      this.paintBtn(this.buUpBtn, v.canAfford ? new Color(80, 160, 110, 255) : new Color(70, 75, 90, 255), 220, 88);
     }
   }
 
@@ -1902,6 +1938,10 @@ export class S7DemoController extends Component {
     const msgN = new Node('m'); msgN.layer = this.node.layer; panel.addChild(msgN); msgN.setPosition(0, dh * 0.02, 0);
     this.resultMsgLabel = msgN.addComponent(Label);
     this.resultMsgLabel.fontSize = 30; this.resultMsgLabel.lineHeight = 40; this.resultMsgLabel.color = new Color(225, 228, 240); this.resultMsgLabel.string = '';
+    // #2：败因/遇袭长文案锚进结算卡内容框自动缩。
+    this.labelBox(this.resultMsgLabel).setContentSize(dw * 0.92, dh * 0.34);
+    this.resultMsgLabel.overflow = Label.Overflow.SHRINK;
+    this.resultMsgLabel.enableWrapText = true;
 
     const mkB = (w: number, h: number, c: Color, x: number, y: number, tap: () => void): Label => {
       const n = new Node('rb'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
@@ -1914,15 +1954,16 @@ export class S7DemoController extends Component {
     };
     // L 反馈4：伤害统计键（胜负都有·点开看双方 top5）。
     mkB(260, 64, new Color(90, 100, 130, 255), 0, -dh * 0.06, () => this.openBattleStats()).string = '📊 伤害统计';
-    // 三键：选择关卡(左) / 返回星港(中) / 下一关·再次挑战(右)。③终稿：奖励明细/广告键已全移到三选一屏，结算窗不再带它们。
-    const lvlLbl = mkB(220, 92, new Color(70, 130, 180, 255), -W * 0.30, -dh * 0.30, () => this.onResultGoLevelSelect());
+    // 三键：选择关卡(左) / 返回(中·随语境改文案) / 下一关·再次挑战(右)。x 由 layoutResultKeys 按可见键数走 #14 统一孔位。
+    // ③终稿：奖励明细/广告键已全移到三选一屏，结算窗不再带它们。巡检批：220→210 等宽（三键 #15 间距达标）。
+    const lvlLbl = mkB(210, 92, new Color(70, 130, 180, 255), -W * 0.30, -dh * 0.30, () => this.onResultGoLevelSelect());
     lvlLbl.string = '选择关卡';
     this.resultLevelBtn = lvlLbl.node.parent; // 块2：悬赏战斗时隐藏（单键返回）
-    const homeLbl = mkB(220, 92, new Color(120, 90, 160, 255), 0, -dh * 0.30, () => this.onResultGoHome());
+    const homeLbl = mkB(210, 92, new Color(120, 90, 160, 255), 0, -dh * 0.30, () => this.onResultGoHome());
     homeLbl.string = '返回星港';
     this.resultHomeLabel = homeLbl;
     this.resultHomeBtn = homeLbl.node.parent; // M1：强引导 step3 高光「返回星港」用
-    this.resultRightLabel = mkB(220, 92, new Color(225, 150, 45, 255), W * 0.30, -dh * 0.30, () => this.onResultGoPrebattle());
+    this.resultRightLabel = mkB(210, 92, new Color(225, 150, 45, 255), W * 0.30, -dh * 0.30, () => this.onResultGoPrebattle());
 
     // 块5(S13 #9·附录B B1.5)：战败"安慰补给"附属小块——挂在结算卡下方（仅主线战败显·openResultPopup 控显）。
     // 基础包白送已入账文案 + 旁「📺 安慰双倍」（每日1次·统一三态）；第4败起=鼓励文案、无双倍键。
@@ -1933,9 +1974,10 @@ export class S7DemoController extends Component {
     sg.fillColor = new Color(30, 34, 30, 235); sg.roundRect(-(dw * 0.94) / 2, -60, dw * 0.94, 120, 16); sg.fill();
     strip.active = false;
     this.consolationStripNode = strip;
-    const ct = this.mkPanelLabel(strip, '', 22, new Color(215, 230, 210), -dw * 0.06, 0);
+    // 巡检批 #2：文案框右缘止于「安慰双倍」键左缘 8px 外（原 0.60dw 宽垫进按钮底下 72px）。
+    const ct = this.mkPanelLabel(strip, '', 22, new Color(215, 230, 210), -dw * 0.135, 0);
     ct.overflow = Label.Overflow.SHRINK; ct.enableWrapText = true;
-    ct.getComponent(UITransform)?.setContentSize(dw * 0.60, 108);
+    ct.getComponent(UITransform)?.setContentSize(dw * 0.50, 108);
     this.consolationTextLabel = ct;
     const cad = this.addBtn(strip, '📺 安慰双倍', 220, 72, new Color(60, 130, 90, 255), dw * 0.30, 0, () => this.onConsolationDouble(), 20);
     this.consolationAdLabel = cad;
@@ -1966,11 +2008,27 @@ export class S7DemoController extends Component {
       if (ambushChoice) this.resultRightLabel.string = '⚔ 正面迎战';
       else if (!isSpecial) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
     }
+    // B0.6 #14（巡检批·Ron 点名先例）：按可见键数重排到统一孔位——单键居中、两键对称（遇袭 躲避左/迎战右）、三键等分；
+    // 长文案（返回悬赏板/⚔ 正面迎战等）锚进按钮内框防溢出（#2）。
+    this.layoutResultKeys();
+    if (this.resultHomeLabel) this.clampBtnLabel(this.resultHomeLabel);
+    if (this.resultRightLabel) this.clampBtnLabel(this.resultRightLabel);
     // 块5(S13 #9)：主线战败 → 结算卡下方附"安慰补给"小块（基础包已入账文案/第4败鼓励文案 + 「📺安慰双倍」三态）。
     this.refreshConsolationStrip(won, isSpecial);
     this.resultPopupNode.active = true;
     // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（必须选 1 才继续；选完浮现两键/继续·块5 全部关卡；Boss 继续后弹大奖特写，才露出结算窗）。
     if (won && this.pendingLevelReward) this.openLevelReward();
+  }
+
+  /** 结算窗按钮组随语境重排（B0.6 #14·统一孔位）：可见键 1/2/3 个 → 居中 / 左右对称 / 等分一行（等宽等高已由构造保证）。 */
+  private layoutResultKeys(): void {
+    const keys: Node[] = [];
+    if (this.resultLevelBtn?.active) keys.push(this.resultLevelBtn);
+    if (this.resultHomeBtn) keys.push(this.resultHomeBtn); // 中键恒在（文案随语境）
+    const rightBtn = this.resultRightLabel?.node.parent ?? null;
+    if (rightBtn && rightBtn.active) keys.push(rightBtn);
+    const xs = this.dialogBtnRowXs(keys.length);
+    keys.forEach((n, i) => n.setPosition(xs[i] ?? 0, n.position.y, 0));
   }
 
   /** 安慰小块刷新：仅"主线战败 + 本场已捕获安慰上下文"时显示。pack=null（第4败起）→ 鼓励文案、无双倍键。 */
@@ -2119,7 +2177,7 @@ export class S7DemoController extends Component {
       const y = top - r * gy;
       mkB(nodeId, bw, bh, new Color(60, 110, 170, 255), x, y, () => this.onPickLevel(nodeId));
     });
-    mkB('关闭', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLevelSelect());
+    mkB('返回', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLevelSelect()); // #16：子浮层退路统一叫「返回」
   }
 
   // ===== M0 新手引导 UI 壳（通用·M1-M3 复用，本层不含具体步骤内容） =====
@@ -2289,6 +2347,13 @@ export class S7DemoController extends Component {
       this.clampBtnLabel(label);
     }
     return st;
+  }
+
+  /** 取/补 Label 所在节点的 UITransform（B0.6 #2 容器框通用小工具·防重复 addComponent）。 */
+  private labelBox(label: Label): UITransform {
+    let ut = label.node.getComponent(UITransform);
+    if (!ut) ut = label.node.addComponent(UITransform);
+    return ut;
   }
 
   /** 按钮文案锚进按钮内框（B0.6 #2 文本永在容器内）：券态附加「广告券×N」会变长——超长自动缩字号、禁溢出。 */
@@ -3132,7 +3197,7 @@ export class S7DemoController extends Component {
     );
   }
 
-  /** 搭弱引导首触短教程弹窗（默认隐藏）：居中卡片，文字 + 跳过/下一步 两键。 */
+  /** 搭弱引导首触短教程弹窗（默认隐藏）：居中卡片，文字 + 「知道了」单键（居中·#14 单键孔位）。 */
   private buildTutorialPopup(W: number, H: number): void {
     const panel = new Node('S7TutorialPopup');
     panel.layer = this.node.layer;
@@ -3416,9 +3481,15 @@ export class S7DemoController extends Component {
       return n;
     };
 
-    // 标题 + 信息行（节点/战力/敌情概要）。
+    // 标题 + 信息行（节点/战力/敌情概要）。信息行带容器框（#2：悬赏词缀多行长文案自动缩）。
     mk('★ 战前备战 ★', 52, new Color(255, 230, 120), 0, band.usableTopY - 42);
-    this.prebattleInfoLabel = mk('', 30, new Color(210, 225, 250), 0, band.usableTopY - 100);
+    this.prebattleInfoLabel = mk('', 30, new Color(210, 225, 250), 0, band.usableTopY - 130);
+    {
+      const it = this.labelBox(this.prebattleInfoLabel);
+      it.setContentSize(W * 0.94, 150);
+      this.prebattleInfoLabel.overflow = Label.Overflow.SHRINK;
+      this.prebattleInfoLabel.enableWrapText = true;
+    }
 
     // 3×3 九宫格（居中·下半部分；坐标走 fieldPlayerPos = 战斗站位）。点格 → 弹「上阵界面」。
     const cell = this.fieldCell;
@@ -3442,10 +3513,11 @@ export class S7DemoController extends Component {
     }
 
     // 底部三键：选择关卡(左·主线专属) / 返回(中) / 开始战斗(右)。悬赏备战=两键（藏选关·返回改「返回悬赏板」·openPrebattle 里切）。
-    this.prebattleLevelSelBtn = mkBtn('选择关卡', 230, 88, new Color(70, 130, 180, 255), -W * 0.32, botY + 58, () => this.openLevelSelect());
-    const backBtn = mkBtn('返回星港', 230, 88, new Color(120, 90, 160, 255), 0, botY + 58, () => this.onPrebattleBack());
+    // 巡检批 #15：原「开始战斗」330 宽 @0.30W 与居中「返回」热区重叠 64px → 三键重排，相邻各留 8px。
+    this.prebattleLevelSelBtn = mkBtn('选择关卡', 210, 88, new Color(70, 130, 180, 255), -W * 0.344, botY + 58, () => this.openLevelSelect());
+    const backBtn = mkBtn('返回星港', 200, 88, new Color(120, 90, 160, 255), -W * 0.06, botY + 58, () => this.onPrebattleBack());
     this.prebattleBackLabel = backBtn.getComponentInChildren(Label);
-    this.prebattleSortieBtn = mkBtn('🚀 开始战斗', 330, 112, new Color(225, 150, 45, 255), W * 0.30, botY + 58, () => this.onConfirmSortie());
+    this.prebattleSortieBtn = mkBtn('🚀 开始战斗', 300, 112, new Color(225, 150, 45, 255), W * 0.284, botY + 58, () => this.onConfirmSortie());
 
     // 备战内嵌战斗的「跳过」键（挂面板·不在 ui 容器内，开战时单独显示）。
     const skip = new Node('pbSkip'); skip.layer = this.node.layer; panel.addChild(skip); skip.setPosition(0, botY + 58, 0);
@@ -3924,10 +3996,15 @@ export class S7DemoController extends Component {
     // 右侧详情 + 操作（装配/上下场）。
     const dN = new Node('bd'); dN.layer = this.node.layer; panel.addChild(dN); dN.setPosition(W * 0.24, sheetTop - 120, 0);
     this.boardingDetailLabel = dN.addComponent(Label); this.boardingDetailLabel.fontSize = 24; this.boardingDetailLabel.lineHeight = 32; this.boardingDetailLabel.color = new Color(220, 230, 250);
+    // #2：详情多行（船名/战力/驾驶员/装配概要）锚进右侧详情框，超长自动缩。
+    this.labelBox(this.boardingDetailLabel).setContentSize(W * 0.44, 230);
+    this.boardingDetailLabel.overflow = Label.Overflow.SHRINK;
+    this.boardingDetailLabel.enableWrapText = true;
     const actions = new Node('bActions'); actions.layer = this.node.layer; panel.addChild(actions); actions.setPosition(0, 0, 0);
     this.boardingActionsNode = actions;
-    this.boardingEquipBtn = this.addBtn(actions, '装配', 200, 80, new Color(70, 130, 110, 255), W * 0.16, sheetBot + H * 0.13, () => this.openLoadout(), 30).node.parent;
-    this.boardingBoardBtnLabel = this.addBtn(actions, '上场', 200, 80, new Color(90, 110, 160, 255), W * 0.32, sheetBot + H * 0.13, () => this.onToggleBoard(), 30);
+    // 巡检批 #15：原两键 200 宽 @0.16W/0.32W 热区重叠 80px → 缩窄拉开（间距 ≥8px）。
+    this.boardingEquipBtn = this.addBtn(actions, '装配', 170, 80, new Color(70, 130, 110, 255), W * 0.09, sheetBot + H * 0.13, () => this.openLoadout(), 30).node.parent;
+    this.boardingBoardBtnLabel = this.addBtn(actions, '上场', 170, 80, new Color(90, 110, 160, 255), W * 0.335, sheetBot + H * 0.13, () => this.onToggleBoard(), 30);
     this.boardingBoardBtn = this.boardingBoardBtnLabel.node.parent;
 
     // 底部中间「返回」。
@@ -4013,6 +4090,28 @@ export class S7DemoController extends Component {
     card.on(Node.EventType.TOUCH_END, () => {}, this);
   }
 
+  /** B0.6 #14 弹窗按钮组统一孔位（巡检批抽取·唯一真源）：1键居中 / 2键左右对称等分 / 3键等分一行。
+   *  语义位置铁律：主行动/确认恒右（单键居中）、取消/返回恒左。今后弹窗按钮组一律走本孔位，禁止手摆坐标。 */
+  private dialogBtnRowXs(count: number): number[] {
+    const W = this.viewW;
+    if (count <= 1) return [0];
+    if (count === 2) return [-W * 0.21, W * 0.21];
+    return [-W * 0.30, 0, W * 0.30];
+  }
+
+  /** B0.6 #14 弹窗两键（等宽等高·对称等分·次要/取消左 + 主行动右）。返回 [左Label, 右Label]。 */
+  private addDialogBtnPair(
+    parent: Node, leftText: string, leftColor: Color, onLeft: () => void,
+    rightText: string, rightColor: Color, onRight: () => void,
+    y: number, w = 240, h = 88, fontSize = 30,
+  ): [Label, Label] {
+    const xs = this.dialogBtnRowXs(2);
+    return [
+      this.addBtn(parent, leftText, w, h, leftColor, xs[0], y, onLeft, fontSize),
+      this.addBtn(parent, rightText, w, h, rightColor, xs[1], y, onRight, fontSize),
+    ];
+  }
+
   /** 通用按钮：父节点 + 文字 + 尺寸/色/位置 + 回调，返回 Label（便于动态改字）。 */
   private addBtn(parent: Node, text: string, w: number, h: number, color: Color, x: number, y: number, onTap: () => void, fontSize = 28): Label {
     const n = new Node('btn'); n.layer = this.node.layer; parent.addChild(n); n.setPosition(x, y, 0);
@@ -4063,8 +4162,12 @@ export class S7DemoController extends Component {
     this.equipDetailTitle = tN.addComponent(Label); this.equipDetailTitle.fontSize = 38; this.equipDetailTitle.lineHeight = 46; this.equipDetailTitle.color = new Color(255, 230, 120);
     const iN = new Node('i'); iN.layer = this.node.layer; panel.addChild(iN); iN.setPosition(0, 0, 0);
     this.equipDetailInfo = iN.addComponent(Label); this.equipDetailInfo.fontSize = 28; this.equipDetailInfo.lineHeight = 38; this.equipDetailInfo.color = new Color(215, 225, 245);
-    this.addBtn(panel, '取消', 240, 84, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.11, () => this.closeEquipDetail(), 32);
-    this.equipDetailActionLabel = this.addBtn(panel, '装备', 240, 84, new Color(70, 140, 110, 255), W * 0.20, -H * 0.11, () => this.onEquipDetailAction(), 32);
+    // B0.6 #14：取消左 / 主操作右，统一孔位。
+    const [, equipAction] = this.addDialogBtnPair(
+      panel, '取消', new Color(110, 90, 150, 255), () => this.closeEquipDetail(),
+      '装备', new Color(70, 140, 110, 255), () => this.onEquipDetailAction(), -H * 0.11, 240, 88, 32,
+    );
+    this.equipDetailActionLabel = equipAction;
     this.equipDetailActionBtn = this.equipDetailActionLabel.node.parent;
   }
 
@@ -4078,8 +4181,11 @@ export class S7DemoController extends Component {
     this.addModalDismiss(panel, () => this.closeEquipConfirm(), W * 0.84, H * 0.26, 0, 0); // 点卡片外 = 取消
     const cN = new Node('c'); cN.layer = this.node.layer; panel.addChild(cN); cN.setPosition(0, H * 0.045, 0);
     this.equipConfirmLabel = cN.addComponent(Label); this.equipConfirmLabel.fontSize = 28; this.equipConfirmLabel.lineHeight = 38; this.equipConfirmLabel.color = new Color(230, 220, 245);
-    this.addBtn(panel, '取消', 240, 84, new Color(110, 90, 150, 255), -W * 0.20, -H * 0.09, () => this.closeEquipConfirm(), 32);
-    this.addBtn(panel, '确认', 240, 84, new Color(200, 140, 60, 255), W * 0.20, -H * 0.09, () => this.onEquipConfirmMove(), 32);
+    // B0.6 #14：取消左 / 确认右，统一孔位。
+    this.addDialogBtnPair(
+      panel, '取消', new Color(110, 90, 150, 255), () => this.closeEquipConfirm(),
+      '确认', new Color(200, 140, 60, 255), () => this.onEquipConfirmMove(), -H * 0.09, 240, 88, 32,
+    );
   }
 
   /** 开装配面板：须先选中一艘星舰（在场或不在场均可，装配按船记忆）。 */
@@ -4663,7 +4769,8 @@ export class S7DemoController extends Component {
       const tierStr = kind === 'ship' ? `${shipTierName(getShipTier(this.playerState.unitTiers, uid))}阶` : `${getPilotStar(this.playerState.unitTiers, uid)}★`;
       this.mkPanelLabel(listNode, `${this.unitName(kind, uid)}  ${tierStr}·Lv.${lv}/${cap}`, 24, new Color(225, 225, 235), -this.viewW * 0.20, y);
       const id = uid;
-      const manageBtn = this.addBtn(listNode, '管理', 150, 56, new Color(80, 130, 160, 255), this.viewW * 0.34, y, () => this.openUnitManage(kind, id), 26);
+      // 巡检批 #15：行距 62 − 键高 52 = 相邻行「管理」键垂直间距 10px（原 56 高只剩 6px）。
+      const manageBtn = this.addBtn(listNode, '管理', 150, 52, new Color(80, 130, 160, 255), this.viewW * 0.34, y, () => this.openUnitManage(kind, id), 26);
       this.manageRowBtns.set(`${kind}:${id}`, manageBtn.node.parent as Node);
       y -= 62;
     }
@@ -4773,10 +4880,11 @@ export class S7DemoController extends Component {
     this.unitManageInfoLabel = this.mkPanelLabel(panel, '', 26, new Color(222, 230, 245), 0, topY * 0.18);
     this.unitManageResultLabel = this.mkPanelLabel(panel, '', 24, new Color(180, 230, 200), 0, botY + 200);
     // 动作：升级 / 升阶或升星 / 装配(仅舰) / 返回。
-    this.unitManageUpgradeBtn = this.addBtn(panel, '升级', 200, 80, new Color(70, 150, 110, 255), -W * 0.30, botY + 110, () => this.onUpgradeUnit(this.unitManageKind, this.unitManageId), 28).node.parent; // M1：强引导 step5/8 高光「升级」用
-    this.unitManageAscendLabel = this.addBtn(panel, '升阶', 200, 80, new Color(150, 110, 180, 255), -W * 0.06, botY + 110, () => this.onAscendUnit(this.unitManageKind, this.unitManageId), 28);
-    this.unitManageEquipBtn = this.addBtn(panel, '装配', 200, 80, new Color(70, 130, 160, 255), W * 0.18, botY + 110, () => { this.prebattleSelShip = this.unitManageId; this.openLoadout(); }, 28).node.parent;
-    this.unitManageBackBtn = this.addBtn(panel, '返回', 200, 80, new Color(120, 90, 160, 255), W * 0.34, botY + 36, () => { panel.active = false; }, 28).node.parent;
+    // 巡检批 #15：原三键 200 宽间距 0.24W 相邻热区各重叠 20px、返回行超出安全区下沿 → 重排（相邻 ≥8px·全在安全区内）。
+    this.unitManageUpgradeBtn = this.addBtn(panel, '升级', 190, 76, new Color(70, 150, 110, 255), -W * 0.30, botY + 128, () => this.onUpgradeUnit(this.unitManageKind, this.unitManageId), 28).node.parent; // M1：强引导 step5/8 高光「升级」用
+    this.unitManageAscendLabel = this.addBtn(panel, '升阶', 190, 76, new Color(150, 110, 180, 255), -W * 0.025, botY + 128, () => this.onAscendUnit(this.unitManageKind, this.unitManageId), 28);
+    this.unitManageEquipBtn = this.addBtn(panel, '装配', 190, 76, new Color(70, 130, 160, 255), W * 0.25, botY + 128, () => { this.prebattleSelShip = this.unitManageId; this.openLoadout(); }, 28).node.parent;
+    this.unitManageBackBtn = this.addBtn(panel, '返回', 200, 76, new Color(120, 90, 160, 255), W * 0.34, botY + 40, () => { panel.active = false; }, 28).node.parent;
   }
 
   private openUnitManage(kind: 'ship' | 'pilot', unitId: string): void {
@@ -5000,7 +5108,8 @@ export class S7DemoController extends Component {
     const alab = al.addComponent(Label); alab.fontSize = 26; alab.color = new Color(255, 255, 255); alab.string = '📺 看广告再选 1 个';
     adNode.on(Node.EventType.TOUCH_END, () => this.onChestOpenAd(), this);
     this.chestOpenAdBtnNode = adNode;
-    this.addBtn(panel, '返回背包', 240, 76, new Color(120, 90, 160, 255), 0, -dh * 0.40, () => { panel.active = false; this.refreshBackpack(); }, 28);
+    // 巡检批 #15：与广告键垂直间距拉到 ≥8px（原 7px）。
+    this.addBtn(panel, '返回背包', 240, 76, new Color(120, 90, 160, 255), 0, -dh * 0.41, () => { panel.active = false; this.refreshBackpack(); }, 28);
   }
 
   /** 开一个宝箱：有货→掷 3 选项·进开箱浮层（箱子在「免费选 1」那一刻才扣库存·没选不亏）。 */
@@ -5160,8 +5269,9 @@ export class S7DemoController extends Component {
     this.activityListNode = list;
     this.activityMsgLabel = this.mkPanelLabel(panel, '', 24, new Color(170, 220, 175), 0, botY + 130);
     // DEV-TEMP（验活动链·真机不可能等3/7天/打15把攒满）：灌进度 + 强制周期结算。正式版删。
-    this.addBtn(panel, 'DEV:+50进度', 190, 58, new Color(90, 110, 140, 255), -W * 0.30, botY + 50, () => this.devAddActivityProgress(), 22);
-    this.addBtn(panel, 'DEV:秒结算', 190, 58, new Color(110, 90, 140, 255), -W * 0.05, botY + 50, () => this.devSettleActivity(), 22);
+    // 巡检批 #15：两 DEV 键原重叠 2.5px → 缩窄拉开（相邻 ≥8px）。
+    this.addBtn(panel, 'DEV:+50进度', 180, 58, new Color(90, 110, 140, 255), -W * 0.31, botY + 50, () => this.devAddActivityProgress(), 22);
+    this.addBtn(panel, 'DEV:秒结算', 180, 58, new Color(110, 90, 140, 255), -W * 0.055, botY + 50, () => this.devSettleActivity(), 22);
     this.addBtn(panel, '返回', 180, 58, new Color(120, 90, 160, 255), W * 0.22, botY + 50, () => { panel.active = false; }, 26);
   }
 
@@ -5435,7 +5545,8 @@ export class S7DemoController extends Component {
     this.expOpenMsgLabel = this.mkPanelLabel(panel, '', 24, new Color(210, 220, 240), 0, dh * 0.28);
     const list = new Node('expOptList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
     this.expOpenListNode = list;
-    this.addBtn(panel, '返回背包', 240, 76, new Color(120, 90, 160, 255), 0, -dh * 0.40, () => { panel.active = false; this.refreshBackpack(); }, 28);
+    // 巡检批 #15：下移配合选项卡行距压缩——首次全池自选排到第 3 行也不压返回键。
+    this.addBtn(panel, '返回背包', 240, 76, new Color(120, 90, 160, 255), 0, -dh * 0.41, () => { panel.active = false; this.refreshBackpack(); }, 28);
   }
 
   /** 开扩张宝藏（有货→掷核选项·进开箱浮层·首次=全池自选/非首次=随机三选一·选那刻才扣箱）。 */
@@ -5463,19 +5574,20 @@ export class S7DemoController extends Component {
     const perRow = Math.min(n, 3);
     const cardW = Math.min(this.viewW * 0.27, 210);
     const gap = this.viewW * 0.30;
+    // 巡检批 #15：卡高 118/行距 130（原 130/150）——首次全池自选 3 行也留住与「返回背包」≥8px，行间 12px。
     for (let i = 0; i < n; i += 1) {
       const colu = i % perRow, rowi = Math.floor(i / perRow);
       const rowCount = Math.min(perRow, n - rowi * perRow);
       const startX = -((rowCount - 1) * gap) / 2;
       const x = startX + colu * gap;
-      const y = this.viewH * 0.06 - rowi * 150;
+      const y = this.viewH * 0.075 - rowi * 130;
       const coreId = e.options[i];
       const card = new Node('expCard'); card.layer = this.node.layer; this.expOpenListNode.addChild(card); card.setPosition(x, y, 0);
-      card.addComponent(UITransform).setContentSize(cardW, 130);
-      const bg = card.addComponent(Graphics); bg.fillColor = new Color(50, 46, 76, 255); bg.roundRect(-cardW / 2, -65, cardW, 130, 12); bg.fill();
-      const tl = this.mkPanelLabel(card, this.coreName(coreId), 22, new Color(228, 224, 248), 0, 20);
-      tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(cardW - 14, 70);
-      if (!e.picked) this.addBtn(card, '选这个', cardW - 34, 50, new Color(150, 110, 200, 255), 0, -40, () => this.onPickExpOption(coreId), 22);
+      card.addComponent(UITransform).setContentSize(cardW, 118);
+      const bg = card.addComponent(Graphics); bg.fillColor = new Color(50, 46, 76, 255); bg.roundRect(-cardW / 2, -59, cardW, 118, 12); bg.fill();
+      const tl = this.mkPanelLabel(card, this.coreName(coreId), 22, new Color(228, 224, 248), 0, 18);
+      tl.overflow = Label.Overflow.SHRINK; tl.getComponent(UITransform)?.setContentSize(cardW - 14, 56);
+      if (!e.picked) this.addBtn(card, '选这个', cardW - 34, 46, new Color(150, 110, 200, 255), 0, -34, () => this.onPickExpOption(coreId), 22);
     }
   }
 
@@ -6237,10 +6349,17 @@ export class S7DemoController extends Component {
     this.reportBodyLabel.lineHeight = 40;
     this.reportBodyLabel.color = new Color(225, 230, 245);
     this.reportBodyLabel.string = '';
+    // #2：打捞多单时明细行数不定——锚进卡片内容框自动缩，不顶出卡外。
+    this.labelBox(this.reportBodyLabel).setContentSize(dw * 0.90, dh * 0.58);
+    this.reportBodyLabel.overflow = Label.Overflow.SHRINK;
+    this.reportBodyLabel.enableWrapText = true;
 
     // 两键并排同级（S13.1 五原则②：翻倍与直领并排可选、点哪个都立即走；广告键正常显示不放大不闪烁）。
-    this.addBtn(panel, '一键全领', 250, 96, new Color(90, 170, 95, 255), -W * 0.22, -dh * 0.38, () => this.onClaimReturnReport(false), 34);
-    const dbl = this.addBtn(panel, '📺 全部翻倍', 270, 96, new Color(225, 150, 45, 255), W * 0.20, -dh * 0.38, () => this.onClaimReturnReport(true), 30);
+    // B0.6 #14（巡检批修：原 250/270 不等宽不对称）：等宽等高对称孔位。
+    const [, dbl] = this.addDialogBtnPair(
+      panel, '一键全领', new Color(90, 170, 95, 255), () => this.onClaimReturnReport(false),
+      '📺 全部翻倍', new Color(225, 150, 45, 255), () => this.onClaimReturnReport(true), -dh * 0.38, 260, 96, 30,
+    );
     this.reportDoubleLabel = dbl;
     this.reportDoubleBtn = dbl.node.parent;
   }
@@ -6425,7 +6544,7 @@ export class S7DemoController extends Component {
     this.persist();
     this.refresh();
     this.sound.playSfx('trivia_pop');
-    this.anecdoteView?.show(line.avatar, line.text, this.gainsText(line.reward));
+    this.anecdoteView?.show(line.avatar, anecdoteSpeakerDisplay(line), line.text, this.gainsText(line.reward));
   }
 
   /** DEV-TEMP：+5 广告券（验券态恢复/用券/失败退券——不买商人也能反复测）。上线前删。 */
