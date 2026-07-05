@@ -58,8 +58,16 @@ export class S7BountyBoardView {
   private readonly listTopY: number;
   private readonly rowH: number;
 
-  constructor(parent: Node, private readonly host: S7BountyHost, private readonly W: number, private readonly H: number) {
+  /**
+   * opts（块4·作战大厅折页签）：topY=内容起始Y（大厅给页签栏让出顶部空间·缺省=安全区顶）；
+   * hideClose=隐藏自带「返回星港」（大厅统一提供返回·缺省 false=独立全屏时自带）。bg/触摸吞噬保留（大厅页签栏后加·在其上层）。
+   */
+  constructor(
+    parent: Node, private readonly host: S7BountyHost, private readonly W: number, private readonly H: number,
+    opts: { topY?: number; hideClose?: boolean } = {},
+  ) {
     const band = getS7UsableBand();
+    const topY = opts.topY ?? band.usableTopY;
     const root = new Node('S7BountyBoard'); root.layer = host.layer; parent.addChild(root); root.setPosition(0, 0, 0);
     const bg = root.addComponent(Graphics); bg.fillColor = new Color(8, 12, 24, 252); bg.rect(-W / 2, -H / 2, W, H); bg.fill();
     root.addComponent(UITransform).setContentSize(W, H);
@@ -67,14 +75,14 @@ export class S7BountyBoardView {
     root.active = false;
     this.root = root;
 
-    const title = this.mkLabel(root, 0, band.usableTopY - 44, 40, new Color(150, 220, 200));
+    const title = this.mkLabel(root, 0, topY - 44, 40, new Color(150, 220, 200));
     this.headerLabel = title;
-    this.backlogLabel = this.mkLabel(root, 0, band.usableTopY - 92, 24, new Color(195, 210, 235));
-    this.noticeLabel = this.mkLabel(root, 0, band.usableTopY - 122, 22, new Color(170, 225, 190)); // 一次性提示行（躲避返航等·refresh 清）
+    this.backlogLabel = this.mkLabel(root, 0, topY - 92, 24, new Color(195, 210, 235));
+    this.noticeLabel = this.mkLabel(root, 0, topY - 122, 22, new Color(170, 225, 190)); // 一次性提示行（躲避返航等·refresh 清）
 
     const list = new Node('list'); list.layer = host.layer; root.addChild(list); list.setPosition(0, 0, 0);
     this.listNode = list;
-    this.listTopY = band.usableTopY - 140;
+    this.listTopY = topY - 140;
     const listBottomY = band.usableBottomY + 150;
     this.rowH = Math.min(230, (this.listTopY - listBottomY) / CARDS_PER_PAGE);
 
@@ -83,7 +91,8 @@ export class S7BountyBoardView {
     this.pageLabel = this.mkLabel(root, 0, band.usableBottomY + 132, 26, new Color(200, 210, 230));
     this.nextBtn = this.mkBtn(root, '下一页 ▶', 200, 68, new Color(80, 100, 150, 255), W * 0.26, band.usableBottomY + 132, () => this.turn(1), 26);
 
-    this.mkBtn(root, '返回星港', 260, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 48, () => this.host.onClose(), 30);
+    // 独立全屏时自带「返回星港」；作战大厅折页签时由大厅统一提供（hideClose）。
+    if (!opts.hideClose) this.mkBtn(root, '返回星港', 260, 84, new Color(120, 90, 160, 255), 0, band.usableBottomY + 48, () => this.host.onClose(), 30);
   }
 
   open(): void { this.page = 0; this.refresh(); this.root.active = true; }

@@ -37,8 +37,18 @@ import {
 import { adDailyUsed, adDailyTryConsume } from '../../core/s7/S7AdDailyCounter';
 // 星港悬赏板（第2.5块·块2）：整体取代旧每日委托。核心逻辑在 core/s7/S7StarportBounty + S7CommissionAffix；
 // 界面在独立 view 文件 S7BountyBoardView（守工作流程⑧）；本控制器只做"挂 view + 悬赏战斗编排"。
-import { S7BountyBoardView, S7BountyHost } from './S7BountyBoardView';
+import { S7BountyHost } from './S7BountyBoardView'; // view 本体现由 S7CombatHallView 持有（块4·作战大厅）
 import { S7CorridorTowerView, S7CorridorHost, S7CorridorLayerCard, S7CorridorMilestoneCard } from './S7CorridorTowerView';
+// 块4 每日推演（作战大厅容器·Ron 2026-07-05 hub 架构）：独立 view + 纯逻辑 + 战斗服务（守工作流程⑧）。
+import { S7CombatHallView, S7CombatHallHost, S7CombatHallTab } from './S7CombatHallView';
+import { S7DailyPuzzleHost, S7DailyPuzzleViewData, S7PuzzlePackView, S7PuzzleEnemyCell } from './S7DailyPuzzleView';
+import {
+  refreshDailyPuzzle, isDailyPuzzleSolved, dailyPuzzleAttempts,
+  recordDailyPuzzleAttempt, markDailyPuzzleSolved, dailyPuzzleUnlocked, dailyPuzzleFirstWinReward,
+  PUZZLE_LINEUP_SIZE, DAILY_PUZZLE_UNLOCK_NODE,
+} from '../../core/s7/S7DailyPuzzle';
+import { runDailyPuzzleBattle, S7DailyPuzzleSelectionEntry } from '../../core/s7/S7DailyPuzzleBattleService';
+import { S7DailyPuzzleParam } from '../../config/s7/ConfigTypesS7';
 import {
   corridorLayerPlan, corridorBossNodeIds, nextCorridorLayer, clearCorridorLayer,
   corridorLayerReward, corridorMilestoneReward, doubleCorridorReward,
@@ -292,10 +302,10 @@ export class S7DemoController extends Component {
   private reportBodyLabel: Label | null = null;
   private reportDoubleBtn: Node | null = null;
 
-  // ===== 块2 星港悬赏板（GDD S10.8）=====
-  /** hub「悬赏」入口（关5 强引导结束后解锁）。 */
-  private hubBountyBtn: Node | null = null;
-  /** hub「回廊」入口（首Boss通关后解锁·refresh 门控）。 */
+  // ===== 块2 星港悬赏板 + 块4 每日推演（作战大厅容器·GDD S10.8/S10.9）=====
+  /** hub「作战大厅」入口（关5 强引导结束后解锁·内含悬赏板+每日推演两页签·Ron 2026-07-05 架构）。 */
+  private hubCombatHallBtn: Node | null = null;
+  /** hub「回廊」入口（首Boss通关后解锁·refresh 门控·维持独立不进大厅）。 */
   private hubCorridorBtn: Node | null = null;
   /** 独立全屏深空回廊塔页 view（守工作流程⑧·块3）。 */
   private corridorView: S7CorridorTowerView | null = null;
@@ -303,8 +313,12 @@ export class S7DemoController extends Component {
   private corridorPrepLayer: number | null = null;
   /** 正在演出/结算的回廊层（结果窗单键返回路由用）；null=非回廊战斗。 */
   private corridorActiveLayer: number | null = null;
-  /** 独立全屏悬赏板 view（守工作流程⑧）。 */
-  private bountyView: S7BountyBoardView | null = null;
+  /** 作战大厅容器 view（悬赏板+每日推演双页签·守工作流程⑧·块4）。悬赏 view 由大厅内部持有。 */
+  private combatHall: S7CombatHallView | null = null;
+  /** 正在演出/结算的推演题（结果窗单键返回路由用）；null=非推演战斗。 */
+  private puzzleActiveId: string | null = null;
+  /** DEV-TEMP（块4·上线前删）：跳题内存覆盖——设了就用它当"今日题"（不碰真存档态·真题 solved 存活）；hub 入口清零回真题。 */
+  private devPuzzleId: string | null = null;
   /** 备战处于"悬赏模式"（出战改打该卡·词缀标记按它）；null=正常主线备战。 */
   private bountyPrepCardId: string | null = null;
   /** 正在演出/结算的悬赏卡（结果窗单键返回路由用）；null=主线战斗。 */
@@ -838,8 +852,9 @@ export class S7DemoController extends Component {
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
     this.buildExpOpenPanel(W, H); // 阶段一 I 扩张宝藏开箱浮层
     this.buildBattleStatsPanel(W, H); // 阶段一 L 伤害统计浮层（盖在结果弹窗之上）
-    this.bountyView = new S7BountyBoardView(this.node, this.makeBountyHost(), W, H); // 块2 星港悬赏板·独立全屏 view（守工作流程⑧）
-    this.corridorView = new S7CorridorTowerView(this.node, this.makeCorridorHost(), W, H); // 块3 深空回廊·独立全屏塔页 view（守工作流程⑧）
+    // 块4 作战大厅：容器持有 悬赏板 + 每日推演两页签（守工作流程⑧·Ron 2026-07-05 hub 架构）。
+    this.combatHall = new S7CombatHallView(this.node, this.makeCombatHallHost(), this.makeBountyHost(), this.makePuzzleHost(), W, H);
+    this.corridorView = new S7CorridorTowerView(this.node, this.makeCorridorHost(), W, H); // 块3 深空回廊·独立全屏塔页 view（守工作流程⑧·维持独立）
     this.buildReturnReportPopup(W, H); // 块1 回港报告聚合弹窗（上线自动弹·必领才关；教程遮罩在其后建、可盖住它）
     this.buildBuildingUnlockDialog(W, H); // 建筑解锁确认弹框（真功能·点未解锁建筑弹出）
     this.buildTutorialOverlay(W, H); // M0 强引导遮罩（最后建→盖在所有面板之上）
@@ -907,8 +922,8 @@ export class S7DemoController extends Component {
     this.hubMailSubLabel = mailEntry.getChildByName('s')?.getComponent(Label) ?? null; // 副标签 refresh() 显可领数
     this.hubSortieBtn = this.makeButton('出战', 320, 132, new Color(245, 170, 50, 255), W * 0.20, botY + 152, () => this.openPrebattle());
     // 块2：星港悬赏板入口（出战正上方·关5 强引导结束后解锁，见 refresh()）。
-    this.hubBountyBtn = this.makeButton('悬赏', 200, 80, new Color(70, 165, 150, 255), W * 0.20, botY + 266, () => this.openBounty());
-    this.hubBountyBtn.active = false;
+    this.hubCombatHallBtn = this.makeButton('作战大厅', 200, 80, new Color(120, 110, 175, 255), W * 0.20, botY + 266, () => this.openCombatHall('bounty'));
+    this.hubCombatHallBtn.active = false;
     // 块3：深空回廊入口（左上·首Boss通关后解锁，见 refresh()）。
     this.hubCorridorBtn = this.makeButton('回廊', 200, 80, new Color(95, 120, 190, 255), -W * 0.20, botY + 266, () => this.openCorridor());
     this.hubCorridorBtn.active = false;
@@ -1821,11 +1836,12 @@ export class S7DemoController extends Component {
     // 块3：回廊战斗结算=单键「返回回廊」（同悬赏藏「选关」「下一关/再次挑战」·rule⑨）。
     const isBounty = this.bountyActiveCardId !== null;
     const isCorridor = this.corridorActiveLayer !== null;
-    const isSpecial = isBounty || isCorridor;
+    const isPuzzle = this.puzzleActiveId !== null; // 块4：推演结算=单键「返回推演」
+    const isSpecial = isBounty || isCorridor || isPuzzle;
     const ambushChoice = isBounty && this.bountyAmbushPending !== null;
     if (this.resultLevelBtn) this.resultLevelBtn.active = !isSpecial;
     if (this.resultRightLabel?.node.parent) this.resultRightLabel.node.parent.active = !isSpecial || ambushChoice;
-    if (this.resultHomeLabel) this.resultHomeLabel.string = ambushChoice ? '🛡 躲避袭击' : isBounty ? '返回悬赏板' : isCorridor ? '返回回廊' : '返回星港';
+    if (this.resultHomeLabel) this.resultHomeLabel.string = ambushChoice ? '🛡 躲避袭击' : isBounty ? '返回悬赏板' : isCorridor ? '返回回廊' : isPuzzle ? '返回推演' : '返回星港';
     if (this.resultRightLabel) {
       if (ambushChoice) this.resultRightLabel.string = '⚔ 正面迎战';
       else if (!isSpecial) this.resultRightLabel.string = won ? '下一关 ▶' : '再次挑战';
@@ -1852,6 +1868,7 @@ export class S7DemoController extends Component {
   private onResultGoHome(): void {
     if (this.bountyActiveCardId !== null) { this.onBountyResultReturn(); return; }
     if (this.corridorActiveLayer !== null) { this.onCorridorResultReturn(); return; } // 块3：单键回塔
+    if (this.puzzleActiveId !== null) { this.onPuzzleResultReturn(); return; } // 块4：单键回推演页
     this.dismissBattleScene();
   }
   /** 结果窗·下一关/再次挑战：收战斗画面 → 去当前节点战前备战（胜后当前已推进=下一关；败后当前不变=重打）。 */
@@ -3429,7 +3446,7 @@ export class S7DemoController extends Component {
     const wasBounty = this.bountyPrepCardId !== null;
     const wasCorridor = this.corridorPrepLayer !== null;
     this.closePrebattle(); // 内部清悬赏/回廊模式标记
-    if (wasBounty) this.openBounty();
+    if (wasBounty) this.reopenCombatHall('bounty');
     else if (wasCorridor) this.openCorridor();
   }
 
@@ -5996,9 +6013,42 @@ export class S7DemoController extends Component {
       habitatLevel: () => (this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0),
       gainsText: (r) => this.gainsText(r),
       playCard: (id) => this.onBountyPlayCard(id),
-      onClose: () => this.closeBounty(),
+      onClose: () => this.closeCombatHall(),
     };
   }
+
+  // ===== 块4 作战大厅（容器·两页签 悬赏板+每日推演·Ron 2026-07-05 hub 架构）=====
+
+  private makeCombatHallHost(): S7CombatHallHost {
+    return { layer: this.node.layer, onClose: () => this.closeCombatHall() };
+  }
+
+  /** hub「作战大厅」入口：日刷两页签数据（悬赏发卡 + 推演对齐今日）→ 落盘 → 开大厅到指定页签。解锁=关5 强引导结束。 */
+  private openCombatHall(tab: S7CombatHallTab): void {
+    if (this.playing || !this.combatHall || !this.playerState || !this.session || !this.model) return;
+    if (!this.playerState.tutorial.strongGuideDone) { this.hubToast('完成新手引导后解锁作战大厅'); return; }
+    this.devPuzzleId = null; // 从 hub 进=回真题（清 DEV 跳题覆盖）
+    let dirty = false;
+    // 悬赏日刷（跨天补刷·封顶·幂等）。
+    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
+    const affixPool = (this.runtime?.getAll<{ rowId: string }>('commission_affix_param') ?? []).map((r) => r.rowId);
+    if (refreshBountyBoard(this.playerState.bounty, habitatLv, Date.now(), affixPool)) dirty = true;
+    // 推演对齐今日（跨天换题·真题 solved 存活）。
+    const before = { ...this.playerState.dailyPuzzle };
+    refreshDailyPuzzle(this.playerState.dailyPuzzle, Date.now(), this.puzzleIds());
+    if (before.dayKey !== this.playerState.dailyPuzzle.dayKey || before.puzzleId !== this.playerState.dailyPuzzle.puzzleId) dirty = true;
+    if (dirty) this.persist();
+    this.combatHall.open(tab);
+  }
+
+  /** 战斗返回后重开大厅（不再日刷/不清 DEV 覆盖·保留 DEV 跳题态）：回原页签 + 刷新。 */
+  private reopenCombatHall(tab: S7CombatHallTab): void {
+    if (!this.combatHall) return;
+    this.combatHall.open(tab);
+    this.combatHall.refreshActive();
+  }
+
+  private closeCombatHall(): void { this.combatHall?.close(); }
 
   /** 已通关最高星域档（产出/难度缩放）。 */
   private bountyTier(): number {
@@ -6006,24 +6056,12 @@ export class S7DemoController extends Component {
     return this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
   }
 
-  /** hub「悬赏」入口：日刷发卡（跨天补刷·封顶）→ 落盘 → 开独立悬赏板 view。解锁=关5 强引导结束。 */
-  private openBounty(): void {
-    if (this.playing || !this.bountyView || !this.playerState || !this.session || !this.model) return;
-    if (!this.playerState.tutorial.strongGuideDone) { this.hubToast('完成新手引导后解锁星港悬赏'); return; }
-    const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
-    const affixPool = (this.runtime?.getAll<{ rowId: string }>('commission_affix_param') ?? []).map((r) => r.rowId);
-    if (refreshBountyBoard(this.playerState.bounty, habitatLv, Date.now(), affixPool)) this.persist();
-    this.bountyView.open();
-  }
-
-  private closeBounty(): void { this.bountyView?.close(); }
-
   /** 点卡「出战」：进主线同款备战（悬赏模式·出战改打该卡）；备战信息行挂本场词缀。 */
   private onBountyPlayCard(cardId: string): void {
     if (!this.playerState || this.playing) return;
     if (!findBountyCard(this.playerState.bounty, cardId)) { this.hubToast('这张悬赏已失效'); return; }
     this.bountyPrepCardId = cardId;
-    this.bountyView?.close();
+    this.combatHall?.close();
     this.openPrebattle();
   }
 
@@ -6124,9 +6162,9 @@ export class S7DemoController extends Component {
 
   /** 遇袭遭遇战（选「正面迎战」后·同一战斗舞台接着打）：赢=额外小包(轮换)；败=折损本单护航入账的一部分（占位30%·绝不碰存量）。打完回悬赏板。 */
   private launchBountyAmbush(ctx: { card: S7BountyCard; settledRewards: Record<string, number> }): void {
-    if (!this.playerState) { this.dismissBattleScene(); this.openBounty(); return; }
+    if (!this.playerState) { this.dismissBattleScene(); this.reopenCombatHall('bounty'); return; }
     const out = this.runBountyBattle(ctx.card); // 灰盒复用同敌阵（真实星盗涂装留美术阶段）
-    if (!out) { this.dismissBattleScene(); this.openBounty(); return; } // 起不来就收舞台回板（别卡在黑舞台·不罚）
+    if (!out) { this.dismissBattleScene(); this.reopenCombatHall('bounty'); return; } // 起不来就收舞台回板（别卡在黑舞台·不罚）
     const won = out.result.winner === 'player';
     let text: string;
     if (won) {
@@ -6157,8 +6195,8 @@ export class S7DemoController extends Component {
     this.bountyActiveCardId = null;
     this.bountyAmbushPending = null;
     this.dismissBattleScene();
-    this.openBounty();
-    if (dodged) this.bountyView?.notice('🛡 舰队绕道返航，本单收益已入账（零损失）');
+    this.reopenCombatHall('bounty');
+    if (dodged) this.combatHall?.bountyNotice('🛡 舰队绕道返航，本单收益已入账（零损失）');
   }
 
   /** 结果窗右键「⚔ 正面迎战」（仅遇袭抉择时可见）：不收舞台只收结果窗，同一舞台接打星盗遭遇战。 */
@@ -6166,9 +6204,186 @@ export class S7DemoController extends Component {
     const ambush = this.bountyAmbushPending;
     this.bountyActiveCardId = null;
     this.bountyAmbushPending = null;
-    if (!ambush) { this.dismissBattleScene(); this.openBounty(); return; } // 防御：无上下文就当普通返回
+    if (!ambush) { this.dismissBattleScene(); this.reopenCombatHall('bounty'); return; } // 防御：无上下文就当普通返回
     if (this.resultPopupNode) this.resultPopupNode.active = false;
     this.launchBountyAmbush(ambush);
+  }
+
+  // ===== 块4 每日推演（作战大厅内页签·GDD S10.9·Ron 2026-07-05 三修订）=====
+
+  private makePuzzleHost(): S7DailyPuzzleHost {
+    return {
+      layer: this.node.layer,
+      puzzleView: () => this.buildPuzzleViewData(),
+      startBattle: (sel) => this.onPuzzleStart(sel),
+      onClose: () => this.closeCombatHall(),
+      devJump: (id) => this.devPuzzleJump(id),
+      devPuzzleIds: () => this.puzzleIds(),
+    };
+  }
+
+  /** 题库全部题号（表内顺序·轮换/DEV跳题用）。 */
+  private puzzleIds(): string[] {
+    return (this.runtime?.getAll<S7DailyPuzzleParam>('daily_puzzle_param') ?? []).map((p) => p.rowId);
+  }
+  private puzzleById(id: string): S7DailyPuzzleParam | null {
+    return this.runtime?.getById<S7DailyPuzzleParam>('daily_puzzle_param', id) ?? null;
+  }
+  /** 当前活动题号：DEV 覆盖优先，否则真存档态今日题。 */
+  private activePuzzleId(): string {
+    return this.devPuzzleId ?? (this.playerState?.dailyPuzzle.puzzleId ?? '');
+  }
+  private cfgName(table: 'ship_config' | 'pilot_config' | 'plugin_config', id: string): string {
+    return this.runtime?.getById<{ name?: string }>(table, id)?.name ?? id;
+  }
+  private puzzlePosZh(shipId: string): string {
+    const zh: Record<string, string> = { assault: '突击', guard: '护卫', artillery: '炮击', support: '支援', engineer: '工程' };
+    const pt = this.bountyShipPositionType(shipId);
+    return pt ? zh[pt] ?? String(pt) : '—';
+  }
+  private threatZh(t: string): string {
+    const zh: Record<string, string> = { backline: '后排点名', shield: '护盾', summon: '召唤', heal: '治疗', burst: '爆发', swarm: '蜂群', berserk: '狂暴', mixed: '综合' };
+    return zh[t] ?? t;
+  }
+  /** 战队包携带的核/插件短文案（"核:陨星弹 插:狂热弹药"）。无则空。 */
+  private puzzlePackExtra(pk: S7DailyPuzzleParam['candidatePacks'][number]): string {
+    const parts: string[] = [];
+    if (pk.coreId) parts.push(`核:${this.coreName(pk.coreId)}`);
+    if (pk.plugins && pk.plugins.length > 0) parts.push('插:' + pk.plugins.map((pl) => this.cfgName('plugin_config', pl.pluginId)).join('/'));
+    return parts.join(' ');
+  }
+  /** 敌单位缩略标记 + 是否威胁（沙盘高亮）。 */
+  private puzzleEnemyMark(unitStatRef: string): { mark: string; threat: boolean } {
+    const m: Record<string, { mark: string; threat: boolean }> = {
+      bu_enemy_backline: { mark: '狙', threat: true },
+      bu_enemy_shield: { mark: '盾', threat: true },
+      bu_enemy_shield_warden: { mark: '盾王', threat: true },
+      bu_enemy_support: { mark: '奶', threat: true },
+      bu_enemy_summon_source: { mark: '召', threat: true },
+      bu_enemy_burst_raider: { mark: '炮', threat: true },
+      bu_enemy_charge: { mark: '冲', threat: true },
+      bu_enemy_swarm: { mark: '兵', threat: false },
+      bu_enemy_swarm_tough: { mark: '精', threat: false },
+      bu_enemy_boss_add: { mark: '仆', threat: false },
+    };
+    return m[unitStatRef] ?? { mark: '敌', threat: false };
+  }
+
+  /** 推演 view 展示数据（一次性快照·含未解锁态/已解态）。 */
+  private buildPuzzleViewData(): S7DailyPuzzleViewData {
+    const base: S7DailyPuzzleViewData = {
+      puzzleId: '', title: '每日推演', subtitle: '', threatHint: '', enemyCells: [], candidatePacks: [],
+      lineupSize: PUZZLE_LINEUP_SIZE, solved: false, solvedRewardText: '', attempts: 0,
+    };
+    const st = this.playerState;
+    if (!st || !this.runtime || !this.session) return base;
+    if (!dailyPuzzleUnlocked(this.session.progress.clearedNodeIds)) {
+      return { ...base, locked: true, lockedText: `打通 ${DAILY_PUZZLE_UNLOCK_NODE} 后解锁每日推演（第5关克制概念已教）` };
+    }
+    const pid = this.activePuzzleId();
+    const p = this.puzzleById(pid);
+    if (!p) return { ...base, locked: true, lockedText: '暂无今日推演题（题库待补）' };
+    const idx = this.puzzleIds().indexOf(pid);
+    const now = Date.now();
+    const enemyCells: S7PuzzleEnemyCell[] = p.enemyFormation.map((e) => {
+      const m = this.puzzleEnemyMark(e.unitStatRef);
+      return { slotRef: e.slotRef, mark: m.mark, threat: m.threat };
+    });
+    const candidatePacks: S7PuzzlePackView[] = p.candidatePacks.map((pk) => ({
+      packId: pk.packId,
+      shipName: this.cfgName('ship_config', pk.shipId),
+      pilotName: this.cfgName('pilot_config', pk.pilotId),
+      posType: this.puzzlePosZh(pk.shipId),
+      extra: this.puzzlePackExtra(pk),
+    }));
+    return {
+      puzzleId: pid,
+      title: `第 ${idx >= 0 ? idx + 1 : 1} 题 · ${this.threatZh(p.threatType)}`,
+      subtitle: this.devPuzzleId ? '🧪 DEV 跳题预览（不计真存档）' : '全星港指挥官同题 · 每天凌晨4点换题',
+      threatHint: p.threatHint,
+      enemyCells,
+      candidatePacks,
+      lineupSize: PUZZLE_LINEUP_SIZE,
+      solved: isDailyPuzzleSolved(st.dailyPuzzle, now, pid),
+      solvedRewardText: this.gainsText(dailyPuzzleFirstWinReward()),
+      attempts: dailyPuzzleAttempts(st.dailyPuzzle, now, pid),
+    };
+  }
+
+  /** 推演页「开始推演」：记一次尝试（DEV题不碰真档）→ 真打。 */
+  private onPuzzleStart(sel: S7DailyPuzzleSelectionEntry[]): void {
+    if (!this.playerState || this.playing) return;
+    if (!this.devPuzzleId) recordDailyPuzzleAttempt(this.playerState.dailyPuzzle, Date.now(), this.puzzleIds());
+    this.launchPuzzleBattle(sel);
+  }
+
+  /** 真打一场推演（战队包→组装器→受控入口·就地在战斗舞台播放；摆位已在推演页做·不走主线备战屏）。
+   *  胜=首胜发一次小奖(重复不发)+sfx；负=再想想(不限次·零惩罚·无广告)。结算单键「返回推演」。 */
+  private launchPuzzleBattle(sel: S7DailyPuzzleSelectionEntry[]): void {
+    if (!this.playerState || !this.runtime) return;
+    const pid = this.activePuzzleId();
+    const p = this.puzzleById(pid);
+    if (!p) { this.combatHall?.puzzleNotice('暂无今日推演题'); return; }
+    let out: ReturnType<typeof runDailyPuzzleBattle>;
+    try {
+      out = runDailyPuzzleBattle({ runtime: this.runtime, puzzle: p, selection: sel });
+    } catch (err) {
+      console.warn('[S7DemoController] 推演战斗启动失败', pid, err);
+      this.combatHall?.puzzleNotice('⚠ 阵容不可用，换一摆再试');
+      this.combatHall?.refreshActive();
+      return;
+    }
+    this.sound.playSfx('puzzle_start');
+    const won = out.result.winner === 'player';
+    let text: string;
+    if (won) {
+      // 真题首胜发一次奖（markDailyPuzzleSolved 内含跨天对齐·DEV题不碰真档）。
+      const firstWin = this.devPuzzleId ? false : markDailyPuzzleSolved(this.playerState.dailyPuzzle, Date.now(), this.puzzleIds());
+      if (firstWin) {
+        const rw = dailyPuzzleFirstWinReward();
+        this.creditGains(rw);
+        this.sound.playSfx('puzzle_solve');
+        text = `🎉 妙手！推演解开 —— ${this.gainsText(rw)} · 明日再会`;
+      } else {
+        text = this.devPuzzleId ? '🧪 DEV 题·通过（不发奖·验证用）' : '再次通关（今日已领奖·重温不重复发）';
+      }
+    } else {
+      text = `没解开——再想想（不限次·零惩罚·无广告）\n提示：${this.puzzleThreatAdvice(p)}`;
+    }
+    this.puzzleActiveId = pid;
+    this.pendingWon = won;
+    this.pendingResult = { text, color: won ? new Color(150, 235, 160) : new Color(255, 180, 150) };
+    this.pendingLevelReward = null; // 推演无三选一
+    this.persist();
+    this.combatHall?.close();
+    this.sound.playBgm('bgm_battle');
+    if (this.prebattleNode) this.prebattleNode.active = true; // 激活战斗舞台（摆位已在推演页做·startPlayback 藏摆阵UI画战斗）
+    this.startPlayback(buildS7BattlePlayback(out.result));
+  }
+
+  /** 结果窗·单键「返回推演」：收战斗画面 → 回大厅推演页（保留 DEV 跳题态·不日刷）。 */
+  private onPuzzleResultReturn(): void {
+    this.puzzleActiveId = null;
+    this.dismissBattleScene();
+    this.reopenCombatHall('puzzle');
+  }
+
+  /** 败后威胁提示（B5.3·不推广告）：按威胁类型给解法方向。 */
+  private puzzleThreatAdvice(p: S7DailyPuzzleParam): string {
+    const m: Record<string, string> = {
+      backline: '两艘硬壳护卫放后排(c0)扛狙、脆皮远程放前列速清',
+      shield: '带高爆发一口气凿穿盾，别带纯辅助拖时间',
+      summon: '群伤清小弟 + 远程狙速杀召唤源，前排顶住',
+      heal: '远程狙掉后排奶妈 + 爆发盖过回复',
+      burst: '硬壳顶前排吃重炮、脆皮站后排输出',
+    };
+    return m[p.threatType] ?? '换个搭配 / 摆位再试';
+  }
+
+  /** DEV 跳题（上线前删）：内存覆盖今日题（不碰真存档态）→ 刷新推演页。 */
+  private devPuzzleJump(id: string): void {
+    this.devPuzzleId = id;
+    this.combatHall?.refreshActive();
   }
 
   // ===== 块3 深空回廊（塔页 view 宿主 + 出战流程 + 里程碑 + DEV）=====
@@ -6441,7 +6656,7 @@ export class S7DemoController extends Component {
     const cap = bountyBoardCap(habitatLv);
     if (st.cards.length > cap) st.cards.splice(0, st.cards.length - cap);
     this.persist();
-    if (this.bountyView?.isOpen) this.bountyView.refresh();
+    if (this.combatHall?.isOpen) this.combatHall.refreshActive();
     const golds = r.cards.filter((c) => c.quality === 'gold').length;
     this.hubToast(`[DEV] 重掷4张：金×${golds}·连续无金${st.noGoldDays}批（满${PITY_DAYS - 1}批后下批必金）`);
   }
@@ -6545,7 +6760,7 @@ export class S7DemoController extends Component {
     if (this.hubTicketLabel) this.hubTicketLabel.string = `补给券\n${this.fmtNum(Math.floor(r.supplyTicket ?? 0))}`;
     // 块1：回港报告为弹窗生命周期（必领才关），无常驻领取按钮。
     // 块2：星港悬赏入口=关5 强引导结束后解锁（S10.8）。
-    if (this.hubBountyBtn) this.hubBountyBtn.active = !!this.playerState?.tutorial.strongGuideDone;
+    if (this.hubCombatHallBtn) this.hubCombatHallBtn.active = !!this.playerState?.tutorial.strongGuideDone;
     // 块3：深空回廊入口=首个 Boss（n030）通关后解锁（S10.7）。
     if (this.hubCorridorBtn) this.hubCorridorBtn.active = this.corridorUnlockedNow();
     // J：hub 建筑入口显等级 + 可升↑（买得起且未满级亮提示）。
