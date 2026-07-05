@@ -324,6 +324,9 @@ export class S7DemoController extends Component {
   /** hub 今日补给箱礼盒岛（活动区旁·B1.1）：当日已开→隐藏（券态恢复·统一三态）。 */
   private hubSupplyChestNode: Node | null = null;
   private hubSupplyChestSubLabel: Label | null = null; // 礼盒副标签（券态「广告券×N」提示）
+  /** 开箱结果确认弹窗（块5 完善批·Ron 2026-07-06）：奖励入账后弹·必点「收下」才关（吞触摸·杀进程不丢奖）。 */
+  private supplyChestResultNode: Node | null = null;
+  private supplyChestResultLabel: Label | null = null; // 逐行奖励明细（emoji+名称+数量）
   /** 主线战败安慰包（本场·transient）：pack=null 表示今日已发满只给鼓励文案；doubled=本场已翻倍。 */
   private pendingConsolation: { pack: Record<string, number> | null; doubled: boolean } | null = null;
   private consolationStripNode: Node | null = null;   // 结算卡下方附属小块（战败·仅主线）
@@ -893,6 +896,7 @@ export class S7DemoController extends Component {
     this.buildMailPanel(W, H); // 阶段一 G2 邮件界面（领取入账）
     this.buildLevelRewardPanel(W, H); // 阶段一 F 关卡三选一发奖浮层（最后建 → 盖在结果弹窗之上）
     this.buildGrandRewardPopup(W, H); // ②块2真机 Boss首通大奖特写弹窗（盖在三选一屏/结算窗之上）
+    this.buildSupplyChestResultPopup(W, H); // 块5 完善批 今日补给箱开箱结果确认弹窗（必点收下才关）
     this.buildChestOpenPanel(W, H); // 阶段一 H 星辉货舱开箱浮层（盖在背包之上）
     this.buildActivityPanel(W, H); // 阶段一 G 活动界面（3天行动/7天扩张）
     this.buildVaultPanel(W, H); // 阶段一 I 星空宝库（兑换+合成）
@@ -6333,7 +6337,7 @@ export class S7DemoController extends Component {
 
   // ===== 块5 · 今日补给箱（S13 #2）+ 星港趣事（S10.10）+ 块5 DEV 键 =====
 
-  /** 点礼盒（S13 #2）：看广告→确定性预掷（种子=s7DayKey+今日第几开·杀进程重进不换奖）→入账。每日1次/券态/失败退券走统一广告流。 */
+  /** 点礼盒（S13 #2）：看广告→确定性预掷（种子=s7DayKey+今日第几开·杀进程重进不换奖）→入账→弹结果确认弹窗。每日1次/券态/失败退券走统一广告流。 */
   private onOpenSupplyChest(): void {
     if (!this.playerState || !this.session) return;
     this.runAdPoint(DAILY_SUPPLY_CHEST_AD_POINT,
@@ -6342,16 +6346,61 @@ export class S7DemoController extends Component {
         const now = Date.now();
         const openIndex = adDailyUsed(this.playerState.adDaily, DAILY_SUPPLY_CHEST_AD_POINT, now); // 刚记完数=今日第 N 开（1 起）
         const rewards = rollDailySupplyChest(s7DayKey(now), Math.max(1, openIndex));
-        this.creditGains(rewards);
+        this.creditGains(rewards); // 入账时机不变（弹窗只是回执，杀进程不丢奖）
         this.sound.playSfx('supply_chest_open');
         this.persist();
         this.refresh(); // 礼盒随三态隐入背景（"空盒隐入背景"演出留美术阶段）
-        this.hubToast(`🎁 今日补给箱：${this.gainsText(rewards)} 已入账`);
+        this.openSupplyChestResultPopup(rewards); // 完善批：逐行明细弹窗·必点「收下」才关（替代原飘字自动消失）
       },
       (reason) => {
         this.refresh(); // 券态可能已退回·刷显隐
         this.hubToast(reason === 'ad_failed' ? '广告没看完，补给箱没开' : '广告加载失败');
       });
+  }
+
+  /** 搭补给箱结果确认弹窗（默认隐藏·块5 完善批·照大奖特写成例）：半透明遮罩 + 小卡片 + 标题 + 明细行 + 「收下」。 */
+  private buildSupplyChestResultPopup(W: number, H: number): void {
+    const panel = new Node('S7SupplyChestResult'); panel.layer = this.node.layer; this.node.addChild(panel); panel.setPosition(0, 0, 0);
+    const dim = panel.addComponent(Graphics);
+    dim.fillColor = new Color(0, 0, 0, 200); dim.rect(-W / 2, -H / 2, W, H); dim.fill();
+    const dw = W * 0.78, dh = H * 0.40;
+    dim.fillColor = new Color(38, 34, 24, 255); dim.roundRect(-dw / 2, -dh / 2, dw, dh, 22); dim.fill();
+    panel.addComponent(UITransform).setContentSize(W, H);
+    panel.on(Node.EventType.TOUCH_END, () => {}, this); // 吞触摸·点空白不关（B0.6 ⑤·必点收下）
+    panel.active = false;
+    this.supplyChestResultNode = panel;
+    this.mkPanelLabel(panel, '🎁 今日补给箱', 34, new Color(255, 224, 150), 0, dh * 0.32);
+    const detail = this.mkPanelLabel(panel, '', 26, new Color(232, 236, 245), 0, dh * 0.02);
+    detail.overflow = Label.Overflow.SHRINK; detail.enableWrapText = true; // 文本锚容器内·多条自动缩（B0.6 ②）
+    detail.getComponent(UITransform)?.setContentSize(dw * 0.82, dh * 0.5);
+    this.supplyChestResultLabel = detail;
+    this.addBtn(panel, '收下', 260, 84, new Color(212, 160, 66, 255), 0, -dh * 0.34, () => this.onSupplyChestResultClaim(), 30);
+  }
+
+  /** 弹补给箱结果确认（置顶盖在 hub 之上）：逐行列 emoji+名称+数量。奖励已入账（本弹窗纯回执）。 */
+  private openSupplyChestResultPopup(rewards: Record<string, number>): void {
+    if (!this.supplyChestResultNode) return;
+    const lines = Object.keys(rewards)
+      .filter((k) => (rewards[k] ?? 0) > 0)
+      .map((k) => `${this.resEmoji(k)} ${this.zhRes(k)} ×${this.fmtNum(rewards[k])}`);
+    if (this.supplyChestResultLabel) this.supplyChestResultLabel.string = lines.join('\n') || '（本次无进账）';
+    const parent = this.supplyChestResultNode.parent;
+    if (parent) this.supplyChestResultNode.setSiblingIndex(parent.children.length - 1); // 置顶
+    this.supplyChestResultNode.active = true;
+  }
+
+  /** 收下：关结果弹窗（奖励开箱时已入账·此处只收回执）。 */
+  private onSupplyChestResultClaim(): void {
+    if (this.supplyChestResultNode) this.supplyChestResultNode.active = false;
+  }
+
+  /** 补给箱奖励键→emoji 图标（灰盒占位·仅补给箱可能出现的键；未列回退🎁）。 */
+  private resEmoji(resourceId: string): string {
+    const map: Record<string, string> = {
+      starOre: '🔷', hullAlloy: '🔩', pilotToken: '🎖️', starCargo: '🪙',
+      beaconCommon: '📡', shipBlueprint: '🚀', pilotShardUniversal: '👤',
+    };
+    return map[resourceId] ?? '🎁';
   }
 
   /** 星港趣事（S10.10·块5）：进 hub 时机调——当日确定性掷"有无+哪条"（15%占位）、每日≤1、强引导期不触发、
