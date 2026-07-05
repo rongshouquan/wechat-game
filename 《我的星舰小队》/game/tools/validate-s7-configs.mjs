@@ -1067,6 +1067,71 @@ for (const row of tables.commission_affix_param ?? []) {
   }
 }
 
+// ---- 每日推演（第2.5块·块4）：静态那道闸(c 候选数∈[6,8]) + 结构合法。
+//   要真跑引擎的两道闸(a 作者解回放 / b 蒙特卡洛乱选率<30%) 在 vitest s7_daily_puzzle_solver.test.ts
+//   （.mjs 跑不了 TS 引擎·本工程既定形状）。两扇门同在 npm run gate——坏题必被拦、Codex 加题跑一次全自动验。
+{
+  const PUZZLE_THREAT_TYPES = ['backline', 'shield', 'summon', 'heal', 'burst', 'swarm', 'berserk', 'mixed'];
+  const PUZZLE_QUALITIES = ['fine', 'superior', 'legendary'];
+  const PLAYER_SLOT = /^p[0-2]c[0-2]$/;
+  const ENEMY_SLOT = /^r[0-4]c[0-6]$/;
+  const PUZZLE_MIN_CAND = 6, PUZZLE_MAX_CAND = 8, PUZZLE_LINEUP = 5;
+  const enemyUnitIds = new Set((tables.battle_unit_stat_param ?? []).filter((r) => r.targetType === 'enemy').map((r) => r.rowId));
+  const rows = load('daily_puzzle_param'); tables.daily_puzzle_param = rows;
+  if (rows.length < 5) fail('daily_puzzle_param', '-', `首发样题至少 5 道，实际 ${rows.length}`);
+  const seenPuzzle = new Set();
+  for (const row of rows) {
+    const id = row.rowId;
+    if (!row.schemaVersion || typeof row.schemaVersion !== 'string') fail('daily_puzzle_param', id, '缺少合法 schemaVersion');
+    if (typeof id !== 'string' || !ID_PATTERN.test(id)) { fail('daily_puzzle_param', id, 'rowId 不符合全小写规则'); continue; }
+    if (seenPuzzle.has(id)) fail('daily_puzzle_param', id, 'rowId 重复'); seenPuzzle.add(id);
+    if (!PUZZLE_THREAT_TYPES.includes(row.threatType)) fail('daily_puzzle_param', id, `threatType "${row.threatType}" 非法`);
+    if (typeof row.threatHint !== 'string' || !row.threatHint) fail('daily_puzzle_param', id, 'threatHint 不能为空');
+    if (!Array.isArray(row.enemyFormation) || row.enemyFormation.length === 0) fail('daily_puzzle_param', id, 'enemyFormation 必须为非空数组');
+    else {
+      const eslots = new Set();
+      for (const e of row.enemyFormation) {
+        if (!e || typeof e !== 'object') { fail('daily_puzzle_param', id, 'enemyFormation 含非对象项'); continue; }
+        if (!enemyUnitIds.has(e.unitStatRef)) fail('daily_puzzle_param', id, `enemyFormation.unitStatRef "${e.unitStatRef}" 不是 enemy 战斗单位`);
+        if (typeof e.slotRef !== 'string' || !ENEMY_SLOT.test(e.slotRef)) fail('daily_puzzle_param', id, `enemyFormation.slotRef "${e.slotRef}" 非法（r0c0..r4c6）`);
+        else if (eslots.has(e.slotRef)) fail('daily_puzzle_param', id, `enemyFormation.slotRef "${e.slotRef}" 重复`); else eslots.add(e.slotRef);
+      }
+    }
+    for (const f of ['enemyHpPct', 'enemyAtkPct']) if (row[f] !== undefined && num(row[f]) === null) fail('daily_puzzle_param', id, `${f} 必须为数值`);
+    const packs = row.candidatePacks;
+    const packIds = new Set();
+    if (!Array.isArray(packs)) fail('daily_puzzle_param', id, 'candidatePacks 必须为数组');
+    else {
+      if (packs.length < PUZZLE_MIN_CAND || packs.length > PUZZLE_MAX_CAND) fail('daily_puzzle_param', id, `候选战队包数量必须∈[${PUZZLE_MIN_CAND},${PUZZLE_MAX_CAND}]（闸 c），实际 ${packs.length}`);
+      for (const pk of packs) {
+        if (!pk || typeof pk !== 'object') { fail('daily_puzzle_param', id, 'candidatePacks 含非对象项'); continue; }
+        if (typeof pk.packId !== 'string' || !pk.packId) fail('daily_puzzle_param', id, 'pack.packId 不能为空');
+        else if (packIds.has(pk.packId)) fail('daily_puzzle_param', id, `pack.packId "${pk.packId}" 重复`); else packIds.add(pk.packId);
+        if (!shipIds.has(pk.shipId)) fail('daily_puzzle_param', id, `pack.shipId "${pk.shipId}" 不存在`);
+        if (!pilotIds.has(pk.pilotId)) fail('daily_puzzle_param', id, `pack.pilotId "${pk.pilotId}" 不存在`);
+        if (pk.coreId !== undefined && !coreIds.has(pk.coreId)) fail('daily_puzzle_param', id, `pack.coreId "${pk.coreId}" 不存在`);
+        if (pk.plugins !== undefined) {
+          if (!Array.isArray(pk.plugins) || pk.plugins.length > 3) fail('daily_puzzle_param', id, 'pack.plugins 必须为数组且≤3');
+          else for (const pl of pk.plugins) {
+            if (!pl || !pluginIds.has(pl.pluginId)) fail('daily_puzzle_param', id, `pack.plugin "${pl?.pluginId}" 不存在`);
+            if (!pl || !PUZZLE_QUALITIES.includes(pl.quality)) fail('daily_puzzle_param', id, `pack.plugin.quality "${pl?.quality}" 非法（fine/superior/legendary）`);
+          }
+        }
+      }
+    }
+    const sol = row.authorSolution;
+    if (!Array.isArray(sol) || sol.length !== PUZZLE_LINEUP) fail('daily_puzzle_param', id, `authorSolution 必须正好 ${PUZZLE_LINEUP} 项，实际 ${Array.isArray(sol) ? sol.length : '非数组'}`);
+    else {
+      const pslots = new Set();
+      for (const s of sol) {
+        if (!s || !packIds.has(s.packId)) fail('daily_puzzle_param', id, `authorSolution.packId "${s?.packId}" 不在候选内`);
+        if (!s || typeof s.slotRef !== 'string' || !PLAYER_SLOT.test(s.slotRef)) fail('daily_puzzle_param', id, `authorSolution.slotRef "${s?.slotRef}" 非法（p0c0..p2c2）`);
+        else if (pslots.has(s.slotRef)) fail('daily_puzzle_param', id, `authorSolution.slotRef "${s.slotRef}" 重复`); else pslots.add(s.slotRef);
+      }
+    }
+  }
+}
+
 // 全局：powerIndex 仅允许出现在 power_reference_param
 for (const [name, rows] of Object.entries(tables)) {
   if (name === 'power_reference_param') continue;
@@ -1080,4 +1145,4 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log('all s7 configs valid (44 tables: tier A 5 + tier B 12 params + 1 growth + 5 relation/schema + 5 building + tier C 7 mainline/tutorial/unlock + tier D 3 bridge tables + 5 realtime battle tables + 1 commission affix table)');
+console.log('all s7 configs valid (45 tables: tier A 5 + tier B 12 params + 1 growth + 5 relation/schema + 5 building + tier C 7 mainline/tutorial/unlock + tier D 3 bridge tables + 5 realtime battle tables + 1 commission affix table + 1 daily puzzle table)');

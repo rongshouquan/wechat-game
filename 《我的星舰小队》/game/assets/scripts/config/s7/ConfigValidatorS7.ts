@@ -57,7 +57,7 @@ const TIER_B_TABLES: S7ConfigTableName[] = [
   'source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param',
   'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param',
   'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check',
-  'commission_affix_param',
+  'commission_affix_param', 'daily_puzzle_param',
 ];
 
 // 成长段位参数表（CC-07E-1）：rowId 主键，与 Tier B 参数表同族；逐表数值/口径由 validateGrowth 校验。
@@ -1472,6 +1472,80 @@ function validateCommissionAffix(
   }
 }
 
+// 每日推演题库（第2.5块·块4，GDD S10.9）：静态那道闸(c 候选数∈[6,8]) + 结构合法（.mjs 的 TS 镜像）。
+// 要真跑引擎的两道闸(a 作者解回放 / b 蒙特卡洛乱选率<30%) 在 vitest s7_daily_puzzle_solver.test.ts（校验器跑不了引擎）。
+const S7_PUZZLE_THREAT_TYPES = ['backline', 'shield', 'summon', 'heal', 'burst', 'swarm', 'berserk', 'mixed'];
+const S7_PUZZLE_QUALITIES = ['fine', 'superior', 'legendary'];
+const S7_PUZZLE_PLAYER_SLOT = /^p[0-2]c[0-2]$/;
+const S7_PUZZLE_ENEMY_SLOT = /^r[0-4]c[0-6]$/;
+const S7_PUZZLE_MIN_CAND = 6;
+const S7_PUZZLE_MAX_CAND = 8;
+const S7_PUZZLE_LINEUP = 5;
+function validateDailyPuzzle(
+  errors: S7ValidationError[], rowsByTable: Record<string, Record<string, unknown>[]>,
+  refs: { ships: Set<string>; pilots: Set<string>; cores: Set<string>; plugins: Set<string> },
+): void {
+  const enemyUnitIds = new Set<string>();
+  for (const r of rowsByTable.battle_unit_stat_param ?? []) if (r.targetType === 'enemy') enemyUnitIds.add(String(r.rowId));
+  const push = (id: string, message: string): void => { errors.push({ table: 'daily_puzzle_param', id, message }); };
+
+  for (const row of rowsByTable.daily_puzzle_param ?? []) {
+    const id = String(row.rowId);
+    if (typeof row.threatType !== 'string' || !S7_PUZZLE_THREAT_TYPES.includes(row.threatType)) push(id, `threatType "${String(row.threatType)}" 非法`);
+    if (typeof row.threatHint !== 'string' || row.threatHint.length === 0) push(id, 'threatHint 不能为空');
+
+    const ef = row.enemyFormation;
+    if (!Array.isArray(ef) || ef.length === 0) push(id, 'enemyFormation 必须为非空数组');
+    else {
+      const eslots = new Set<string>();
+      for (const raw of ef) {
+        const e = asRow(raw);
+        if (!e) { push(id, 'enemyFormation 含非对象项'); continue; }
+        if (typeof e.unitStatRef !== 'string' || !enemyUnitIds.has(e.unitStatRef)) push(id, `enemyFormation.unitStatRef "${String(e.unitStatRef)}" 不是 enemy 战斗单位`);
+        if (typeof e.slotRef !== 'string' || !S7_PUZZLE_ENEMY_SLOT.test(e.slotRef)) push(id, `enemyFormation.slotRef "${String(e.slotRef)}" 非法（r0c0..r4c6）`);
+        else if (eslots.has(e.slotRef)) push(id, `enemyFormation.slotRef "${e.slotRef}" 重复`); else eslots.add(e.slotRef);
+      }
+    }
+    for (const f of ['enemyHpPct', 'enemyAtkPct']) if (row[f] !== undefined && num(row[f]) === null) push(id, `${f} 必须为数值`);
+
+    const packs = row.candidatePacks;
+    const packIds = new Set<string>();
+    if (!Array.isArray(packs)) push(id, 'candidatePacks 必须为数组');
+    else {
+      if (packs.length < S7_PUZZLE_MIN_CAND || packs.length > S7_PUZZLE_MAX_CAND) push(id, `候选战队包数量必须∈[${S7_PUZZLE_MIN_CAND},${S7_PUZZLE_MAX_CAND}]（闸 c），实际 ${packs.length}`);
+      for (const raw of packs) {
+        const pk = asRow(raw);
+        if (!pk) { push(id, 'candidatePacks 含非对象项'); continue; }
+        if (typeof pk.packId !== 'string' || pk.packId.length === 0) push(id, 'pack.packId 不能为空');
+        else if (packIds.has(pk.packId)) push(id, `pack.packId "${pk.packId}" 重复`); else packIds.add(pk.packId);
+        if (typeof pk.shipId !== 'string' || !refs.ships.has(pk.shipId)) push(id, `pack.shipId "${String(pk.shipId)}" 不存在`);
+        if (typeof pk.pilotId !== 'string' || !refs.pilots.has(pk.pilotId)) push(id, `pack.pilotId "${String(pk.pilotId)}" 不存在`);
+        if (pk.coreId !== undefined && (typeof pk.coreId !== 'string' || !refs.cores.has(pk.coreId))) push(id, `pack.coreId "${String(pk.coreId)}" 不存在`);
+        if (pk.plugins !== undefined) {
+          if (!Array.isArray(pk.plugins) || pk.plugins.length > 3) push(id, 'pack.plugins 必须为数组且≤3');
+          else for (const rawPl of pk.plugins) {
+            const pl = asRow(rawPl);
+            if (!pl || typeof pl.pluginId !== 'string' || !refs.plugins.has(pl.pluginId)) push(id, `pack.plugin "${String(pl?.pluginId)}" 不存在`);
+            if (!pl || typeof pl.quality !== 'string' || !S7_PUZZLE_QUALITIES.includes(pl.quality)) push(id, `pack.plugin.quality "${String(pl?.quality)}" 非法（fine/superior/legendary）`);
+          }
+        }
+      }
+    }
+
+    const sol = row.authorSolution;
+    if (!Array.isArray(sol) || sol.length !== S7_PUZZLE_LINEUP) push(id, `authorSolution 必须正好 ${S7_PUZZLE_LINEUP} 项，实际 ${Array.isArray(sol) ? sol.length : '非数组'}`);
+    else {
+      const pslots = new Set<string>();
+      for (const raw of sol) {
+        const s = asRow(raw);
+        if (!s || typeof s.packId !== 'string' || !packIds.has(s.packId)) push(id, `authorSolution.packId "${String(s?.packId)}" 不在候选内`);
+        if (!s || typeof s.slotRef !== 'string' || !S7_PUZZLE_PLAYER_SLOT.test(s.slotRef)) push(id, `authorSolution.slotRef "${String(s?.slotRef)}" 非法（p0c0..p2c2）`);
+        else if (pslots.has(s.slotRef)) push(id, `authorSolution.slotRef "${s.slotRef}" 重复`); else pslots.add(s.slotRef);
+      }
+    }
+  }
+}
+
 export function validateS7ConfigBundle(
   bundle: Record<S7ConfigTableName, unknown[]>,
 ): S7ValidationError[] {
@@ -1601,6 +1675,7 @@ export function validateS7ConfigBundle(
   validateTierD(errors, rowsByTable);
   validateBattle(errors, rowsByTable);
   validateCommissionAffix(errors, rowsByTable);
+  validateDailyPuzzle(errors, rowsByTable, { ships: shipIds, pilots: pilotIds, cores: coreIds, plugins: pluginIds });
 
   // 全局：powerIndex 仅允许出现在 power_reference_param
   for (const [table, rows] of Object.entries(rowsByTable)) {

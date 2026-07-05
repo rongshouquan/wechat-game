@@ -797,6 +797,60 @@ export interface S7CommissionAffixParam {
   note: string;
 }
 
+// ===== 每日推演（第2.5块·块4 每日推演，GDD S10.9）=====
+/**
+ * 候选战队包（Ron 2026-07-05 修订②：舰+员固定绑定·可选携带题目指定的插件/星核·玩家不可改装）。
+ * 战斗构建时归一 C 阶 Lv10（无升阶升星），插件/星核照题目指定携带（见 core/s7/S7DailyPuzzleBattleService）。
+ */
+export interface S7DailyPuzzlePackParam {
+  /** 题内唯一包 id（作者解 + 玩家选择用它指向本包）。 */
+  packId: string;
+  shipId: string;
+  pilotId: string;
+  /** 可选·题目指定的星核（core_config）。缺省 = 无核。 */
+  coreId?: string;
+  /** 可选·题目指定的插件（plugin_config·≤3·槽位不重复；quality ∈ fine/superior/legendary）。缺省 = 无插件。 */
+  plugins?: { pluginId: string; quality: string }[];
+}
+/** 内联敌方单位落点（复用块3受控入口的内联敌阵能力·battle_unit_stat_param enemy 行 + 敌 5×7 锚点格）。 */
+export interface S7DailyPuzzleEnemyParam {
+  unitStatRef: string;
+  /** 敌方 5×7 锚点格：r{0-4}c{0-6}。 */
+  slotRef: string;
+}
+/** 作者解一项（Ron 2026-07-05 修订②：选哪个包·摆哪格·必录）。 */
+export interface S7DailyPuzzleSolutionParam {
+  /** ∈ 本题 candidatePacks 的 packId。 */
+  packId: string;
+  /** 我方 3×3 锚点格：p{0-2}c{0-2}。 */
+  slotRef: string;
+}
+/**
+ * 每日推演题目（全服同题·确定性引擎验解·配置表驱动·Codex 走量）。GDD S10.9（Ron 2026-07-05 三修订）。
+ * 验解器三道闸（core/s7/S7DailyPuzzleSolver）：a) 作者解引擎回放必过；b) 随机合法选摆蒙特卡洛通过率 <30%；c) 候选数 ∈[6,8]。
+ * 静态那道闸(c)+结构合法进 validate:configs 门；要真跑引擎的两道闸(a/b)进 vitest 遍历题库测试（.mjs 跑不了 TS 引擎）。
+ */
+export interface S7DailyPuzzleParam {
+  schemaVersion: string;
+  /** = puzzleId（轮换按表内顺序·s7DayKey % 题数）。 */
+  rowId: string;
+  /** 威胁类型（分难度/覆盖用·backline/shield/summon/heal/burst/...）。 */
+  threatType: string;
+  /** 一句威胁提示（沙盘上方明示）。 */
+  threatHint: string;
+  /** 内联敌阵（≥1）。 */
+  enemyFormation: S7DailyPuzzleEnemyParam[];
+  /** 全体敌人血量缩放（占位·调难度用·pct·缺省 0）。 */
+  enemyHpPct?: number;
+  /** 全体敌人攻击缩放（占位·调难度用·pct·缺省 0）。 */
+  enemyAtkPct?: number;
+  /** 候选战队包（6-8·硬校验闸 c）。 */
+  candidatePacks: S7DailyPuzzlePackParam[];
+  /** 作者解（正好 5·必录·闸 a 回放必过）。 */
+  authorSolution: S7DailyPuzzleSolutionParam[];
+  note?: string;
+}
+
 export interface S7ConfigBundle {
   battle_template_config: S7BattleTemplateConfig[];
   ship_config: S7ShipConfig[];
@@ -842,6 +896,7 @@ export interface S7ConfigBundle {
   battle_spawn_param: S7BattleSpawnParam[];
   battle_boss_phase_param: S7BattleBossPhaseParam[];
   commission_affix_param: S7CommissionAffixParam[];
+  daily_puzzle_param: S7DailyPuzzleParam[];
 }
 
 export type S7ConfigTableName = keyof S7ConfigBundle;
@@ -892,6 +947,7 @@ export const S7_ID_FIELD: Record<S7ConfigTableName, string> = {
   battle_spawn_param: 'rowId',
   battle_boss_phase_param: 'rowId',
   commission_affix_param: 'rowId',
+  daily_puzzle_param: 'rowId',
 };
 
 /** 各表资源文件名（不含扩展名，供运行时 cc.resources 加载使用）。 */
@@ -940,4 +996,5 @@ export const S7_TABLE_FILES: Record<S7ConfigTableName, string> = {
   battle_spawn_param: 's7/battle_spawn_param.sample',
   battle_boss_phase_param: 's7/battle_boss_phase_param.sample',
   commission_affix_param: 's7/commission_affix_param.sample',
+  daily_puzzle_param: 's7/daily_puzzle_param.sample',
 };

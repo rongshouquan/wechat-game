@@ -21,7 +21,7 @@ const TABLE_NAMES: S7ConfigTableName[] = [
   'reward_pool_ref_config', 'no_ad_path_check_config', 'risk_fallback_70_config',
   'battle_unit_stat_param', 'battle_effect_param', 'battle_encounter_param',
   'battle_spawn_param', 'battle_boss_phase_param',
-  'commission_affix_param',
+  'commission_affix_param', 'daily_puzzle_param',
 ];
 
 function readSample<T>(table: S7ConfigTableName): T {
@@ -472,5 +472,58 @@ describe('s7 commission_affix_param + positionType validation (第2.5块·块2 �
     const ship = (b.battle_unit_stat_param as Array<Record<string, unknown>>).find((r) => r.targetType === 'ship')!;
     delete ship.positionType;
     expect(validateS7ConfigBundle(b).some((e) => e.table === 'battle_unit_stat_param' && e.message.includes('positionType'))).toBe(true);
+  });
+});
+
+describe('s7 daily_puzzle_param validation (第2.5块·块4 每日推演·静态那道闸+结构)', () => {
+  const puzzleErr = (b: Record<S7ConfigTableName, unknown[]>, sub: string): boolean =>
+    validateS7ConfigBundle(b).some((e) => e.table === 'daily_puzzle_param' && e.message.includes(sub));
+
+  it('闸 c：候选战队包数量 <6 被拒', () => {
+    const b = loadS7Bundle();
+    const p = b.daily_puzzle_param[0] as { candidatePacks: unknown[] };
+    p.candidatePacks = p.candidatePacks.slice(0, 5); // 5 < 6
+    expect(puzzleErr(b, '候选战队包数量')).toBe(true);
+  });
+
+  it('闸 c：候选战队包数量 >8 被拒', () => {
+    const b = loadS7Bundle();
+    const p = b.daily_puzzle_param[0] as { candidatePacks: Record<string, unknown>[] };
+    p.candidatePacks = [...p.candidatePacks, { packId: 'pk9', shipId: 'shp01', pilotId: 'pil01' }]; // 8 → 9
+    expect(puzzleErr(b, '候选战队包数量')).toBe(true);
+  });
+
+  it('作者解不是正好 5 项被拒', () => {
+    const b = loadS7Bundle();
+    const p = b.daily_puzzle_param[0] as { authorSolution: unknown[] };
+    p.authorSolution = p.authorSolution.slice(0, 4); // 4 ≠ 5
+    expect(puzzleErr(b, 'authorSolution 必须正好')).toBe(true);
+  });
+
+  it('作者解引用不在候选内的 packId 被拒', () => {
+    const b = loadS7Bundle();
+    const p = b.daily_puzzle_param[0] as { authorSolution: Record<string, unknown>[] };
+    p.authorSolution[0].packId = 'pk_ghost';
+    expect(puzzleErr(b, '不在候选内')).toBe(true);
+  });
+
+  it('敌阵引用非 enemy 战斗单位被拒', () => {
+    const b = loadS7Bundle();
+    const p = b.daily_puzzle_param[0] as { enemyFormation: Record<string, unknown>[] };
+    p.enemyFormation[0].unitStatRef = 'bu_ship_vanguard'; // 玩家船不是 enemy 单位
+    expect(puzzleErr(b, '不是 enemy 战斗单位')).toBe(true);
+  });
+
+  it('战队包引用不存在的星舰被拒', () => {
+    const b = loadS7Bundle();
+    const p = b.daily_puzzle_param[0] as { candidatePacks: Record<string, unknown>[] };
+    p.candidatePacks[0].shipId = 'shp99';
+    expect(puzzleErr(b, 'pack.shipId')).toBe(true);
+  });
+
+  it('非法 threatType 被拒', () => {
+    const b = loadS7Bundle();
+    (b.daily_puzzle_param[0] as { threatType: string }).threatType = 'lightning';
+    expect(puzzleErr(b, 'threatType')).toBe(true);
   });
 });

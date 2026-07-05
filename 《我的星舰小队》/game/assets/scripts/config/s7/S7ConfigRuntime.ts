@@ -40,7 +40,7 @@ export class S7ConfigAssembleError extends Error {
 }
 
 /**
- * 按清单读取全部 44 张表并组装为 loadFromData 所需的 bundle。
+ * 按清单读取全部 45 张表并组装为 loadFromData 所需的 bundle。
  * 任一表读取失败 / 返回非数组即抛 S7ConfigAssembleError（不静默吞错）。
  * 注意：本函数只负责"读齐并组装"，不做内容校验——内容校验在 S7ConfigLoader.loadFromData 内统一执行。
  */

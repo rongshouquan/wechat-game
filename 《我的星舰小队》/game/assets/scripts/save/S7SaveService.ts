@@ -101,6 +101,11 @@ import {
   createDefaultS7Corridor,
   normalizeS7Corridor,
 } from '../core/s7/S7DeepCorridor';
+import {
+  S7DailyPuzzleSaveState,
+  createDefaultS7DailyPuzzle,
+  normalizeS7DailyPuzzle,
+} from '../core/s7/S7DailyPuzzle';
 
 /**
  * S7 存档结构版本。S7 首发独立计数，与流程版 CURRENT_SAVE_VERSION 互不相干。
@@ -128,8 +133,9 @@ import {
  * v21（第2.5块·块2 星港悬赏板）：commissions → bounty(悬赏卡板 + 生成日 + 暗保底计数)；**真迁移**——
  *   v20 老档的 commissions 积压次数(护航+演习 stock 之和)折算成等量铜卡进新板(见 S7StarportBounty.normalizeS7Bounty)。
  * v22（第2.5块·块3 深空回廊）：playerState 增加 corridor(已通最高层 + 里程碑领取状态)；旧档加载补默认空(加性迁移，无需重置)。
+ * v23（第2.5块·块4 每日推演）：playerState 增加 dailyPuzzle(当日题号 + 已解标记 + 尝试计数)；旧档加载补默认空(加性迁移，无需重置)。
  */
-export const S7_CURRENT_SAVE_VERSION = 22;
+export const S7_CURRENT_SAVE_VERSION = 23;
 
 /**
  * S7 独立存档 key：必须与流程版 SAVE_STORAGE_KEY（'starship_squad_save_v1'）不同，互不污染。
@@ -199,6 +205,8 @@ export interface S7PlayerState {
   bounty: S7BountyState;
   /** 深空回廊（第2.5块·块3）：已通最高层 + 里程碑领取状态，形状由 core/s7/S7DeepCorridor 拥有。 */
   corridor: S7CorridorState;
+  /** 每日推演（第2.5块·块4）：当日题号 + 已解标记 + 尝试计数，形状由 core/s7/S7DailyPuzzle 拥有。 */
+  dailyPuzzle: S7DailyPuzzleSaveState;
 }
 
 export interface S7SaveData {
@@ -239,6 +247,7 @@ export function createDefaultS7PlayerState(): S7PlayerState {
     adDaily: createDefaultS7AdDaily(),
     bounty: createDefaultS7Bounty(),
     corridor: createDefaultS7Corridor(),
+    dailyPuzzle: createDefaultS7DailyPuzzle(),
   };
 }
 
@@ -302,6 +311,8 @@ function normalizeS7PlayerState(raw: unknown): S7PlayerState {
     bounty: normalizeS7Bounty(src.bounty, src.commissions),
     // v22 加性：旧档无 corridor → 补默认空塔（未通任何层·无里程碑领取）。
     corridor: normalizeS7Corridor(src.corridor),
+    // v23 加性：旧档无 dailyPuzzle → 补默认（未初始化·未解·0 尝试；进推演页由 refreshDailyPuzzle 对齐今日）。
+    dailyPuzzle: normalizeS7DailyPuzzle(src.dailyPuzzle),
   };
 }
 
