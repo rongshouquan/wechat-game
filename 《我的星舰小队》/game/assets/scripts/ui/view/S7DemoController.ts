@@ -47,7 +47,7 @@ import {
   CONSOLATION_ENCOURAGE_TEXT, defeatConsolationPack,
 } from '../../core/s7/S7DefeatConsolation';
 import {
-  ANECDOTE_SHOWN_COUNTER_KEY, anecdoteForDay, anecdoteByIndex, anecdoteSpeakerDisplay, S7AnecdoteLine,
+  ANECDOTE_SHOWN_COUNTER_KEY, anecdoteForDay, anecdoteByIndex, anecdoteSpeakerDisplay, S7AnecdoteLine, S7_ANECDOTE_LINES,
 } from '../../core/s7/S7StarportAnecdote';
 import { S7AnecdoteBubbleView } from './S7AnecdoteBubbleView';
 // 星港悬赏板（第2.5块·块2）：整体取代旧每日委托。核心逻辑在 core/s7/S7StarportBounty + S7CommissionAffix；
@@ -335,7 +335,6 @@ export class S7DemoController extends Component {
   private consolationAdLabel: Label | null = null;
   /** 星港趣事小弹泡（独立 view·守⑧）。 */
   private anecdoteView: S7AnecdoteBubbleView | null = null;
-  private devAnecdoteIndex = 0; // DEV「触发趣事」轮换序号（仅内存·上线前随工具行删）
 
   // ===== 块2 星港悬赏板 + 块4 每日推演（作战大厅容器·GDD S10.8/S10.9）=====
   /** hub「作战大厅」入口（关5 强引导结束后解锁·内含悬赏板+每日推演两页签·Ron 2026-07-05 架构）。 */
@@ -2338,13 +2337,17 @@ export class S7DemoController extends Component {
     return s7AdButtonState(point, used, tickets, this.isStrongGuideActive());
   }
 
-  /** 三态按钮通用应用：hidden→节点隐藏；available→基础文案；ticket→基础文案+「广告券×N」（长文案自动缩进按钮内·B0.6 #2）。 */
+  /** 三态按钮通用应用：hidden→节点隐藏；available→基础文案；ticket→基础文案+「广告券×N」（长文案自动缩进按钮内·B0.6 #2）。
+   *  复验批：文本没变不重设——Label.string 触发整段重排版+SHRINK 多趟测量，本方法挂在 hub/打捞/抽卡/商人等高频 refresh 链上，守卫掉就是省下的点击延迟。 */
   private applyAdButton(node: Node | null, label: Label | null, point: S7AdPoint, baseText: string): S7AdButtonState {
     const st = this.adButtonState(point);
     if (node) node.active = st.kind !== 'hidden';
     if (label) {
-      label.string = st.kind === 'ticket' ? adTicketButtonLabel(baseText, st.tickets) : baseText;
-      this.clampBtnLabel(label);
+      const s = st.kind === 'ticket' ? adTicketButtonLabel(baseText, st.tickets) : baseText;
+      if (label.string !== s) {
+        label.string = s;
+        this.clampBtnLabel(label);
+      }
     }
     return st;
   }
@@ -3768,6 +3771,8 @@ export class S7DemoController extends Component {
     const isCorridor = this.corridorPrepLayer !== null; // 块3：回廊模式也藏「选择关卡」、返回改「返回回廊」
     if (this.prebattleLevelSelBtn) this.prebattleLevelSelBtn.active = !isBounty && !isCorridor; // 选关=主线专属
     if (this.prebattleBackLabel) this.prebattleBackLabel.string = isBounty ? '返回悬赏板' : isCorridor ? '返回回廊' : '返回星港';
+    // 巡检复验批 #14：两键模式（悬赏/回廊）底栏改等宽等高对称孔位（原「返回」200×88 与「开始战斗」300×112 大小不一且不对称）。
+    this.layoutPrebattleKeys(isBounty || isCorridor);
     // ③b：定当前玩法（护航/演习按悬赏卡主题分）+ 载入该玩法的编队记忆（首进从当前全局 formation 播种再分叉）。
     this.prebattleGameplay = isCorridor ? 'corridor' : isBounty ? this.bountyThemeKey() : 'mainline';
     if (this.squad) loadGameplayLineup(this.squad, this.prebattleGameplay);
@@ -3789,6 +3794,31 @@ export class S7DemoController extends Component {
     if (this.squad) saveGameplayLineup(this.squad, this.prebattleGameplay);
   }
 
+  /** 重摆一颗既有按钮（位置+热区+重绘底色·圆角 12 与备战 mkBtn 一致）。备战底栏模式切换用。 */
+  private resizeBtn(node: Node, w: number, h: number, color: Color, x: number, y: number): void {
+    node.setPosition(x, y, 0);
+    node.getComponent(UITransform)?.setContentSize(w, h);
+    const g = node.getComponent(Graphics);
+    if (g) { g.clear(); g.fillColor = color; g.roundRect(-w / 2, -h / 2, w, h, 12); g.fill(); }
+  }
+
+  /** 备战底栏随模式重排（巡检复验批·B0.6 #14）：悬赏/回廊=两键（藏选关）→ 等宽等高对称孔位（返回左/开始战斗右）；
+   *  主线=三键原三槽（页面底栏·主行动键加重合 #4，#14b 属正式版施工规范灰盒不搬家——本函数只治"两键模式大小不一不对称"的妨碍使用级问题）。 */
+  private layoutPrebattleKeys(twoKey: boolean): void {
+    const W = this.viewW;
+    const botY = getS7UsableBand().usableBottomY;
+    const back = this.prebattleBackLabel?.node.parent ?? null;
+    if (!back || !this.prebattleSortieBtn) return;
+    if (twoKey) {
+      const xs = this.dialogBtnRowXs(2);
+      this.resizeBtn(back, 260, 96, new Color(120, 90, 160, 255), xs[0], botY + 58);
+      this.resizeBtn(this.prebattleSortieBtn, 260, 96, new Color(225, 150, 45, 255), xs[1], botY + 58);
+    } else {
+      this.resizeBtn(back, 200, 88, new Color(120, 90, 160, 255), -W * 0.06, botY + 58);
+      this.resizeBtn(this.prebattleSortieBtn, 300, 112, new Color(225, 150, 45, 255), W * 0.284, botY + 58);
+    }
+  }
+
   /** 备战「返回」：悬赏→回悬赏板 / 回廊→回塔 / 主线→回基地。 */
   private onPrebattleBack(): void {
     const wasBounty = this.bountyPrepCardId !== null;
@@ -3807,6 +3837,7 @@ export class S7DemoController extends Component {
   /** 刷新战前备战：信息行(节点/战力/敌情概要) + 敌情预览色块 + 9 格编队 + 选中船详情。 */
   private refreshPrebattle(): void {
     if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
+    const perfT0 = Date.now(); // DEV-TEMP：[PERF] 探针（复验批·编队点击链延迟证据·上线前随 DEV 清单删）
     // 块2：悬赏模式下敌情预览用悬赏敌阵节点（已通关最高星域首个节点），不显示主线当前关。
     // 块3：回廊模式用 n001 为载体建玩家侧战力/9格（敌情另按回廊敌阵单画·见下）。
     const viewProgress = this.corridorPrepLayer !== null
@@ -3860,9 +3891,14 @@ export class S7DemoController extends Component {
           g.roundRect(p.x - cell / 2, p.y - cell / 2, cell, cell, 10); g.stroke();
         }
         const lbl = this.prebattleCellLabels[r2 * 3 + c];
-        if (lbl) lbl.string = slot ? `${slot.shipId}\n${this.pilotOf(slot.shipId) ?? '缺员'}` : '+';
+        if (lbl) {
+          const s = slot ? `${slot.shipId}\n${this.pilotOf(slot.shipId) ?? '缺员'}` : '+';
+          if (lbl.string !== s) lbl.string = s; // 复验批：文本守卫（九宫格逐格重设会白付 9 次排版）
+        }
       }
     }
+    const perfCost = Date.now() - perfT0;
+    if (perfCost >= 8) console.log(`[PERF][DEV-TEMP] 备战 refresh ${perfCost}ms`);
   }
 
   /** 某船的装配概要（3槽插件 + 星核），多行短文。按船读 shipLoadouts。 */
@@ -6567,11 +6603,11 @@ export class S7DemoController extends Component {
     this.hubToast('[DEV] 已重置今日广告与每日计数（各点位按钮恢复）');
   }
 
-  /** DEV-TEMP：必触发趣事（绕过 15% 概率与每日≤1·按池子轮换·真实入账链路）。上线前删。 */
+  /** DEV-TEMP：必触发趣事（绕过 15% 概率与每日≤1·随机抽一条·真实入账链路）。上线前删。
+   *  DEV 路径允许 Math.random；正式触发 anecdoteForDay 的确定性掷签一字不动（当天锁签防反复刷=设计+工程双重需要）。 */
   private devForceAnecdote(): void {
     if (!this.playerState || !this.session) return;
-    const line = anecdoteByIndex(this.devAnecdoteIndex);
-    this.devAnecdoteIndex += 1;
+    const line = anecdoteByIndex(Math.floor(Math.random() * S7_ANECDOTE_LINES.length));
     this.showAnecdote(line);
   }
 
@@ -7361,6 +7397,7 @@ export class S7DemoController extends Component {
 
   private refresh(): void {
     if (!this.session || !this.statusLabel || !this.playerState) return;
+    const perfT0 = Date.now(); // DEV-TEMP：[PERF] 探针（复验批·公共 refresh 主链延迟证据·上线前随 DEV 清单删）
     const r = this.session.resources;
     const ore = Math.floor(r.starOre ?? 0);
     const alloy = Math.floor(r.hullAlloy ?? 0);
@@ -7404,6 +7441,8 @@ export class S7DemoController extends Component {
       this.hubMailSubLabel.string = claimable > 0 ? `领取×${claimable}` : '查看';
       this.hubMailSubLabel.color = claimable > 0 ? new Color(140, 235, 160) : new Color(225, 235, 255, 200);
     }
+    const perfCost = Date.now() - perfT0;
+    if (perfCost >= 8) console.log(`[PERF][DEV-TEMP] hub refresh ${perfCost}ms`);
   }
 
   /** 千分位格式化（避免 locale 差异·手写分组）。 */

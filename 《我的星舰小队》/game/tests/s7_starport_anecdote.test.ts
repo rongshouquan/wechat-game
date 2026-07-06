@@ -31,7 +31,7 @@ describe('块5+巡检批 · 星港趣事', () => {
     expect(ANECDOTE_TRIGGER_CHANCE).toBeCloseTo(0.15, 5);
   });
 
-  it('定稿池：≥30 条（任务单口径·上不封顶；现 12 种子+59 正式=71）·每条 头像+趣话+个位数微量奖励（星贝/星矿）', () => {
+  it('定稿池：≥30 条（任务单口径·上不封顶；现 12 种子+60 正式=72·006 改词回池）·每条 头像+趣话+个位数微量奖励（星贝/星矿）', () => {
     expect(S7_ANECDOTE_LINES.length).toBeGreaterThanOrEqual(30);
     for (const line of S7_ANECDOTE_LINES) {
       expect(line.avatar.length).toBeGreaterThan(0);

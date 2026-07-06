@@ -9,7 +9,15 @@
  *   → 候选战队包横排(舰+员+若有核/插件·点选) → 我方 3×3 选摆格(点包再点格放置·点已放格拿回) → 开始推演。
  * 选摆满 5 才可开打；胜=今日已解态+奖励；败=随便再试(不限次·零惩罚·无广告)。
  *
- * 交互通则 B0.6 逐条守：①点击当帧刷新 ②文本锚容器内 SHRINK ③返回明确(大厅提供) ④按钮随语境(未满5不可开打)
+ * 巡检复验修复批（2026-07-06·Ron 真机反馈）两刀：
+ *   ① **增量刷新（治点击延迟真因）**：旧版每次点击全量 removeAllChildren + 重建 ~90 节点/20+ 处 SHRINK 文本测量；
+ *      现改「结构层换题才重建（rebuildStructure）+ 状态层点击只重画颜色/守卫式改字（applyState）」——点击路径 0 节点重建、
+ *      文本没变不重设（Label.string 触发整段重排版，SHRINK 还要多趟字号测量——守卫掉就是省下的延迟）。
+ *   ② **三大块放大 + 吃纵向空档**：尺寸上限抬高（沙盘格高 24→44 / 包卡高 112→170 / 摆位格 100→150·字号随格子同步缩放），
+ *      区块按可用高度顺排、只留 16px 呼吸档（B0.6 #16 间距档）——高屏不再"内容三分之一+大片空黑"；
+ *      小屏仍按带宽自适应缩格，零重叠硬线不破（B0.6②·W=750 校算）。
+ *
+ * 交互通则 B0.6 逐条守：①点击当帧刷新（增量·毫秒级） ②文本锚容器内 SHRINK ③返回明确(大厅提供) ④按钮随语境(未满5不可开打)
  *   ⑥四态(选中高亮/已上阵置灰) ⑦入账回执(控制器飘字) ⑧玩家侧题号从1起 ⑩新内容一句话(威胁提示) ⑪DEV隔离 ⑫随停(控制器管)。
  */
 import { Node, Label, Color, Graphics, UITransform } from 'cc';
@@ -93,6 +101,13 @@ export class S7DailyPuzzleView {
   private placedForPuzzle = '';
   private devPickIdx = 0;
 
+  // ===== 复验批①·增量刷新缓存：换题/候选变化才重建节点，点击只改状态 =====
+  private builtForPuzzle = '';
+  private builtPackKey = '';
+  private packViews = new Map<string, { gfx: Graphics; nameL: Label; statusL: Label; cardW: number; cardH: number }>();
+  private gridViews = new Map<string, { gfx: Graphics; occL: Label; occSub: Label; emptyL: Label; cell: number }>();
+  private lastStartText = '';
+
   constructor(
     parent: Node, private readonly host: S7DailyPuzzleHost, private readonly W: number, private readonly H: number,
     opts: { topY?: number } = {},
@@ -130,16 +145,20 @@ export class S7DailyPuzzleView {
   get isOpen(): boolean { return this.root.active; }
   notice(text: string): void { this.noticeLabel.string = text; }
 
-  /** 重刷：题头 + 威胁 + 敌阵沙盘 + 候选包横排 + 3×3 选摆 + 开打态。换题清选摆；同题保留（败后可微调再试）。 */
+  /** 重刷：结构层（换题才重建节点）+ 状态层（守卫式改字/重画变色）。换题清选摆；同题保留（败后可微调再试）。 */
   refresh(): void {
+    const t0 = Date.now(); // DEV-TEMP：[PERF] 计时探针（真机延迟证据·微信开发者工具 console 看·上线前随 DEV 清单删）
     const d = this.host.puzzleView();
-    this.bodyNode.removeAllChildren();
     if (d.locked) {
-      this.headerLabel.string = '🧩 每日推演';
-      this.subLabel.string = '';
-      this.hintLabel.string = '';
-      this.noticeLabel.string = '';
+      this.builtForPuzzle = ''; this.builtPackKey = '';
+      this.packViews.clear(); this.gridViews.clear();
+      this.bodyNode.removeAllChildren();
+      this.setL(this.headerLabel, '🧩 每日推演');
+      this.setL(this.subLabel, '');
+      this.setL(this.hintLabel, '');
+      this.setL(this.noticeLabel, '');
       this.startBtn.active = false;
+      this.lastStartText = '';
       this.mkLabel(this.bodyNode, 0, this.topY - 200, 26, new Color(200, 180, 130)).string = `🔒 ${d.lockedText ?? '暂未解锁'}`;
       return;
     }
@@ -150,20 +169,49 @@ export class S7DailyPuzzleView {
     for (const [slot, pid] of Array.from(this.placement.entries())) if (!packIds.has(pid)) this.placement.delete(slot);
     if (this.selectedPackId && !packIds.has(this.selectedPackId)) this.selectedPackId = null;
 
-    this.headerLabel.string = `🧩 ${d.title}`;
-    this.subLabel.string = d.subtitle;
-    this.hintLabel.string = `⚠ ${d.threatHint}`;
-    this.noticeLabel.string = d.solved
+    // 结构层：换题/候选包变了才重建（正常点击路径零节点重建——延迟修复的核心）。
+    const packKey = d.candidatePacks.map((p) => p.packId).join(',');
+    const rebuilt = d.puzzleId !== this.builtForPuzzle || packKey !== this.builtPackKey;
+    if (rebuilt) {
+      this.rebuildStructure(d);
+      this.builtForPuzzle = d.puzzleId;
+      this.builtPackKey = packKey;
+    }
+
+    // 状态层：文本守卫（没变不重设=不触发 Label 重排版/SHRINK 重测量）+ 只重画变色的卡/格。
+    this.setL(this.headerLabel, `🧩 ${d.title}`);
+    this.setL(this.subLabel, d.subtitle);
+    this.setL(this.hintLabel, `⚠ ${d.threatHint}`);
+    this.setL(this.noticeLabel, d.solved
       ? `🎉 今日已解 · 奖励 ${d.solvedRewardText} · 明日再会（可重温·不重复发奖）`
       : this.selectedPackId
         ? '已选中一个战队包 —— 点下方九宫格空位放上去'
-        : `点候选包选中 → 点九宫格摆位 · 已摆 ${this.placement.size}/${d.lineupSize}（点已摆的格可拿回）`;
+        : `点候选包选中 → 点九宫格摆位 · 已摆 ${this.placement.size}/${d.lineupSize}（点已摆的格可拿回）`);
+    this.applyPackStates(d);
+    this.applyGridStates(d);
 
-    // 四区顺排（自适应高度·区间零重叠·守 B0.6 ②·真机修复批①）：题头 → 敌阵沙盘 → 候选包 → 我方摆位。
-    // 每区 = 分隔标题(DIV) + 内容(自适应)；总高按可用竖向空间三区按比例分，格子随之缩放，永不叠。
-    const DIV = 26, GAP = 12;
+    // 开打态：满 5 才可开（未满置灰·B0.6 ④⑥）；文本没变不重画。
+    const ready = this.placement.size === d.lineupSize;
+    const startText = ready ? '开始推演' : `再摆 ${d.lineupSize - this.placement.size} 个`;
+    if (startText !== this.lastStartText) {
+      this.lastStartText = startText;
+      this.startLabel.string = startText;
+      this.redrawBtnBg(this.startBtn, ready ? new Color(235, 170, 50, 255) : new Color(90, 90, 96, 255));
+    }
+    const cost = Date.now() - t0;
+    if (cost >= 8) console.log(`[PERF][DEV-TEMP] 推演页 refresh ${cost}ms${rebuilt ? '（换题重建）' : '（增量）'}`);
+  }
+
+  /** 结构层重建（仅换题/候选变化时走）：四区顺排放大版（复验批②）——尺寸上限抬高、区块紧排 16px 呼吸档、字号随格缩放。 */
+  private rebuildStructure(d: S7DailyPuzzleViewData): void {
+    this.bodyNode.removeAllChildren();
+    this.packViews.clear();
+    this.gridViews.clear();
+    this.lastStartText = ''; // 重建后强制开打钮重刷一次
+
+    const DIV = 26, GAP = 16; // 区块呼吸间距走 B0.6 #16 档（16px）
     const headerBottom = this.topY - 138;       // 题头块(含威胁提示/notice)之下
-    const floor = this.bottomY + 168;           // 内容底（开打大钮之上，留呼吸）
+    const floor = this.bottomY + 168;           // 内容底（开打大钮之上留呼吸）
     const contentH = Math.max(240, headerBottom - floor - 3 * DIV - 3 * GAP);
     const hEnemy = contentH * 0.26, hCand = contentH * 0.36, hGrid = contentH * 0.38;
     let y = headerBottom;
@@ -178,29 +226,27 @@ export class S7DailyPuzzleView {
     this.buildCandidateRow(d.candidatePacks, y, hCand);
     y -= hCand + GAP;
     divider('── 我方摆位（上＝我前排·贴近敌 · 下＝后排）──', new Color(150, 220, 180));
-    this.buildPlayerGrid(d.candidatePacks, y, hGrid);
-
-    // 开打态：满 5 才可开（未满置灰·B0.6 ④⑥）。
-    const ready = this.placement.size === d.lineupSize;
-    this.startLabel.string = ready ? '开始推演' : `再摆 ${d.lineupSize - this.placement.size} 个`;
-    this.redrawBtnBg(this.startBtn, ready ? new Color(235, 170, 50, 255) : new Color(90, 90, 96, 255));
+    this.buildPlayerGrid(y, hGrid);
   }
 
   /**
    * 敌阵沙盘（朝向走唯一真源 s7FieldUniformPos·B0.7）：纵深=竖轴、横向=行；敌前排(c0)在下贴近你、c6 最深在上。
-   * 只画被占用格（威胁高亮）。区高 height 内自适应缩放（永不越区）。
+   * 只画被占用格（威胁高亮）。复验批②：格高上限 24→44、宽随高放大（≤1.6 倍高·横向最宽 0.88W），标记字号随格缩放。
+   * 全静态（占用/威胁属题面）→ 只在结构重建时走。
    */
   private buildEnemySandbox(cells: readonly S7PuzzleEnemyCell[], topY: number, height: number): void {
     const gap = 3;
     const depth = S7_FIELD_DEPTH.enemy, lateral = S7_FIELD_LATERAL.enemy; // 7 深 × 5 横
-    const chE = Math.max(12, Math.min(24, (height - (depth - 1) * gap) / depth)); // 深度占竖向
-    const cwE = Math.min(chE * 1.4, (this.W * 0.7 - (lateral - 1) * gap) / lateral);
+    const chE = Math.max(12, Math.min(44, (height - (depth - 1) * gap) / depth));
+    const cwE = Math.min(chE * 1.6, (this.W * 0.88 - (lateral - 1) * gap) / lateral);
     const gridW = lateral * (cwE + gap) - gap, gridH = depth * (chE + gap) - gap;
     const anchorX = -gridW / 2 + cwE / 2;      // visualCol0 = 最左
     const anchorY = topY - chE / 2 - 4;         // visualRow0 = 最上
-    const frame = new Node('efrm'); frame.layer = this.host.layer; this.bodyNode.addChild(frame); frame.setPosition(0, topY - height / 2, 0);
+    const frame = new Node('efrm'); frame.layer = this.host.layer; this.bodyNode.addChild(frame);
+    frame.setPosition(0, topY - 4 - gridH / 2, 0); // 框贴住实际格阵（顶对齐·不再按带高居中留缝）
     const fg = frame.addComponent(Graphics); fg.fillColor = new Color(16, 20, 32, 255); fg.roundRect(-gridW / 2 - 8, -gridH / 2 - 8, gridW + 16, gridH + 16, 8); fg.fill();
     const occ = new Map(cells.map((c) => [c.slotRef, c]));
+    const markFs = Math.round(Math.min(22, Math.max(12, chE - 8)));
     for (let row = 0; row < lateral; row += 1) for (let col = 0; col < depth; col += 1) {
       const cell = occ.get(`r${row}c${col}`);
       const { x, y } = s7FieldUniformPos('enemy', row, col, anchorX, anchorY, cwE, chE, gap);
@@ -208,86 +254,121 @@ export class S7DailyPuzzleView {
       const g = n.addComponent(Graphics);
       g.fillColor = cell ? (cell.threat ? new Color(200, 70, 70, 255) : new Color(120, 80, 80, 255)) : new Color(30, 36, 50, 255);
       g.roundRect(-cwE / 2, -chE / 2, cwE, chE, 4); g.fill();
-      if (cell) { const l = this.mkLabel(n, 0, 0, Math.min(15, chE - 8), new Color(255, 255, 255)); l.string = cell.mark; }
+      if (cell) { const l = this.mkLabel(n, 0, 0, markFs, new Color(255, 255, 255)); l.string = cell.mark; }
     }
   }
 
-  /** 候选战队包横排（2 行铺·自适应高度不压缩·点选高亮·已上阵置灰·真机修复批①·守 B0.6 ②）。 */
+  /** 候选战队包横排（2 行铺·复验批②：卡高上限 112→170、字号随卡高缩放）。结构层只建一次：
+   *  名字/定位型/核插件=题面静态文本；「点选/✓已选/已上阵」状态行与描边色由 applyPackStates 增量更新。 */
   private buildCandidateRow(packs: readonly S7PuzzlePackView[], topY: number, height: number): void {
-    const perRow = 4, gap = 8, rowGap = 10;
+    const perRow = 4, gap = 8, rowGap = 12;
     const rows = Math.max(1, Math.ceil(packs.length / perRow));
-    const cardW = Math.min(174, (this.W * 0.94) / perRow - gap);
-    const cardH = Math.max(76, Math.min(112, (height - (rows - 1) * rowGap) / rows));
+    const cardW = Math.min(190, (this.W * 0.94) / perRow - gap);
+    const cardH = Math.max(76, Math.min(170, (height - (rows - 1) * rowGap) / rows));
+    const nameFs = Math.round(Math.max(19, Math.min(26, cardH * 0.18)));
+    const midFs = Math.round(Math.max(15, Math.min(19, cardH * 0.14)));
+    const stFs = Math.round(Math.max(14, Math.min(17, cardH * 0.13)));
     const topRowY = topY - cardH / 2 - 2;
-    const placedPacks = new Set(this.placement.values());
     packs.forEach((p, i) => {
       const rowN = Math.floor(i / perRow), col = i % perRow;
       const rowCount = Math.min(perRow, packs.length - rowN * perRow);
       const rowW = rowCount * (cardW + gap) - gap;
       const x = -rowW / 2 + cardW / 2 + col * (cardW + gap);
       const y = topRowY - rowN * (cardH + rowGap);
-      const placed = placedPacks.has(p.packId);
-      const selected = this.selectedPackId === p.packId;
       const n = new Node('pk'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
       n.addComponent(UITransform).setContentSize(cardW, cardH);
-      const g = n.addComponent(Graphics);
-      g.fillColor = placed ? new Color(28, 32, 40, 255) : new Color(24, 34, 56, 255);
-      g.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 8); g.fill();
-      g.lineWidth = selected ? 5 : 2;
-      g.strokeColor = selected ? new Color(240, 205, 90, 255) : placed ? new Color(70, 75, 85, 255) : new Color(90, 120, 165, 255);
-      g.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, 8); g.stroke();
-      // 卡内自上而下：舰·员 / [定位型]·核插件 / 状态行（按卡高比例排·小卡不撞）。
-      const nameL = this.mkLabel(n, 0, cardH * 0.30, 19, placed ? new Color(120, 125, 135) : new Color(225, 232, 245));
-      nameL.overflow = Label.Overflow.SHRINK; nameL.enableWrapText = false; nameL.node.getComponent(UITransform)!.setContentSize(cardW - 12, 24);
+      const g = n.addComponent(Graphics); // 底/描边由 applyPackStates 按态重画
+      const nameL = this.mkLabel(n, 0, cardH * 0.30, nameFs, new Color(225, 232, 245));
+      nameL.overflow = Label.Overflow.SHRINK; nameL.enableWrapText = false; nameL.node.getComponent(UITransform)!.setContentSize(cardW - 12, nameFs + 8);
       nameL.string = `${p.shipName}·${p.pilotName}`;
-      const midL = this.mkLabel(n, 0, cardH * 0.03, 15, new Color(170, 190, 160));
-      midL.overflow = Label.Overflow.SHRINK; midL.enableWrapText = false; midL.node.getComponent(UITransform)!.setContentSize(cardW - 12, 22);
+      const midL = this.mkLabel(n, 0, cardH * 0.03, midFs, new Color(170, 190, 160));
+      midL.overflow = Label.Overflow.SHRINK; midL.enableWrapText = false; midL.node.getComponent(UITransform)!.setContentSize(cardW - 12, midFs + 8);
       midL.string = p.extra ? `[${p.posType}] ${p.extra}` : `[${p.posType}]`;
-      this.mkLabel(n, 0, -cardH * 0.32, 15, placed ? new Color(150, 155, 165) : selected ? new Color(240, 205, 90) : new Color(130, 155, 190))
-        .string = placed ? '已上阵·点格拿回' : selected ? '✓已选·点格放' : '点选';
-      if (!placed) n.on(Node.EventType.TOUCH_END, () => this.onPickPack(p.packId), this);
+      const statusL = this.mkLabel(n, 0, -cardH * 0.32, stFs, new Color(130, 155, 190));
+      // 点击常挂·已上阵与否在 onPickPack 内判（老行为：已上阵卡点了无反应，去点格拿回）。
+      n.on(Node.EventType.TOUCH_END, () => this.onPickPack(p.packId), this);
+      this.packViews.set(p.packId, { gfx: g, nameL, statusL, cardW, cardH });
     });
   }
 
   /**
    * 我方 3×3 选摆格（朝向走唯一真源 s7FieldUniformPos·B0.7）：纵深=竖轴、横向=行；我方前排(c2)在上贴近敌。
-   * 遍历引擎格 p{row}c{col}，由 helper 定屏幕位置（引擎坐标/题库/验解器全不动·纯视觉）。自适应高度缩放。
-   * 点空位放当前选中包、点已放格拿回。
+   * 复验批②：格上限 100→150、字号随格缩放。结构层建格与三套标签（占用名/驾驶员/空位标记），
+   * 占用态切换由 applyGridStates 增量更新（改 active+守卫式改字+重画底色）。
    */
-  private buildPlayerGrid(packs: readonly S7PuzzlePackView[], topY: number, height: number): void {
-    const nameOf = new Map(packs.map((p) => [p.packId, p]));
+  private buildPlayerGrid(topY: number, height: number): void {
     const gap = 10;
     const depth = S7_FIELD_DEPTH.player, lateral = S7_FIELD_LATERAL.player; // 3 深 × 3 横
-    const cell = Math.max(64, Math.min(100, Math.min((height - (depth - 1) * gap) / depth, (this.W * 0.72 - (lateral - 1) * gap) / lateral)));
+    const cell = Math.max(64, Math.min(150, Math.min((height - (depth - 1) * gap) / depth, (this.W * 0.8 - (lateral - 1) * gap) / lateral)));
     const gridW = lateral * (cell + gap) - gap;
     const anchorX = -gridW / 2 + cell / 2, anchorY = topY - cell / 2 - 2;
+    const occFs = Math.round(Math.min(22, Math.max(14, cell * 0.2)));
+    const subFs = Math.round(Math.min(16, Math.max(12, cell * 0.14)));
+    const emptyFs = Math.round(Math.min(18, Math.max(13, cell * 0.16)));
     for (let row = 0; row < lateral; row += 1) for (let col = 0; col < depth; col += 1) {
       const slot = `p${row}c${col}`;
       const { x, y } = s7FieldUniformPos('player', row, col, anchorX, anchorY, cell, cell, gap);
       const isFront = s7FieldVisualCell('player', row, col).visualRow === 0;
       const isBack = s7FieldVisualCell('player', row, col).visualRow === depth - 1;
-      const pid = this.placement.get(slot);
-      const pack = pid ? nameOf.get(pid) : undefined;
       const n = new Node('gc'); n.layer = this.host.layer; this.bodyNode.addChild(n); n.setPosition(x, y, 0);
       n.addComponent(UITransform).setContentSize(cell, cell);
-      const g = n.addComponent(Graphics);
-      g.fillColor = pack ? new Color(36, 60, 92, 255) : new Color(22, 28, 42, 255);
-      g.roundRect(-cell / 2, -cell / 2, cell, cell, 8); g.fill();
-      g.lineWidth = 2; g.strokeColor = pack ? new Color(120, 175, 235, 255) : new Color(60, 72, 96, 255);
-      g.roundRect(-cell / 2, -cell / 2, cell, cell, 8); g.stroke();
-      if (pack) {
-        const l = this.mkLabel(n, 0, cell * 0.08, Math.min(16, cell * 0.19), new Color(230, 238, 250));
-        l.overflow = Label.Overflow.SHRINK; l.enableWrapText = true; l.node.getComponent(UITransform)!.setContentSize(cell - 10, cell * 0.5);
-        l.string = pack.shipName;
-        this.mkLabel(n, 0, -cell / 2 + 13, 13, new Color(150, 175, 205)).string = pack.pilotName;
-      } else {
-        this.mkLabel(n, 0, 0, 15, new Color(90, 105, 130)).string = isFront ? '前排' : isBack ? '后排' : '·';
-      }
+      const g = n.addComponent(Graphics); // 底/描边由 applyGridStates 按态重画
+      const occL = this.mkLabel(n, 0, cell * 0.08, occFs, new Color(230, 238, 250));
+      occL.overflow = Label.Overflow.SHRINK; occL.enableWrapText = true; occL.node.getComponent(UITransform)!.setContentSize(cell - 10, cell * 0.5);
+      const occSub = this.mkLabel(n, 0, -cell / 2 + subFs + 4, subFs, new Color(150, 175, 205));
+      const emptyL = this.mkLabel(n, 0, 0, emptyFs, new Color(90, 105, 130));
+      emptyL.string = isFront ? '前排' : isBack ? '后排' : '·'; // 静态·建一次
       n.on(Node.EventType.TOUCH_END, () => this.onTapCell(slot), this);
+      this.gridViews.set(slot, { gfx: g, occL, occSub, emptyL, cell });
     }
   }
 
+  /** 状态层：候选卡按 已上阵/选中/可选 重画底与描边、置灰名字、守卫式更新状态行。 */
+  private applyPackStates(d: S7DailyPuzzleViewData): void {
+    const placedSet = new Set(this.placement.values());
+    for (const p of d.candidatePacks) {
+      const v = this.packViews.get(p.packId);
+      if (!v) continue;
+      const placed = placedSet.has(p.packId);
+      const selected = this.selectedPackId === p.packId;
+      const g = v.gfx;
+      g.clear();
+      g.fillColor = placed ? new Color(28, 32, 40, 255) : new Color(24, 34, 56, 255);
+      g.roundRect(-v.cardW / 2, -v.cardH / 2, v.cardW, v.cardH, 8); g.fill();
+      g.lineWidth = selected ? 5 : 2;
+      g.strokeColor = selected ? new Color(240, 205, 90, 255) : placed ? new Color(70, 75, 85, 255) : new Color(90, 120, 165, 255);
+      g.roundRect(-v.cardW / 2, -v.cardH / 2, v.cardW, v.cardH, 8); g.stroke();
+      v.nameL.color = placed ? new Color(120, 125, 135) : new Color(225, 232, 245);
+      this.setL(v.statusL, placed ? '已上阵·点格拿回' : selected ? '✓已选·点格放' : '点选');
+      v.statusL.color = placed ? new Color(150, 155, 165) : selected ? new Color(240, 205, 90) : new Color(130, 155, 190);
+    }
+  }
+
+  /** 状态层：摆位格按 占用/空 重画底与描边、切换标签组、守卫式更新占用文本。 */
+  private applyGridStates(d: S7DailyPuzzleViewData): void {
+    const nameOf = new Map(d.candidatePacks.map((p) => [p.packId, p]));
+    this.gridViews.forEach((v, slot) => { // Map 遍历走 forEach（项目铁律：微信构建禁展开/慎迭代 Set/Map·memory cocos-no-spread-set-map）
+      const pid = this.placement.get(slot);
+      const pack = pid ? nameOf.get(pid) : undefined;
+      const g = v.gfx;
+      g.clear();
+      g.fillColor = pack ? new Color(36, 60, 92, 255) : new Color(22, 28, 42, 255);
+      g.roundRect(-v.cell / 2, -v.cell / 2, v.cell, v.cell, 8); g.fill();
+      g.lineWidth = 2; g.strokeColor = pack ? new Color(120, 175, 235, 255) : new Color(60, 72, 96, 255);
+      g.roundRect(-v.cell / 2, -v.cell / 2, v.cell, v.cell, 8); g.stroke();
+      v.occL.node.active = !!pack;
+      v.occSub.node.active = !!pack;
+      v.emptyL.node.active = !pack;
+      if (pack) {
+        this.setL(v.occL, pack.shipName);
+        this.setL(v.occSub, pack.pilotName);
+      }
+    });
+  }
+
   private onPickPack(packId: string): void {
+    // 已上阵的卡：点了无反应（拿回走"点格"·与旧版行为一致——旧版靠重建时不挂监听实现）。
+    if (Array.from(this.placement.values()).includes(packId)) return;
     this.selectedPackId = this.selectedPackId === packId ? null : packId;
     this.refresh();
   }
@@ -320,6 +401,9 @@ export class S7DailyPuzzleView {
   }
 
   // ===== 小工具（复刻同族 view 灰盒建法·自包含）=====
+  /** 守卫式改字：文本没变不重设（Label.string 触发整段重排版·SHRINK 还要多趟测量——增量刷新的省钱点）。 */
+  private setL(l: Label, s: string): void { if (l.string !== s) l.string = s; }
+
   private redrawBtnBg(btn: Node, color: Color): void {
     const g = btn.getComponent(Graphics)!; const t = btn.getComponent(UITransform)!;
     g.clear(); g.fillColor = color; g.roundRect(-t.width / 2, -t.height / 2, t.width, t.height, 10); g.fill();
