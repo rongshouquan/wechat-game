@@ -28,7 +28,7 @@ Primary request: Create ONE top-down battle sprite of the friendly assault stars
 
 Ship identity (must read clearly as a SPACE starfighter, never an ocean boat): a fast interceptor-type space starfighter with an arrowhead nose and swept blade-shaped wings; a glossy deep-black candy-gloss hull with a clear glowing cockpit canopy and cyan blade-light glowing along the wing edges. Palette: glossy deep black hull + cyan-blue blade glow, kept harmonious inside the game's bright candy world.
 
-Charm note: give it a light, friendly candy-cute charm, at the same level as this game's 捣蛋星盗 pirate enemy units.
+Charm note: make it candy-sweet, adorable and chibi-cute, with a touch of dreamy magic.
 
 Style anchor: match the locked global style "第15批版B-抽3" rendering: candy-cute cozy sci-fi, soft cel shading, glossy candy highlights, rounded one-piece smooth-shell starship, thick clean dark same-hue outlines, big clean color blocks, bright friendly polished finish.
 
@@ -54,7 +54,7 @@ Primary request: Create ONE top-down battle sprite of the friendly guard starshi
 
 Ship identity (must read clearly as a SPACE starship, never an ocean boat): a broad, sturdy armored guardian space starship — a wide rounded spacecraft body with a thick armored front, short stubby wings, a cockpit canopy, and one big glowing blue energy-shield emitter mounted on its front as its signature feature (a hexagonal shield motif is welcome, but only as the shield emitter's shape, NOT as the whole ship). Palette: sturdy deep steel-blue + white armor with glowing shield-blue, kept harmonious inside the game's bright candy world.
 
-Charm note: give it a light, friendly candy-cute charm, at the same level as this game's 捣蛋星盗 pirate enemy units.
+Charm note: make it candy-sweet, adorable and chibi-cute, with a touch of dreamy magic.
 
 Style anchor: match the locked global style "第15批版B-抽3" rendering: candy-cute cozy sci-fi, soft cel shading, glossy candy highlights, rounded one-piece smooth-shell starship, thick clean dark same-hue outlines, big clean color blocks, bright friendly polished finish.
 
@@ -80,7 +80,7 @@ Primary request: Create ONE top-down battle sprite of the friendly artillery sta
 
 Ship identity (must read clearly as a SPACE starship, never an ocean boat): a heavy weapons space starship — a rounded spacecraft body with a cockpit canopy and short swept wings, carrying two big cannon barrels mounted along its back / spine as the dominant silhouette feature, with subtle warm glowing barrel cores as body material glow. Palette: blazing orange + gold hull with heated glow accents, kept harmonious inside the game's bright candy world.
 
-Charm note: give it a light, friendly candy-cute charm, at the same level as this game's 捣蛋星盗 pirate enemy units.
+Charm note: make it candy-sweet, adorable and chibi-cute, with a touch of dreamy magic.
 
 Style anchor: match the locked global style "第15批版B-抽3" rendering: candy-cute cozy sci-fi, soft cel shading, glossy candy highlights, rounded one-piece smooth-shell starship, thick clean dark same-hue outlines, big clean color blocks, bright friendly polished finish.
 
@@ -106,7 +106,7 @@ Primary request: Create ONE top-down battle sprite of the friendly support stars
 
 Ship identity (must read clearly as a SPACE starship, never an ocean boat): a graceful pure-white support space starfighter — a smooth rounded spacecraft body with a cockpit canopy, its signature being two glowing golden halo-ring light-wings arcing from its sides (the ring-wings are part of the ship's wing structure, not a detached halo). Palette: pure white hull + soft gold and warm light glow, kept harmonious inside the game's bright candy world.
 
-Charm note: give it a light, friendly candy-cute charm, at the same level as this game's 捣蛋星盗 pirate enemy units.
+Charm note: make it candy-sweet, adorable and chibi-cute, with a touch of dreamy magic.
 
 Style anchor: match the locked global style "第15批版B-抽3" rendering: candy-cute cozy sci-fi, soft cel shading, glossy candy highlights, rounded one-piece smooth-shell starship, thick clean dark same-hue outlines, big clean color blocks, bright friendly polished finish.
 
@@ -132,7 +132,7 @@ Primary request: Create ONE top-down battle sprite of the friendly engineering s
 
 Ship identity (must read clearly as a SPACE starship, never an ocean boat): a wide-bodied gray-purple engineering / utility space craft — a broad rounded spacecraft body with a cockpit canopy and short swept wings, ringed with a few small mist-nozzle pods tucked tight along the hull edges; a few SMALL decorative mist wisps hugging tight to the hull edge are part of its identity (keep them subtle and attached, never a big fog cloud). Palette: soft gray-purple + pale lavender glow, kept harmonious inside the game's bright candy world.
 
-Charm note: give it a light, friendly candy-cute charm, at the same level as this game's 捣蛋星盗 pirate enemy units.
+Charm note: make it candy-sweet, adorable and chibi-cute, with a touch of dreamy magic.
 
 Style anchor: match the locked global style "第15批版B-抽3" rendering: candy-cute cozy sci-fi, soft cel shading, glossy candy highlights, rounded one-piece smooth-shell starship, thick clean dark same-hue outlines, big clean color blocks, bright friendly polished finish.
 
