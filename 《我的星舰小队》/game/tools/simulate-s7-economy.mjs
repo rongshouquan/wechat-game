@@ -299,6 +299,8 @@ export const PARAMS = {
   events: {
     cycle3: { supplyTicket: 8, beaconCommon: 2, beaconRare: 1, universal: 8, starOre: 400, completionChest: 1 },
     cycle7: { supplyTicket: 12, beaconCommon: 2, beaconRare: 2, beaconEpic: 1, universal: 16, starOre: 900, resident: 1, worker: 1, completionCore: 1 },
+    // 3天结算奖=行动宝藏三选一（2026-07-06 自 v1.0 复原进 S10.5）：传奇插件 / 舰通用碎片 / 员通用碎片
+    treasure3: { legendaryPlugin: 1, universalShards: 20 },
     completionThreshold: 0.6,
   },
 
@@ -884,6 +886,19 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         if (!paused && tier.eventCompletion >= P.events.completionThreshold) {
           openCargoChest(st, credit, P.events.cycle3.completionChest, watcher && adsLeft > 0 && useAd(), P);
           if (day <= T.eventCycle3) st.mains[0].ship.shards += P.tutorialGrant.firstEventMainShard;
+          // 结算奖=行动宝藏三选一（v1.0 复原）·边际贪心：插件会顶掉精良/空槽（Δ≥55）才拿；
+          // 槽位已铺满优秀及以上（再拿只赚 Δ35）→ 改拿通用碎片对半（喂升阶升星的边际更高）。
+          // 首周期不发：首期行动宝藏=教程定向碎片特案（上一行 firstEventMainShard·GDD-M 首Boss助力），防双重计账。
+          if (day > T.eventCycle3) {
+            let treasureSlots = 0;
+            for (const m of st.mains) treasureSlots += T.pluginSlotsByTier[m.ship.tier];
+            if (st.plugins.legendary + st.plugins.superior < treasureSlots) {
+              st.plugins.legendary += P.events.treasure3.legendaryPlugin;
+            } else {
+              credit('events', 'shipBlueprint', P.events.treasure3.universalShards / 2);
+              credit('events', 'pilotShardUniversal', P.events.treasure3.universalShards / 2);
+            }
+          }
         }
         ev3Anchor = day + 1;
       }
