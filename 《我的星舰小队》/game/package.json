@@ -8,11 +8,10 @@
   "scripts": {
     "gate": "npm run test && npm run typecheck && npm run validate:configs:s7",
     "typecheck": "tsc --noEmit",
-    "validate:configs": "node tools/validate-configs.mjs",
     "validate:configs:s7": "node tools/validate-s7-configs.mjs",
     "simulate:s7-progression": "node tools/simulate-s7-progression.mjs",
     "test": "vitest run",
-    "build:wechat": "echo [手动构建步骤] && echo 1. 用 Cocos Creator 3.8.8 打开 F:\\Codex\\星舰小队\\game && echo 2. 菜单栏 - 项目 - 构建发布 && echo 3. 平台选择「微信小游戏」 && echo 4. AppID 填 wx5809349b6eb8275a && echo 5. 构建路径确认为 build/wechatgame && echo 6. 点「构建」等完成，再点「运行」用微信开发者工具验证 && echo 产物路径: F:\\Codex\\星舰小队\\game\\build\\wechatgame"
+    "build:wechat": "echo [手动构建步骤] && echo 1. 用 Cocos Creator 3.8.8 打开 F:\\Claude Code\\《我的星舰小队》\\game && echo 2. 菜单栏 - 项目 - 构建发布 && echo 3. 平台选择「微信小游戏」 && echo 4. AppID 填 wx5809349b6eb8275a && echo 5. 构建路径确认为 build/wechatgame && echo 6. 点「构建」等完成，再点「运行」用微信开发者工具验证 && echo 产物路径: F:\\Claude Code\\《我的星舰小队》\\game\\build\\wechatgame"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
