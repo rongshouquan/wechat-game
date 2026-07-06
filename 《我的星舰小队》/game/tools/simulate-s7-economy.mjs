@@ -1,0 +1,1319 @@
+// S7 真实资源经济模拟器（第三块①「造尺子」·2026-07-06）
+//
+// ============================================================================
+// 用途：四档玩家（肝/重/普/轻）逐日"真实过日子"——挣真资源、花真资源、按真实养成态
+//   算战力、按 150 关压力值推进、卡关攒资源破墙。校准靶 = 形状模型
+//   `simulate-s7-progression.mjs`（2026-07-02 Ron 拍板锁定，一行不动）：
+//   四档毕业 肝30/重37/普47/轻57（±10%）+ 首周清关 35-40% + 6 真Boss长墙
+//   （肝档最长 ≤4 天、普/轻终盘最长 8-11 天）。
+//
+// 真源指针（结构与锁定数字，冲突以此为准）：
+//   - GDD-v2.0.md S8/S9/S10.1-10.10/S13（各系统收支结构、广告10点位、悬赏/回廊/推演/回港）
+//   - GDD-附录D-星舰真源.md §0（升阶消耗 30合成+50/100/300/1000、等级上限 C20/B40/A60/S80/SS100）
+//   - GDD-附录D-驾驶员真源.md §0（升星消耗同梯、每级+1%驾驶加成、星级系数质变线）
+//   - GDD-附录D-插件真源.md（战力 15/35/70、3合1 升品、C1/B2/A3 槽）
+//   - GDD-附录D-星核真源.md（+120/装核船、渠道=首Boss固定/扩张宝藏/碎片合成/宝石兑换）
+//   - 第二块-数值设计/节奏表-B1-普通玩家主干-v0.1.md（战力公式骨架、升级成本曲线形状、
+//     星核节奏支柱 §8、四档时间门控原理 §9；B1 旧数字不当靶）
+//   - 第二块-数值设计/建筑数值-6b3草案（建筑成本 120×L^1.3×重要度、各级效果·Ron 拍板 v0.2）
+//   - 钱包 14 键 = S7SaveService.S7_RESOURCE_KEYS
+//   - 150 关拓扑 = generate-s7-mainline-topology.mjs（6 星域墙位 60/84/102/120/138/150、
+//     剧情首Boss n030、精英 [6,59,83,101,119,137,149]）
+//
+// 模型口径（任务单硬规格）：
+//   - 期望值模型：随机项按数学期望直算，零 RNG、跑一次秒出、完全确定。
+//   - 20 抽保底按确定节拍精确触发（每满 20 抽发 1 个 A 本体，自然概率另计）。
+//   - 欧非包络：三个关键随机项（专属碎片归属集中度/悬赏金卡率/打捞发现产出）
+//     乐观/悲观系数双跑输出带宽（envelope='lucky'|'unlucky'）。
+//   - 守恒：每日每币种余额不为负；台账逐源记账（income/spend），收支恒等式可自检。
+//   - 零回写：本工具不改任何游戏运行时代码/配置；校准解只出文档。
+//
+// 压力值表的生成方法（=校准解的一部分，任务单硬规格 #5"初值按形状曲线生成"）：
+//   ① 内嵌形状模型（只读副本·常量锁定）跑出普通档"第几天该清到第几关"的时刻表；
+//   ② 用经济模拟里普通档的真实战力轨迹，把时刻表重采样成真实战力单位的 150 关压力值
+//      （关 n 的压力值 = 普通档在形状时刻表说"清到 n 那天"开盘时的战力）；
+//   ③ 全局系数 γ 二分搜索，使普通档在经济模拟里恰好第 47 天毕业。
+//   迭代 ①→②→③ 至收敛（确定性模型必收敛），其余三档不看靶自由跑——它们落在哪就是
+//   尺子对"参与度差异"的真实测量。
+//
+// ============================================================================
+// 玩家策略成文（固定优先级贪心 · 四档共用同一策略、只差档位参数）：
+//   每日流程：
+//   1. 回港领取：离线产出 + 巡逻收益（按离开时长累积、居住舱存储上限截断）；
+//      看广告档用 #1 报告翻倍（软货币）。
+//   2. 快速打理（固定几分钟）：商人（星贝盈余买补给券至日限+轮换篮）→ 打捞派趟
+//      （信标 史诗>稀有>普通；积压少走 24h 长趟、积压多加短趟消化；#5 广告追加一趟）。
+//   3. 花钱优先级：a.通用碎片 1:1 转当前瓶颈主力 → b.专属碎片够就升阶/升星（主力1
+//      优先冲 S 接陨星弹，其余按阶低者先）→ c.补给券全抽（舰/员池对半）→ d.合金/
+//      驾驶记录从最便宜一级逐级买满 5 主力 → e.插件 3合1 升品 → f.星矿升建筑
+//      （居住舱→打捞港→研究塔→补给站→商人→展厅；船坞/训练舱现无战斗外收益不升，遵真源
+//      TODO）→ g.星核碎片够 60 即合成、星空宝石够价即宝库兑换（复购 ×1.5 递增）。
+//   4. 推主线优先：战力 ≥ 压力值就打（45 秒/关时间预算）；首通=固定软货币+三选一期望
+//      （选卡偏好：点名主力的专属碎片>补给券/星核碎片>插件/信标>星矿）；看广告档
+//      每日 1 次 #3 固定翻倍 + 1 次 #4 再选一，用在当日最后一关（最肥）。
+//   5. 剩余时间做日常：悬赏板（含积压回补·护航遇袭"正面迎战"）→ 每日推演 →
+//      深空回廊往上顶（层奖+每5层里程碑·#10 翻倍）。
+//   6. 卡关日：每日 1 次挑战尝试吃战败安慰包（#9 翻倍），攒资源等破墙。
+//   档位参数（TIERS）：日均在线分钟 / 会话数 / 广告观看次数（轻度=0，天然构成
+//   "纯无广告"红线跑法）/ 日常完成率 / 打捞趟数计划 / 回廊时间 / 购物意愿。
+//
+// 模型简化（诚实声明，全部记入《数值初值表-v0》）：
+//   - 专属碎片不跨单位挪用：5 主力各自独立积攒（随机归属碎片 × 归属集中度 ÷ 5 +
+//     定向投放），落在非主力身上的碎片单独沉淀记账（审视报告"死水"观察口）。
+//   - 打捞按"当日派趟当日结算"的稳态近似；信标不过期，短趟只在积压时用。
+//   - 商人广告刷新 #8 折算为轮换购买篮 ×1.5；广告券（星贝→广告机会转换器）v0 不启用
+//     （不影响零广告红线与 +25-30% 上限判定，留作第二子步杠杆）。
+//   - 战斗胜负 = 战力比阈值 1.0（Boss spike 已在压力值内），不模拟词缀/克制微操。
+//   - 教程期（n001-n030）定向投放保证"首Boss前养出 1 艘 S 阶"（GDD-M 铁律）：
+//     早期节点内置对主力1 的专属碎片投放，见 PARAMS.tutorialGrant。
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// 〇、内嵌形状模型（校准靶·常量与算法为 simulate-s7-progression.mjs 的只读副本，
+//     若形状模型再被拍板改参，这里必须同步；gate 测试钉住本副本输出 30/37/47/57）
+// ---------------------------------------------------------------------------
+
+export const SHAPE = {
+  N: 150, base: 100, qStart: 0.003, qEnd: 0.03, curvePow: 1.1,
+  bossPositions: [0.4, 0.55, 0.68, 0.8, 0.9, 1.0], bossSpike: 1.8, P0: 100,
+  SEC_PER_NODE: 45, MAX_DAYS: 90,
+  tiers: {
+    轻度: { minutesPerDay: 15, r: 0.050, stuckBonus: 1 },
+    普通: { minutesPerDay: 35, r: 0.060, stuckBonus: 2 },
+    重度: { minutesPerDay: 90, r: 0.072, stuckBonus: 4 },
+    肝档: { minutesPerDay: 150, r: 0.085, stuckBonus: 7 },
+  },
+};
+
+export function shapeRequiredCurve(s = SHAPE) {
+  const smooth = [0, s.base];
+  for (let n = 2; n <= s.N; n++) {
+    const t = Math.pow((n - 1) / (s.N - 1), s.curvePow);
+    const q = s.qStart + (s.qEnd - s.qStart) * t;
+    smooth[n] = smooth[n - 1] * (1 + q);
+  }
+  const actual = smooth.slice();
+  for (const pos of s.bossPositions) {
+    const n = Math.round(pos * s.N);
+    actual[n] = smooth[n] * s.bossSpike;
+  }
+  return actual;
+}
+
+/** 形状模型单档逐日模拟（与原工具逐行为同一算法）。返回 {graduateDay, dailyLog}。 */
+export function shapeSimulate(tierName, s = SHAPE) {
+  const t = s.tiers[tierName];
+  const required = shapeRequiredCurve(s);
+  const maxNodesPerDay = Math.max(1, Math.floor((t.minutesPerDay * 60) / s.SEC_PER_NODE));
+  let power = s.P0, cleared = 0;
+  const dailyLog = [];
+  for (let day = 1; day <= s.MAX_DAYS; day++) {
+    const wasStuck = power < required[cleared + 1];
+    power *= 1 + t.r;
+    if (wasStuck) power += t.stuckBonus;
+    let clearedToday = 0;
+    while (cleared < s.N && power >= required[cleared + 1] && clearedToday < maxNodesPerDay) {
+      cleared++; clearedToday++;
+    }
+    dailyLog.push(clearedToday);
+    if (cleared >= s.N) return { graduateDay: day, dailyLog };
+  }
+  return { graduateDay: null, dailyLog };
+}
+
+/** 形状时刻表：node → 普通档应在第几天清掉它。 */
+export function shapeDaySchedule(tierName = '普通', s = SHAPE) {
+  const { dailyLog } = shapeSimulate(tierName, s);
+  const dayOf = [0];
+  let n = 0;
+  for (let d = 1; d <= dailyLog.length; d++) {
+    for (let k = 0; k < dailyLog[d - 1]; k++) dayOf[++n] = d;
+  }
+  return dayOf; // dayOf[n] = 形状模型里普通档清掉第 n 关的那天
+}
+
+// ---------------------------------------------------------------------------
+// 一、真源锁定常量（不是校准旋钮；改这里=改真源，须先过冲突清单）
+// ---------------------------------------------------------------------------
+
+export const TRUTHS = {
+  N: 150,
+  regionSpans: [
+    { sf: 1, from: 1, to: 60 }, { sf: 2, from: 61, to: 84 }, { sf: 3, from: 85, to: 102 },
+    { sf: 4, from: 103, to: 120 }, { sf: 5, from: 121, to: 138 }, { sf: 6, from: 139, to: 150 },
+  ],
+  bossNodes: [60, 84, 102, 120, 138, 150],
+  storyBossNode: 30,
+  eliteNodes: [6, 59, 83, 101, 119, 137, 149],
+
+  // 战力公式 v0.1 骨架（B1 §1 + S5.5 驾驶加成计入 + 星核插件计入战力拍板）
+  tierBase: [100, 160, 250, 380, 550],
+  shipLevelPowerPct: 0.08,
+  pilotStarCoef: [1.0, 1.08, 1.18, 1.30, 1.45],
+  pilotLevelPct: 0.01,
+  pluginPower: { fine: 15, superior: 35, legendary: 70 },
+  corePower: 120,
+  pluginSlotsByTier: [1, 2, 3, 3, 3],
+
+  shipLevelCapByTier: [20, 40, 60, 80, 100],
+  pilotLevelCapByStar: [20, 40, 60, 80, 100],
+
+  shipLevelCost: (lv) => Math.round(50 * Math.pow(lv, 1.3)),
+  pilotLevelCost: (lv) => Math.round(40 * Math.pow(lv, 1.2)),
+
+  synthesizeBodyShards: 30,
+  shipAscendCost: [50, 100, 300, 1000],
+  pilotStarupCost: [50, 100, 300, 1000],
+
+  buildingCost: (level, coef) => Math.round(120 * Math.pow(level, 1.3) * coef),
+  buildingImportance: { dock: 1.3, training: 1.3, habitat: 1.1, research: 1.1, supply: 1.1, salvage: 1.0, merchant: 1.0, gallery: 1.0 },
+  habitatStorageHours: (lv) => (lv <= 0 ? 0 : 36 + 1.3 * (lv - 1)),
+  habitatRatePct: (lv) => Math.max(0, lv) * 2,
+  researchPowerPct: (lv) => Math.max(0, lv) * 1,
+  galleryPerCorePct: (lv) => 0.3 + (Math.max(1, lv) - 1) * (0.3 / 9),
+  galleryCapPct: 10,
+  salvageQueues: (lv) => (lv >= 7 ? 3 : lv >= 4 ? 2 : lv >= 1 ? 1 : 0),
+  buildingMaxLevel: 10,
+
+  salvageTimeMult: { h2: 1, h8: 2.2, h24: 3.8 }, // 每小时效率递减（0.50/0.28/0.16），每信标收益随时长递增
+
+  bountyDailyCards: 4,
+  bountyQualityMult: { bronze: 1, silver: 1.6, gold: 3 },
+  bountyGoldPity: 4,
+  bountyPerfectMult: 1.25,
+  bountyAmbushRate: 0.15,
+  bountyAmbushLossPct: 0.30,
+  bountyBoardCap: [12, 16, 20],
+
+  corridorMilestoneEvery: 5,
+  corridorEchoEvery: 25,
+
+  gachaPity: 20,
+  vaultRepeatPriceGrowth: 1.5,
+  eventCycle3: 3,
+  eventCycle7: 7,
+};
+
+// ---------------------------------------------------------------------------
+// 二、校准参数表（唯一调参处——"改一处→重跑→秒出四档对比"）
+// ---------------------------------------------------------------------------
+
+export const PARAMS = {
+  maxDays: 120,
+
+  // 星域系数（离线/巡逻/悬赏共用进度乘区·下标=已通关星域数 0-6；主线奖励按关所在星域取）
+  regionCoef: [1.0, 1.7, 2.7, 4.0, 5.8, 8.2, 10.5],
+
+  // 离线产出（/小时·×星域系数×(1+居住舱%+居民%)）——星矿为主（S10.10 侧重口径）；
+  // 合金/记录刻意小额：离线是"回来有得领"的底垫，不是战力主粮（护 #1 广告翻倍 ≤ 加速上限）
+  offline: { starOre: 100, hullAlloy: 30, pilotToken: 20 },
+  // 星矿的星域乘区用开方衰减（星矿=建筑币·十级封顶的有限 sink，全速乘区必然溢出成死水）
+  oreCoefPow: 0.5,
+  // 巡逻收益（/小时·×星域系数×(1+派驻加成)）——战斗养成资源小额（≈离线同币种 45% 档）
+  patrol: { hullAlloy: 14, pilotToken: 9, starCargo: 4 },
+  patrolDockPctPerShip: 4,
+  patrolDockMax: 10,
+
+  // 悬赏板（基础/张·×星域系数×品质期望；护航=合金+星贝、演习=驾驶记录）
+  bounty: {
+    escortAlloy: 200, escortCargo: 20,
+    drillToken: 135,
+    goldRate: 0.08,
+    goldPhysical: { beaconCommon: 1 / 3, shipBlueprint: 1 / 3, supplyTicket: 1 / 3 },
+    ambushWinBonus: { shipBlueprint: 0.5, supplyTicket: 0.5 },
+    perfectRate: 0.5,
+    ambushWinRate: 0.85,
+    minutesPerCard: 1.2,
+  },
+
+  // 每日推演（n040 后·首胜）
+  puzzle: { starCargo: 30, shipBlueprint: 2.5, minutes: 2.0 },
+
+  // 今日补给箱（#2 广告点位）
+  supplyChest: { hullAlloy: 35, pilotToken: 25, starCargo: 10, beaconCommon: 0.25, universal: 1.0 },
+
+  // 商人小站
+  merchant: {
+    ticketPrice: 80, ticketDailyCap: 40,
+    cargoReserve: 150,
+    richThreshold: 800,
+    basket: { beaconCommon: { p: 1.8, price: 200 }, finePlugin: { p: 0.35, price: 320 }, coreFrag5: { p: 0.15, price: 500 } },
+    minutes: 0.8,
+  },
+
+  // 打捞（每信标一趟；软货币/通用碎片 ×时间档倍率；rolls=发现掷骰·随时长档取对应值）
+  // 策略：每队先派 1 趟 24h（信标效率高）；剩余信标按档位趟数计划加派 2h 短趟消化
+  // （时间效率高·信标效率低——"消化型"重度玩家 vs "效率型"轻度玩家的真实分层）；
+  // 星贝盈余时买打捞加速券把短趟升为 8h 档产出（花星贝买时间·S10.2/S10.3 设计）。
+  salvage: {
+    minutes: 1.0,
+    tiers: {
+      common: {
+        ore: 30, cargo: 14, universal: 1.5, fixed: {},
+        rolls: { h2: 1.6, h8: 3.8, h24: 8.2 },
+        rollEV: { universal: 0.5, supplyTicket: 0.25, beaconCommon: 0.16, coreFrag: 0.015, finePlugin: 0.05, resident: 0.02, worker: 0.02, cargoChest: 0.01 },
+      },
+      rare: {
+        ore: 70, cargo: 38, universal: 2.5, fixed: { coreFrag: 1 },
+        rolls: { h2: 2.6, h8: 5.0, h24: 10.4 },
+        rollEV: { universal: 0.8, supplyTicket: 0.3, beaconRare: 0.10, coreFrag: 0.03, superiorPlugin: 0.05, starGem: 0.05, resident: 0.03, worker: 0.03, cargoChest: 0.015 },
+      },
+      epic: {
+        ore: 160, cargo: 95, universal: 4, fixed: { coreFrag: 2, starGem: 2 },
+        rolls: { h2: 3.8, h8: 7.0, h24: 12.6 },
+        rollEV: { universal: 1.2, supplyTicket: 0.4, beaconEpic: 0.05, coreFrag: 0.05, superiorPlugin: 0.07, legendaryPlugin: 0.035, starGem: 0.15, resident: 0.04, worker: 0.04, cargoChest: 0.02 },
+      },
+    },
+    // 打捞加速券（商人·星贝→时间转换器）：把一趟 2h 短趟的产出升到 8h 档
+    accel: { price: 150 },
+  },
+
+  // 主线首通（固定软货币三件套 ×关所在星域系数 ×档位倍率）
+  mainline: {
+    fixedAlloyBase: 55, fixedTokenBase: 36, fixedCargoBase: 24,
+    eliteMult: 1.6, bossMult: 2.6, storyBossMult: 2.0,
+    minutesPerNode: 0.75,
+    pickEV: {
+      normal: { mainShipShard: 1.3, mainPilotShard: 1.3, offShard: 2.6, supplyTicket: 0.85, coreFrag: 0.4, starOreBase: 11, beaconCommon: 0.4, finePlugin: 0.16 },
+      elite: { mainShipShard: 2.0, mainPilotShard: 2.0, offShard: 4.0, supplyTicket: 1.4, coreFrag: 1.0, starOreBase: 16, beaconRare: 0.35, superiorPlugin: 0.15 },
+      boss: { mainShipShard: 2.6, mainPilotShard: 2.6, offShard: 5.2, supplyTicket: 2.6, coreFrag: 3.0, starOreBase: 26, beaconEpic: 0.15, starGem: 1.6, superiorPlugin: 0.13, legendaryPlugin: 0.04 },
+    },
+    adExtraPickMult: 0.9,
+  },
+
+  // 教程期定向投放（GDD-M"首Boss前刚好养出 1 艘 S 阶"·人人相同·计入初值表）
+  tutorialGrant: { perNodeMainShard: 13, untilNode: 30, firstEventMainShard: 60 },
+
+  // 抽卡（S10.1 碎片化）
+  gacha: {
+    shardPerPullEV: 2.0,
+    bodyP: { C: 0.07, B: 0.025, A: 0.008 },
+    dupFoldShards: 15,
+    poolSizeShips: 18, poolSizePilots: 20,
+  },
+
+  // 星核渠道量值
+  core: { synthesisFragCost: 60, vaultBasePrice: 80, distinctPool: 13 },
+
+  // 事件（3天行动/7天扩张·自然游玩推进；周期总包平摊+周期末大奖）
+  events: {
+    cycle3: { supplyTicket: 8, beaconCommon: 2, beaconRare: 1, universal: 8, starOre: 400, completionChest: 1 },
+    cycle7: { supplyTicket: 12, beaconCommon: 2, beaconRare: 2, beaconEpic: 1, universal: 16, starOre: 900, resident: 1, worker: 1, completionCore: 1 },
+    completionThreshold: 0.6,
+  },
+
+  // 邮件（迎新+里程碑·一次性）
+  mail: {
+    day1: { supplyTicket: 10, hullAlloy: 300, starOre: 300, starCargo: 200 },
+    day3: { supplyTicket: 5, beaconCommon: 2 },
+    day7: { supplyTicket: 8, beaconRare: 1 },
+  },
+
+  // 星辉货舱（Boss 大奖/打捞稀有/3天活动完成；#7 广告=期望 ×1.5）
+  cargoChest: {
+    coreFrag: 4, starGem: 2,
+    beacons: { beaconCommon: 2.0, beaconRare: 1.4, beaconEpic: 0.6 },
+    adPickMult: 1.5,
+  },
+
+  // 深空回廊（参与度分层主渠道：肝爬得深爬得勤 → 层奖+里程碑显著多）
+  corridor: {
+    reqBase: 420, reqGrowth: 0.075, echoSpike: 1.25, minutesPerLayer: 1.0,
+    layerAlloy: { base: 22, per: 5.5 }, layerToken: { base: 15, per: 3.6 }, layerCargo: { base: 4, per: 1.0 },
+    msOre: { base: 100, per: 60 }, msCargo: { base: 50, per: 25 }, msUniversal: { base: 4, per: 1.6 },
+    msBeacon: 2, rareBeaconLayer: 25, epicBeaconLayer: 50,
+  },
+
+  // 战败安慰包（仅主线·卡关日 1 次尝试）
+  consolation: { hullAlloy: 45, pilotToken: 30, firstDefeatBeacon: 1 },
+
+  // 星港趣事（微量）
+  anecdote: { chance: 0.15, starCargo: 3, starOre: 3 },
+
+  // 建筑解锁脚本（节点/天触发；解锁占位花费=强引导 8/5/8/5）
+  unlock: {
+    dockNode: 1, trainingNode: 1, supplyNode: 3, salvageNode: 4, merchantNode: 5,
+    habitatNode: 8, galleryNode: 15, researchDay: 5,
+    unlockCosts: { dock: 8, training: 5, supply: 8, salvage: 5, merchant: 5 },
+  },
+  buildingPriority: ['habitat', 'salvage', 'research', 'supply', 'merchant', 'gallery'],
+  oreReserve: 0,
+  // 建筑成本全局系数（6b3 草案自述"v0.1 起步值·原型校准"——尺子校准解=×3，
+  // 让建筑线成为星矿的真实长期 sink，压死"溢出回收灌爆星贝"的死水；记入初值表待回写）
+  buildingCostMult: 3.0,
+
+  // 欧非包络（三个关键随机项·任务单硬规格 #3）
+  envelope: {
+    expected: { mainShardShare: 0.34, goldRate: 1.0, salvageRollMult: 1.0 },
+    lucky: { mainShardShare: 0.44, goldRate: 1.5, salvageRollMult: 1.15 },
+    unlucky: { mainShardShare: 0.25, goldRate: 0.6, salvageRollMult: 0.85 },
+  },
+
+  // 广告点位量值（S13 十点位·全点位每日 1 次）
+  ads: { ticketPerAd: 7, salvageInstantDur: 'h8' },
+
+  // 压力值校准器
+  pressureCalib: { iterations: 6, blend: 0.7, gammaLo: 0.5, gammaHi: 3.0, gammaSteps: 24 },
+};
+
+// ---------------------------------------------------------------------------
+// 三、四档玩家画像（任务单硬规格 #4：只差参数）
+// ---------------------------------------------------------------------------
+
+export const TIERS = {
+  // tinkerBonus = 卡关期"换搭配试错"的等效战力折算（S2/S8：墙期体验含换搭配试错；
+  // 克制与词缀真实存在，时间多=试出针对性阵容的概率高——按档位折算成小幅有效战力，计入初值表）
+  肝档: {
+    minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
+    dailyCompletion: 1.0, eventCompletion: 1.0,
+    salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
+  },
+  重度: {
+    minutesPerDay: 90, sessionsPerDay: 4, adsPerDay: 6,
+    dailyCompletion: 1.0, eventCompletion: 1.0,
+    salvageRunsPerQueue: 3, corridorMinutes: 14, shoppingPower: 1.0, tinkerBonus: 0.055, consolationTries: 2, stallCorridorMult: 2.2,
+  },
+  普通: {
+    minutesPerDay: 35, sessionsPerDay: 2.5, adsPerDay: 2,
+    dailyCompletion: 0.92, eventCompletion: 0.95,
+    salvageRunsPerQueue: 2, corridorMinutes: 7, shoppingPower: 0.8, tinkerBonus: 0.03, consolationTries: 1,
+  },
+  轻度: {
+    minutesPerDay: 15, sessionsPerDay: 1.5, adsPerDay: 0,
+    dailyCompletion: 0.88, eventCompletion: 0.92,
+    salvageRunsPerQueue: 2, corridorMinutes: 5, shoppingPower: 0.75, tinkerBonus: 0.025, consolationTries: 1,
+  },
+};
+
+export const TARGETS = { 肝档: 30, 重度: 37, 普通: 47, 轻度: 57 };
+
+// ---------------------------------------------------------------------------
+// 四、拓扑与战力公式
+// ---------------------------------------------------------------------------
+
+export function regionOfNode(n, T = TRUTHS) {
+  for (const r of T.regionSpans) if (n >= r.from && n <= r.to) return r.sf;
+  return T.regionSpans.length;
+}
+
+export function nodeStage(n, T = TRUTHS) {
+  if (n === T.storyBossNode) return 'storyBoss';
+  if (T.bossNodes.includes(n)) return 'boss';
+  if (T.eliteNodes.includes(n)) return 'elite';
+  return 'normal';
+}
+
+export function shipBasePower(tier, level, T = TRUTHS) {
+  return T.tierBase[tier] * (1 + T.shipLevelPowerPct * Math.max(0, level - 1));
+}
+
+export function pilotCoef(star, level, T = TRUTHS) {
+  return T.pilotStarCoef[star - 1] * (1 + T.pilotLevelPct * level);
+}
+
+/** 单舰战力 = (星舰基础 + 插件合计) × 驾驶员系数 + 星核加成（B1 §1 + 星核插件计入拍板） */
+export function unitPower(ship, pilot, pluginSum, hasCore, T = TRUTHS) {
+  const base = shipBasePower(ship.tier, ship.level, T);
+  const coef = pilot ? pilotCoef(pilot.star, pilot.level, T) : 1.0;
+  return (base + pluginSum) * coef + (hasCore ? T.corePower : 0);
+}
+
+/** 队伍战力：上阵主力 + 插件按槽装最优 + 星核装 S 阶槽 + 研究塔/展厅小乘区 */
+export function teamPower(st, T = TRUTHS) {
+  const lineup = Math.min(5, Math.floor(st.rosterShips), Math.floor(st.rosterPilots) || 1);
+  // 展开插件为"件"列表（期望模型允许小数件，按价值排序装配）
+  let slots = 0;
+  for (let i = 0; i < lineup; i++) slots += T.pluginSlotsByTier[st.mains[i].ship.tier];
+  const stock = [
+    ...Array(Math.ceil(st.plugins.legendary)).fill().map((_, i) => Math.min(1, st.plugins.legendary - i) * T.pluginPower.legendary),
+    ...Array(Math.ceil(st.plugins.superior)).fill().map((_, i) => Math.min(1, st.plugins.superior - i) * T.pluginPower.superior),
+    ...Array(Math.ceil(st.plugins.fine)).fill().map((_, i) => Math.min(1, st.plugins.fine - i) * T.pluginPower.fine),
+  ].slice(0, Math.max(0, slots));
+  let coreSlots = 0;
+  for (let i = 0; i < lineup; i++) if (st.mains[i].ship.tier >= 3) coreSlots++;
+  let coresLeft = Math.min(Math.floor(st.coresOwned), coreSlots);
+
+  let total = 0, si = 0;
+  for (let i = 0; i < lineup; i++) {
+    const m = st.mains[i];
+    const nSlots = T.pluginSlotsByTier[m.ship.tier];
+    let plugSum = 0;
+    for (let k = 0; k < nSlots && si < stock.length; k++, si++) plugSum += stock[si];
+    const hasCore = m.ship.tier >= 3 && coresLeft > 0;
+    if (hasCore) coresLeft--;
+    total += unitPower(m.ship, m.pilot, plugSum, hasCore, T);
+  }
+  const researchPct = T.researchPowerPct(st.buildings.research) / 100;
+  const galleryPct = Math.min(T.galleryCapPct,
+    st.buildings.gallery >= 1 ? st.coresDistinct * T.galleryPerCorePct(st.buildings.gallery) : 0) / 100;
+  return total * (1 + researchPct + galleryPct);
+}
+
+// ---------------------------------------------------------------------------
+// 五、状态与台账
+// ---------------------------------------------------------------------------
+
+export const RESOURCE_KEYS = [
+  'starOre', 'hullAlloy', 'shipBlueprint', 'pilotShardUniversal', 'pilotToken',
+  'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
+  'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo', 'adTicket',
+];
+
+function newState() {
+  return {
+    res: Object.fromEntries(RESOURCE_KEYS.map((k) => [k, 0])),
+    mains: Array.from({ length: 5 }, (_, i) => ({
+      ship: { tier: 0, level: 1, shards: 0, owned: i === 0 },
+      pilot: { star: 1, level: 1, shards: 0, owned: i === 0 },
+    })),
+    rosterShips: 1, rosterPilots: 1,
+    offShardsShip: 0, offShardsPilot: 0,
+    plugins: { fine: 0, superior: 0, legendary: 0 },
+    coresOwned: 0, coresDistinct: 0,
+    buildings: { dock: 0, training: 0, habitat: 0, salvage: 0, merchant: 0, supply: 0, research: 0, gallery: 0 },
+    residents: 0, workers: 0,
+    cleared: 0, corridorLayer: 0, corridorUnlocked: false,
+    pityCounter: { ship: 0, pilot: 0 },
+    vaultBought: 0,
+    bountyBacklog: 0,
+    ledger: { income: {}, spend: {} },
+    negativeViolations: [],
+    dailyCleared: [], dailyPower: [], dailyStuck: [],
+    wallDays: {},
+    graduateDay: null,
+    adsUsedTotal: 0, chestsOpened: 0,
+  };
+}
+
+function mkLedgerFns(st, incomeScale) {
+  const credit = (source, key, amount) => {
+    const scaled = amount * (incomeScale?.[source] ?? 1);
+    if (!(scaled > 0)) return;
+    st.res[key] = (st.res[key] ?? 0) + scaled;
+    const s = (st.ledger.income[source] ??= {});
+    s[key] = (s[key] ?? 0) + scaled;
+  };
+  const debit = (source, key, amount) => {
+    if (!(amount > 0)) return true;
+    if ((st.res[key] ?? 0) + 1e-9 < amount) return false;
+    st.res[key] -= amount;
+    const s = (st.ledger.spend[source] ??= {});
+    s[key] = (s[key] ?? 0) + amount;
+    return true;
+  };
+  return { credit, debit };
+}
+
+// ---------------------------------------------------------------------------
+// 六、子系统（花钱/抽卡/打捞/开箱/主线收益）
+// ---------------------------------------------------------------------------
+
+function syncMainOwnership(st) {
+  for (let i = 0; i < 5; i++) {
+    if (st.rosterShips >= i + 1) st.mains[i].ship.owned = true;
+    if (st.rosterPilots >= i + 1) st.mains[i].pilot.owned = true;
+  }
+}
+
+function creditMainShards(st, kind, totalShards, share) {
+  if (!(totalShards > 0)) return;
+  const per = (totalShards * share) / 5;
+  for (const m of st.mains) {
+    if (kind === 'ship') m.ship.shards += per;
+    else m.pilot.shards += per;
+  }
+  if (kind === 'ship') st.offShardsShip += totalShards * (1 - share);
+  else st.offShardsPilot += totalShards * (1 - share);
+}
+
+function doGachaPulls(st, pool, pulls, env, P, T) {
+  if (!(pulls > 0)) return;
+  const poolSize = pool === 'ship' ? P.gacha.poolSizeShips : P.gacha.poolSizePilots;
+  const roster = pool === 'ship' ? st.rosterShips : st.rosterPilots;
+  creditMainShards(st, pool, pulls * P.gacha.shardPerPullEV, env.mainShardShare);
+  const pity = st.pityCounter[pool] + pulls;
+  const pityBodies = Math.floor(pity / T.gachaPity);
+  st.pityCounter[pool] = pity % T.gachaPity;
+  const bodies = pulls * (P.gacha.bodyP.C + P.gacha.bodyP.B + P.gacha.bodyP.A) + pityBodies;
+  const dupP = Math.min(0.95, roster / poolSize);
+  const dupShards = bodies * dupP * P.gacha.dupFoldShards;
+  creditMainShards(st, pool, dupShards, env.mainShardShare);
+  if (pool === 'ship') st.rosterShips += bodies * (1 - dupP);
+  else st.rosterPilots += bodies * (1 - dupP);
+  syncMainOwnership(st);
+}
+
+function convertUniversal(st, debit) {
+  const owned = st.mains.filter((m) => m.ship.owned);
+  if (owned.length) {
+    const b = owned.sort((a, x) => a.ship.tier - x.ship.tier)[0];
+    const u = st.res.shipBlueprint;
+    if (u > 0 && debit('convert', 'shipBlueprint', u)) b.ship.shards += u;
+  }
+  const ownedP = st.mains.filter((m) => m.pilot.owned);
+  if (ownedP.length) {
+    const b = ownedP.sort((a, x) => a.pilot.star - x.pilot.star)[0];
+    const u = st.res.pilotShardUniversal;
+    if (u > 0 && debit('convert', 'pilotShardUniversal', u)) b.pilot.shards += u;
+  }
+}
+
+function doAscends(st, T) {
+  let go = true;
+  while (go) {
+    go = false;
+    for (const m of [...st.mains].sort((a, b) => a.ship.tier - b.ship.tier)) {
+      if (!m.ship.owned) {
+        if (m.ship.shards >= T.synthesizeBodyShards) { m.ship.shards -= T.synthesizeBodyShards; m.ship.owned = true; go = true; }
+        continue;
+      }
+      if (m.ship.tier < 4 && m.ship.shards >= T.shipAscendCost[m.ship.tier]) {
+        m.ship.shards -= T.shipAscendCost[m.ship.tier]; m.ship.tier += 1; go = true;
+      }
+    }
+    for (const m of [...st.mains].sort((a, b) => a.pilot.star - b.pilot.star)) {
+      if (!m.pilot.owned) {
+        if (m.pilot.shards >= T.synthesizeBodyShards) { m.pilot.shards -= T.synthesizeBodyShards; m.pilot.owned = true; go = true; }
+        continue;
+      }
+      if (m.pilot.star < 5 && m.pilot.shards >= T.pilotStarupCost[m.pilot.star - 1]) {
+        m.pilot.shards -= T.pilotStarupCost[m.pilot.star - 1]; m.pilot.star += 1; go = true;
+      }
+    }
+  }
+}
+
+function doLevelUps(st, debit, T) {
+  const lineup = Math.min(5, Math.floor(st.rosterShips));
+  for (let guard = 0; guard < 5000; guard++) {
+    let best = null;
+    for (let i = 0; i < lineup; i++) {
+      const m = st.mains[i];
+      if (!m.ship.owned || m.ship.level >= T.shipLevelCapByTier[m.ship.tier]) continue;
+      const c = T.shipLevelCost(m.ship.level);
+      if (!best || c < best.cost) best = { m, cost: c };
+    }
+    if (!best || !debit('shipLevel', 'hullAlloy', best.cost)) break;
+    best.m.ship.level += 1;
+  }
+  const lineupP = Math.min(5, Math.floor(st.rosterPilots));
+  for (let guard = 0; guard < 5000; guard++) {
+    let best = null;
+    for (let i = 0; i < lineupP; i++) {
+      const m = st.mains[i];
+      if (!m.pilot.owned || m.pilot.level >= T.pilotLevelCapByStar[m.pilot.star - 1]) continue;
+      const c = T.pilotLevelCost(m.pilot.level);
+      if (!best || c < best.cost) best = { m, cost: c };
+    }
+    if (!best || !debit('pilotLevel', 'pilotToken', best.cost)) break;
+    best.m.pilot.level += 1;
+  }
+}
+
+function doPluginCraft(st) {
+  const fineKeep = 12, supKeep = 9;
+  if (st.plugins.fine > fineKeep) {
+    st.plugins.superior += (st.plugins.fine - fineKeep) / 3;
+    st.plugins.fine = fineKeep;
+  }
+  if (st.plugins.superior > supKeep) {
+    st.plugins.legendary += (st.plugins.superior - supKeep) / 3;
+    st.plugins.superior = supKeep;
+  }
+}
+
+function doBuildings(st, debit, P, T) {
+  const disc = Math.min(0.2, st.workers * 0.01);
+  for (let guard = 0; guard < 100; guard++) {
+    let done = false;
+    for (const b of P.buildingPriority) {
+      if (st.buildings[b] <= 0 || st.buildings[b] >= T.buildingMaxLevel) continue;
+      const cost = Math.round(T.buildingCost(st.buildings[b], T.buildingImportance[b]) * P.buildingCostMult * (1 - disc));
+      if (st.res.starOre - cost >= P.oreReserve && debit('building', 'starOre', cost)) {
+        st.buildings[b] += 1; done = true; break;
+      }
+    }
+    if (!done) break;
+  }
+  const allCapped = P.buildingPriority.every((b) => st.buildings[b] === 0 || st.buildings[b] >= T.buildingMaxLevel);
+  if (allCapped && st.buildings.merchant >= 2 && st.res.starOre > 2000) {
+    const surplus = st.res.starOre - 2000;
+    if (debit('oreRecycle', 'starOre', surplus)) {
+      st.res.starCargo += surplus / 4;
+      const s = (st.ledger.income.oreRecycle ??= {});
+      s.starCargo = (s.starCargo ?? 0) + surplus / 4;
+    }
+  }
+}
+
+function doCores(st, debit, P, T) {
+  while (st.res.coreFrag >= P.core.synthesisFragCost && debit('coreSynthesis', 'coreFrag', P.core.synthesisFragCost)) {
+    st.coresOwned += 1;
+  }
+  for (let guard = 0; guard < 10; guard++) {
+    const price = Math.round(P.core.vaultBasePrice * Math.pow(T.vaultRepeatPriceGrowth, st.vaultBought));
+    if (st.res.starGem >= price && debit('coreVault', 'starGem', price)) { st.coresOwned += 1; st.vaultBought += 1; }
+    else break;
+  }
+  const pool = P.core.distinctPool;
+  st.coresDistinct = Math.min(pool + 3,
+    pool * (1 - Math.exp(-Math.max(0, st.coresOwned - 1) / pool)) + (st.coresOwned > 0 ? 1 : 0));
+}
+
+function openCargoChest(st, credit, count, adPick, P) {
+  if (!(count > 0)) return;
+  const mult = adPick ? P.cargoChest.adPickMult : 1.0;
+  credit('cargoChest', 'coreFrag', P.cargoChest.coreFrag * count * mult);
+  credit('cargoChest', 'starGem', P.cargoChest.starGem * count * mult);
+  for (const [k, v] of Object.entries(P.cargoChest.beacons)) credit('cargoChest', k, v * count * mult);
+  st.chestsOpened += count;
+}
+
+function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
+  const queues = T.salvageQueues(st.buildings.salvage);
+  if (queues <= 0) return;
+  // 每队 1 趟 24h 保底（信标效率优先）；剩余按档位趟数计划加 2h 短趟消化（时间效率优先）；
+  // 短趟可用加速券升为 8h 档产出（星贝盈余时购买）；广告 #5 追加一趟 8h 档。
+  const runs = queues * tier.salvageRunsPerQueue + (adRun ? 1 : 0);
+  for (let r = 0; r < runs; r++) {
+    const isAd = adRun && r === runs - 1;
+    const isLong = r < queues;
+    const bkey = st.res.beaconEpic >= 1 ? 'beaconEpic' : st.res.beaconRare >= 1 ? 'beaconRare' : st.res.beaconCommon >= 1 ? 'beaconCommon' : null;
+    if (!bkey || !debit('salvage', bkey, 1)) break;
+    const def = P.salvage.tiers[bkey === 'beaconEpic' ? 'epic' : bkey === 'beaconRare' ? 'rare' : 'common'];
+    let dur = isAd ? P.ads.salvageInstantDur : isLong ? 'h24' : 'h2';
+    if (dur === 'h2' && st.res.starCargo > P.merchant.richThreshold
+      && debit('salvageAccel', 'starCargo', P.salvage.accel.price)) dur = 'h8'; // 加速券
+    const mult = T.salvageTimeMult[dur];
+    credit('salvage', 'starOre', def.ore * mult);
+    credit('salvage', 'starCargo', def.cargo * mult);
+    credit('salvage', 'shipBlueprint', (def.universal * mult) / 2);
+    credit('salvage', 'pilotShardUniversal', (def.universal * mult) / 2);
+    for (const [k, v] of Object.entries(def.fixed)) credit('salvage', k, v);
+    const rolls = def.rolls[dur] * env.salvageRollMult;
+    const ev = def.rollEV;
+    if (ev.universal) { credit('salvage', 'shipBlueprint', (rolls * ev.universal) / 2); credit('salvage', 'pilotShardUniversal', (rolls * ev.universal) / 2); }
+    if (ev.supplyTicket) credit('salvage', 'supplyTicket', rolls * ev.supplyTicket);
+    if (ev.beaconCommon) credit('salvage', 'beaconCommon', rolls * ev.beaconCommon);
+    if (ev.beaconRare) credit('salvage', 'beaconRare', rolls * ev.beaconRare);
+    if (ev.beaconEpic) credit('salvage', 'beaconEpic', rolls * ev.beaconEpic);
+    if (ev.coreFrag) credit('salvage', 'coreFrag', rolls * ev.coreFrag);
+    if (ev.starGem) credit('salvage', 'starGem', rolls * ev.starGem);
+    if (ev.finePlugin) st.plugins.fine += rolls * ev.finePlugin;
+    if (ev.superiorPlugin) st.plugins.superior += rolls * ev.superiorPlugin;
+    if (ev.legendaryPlugin) st.plugins.legendary += rolls * ev.legendaryPlugin;
+    if (ev.resident) st.residents += rolls * ev.resident;
+    if (ev.worker) st.workers += rolls * ev.worker;
+    if (ev.cargoChest) openCargoChest(st, credit, rolls * ev.cargoChest, false, P);
+  }
+}
+
+function creditPickEV(st, credit, ev, picks, coef) {
+  for (const m of st.mains) {
+    m.ship.shards += (ev.mainShipShard * picks) / 5;
+    m.pilot.shards += (ev.mainPilotShard * picks) / 5;
+  }
+  st.offShardsShip += (ev.offShard * picks) / 2;
+  st.offShardsPilot += (ev.offShard * picks) / 2;
+  if (ev.supplyTicket) credit('mainlinePick', 'supplyTicket', ev.supplyTicket * picks);
+  if (ev.coreFrag) credit('mainlinePick', 'coreFrag', ev.coreFrag * picks);
+  if (ev.starOreBase) credit('mainlinePick', 'starOre', ev.starOreBase * coef * picks);
+  if (ev.beaconCommon) credit('mainlinePick', 'beaconCommon', ev.beaconCommon * picks);
+  if (ev.beaconRare) credit('mainlinePick', 'beaconRare', ev.beaconRare * picks);
+  if (ev.beaconEpic) credit('mainlinePick', 'beaconEpic', ev.beaconEpic * picks);
+  if (ev.starGem) credit('mainlinePick', 'starGem', ev.starGem * picks);
+  if (ev.finePlugin) st.plugins.fine += ev.finePlugin * picks;
+  if (ev.superiorPlugin) st.plugins.superior += ev.superiorPlugin * picks;
+  if (ev.legendaryPlugin) st.plugins.legendary += ev.legendaryPlugin * picks;
+}
+
+function nodeClearIncome(st, credit, n, opts, P, T) {
+  const stage = nodeStage(n, T);
+  const coef = P.regionCoef[regionOfNode(n, T) - 1] ?? 1;
+  const mult = stage === 'boss' ? P.mainline.bossMult : stage === 'elite' ? P.mainline.eliteMult : stage === 'storyBoss' ? P.mainline.storyBossMult : 1;
+  const fixMult = mult * coef * (opts.adDouble ? 2 : 1);
+  credit('mainline', 'hullAlloy', P.mainline.fixedAlloyBase * fixMult);
+  credit('mainline', 'pilotToken', P.mainline.fixedTokenBase * fixMult);
+  credit('mainline', 'starCargo', P.mainline.fixedCargoBase * fixMult);
+
+  const evKey = stage === 'boss' ? 'boss' : stage === 'storyBoss' || stage === 'elite' ? 'elite' : 'normal';
+  const picks = 1 + (opts.adExtraPick ? P.mainline.adExtraPickMult : 0);
+  creditPickEV(st, credit, P.mainline.pickEV[evKey], picks, coef);
+
+  if (n <= P.tutorialGrant.untilNode) st.mains[0].ship.shards += P.tutorialGrant.perNodeMainShard;
+  if (stage === 'storyBoss') { st.coresOwned += 1; st.corridorUnlocked = true; }
+  else if (stage === 'boss') openCargoChest(st, credit, 1, opts.watcherChest, P);
+  if (n === 3) { st.rosterShips = Math.max(st.rosterShips, 2); st.rosterPilots = Math.max(st.rosterPilots, 2); syncMainOwnership(st); }
+  if (n === 5) { st.rosterPilots = Math.max(st.rosterPilots, 3); syncMainOwnership(st); }
+}
+
+// ---------------------------------------------------------------------------
+// 七、主模拟（单档一遍）
+// ---------------------------------------------------------------------------
+
+/**
+ * @param {string} tierName
+ * @param {number[]} pressure 150 关压力值表（校准器产出；下标 1..150）
+ * @param {object} opts { envelope, ads:'profile'|'none'|'full', disable:{...},
+ *                        incomeScale:{source:mult}, pause:{from,days}, runFullDays }
+ */
+export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T = TRUTHS) {
+  const tier = TIERS[tierName];
+  if (!tier) throw new Error(`unknown tier ${tierName}`);
+  const env = P.envelope[opts.envelope ?? 'expected'];
+  const dis = opts.disable ?? {};
+  const st = newState();
+  const { credit, debit } = mkLedgerFns(st, opts.incomeScale);
+  const adsPerDay = opts.ads === 'none' ? 0 : opts.ads === 'full' ? 9 : tier.adsPerDay;
+  const watcher = adsPerDay > 0;
+  let ev3Anchor = 1, ev7Anchor = 1;
+
+  for (let day = 1; day <= P.maxDays; day++) {
+    const paused = opts.pause && day >= opts.pause.from && day < opts.pause.from + opts.pause.days;
+    const clearedRegions = T.regionSpans.filter((r) => st.cleared >= r.to).length;
+    const offCoef = P.regionCoef[clearedRegions];
+    let adsLeft = paused ? 0 : adsPerDay;
+    let minutes = paused ? 0 : tier.minutesPerDay;
+    const useAd = () => { if (adsLeft > 0) { adsLeft--; st.adsUsedTotal++; return true; } return false; };
+
+    // —— 0. 解锁脚本 ——
+    const U = P.unlock;
+    const tryUnlock = (b, node) => {
+      if (st.buildings[b] === 0 && st.cleared >= node) {
+        const cost = U.unlockCosts[b] ?? 0;
+        if (cost === 0 || debit('unlock', 'starOre', cost)) st.buildings[b] = 1;
+      }
+    };
+    tryUnlock('dock', U.dockNode); tryUnlock('training', U.trainingNode);
+    tryUnlock('supply', U.supplyNode); tryUnlock('salvage', U.salvageNode);
+    tryUnlock('merchant', U.merchantNode);
+    if (st.buildings.habitat === 0 && st.cleared >= U.habitatNode) st.buildings.habitat = 1;
+    if (st.buildings.gallery === 0 && st.cleared >= U.galleryNode) st.buildings.gallery = 1;
+    if (st.buildings.research === 0 && day >= U.researchDay) st.buildings.research = 1;
+
+    // —— 1. 邮件（一次性·迎新/里程碑）——
+    if (!dis.mail && !paused) {
+      const pack = day === 1 ? P.mail.day1 : day === 3 ? P.mail.day3 : day === 7 ? P.mail.day7 : null;
+      if (pack) for (const [k, v] of Object.entries(pack)) credit('mail', k, v);
+    }
+
+    // —— 2. 回港领取（离线+巡逻·停玩后按存储上限补领）——
+    const storageH = T.habitatStorageHours(st.buildings.habitat) + Math.min(6, st.residents * 0.5);
+    if (!paused && st.buildings.habitat >= 1) {
+      let hours = 24 - minutes / 60;
+      if (opts.pause && day === opts.pause.from + opts.pause.days) hours += opts.pause.days * 24;
+      hours = Math.min(hours, storageH);
+      const rateMult = 1 + (T.habitatRatePct(st.buildings.habitat) + st.residents * 1) / 100;
+      const adDouble = watcher && useAd() ? 2 : 1; // #1 回港报告翻倍
+      if (!dis.offline) {
+        const oreCoef = Math.pow(offCoef, P.oreCoefPow ?? 1);
+        credit('offline', 'starOre', P.offline.starOre * oreCoef * rateMult * hours * adDouble);
+        credit('offline', 'hullAlloy', P.offline.hullAlloy * offCoef * rateMult * hours * adDouble);
+        credit('offline', 'pilotToken', P.offline.pilotToken * offCoef * rateMult * hours * adDouble);
+      }
+      if (!dis.patrol && clearedRegions >= 1) {
+        const docked = Math.min(P.patrolDockMax, Math.max(0, Math.floor(st.rosterShips) - 5));
+        const dockMult = 1 + (docked * P.patrolDockPctPerShip) / 100;
+        credit('patrol', 'hullAlloy', P.patrol.hullAlloy * offCoef * dockMult * hours * adDouble);
+        credit('patrol', 'pilotToken', P.patrol.pilotToken * offCoef * dockMult * hours * adDouble);
+        credit('patrol', 'starCargo', P.patrol.starCargo * offCoef * dockMult * hours * adDouble);
+      }
+      minutes -= 0.5;
+    }
+
+    // —— 3. 快速打理：商人 + 打捞 + 赞助券/补给箱广告 ——
+    if (!paused && adsLeft > 0) { // #2 今日补给箱（看广告开箱）
+      if (useAd()) {
+        credit('supplyChest', 'hullAlloy', P.supplyChest.hullAlloy);
+        credit('supplyChest', 'pilotToken', P.supplyChest.pilotToken);
+        credit('supplyChest', 'starCargo', P.supplyChest.starCargo);
+        credit('supplyChest', 'beaconCommon', P.supplyChest.beaconCommon);
+        credit('supplyChest', 'shipBlueprint', P.supplyChest.universal / 2);
+        credit('supplyChest', 'pilotShardUniversal', P.supplyChest.universal / 2);
+      }
+    }
+    if (!paused && st.buildings.supply >= 1 && adsLeft > 0 && useAd()) {
+      credit('adTickets', 'supplyTicket', P.ads.ticketPerAd); // #6 赞助补给券
+    }
+    if (!paused && !dis.merchant && st.buildings.merchant >= 1) {
+      minutes -= P.merchant.minutes;
+      const afford = Math.floor(Math.max(0, st.res.starCargo - P.merchant.cargoReserve) / P.merchant.ticketPrice);
+      const buy = Math.min(P.merchant.ticketDailyCap, afford);
+      if (buy > 0 && debit('merchantTicket', 'starCargo', buy * P.merchant.ticketPrice)) {
+        credit('merchantTicket', 'supplyTicket', buy);
+      }
+      if (st.res.starCargo > P.merchant.richThreshold) {
+        let basketMult = tier.shoppingPower;
+        if (watcher && adsLeft > 0 && useAd()) basketMult *= 1.5; // #8 商人刷新
+        const B = P.merchant.basket;
+        const tryBuy = (entry, give) => {
+          const q = entry.p * basketMult;
+          if (q > 0 && st.res.starCargo - entry.price * q > P.merchant.richThreshold / 2 && debit('merchantBasket', 'starCargo', entry.price * q)) give(q);
+        };
+        tryBuy(B.beaconCommon, (q) => credit('merchantBasket', 'beaconCommon', q));
+        tryBuy(B.finePlugin, (q) => { st.plugins.fine += q; });
+        tryBuy(B.coreFrag5, (q) => credit('merchantBasket', 'coreFrag', q * 5));
+      }
+    }
+    if (!paused && !dis.salvage && st.buildings.salvage >= 1) {
+      minutes -= P.salvage.minutes;
+      const queues = T.salvageQueues(st.buildings.salvage);
+      const adRun = watcher && adsLeft > 0
+        && (st.res.beaconCommon + st.res.beaconRare + st.res.beaconEpic) > queues && useAd(); // #5
+      // 昨日卡关 → 今天更勤地倒腾打捞（卡关日会话时间全闲着）
+      const prevStuck = st.dailyStuck.length > 0 && st.dailyStuck[st.dailyStuck.length - 1] === 1;
+      const boostTier = prevStuck ? { ...tier, salvageRunsPerQueue: tier.salvageRunsPerQueue * 1.5 } : tier;
+      doSalvage(st, credit, debit, boostTier, env, adRun, P, T);
+    }
+
+    // —— 4. 事件（3天/7天·平摊+周期末大奖）——
+    if (!dis.events) {
+      const comp = paused ? 0 : tier.eventCompletion;
+      const drip = (pack, cycleDays) => {
+        for (const [k, v] of Object.entries(pack)) {
+          if (k.startsWith('completion')) continue;
+          const amt = (v / cycleDays) * comp;
+          if (k === 'universal') { credit('events', 'shipBlueprint', amt / 2); credit('events', 'pilotShardUniversal', amt / 2); }
+          else if (k === 'resident') st.residents += amt;
+          else if (k === 'worker') st.workers += amt;
+          else credit('events', k, amt);
+        }
+      };
+      if (!paused) { drip(P.events.cycle3, T.eventCycle3); drip(P.events.cycle7, T.eventCycle7); }
+      if (day === ev3Anchor + T.eventCycle3 - 1) {
+        if (!paused && tier.eventCompletion >= P.events.completionThreshold) {
+          openCargoChest(st, credit, P.events.cycle3.completionChest, watcher && adsLeft > 0 && useAd(), P);
+          if (day <= T.eventCycle3) st.mains[0].ship.shards += P.tutorialGrant.firstEventMainShard;
+        }
+        ev3Anchor = day + 1;
+      }
+      if (day === ev7Anchor + T.eventCycle7 - 1) {
+        if (!paused && tier.eventCompletion >= P.events.completionThreshold) st.coresOwned += P.events.cycle7.completionCore;
+        ev7Anchor = day + 1;
+      }
+    }
+
+    // —— 5. 花钱（转换→升阶→抽卡→升级→插件→建筑→星核）——
+    if (!paused) {
+      convertUniversal(st, debit);
+      doAscends(st, T);
+      if (!dis.gacha) {
+        const tickets = Math.floor(st.res.supplyTicket);
+        if (tickets > 0 && debit('gacha', 'supplyTicket', tickets)) {
+          const shipPulls = tickets / 2;
+          doGachaPulls(st, 'ship', shipPulls, env, P, T);
+          doGachaPulls(st, 'pilot', tickets - shipPulls, env, P, T);
+        }
+      }
+      doAscends(st, T);
+      doLevelUps(st, debit, T);
+      doPluginCraft(st);
+      doBuildings(st, debit, P, T);
+      doCores(st, debit, P, T);
+    }
+
+    // —— 6. 推主线（主线优先吃时间预算；有效战力 = 战力 ×(1+换搭配试错折算)）——
+    let clearedToday = 0;
+    let power = teamPower(st, T);
+    const tinker = 1 + (tier.tinkerBonus ?? 0);
+    if (!paused && st.cleared < T.N) {
+      let nodeBudget = Math.floor(Math.max(0, minutes) / P.mainline.minutesPerNode);
+      let adDoubleLeft = watcher && adsLeft > 0; // #3 首通翻倍（用在当日最后一关）
+      let adPickLeft = watcher && adsLeft > 1;   // #4 再选一个
+      while (st.cleared < T.N && nodeBudget > 0 && power * tinker >= pressure[st.cleared + 1]) {
+        const n = st.cleared + 1;
+        const isLast = nodeBudget === 1 || (st.cleared + 1 < T.N && power * tinker < pressure[n + 1] && true);
+        const opts2 = { watcherChest: watcher && adsLeft > 0, adDouble: false, adExtraPick: false };
+        if (isLast && adDoubleLeft && useAd()) { opts2.adDouble = true; adDoubleLeft = false; }
+        if (isLast && adPickLeft && useAd()) { opts2.adExtraPick = true; adPickLeft = false; }
+        if (opts2.watcherChest && nodeStage(n, T) === 'boss') useAd(); // #7 货舱多选
+        if (!dis.mainlineRewards) nodeClearIncome(st, credit, n, opts2, P, T);
+        else if (n === T.storyBossNode) { st.coresOwned += 1; st.corridorUnlocked = true; }
+        st.cleared = n;
+        clearedToday++; nodeBudget--;
+        minutes -= P.mainline.minutesPerNode;
+        convertUniversal(st, debit); doAscends(st, T); doLevelUps(st, debit, T);
+        power = teamPower(st, T);
+      }
+    }
+
+    // —— 7. 剩余时间做日常：悬赏 → 推演 → 回廊 ——
+    if (st.cleared >= 5) {
+      st.bountyBacklog = Math.min(st.bountyBacklog + T.bountyDailyCards,
+        T.bountyBoardCap[st.buildings.habitat >= 10 ? 2 : st.buildings.habitat >= 5 ? 1 : 0]);
+    }
+    if (!paused && !dis.bounty && st.cleared >= 5 && st.bountyBacklog > 0) {
+      const canByTime = Math.floor(Math.max(0, minutes) / P.bounty.minutesPerCard);
+      const want = Math.round(T.bountyDailyCards * tier.dailyCompletion + (st.bountyBacklog > T.bountyDailyCards ? 3 : 0));
+      const cards = Math.max(0, Math.min(st.bountyBacklog, want, canByTime));
+      if (cards > 0) {
+        minutes -= cards * P.bounty.minutesPerCard;
+        st.bountyBacklog -= cards;
+        const gBase = Math.min(0.5, P.bounty.goldRate * env.goldRate);
+        const pNoGoldDay = Math.pow(1 - gBase, T.bountyDailyCards);
+        const gEff = gBase + Math.pow(pNoGoldDay, T.bountyGoldPity) * (1 / T.bountyDailyCards) * 0.5;
+        const qMult = (1 - 0.32 - gEff) + 0.32 * T.bountyQualityMult.silver + gEff * T.bountyQualityMult.gold;
+        const perfect = 1 + P.bounty.perfectRate * (T.bountyPerfectMult - 1);
+        const ambushLoss = 1 - T.bountyAmbushRate * (1 - P.bounty.ambushWinRate) * T.bountyAmbushLossPct;
+        const half = cards / 2;
+        credit('bounty', 'hullAlloy', P.bounty.escortAlloy * offCoef * qMult * perfect * ambushLoss * half);
+        credit('bounty', 'starCargo', P.bounty.escortCargo * offCoef * qMult * perfect * ambushLoss * half);
+        credit('bounty', 'pilotToken', P.bounty.drillToken * offCoef * qMult * half);
+        for (const [k, share] of Object.entries(P.bounty.goldPhysical)) credit('bounty', k, gEff * cards * share);
+        const winEV = T.bountyAmbushRate * P.bounty.ambushWinRate * half;
+        for (const [k, v] of Object.entries(P.bounty.ambushWinBonus)) credit('bounty', k, winEV * v);
+      }
+    }
+    if (!paused && !dis.puzzle && st.cleared >= 40 && minutes >= P.puzzle.minutes * tier.dailyCompletion) {
+      minutes -= P.puzzle.minutes * tier.dailyCompletion;
+      credit('puzzle', 'starCargo', P.puzzle.starCargo * tier.dailyCompletion);
+      credit('puzzle', 'shipBlueprint', P.puzzle.shipBlueprint * tier.dailyCompletion);
+    }
+    if (!paused && !dis.corridor && st.corridorUnlocked) {
+      // 卡关日主线时间空出来 → 投回廊（S8 墙期体验："有仗可打"由回廊/悬赏/推演承担）；
+      // 投入倍数按档位（肝档卡关日几乎全泡回廊）
+      const stuckToday = st.cleared < T.N && power * tinker < pressure[st.cleared + 1];
+      const cmCap = tier.corridorMinutes * (stuckToday ? (tier.stallCorridorMult ?? 2) : 1);
+      let cm = Math.min(cmCap, Math.max(0, minutes));
+      while (cm >= PARAMS.corridor.minutesPerLayer) {
+        const L = st.corridorLayer + 1;
+        let req = P.corridor.reqBase * Math.pow(1 + P.corridor.reqGrowth, L - 1);
+        if (L % T.corridorEchoEvery === 0) req *= P.corridor.echoSpike;
+        if (power * tinker < req) break; // 回廊戏法层=动脑换搭配可提前过（S10.7），同折算
+        cm -= P.corridor.minutesPerLayer;
+        st.corridorLayer = L;
+        credit('corridor', 'hullAlloy', P.corridor.layerAlloy.base + P.corridor.layerAlloy.per * L);
+        credit('corridor', 'pilotToken', P.corridor.layerToken.base + P.corridor.layerToken.per * L);
+        credit('corridor', 'starCargo', P.corridor.layerCargo.base + P.corridor.layerCargo.per * L);
+        if (L % T.corridorMilestoneEvery === 0) {
+          const i = L / T.corridorMilestoneEvery;
+          const msMult = watcher && adsLeft > 0 && useAd() ? 2 : 1; // #10 里程碑翻倍
+          credit('corridor', 'starOre', (P.corridor.msOre.base + P.corridor.msOre.per * i) * msMult);
+          credit('corridor', 'starCargo', (P.corridor.msCargo.base + P.corridor.msCargo.per * i) * msMult);
+          const uni = (P.corridor.msUniversal.base + P.corridor.msUniversal.per * i) * msMult;
+          credit('corridor', 'shipBlueprint', uni / 2);
+          credit('corridor', 'pilotShardUniversal', uni / 2);
+          const bkey = L >= P.corridor.epicBeaconLayer ? 'beaconEpic' : L >= P.corridor.rareBeaconLayer ? 'beaconRare' : 'beaconCommon';
+          credit('corridor', bkey, P.corridor.msBeacon * msMult);
+        }
+      }
+    }
+
+    // —— 8. 卡关：安慰包（白送每日≤3 次·按档位尝试次数领）+ 趣事 ——
+    const stuckNow = st.cleared < T.N && power * tinker < pressure[st.cleared + 1];
+    if (!paused && stuckNow) {
+      const tries = Math.min(3, tier.consolationTries ?? 1); // 肝档一天多试几次墙
+      const adCons = watcher && adsLeft > 0 && useAd() ? 1 : 0; // #9 战败安慰双倍（首次那单）
+      credit('consolation', 'hullAlloy', P.consolation.hullAlloy * (tries + adCons));
+      credit('consolation', 'pilotToken', P.consolation.pilotToken * (tries + adCons));
+      credit('consolation', 'beaconCommon', P.consolation.firstDefeatBeacon);
+      const wallNode = st.cleared + 1;
+      if (nodeStage(wallNode, T) === 'boss') st.wallDays[wallNode] = (st.wallDays[wallNode] ?? 0) + 1;
+    }
+    if (!paused) {
+      credit('anecdote', 'starCargo', P.anecdote.chance * P.anecdote.starCargo);
+      credit('anecdote', 'starOre', P.anecdote.chance * P.anecdote.starOre);
+    }
+
+    // —— 9. 日终记录 + 守恒检查 ——
+    st.dailyCleared.push(clearedToday);
+    st.dailyPower.push(power);
+    st.dailyStuck.push(!paused && clearedToday === 0 && stuckNow ? 1 : 0);
+    for (const k of RESOURCE_KEYS) {
+      if (st.res[k] < -1e-6) st.negativeViolations.push({ day, key: k, value: st.res[k] });
+    }
+    if (st.cleared >= T.N && st.graduateDay === null) {
+      st.graduateDay = day;
+      if (!opts.runFullDays) break;
+    }
+  }
+  return summarize(tierName, st, opts, P, T);
+}
+
+function zeroStreaks(log) {
+  const streaks = []; let cur = 0;
+  for (const v of log) { if (v === 0) cur++; else { if (cur > 0) streaks.push(cur); cur = 0; } }
+  if (cur > 0) streaks.push(cur);
+  return streaks;
+}
+
+function summarize(tierName, st, opts, P, T) {
+  const upto = st.graduateDay ?? st.dailyCleared.length;
+  const cl = st.dailyCleared.slice(0, upto);
+  // 墙统计：战力被卡的零清日（1=卡住 → 转成 0 让 zeroStreaks 数连段）
+  const stuckMask = cl.map((v, i) => (st.dailyStuck[i] === 1 ? 0 : 1));
+  const wallStreaks = zeroStreaks(stuckMask);
+  const firstWeek = cl.slice(0, 7).reduce((a, b) => a + b, 0);
+  return {
+    tier: tierName,
+    graduateDay: st.graduateDay,
+    cleared: st.cleared,
+    firstWeekCleared: firstWeek,
+    firstWeekPct: Math.round((firstWeek / T.N) * 1000) / 10,
+    maxWallDays: wallStreaks.length ? Math.max(...wallStreaks) : 0,
+    wallsOver2: wallStreaks.filter((s) => s >= 2).length,
+    wallDays: st.wallDays,
+    finalPower: Math.round(st.dailyPower[upto - 1] ?? 0),
+    corridorLayer: Math.round(st.corridorLayer),
+    coresOwned: Math.round(st.coresOwned * 10) / 10,
+    mains: st.mains.map((m) => ({ shipTier: m.ship.tier, shipLv: m.ship.level, star: m.pilot.star, pilotLv: m.pilot.level })),
+    offShards: { ship: Math.round(st.offShardsShip), pilot: Math.round(st.offShardsPilot) },
+    resources: Object.fromEntries(RESOURCE_KEYS.map((k) => [k, Math.round(st.res[k] * 10) / 10])),
+    negativeViolations: st.negativeViolations,
+    adsUsedTotal: st.adsUsedTotal,
+    dailyCleared: cl,
+    dailyPower: st.dailyPower,
+    ledger: st.ledger,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 八、压力值校准器（重采样普通档轨迹 + γ 搜索普通档=47 天）
+// ---------------------------------------------------------------------------
+
+/** 初值压力曲线：按形状曲线等比放大到真实战力量级（迭代起点用）。 */
+export function seedPressureCurve(scaleGuess = 3.0) {
+  const shaped = shapeRequiredCurve();
+  return shaped.map((v) => (v ? Math.round(v * scaleGuess) : v));
+}
+
+/**
+ * 校准压力值表：
+ *  迭代：用普通档经济轨迹按形状时刻表重采样 → γ 搜索让普通档毕业=47 天。
+ * 返回 { pressure, gamma, iterations, notes }。
+ */
+export function calibratePressure(P = PARAMS, T = TRUTHS) {
+  const schedule = shapeDaySchedule('普通');       // n → 形状里普通档清 n 的那天
+  const targetDay = TARGETS['普通'];
+  let pressure = seedPressureCurve();
+  let gamma = 1;
+  const C = P.pressureCalib;
+  for (let iter = 0; iter < C.iterations; iter++) {
+    const run = simulateEconomyTier('普通', pressure, { runFullDays: true }, P, T);
+    const powerAt = (d) => run.dailyPower[Math.max(0, Math.min(run.dailyPower.length - 1, d - 1))];
+    // 重采样：关 n 的压力值 = 普通档在"形状说该清 n 那天"开盘（前一日终）的战力；
+    // 真Boss墙节点取"开盘与前一日"的均值——期望模型玩家在日中跨线，整日采样会系统性
+    // 高估墙高（普通档时间线被 γ 迭代钉回形状表不受影响，其余档的墙长因此不再多算 1 天）
+    const raw = [0];
+    for (let n = 1; n <= T.N; n++) {
+      const d = schedule[n] ?? schedule[schedule.length - 1];
+      const p1 = powerAt(d - 1) || run.dailyPower[0] * 0.8;
+      raw[n] = T.bossNodes.includes(n) ? 0.5 * (p1 + (powerAt(d - 2) || p1)) : p1;
+    }
+    for (let n = 2; n <= T.N; n++) raw[n] = Math.max(raw[n], raw[n - 1]); // 单调
+    // 混合上一轮，稳定收敛
+    pressure = pressure.map((v, n) => (n === 0 ? 0 : Math.round(C.blend * raw[n] + (1 - C.blend) * v)));
+    // γ 搜索：全曲线乘 γ 使普通档恰好 targetDay 毕业
+    let lo = C.gammaLo, hi = C.gammaHi, best = 1;
+    for (let s = 0; s < C.gammaSteps; s++) {
+      const mid = (lo + hi) / 2;
+      const trial = pressure.map((v, n) => (n === 0 ? 0 : Math.round(v * mid)));
+      const g = simulateEconomyTier('普通', trial, {}, P, T).graduateDay;
+      if (g === null || g > targetDay) hi = mid; else { lo = mid; best = mid; if (g === targetDay) break; }
+    }
+    gamma = best;
+    pressure = pressure.map((v, n) => (n === 0 ? 0 : Math.round(v * gamma)));
+  }
+  // 教程段（n1-n8）终表钳制：强引导关必须开局可过（GDD-M 硬规格）。放在迭代与 γ 收口
+  // 之后，只修最终表的头 8 关（全档 D1-3 内清掉的关），不扰动普通档 47 天钉靶。
+  const day1Power = simulateEconomyTier('普通', pressure, { runFullDays: false }, P, T).dailyPower[0];
+  for (let n = 1; n <= 8; n++) {
+    pressure[n] = Math.min(pressure[n], Math.round(day1Power * (0.30 + 0.08 * n)));
+  }
+  for (let n = 2; n <= T.N; n++) pressure[n] = Math.max(pressure[n], pressure[n - 1]);
+  return { pressure, gamma };
+}
+
+// ---------------------------------------------------------------------------
+// 九、运行器
+// ---------------------------------------------------------------------------
+
+export function runStandard(pressure, P = PARAMS) {
+  const out = {};
+  for (const t of Object.keys(TIERS)) {
+    out[t] = {
+      expected: simulateEconomyTier(t, pressure, { envelope: 'expected' }, P),
+      lucky: simulateEconomyTier(t, pressure, { envelope: 'lucky' }, P),
+      unlucky: simulateEconomyTier(t, pressure, { envelope: 'unlucky' }, P),
+    };
+  }
+  return out;
+}
+
+export function checkCalibration(std, P = PARAMS) {
+  const errors = [];
+  for (const [t, target] of Object.entries(TARGETS)) {
+    const g = std[t].expected.graduateDay;
+    if (!g) errors.push(`${t} 未在 ${P.maxDays} 天内毕业（卡在 ${std[t].expected.cleared}）`);
+    else if (Math.abs(g - target) > target * 0.10) errors.push(`${t} 毕业 D${g} 偏离靶 ${target}±10%`);
+  }
+  const fw = std['普通'].expected.firstWeekPct;
+  if (fw < 33 || fw > 42) errors.push(`普通档首周清关 ${fw}% 超出 35-40% 带（容差±2）`);
+  const order = ['肝档', '重度', '普通', '轻度'].map((t) => std[t].expected.graduateDay ?? 999);
+  for (let i = 1; i < order.length; i++) if (!(order[i] > order[i - 1])) { errors.push(`档位顺序错：${JSON.stringify(order)}`); break; }
+  if (std['肝档'].expected.maxWallDays > 4) errors.push(`肝档最长墙 ${std['肝档'].expected.maxWallDays} 天 > 4`);
+  if (std['普通'].expected.maxWallDays > 11) errors.push(`普通档最长墙 ${std['普通'].expected.maxWallDays} 天 > 11`);
+  if (std['轻度'].expected.maxWallDays > 12) errors.push(`轻度档最长墙 ${std['轻度'].expected.maxWallDays} 天 > 12`);
+  for (const t of Object.keys(TARGETS)) {
+    const viol = std[t].expected.negativeViolations;
+    if (viol.length) errors.push(`${t} 守恒违规 ${viol.length} 处（首处 ${JSON.stringify(viol[0])}）`);
+  }
+  return errors;
+}
+
+export function runAdComparison(pressure, P = PARAMS) {
+  const out = {};
+  for (const t of ['肝档', '重度', '普通']) {
+    const full = simulateEconomyTier(t, pressure, { ads: 'full' }, P);
+    const none = simulateEconomyTier(t, pressure, { ads: 'none' }, P);
+    out[t] = {
+      fullDays: full.graduateDay, zeroDays: none.graduateDay,
+      speedup: none.graduateDay && full.graduateDay
+        ? Math.round(((none.graduateDay - full.graduateDay) / none.graduateDay) * 1000) / 10 : null,
+      zeroMaxWall: none.maxWallDays,
+    };
+  }
+  return out;
+}
+
+export function runSensitivity(pressure, P = PARAMS) {
+  const base = simulateEconomyTier('普通', pressure, {}, P).graduateDay;
+  const sources = ['offline', 'patrol', 'bounty', 'corridor', 'salvage', 'gacha', 'events', 'mail', 'merchant', 'puzzle', 'mainlineRewards'];
+  const rows = [];
+  for (const s of sources) {
+    const r = simulateEconomyTier('普通', pressure, { disable: { [s]: true } }, P);
+    rows.push({ source: s, graduateDay: r.graduateDay, delta: r.graduateDay ? r.graduateDay - base : `未毕业(卡${r.cleared})` });
+  }
+  return { base, rows };
+}
+
+export function runHalving(pressure, P = PARAMS) {
+  // 深度自检反例：把某收入源砍半，尺子必须报告变慢（不许靠别的漏洞"自愈"）
+  const base = simulateEconomyTier('普通', pressure, {}, P).graduateDay;
+  const rows = [];
+  for (const s of ['offline', 'salvage', 'bounty']) {
+    const r = simulateEconomyTier('普通', pressure, { incomeScale: { [s]: 0.5 } }, P);
+    rows.push({ source: `${s}×0.5`, graduateDay: r.graduateDay, delta: r.graduateDay ? r.graduateDay - base : `未毕业(卡${r.cleared})` });
+  }
+  return { base, rows };
+}
+
+export function runCatchup(pressure, P = PARAMS) {
+  const rows = [];
+  for (const t of ['普通', '轻度']) {
+    const base = simulateEconomyTier(t, pressure, {}, P).graduateDay;
+    for (const [from, days] of [[10, 1], [10, 2], [10, 3], [10, 4], [25, 2], [25, 4]]) {
+      const r = simulateEconomyTier(t, pressure, { pause: { from, days } }, P);
+      rows.push({
+        tier: t, from, days, base, graduateDay: r.graduateDay,
+        delay: r.graduateDay ? r.graduateDay - base : null,
+        extraVsPause: r.graduateDay ? r.graduateDay - base - days : null,
+      });
+    }
+  }
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// 十、CLI
+// ---------------------------------------------------------------------------
+
+function fmtTierLine(r, target) {
+  const dev = r.graduateDay ? Math.round(((r.graduateDay - target) / target) * 1000) / 10 : null;
+  return `D${r.graduateDay ?? '×'}(靶${target} ${dev !== null ? (dev >= 0 ? '+' : '') + dev + '%' : '未毕业'}) `
+    + `首周${r.firstWeekCleared}关(${r.firstWeekPct}%) 最长墙${r.maxWallDays}天 ≥2天墙${r.wallsOver2}个 `
+    + `终战力${r.finalPower} 回廊${r.corridorLayer}层 核${r.coresOwned}`;
+}
+
+const isMain = typeof process !== 'undefined' && process.argv[1]
+  && /simulate-s7-economy\.mjs$/.test(String(process.argv[1]).replace(/\\/g, '/'));
+
+if (isMain) {
+  const args = new Set(process.argv.slice(2));
+  const t0 = Date.now();
+  console.log('==== S7 真实资源经济模拟器（第三块①造尺子·期望值模型·零RNG）====');
+
+  const { pressure, gamma } = calibratePressure();
+  console.log(`压力值表：按形状时刻表重采样 + γ=${Math.round(gamma * 1000) / 1000} 收口 + 教程段(n1-8)钳制`);
+
+  const std = runStandard(pressure);
+  console.log(`\n—— 四档校准（expected·档位画像广告/天：肝${TIERS['肝档'].adsPerDay}/重${TIERS['重度'].adsPerDay}/普${TIERS['普通'].adsPerDay}/轻${TIERS['轻度'].adsPerDay}）——`);
+  for (const [t, target] of Object.entries(TARGETS)) {
+    console.log(`[${t}] ${fmtTierLine(std[t].expected, target)}`);
+    console.log(`       欧非带宽：欧 D${std[t].lucky.graduateDay ?? '×'} / 非 D${std[t].unlucky.graduateDay ?? '×'}`);
+  }
+  const errors = checkCalibration(std);
+  console.log(errors.length ? `\n❌ 校准未过：\n  - ${errors.join('\n  - ')}` : '\n✅ 校准形状检查全过（毕业±10%/首周/墙分布/档位顺序/守恒）');
+
+  if (args.has('--ads') || args.has('--all')) {
+    console.log('\n—— 广告双跑（全点位吃满 vs 纯零广告）——');
+    for (const [t, r] of Object.entries(runAdComparison(pressure))) {
+      console.log(`[${t}] 满广告 D${r.fullDays} vs 零广告 D${r.zeroDays} → 加速 ${r.speedup}%（零广告最长墙 ${r.zeroMaxWall} 天）`);
+    }
+  }
+  if (args.has('--sensitivity') || args.has('--all')) {
+    console.log('\n—— 敏感性冒烟（普通档·单源清零）——');
+    const sen = runSensitivity(pressure);
+    console.log(`基线 D${sen.base}`);
+    for (const r of sen.rows) console.log(`  −${r.source}: D${r.graduateDay ?? '×'} (Δ${typeof r.delta === 'number' ? (r.delta >= 0 ? '+' : '') + r.delta : r.delta})`);
+  }
+  if (args.has('--halving') || args.has('--all')) {
+    console.log('\n—— 反例自检（收入源砍半·尺子须诚实变慢）——');
+    const h = runHalving(pressure);
+    console.log(`基线 D${h.base}`);
+    for (const r of h.rows) console.log(`  ${r.source}: D${r.graduateDay ?? '×'} (Δ${typeof r.delta === 'number' ? (r.delta >= 0 ? '+' : '') + r.delta : r.delta})`);
+  }
+  if (args.has('--catchup') || args.has('--all')) {
+    console.log('\n—— 追赶实验（第X天起停玩N天）——');
+    for (const r of runCatchup(pressure)) {
+      console.log(`  [${r.tier}] D${r.from}起停${r.days}天 → 毕业D${r.graduateDay}（比基线D${r.base}晚${r.delay}天·超出停玩本身${r.extraVsPause}天）`);
+    }
+  }
+  if (args.has('--pressure')) {
+    console.log('\n—— 150 关压力值表 ——');
+    for (let n = 1; n <= TRUTHS.N; n++) {
+      const tag = nodeStage(n) === 'boss' ? ' ←真Boss墙' : nodeStage(n) === 'storyBoss' ? ' ←剧情首Boss' : nodeStage(n) === 'elite' ? ' (精英)' : '';
+      console.log(`n${String(n).padStart(3, '0')} ${pressure[n]}${tag}`);
+    }
+  }
+  if (args.has('--income')) {
+    console.log('\n—— 普通档收入构成（累计·按源）——');
+    const r = std['普通'].expected;
+    for (const [src, kv] of Object.entries(r.ledger.income)) {
+      const parts = Object.entries(kv).map(([k, v]) => `${k}:${Math.round(v)}`).join(' ');
+      console.log(`  ${src}: ${parts}`);
+    }
+    console.log('—— 终局余额（死水/溢出观察口）——');
+    console.log(`  ${JSON.stringify(r.resources)}`);
+    console.log(`  非主力专属碎片沉淀：舰 ${r.offShards.ship} / 员 ${r.offShards.pilot}`);
+    console.log(`  主力养成态：${r.mains.map((m) => `T${m.shipTier}L${m.shipLv}/${m.star}★L${m.pilotLv}`).join(' ')}`);
+  }
+  if (args.has('--trace')) {
+    const r = simulateEconomyTier('普通', pressure, {});
+    console.log('\nday cleared cum power req(next)');
+    let cum = 0;
+    for (let d = 0; d < r.dailyCleared.length; d++) {
+      cum += r.dailyCleared[d];
+      console.log(`${d + 1} ${r.dailyCleared[d]} ${cum} ${Math.round(r.dailyPower[d])} ${cum < 150 ? pressure[cum + 1] : '-'}`);
+    }
+  }
+  if (args.has('--json')) {
+    const fs = await import('node:fs');
+    const path = process.env.S7_ECON_JSON ?? 'tools/s7-economy-report.json';
+    const strip = (r) => ({ ...r, ledger: undefined, dailyPower: undefined, dailyCleared: undefined });
+    const payload = {
+      generatedBy: 'simulate-s7-economy.mjs', targets: TARGETS, gamma,
+      params: { ...PARAMS }, tiers: TIERS,
+      standard: Object.fromEntries(Object.entries(std).map(([t, v]) => [t, {
+        expected: strip(v.expected),
+        lucky: { graduateDay: v.lucky.graduateDay }, unlucky: { graduateDay: v.unlucky.graduateDay },
+      }])),
+      ads: runAdComparison(pressure), sensitivity: runSensitivity(pressure),
+      halving: runHalving(pressure), catchup: runCatchup(pressure), pressure,
+    };
+    fs.writeFileSync(path, JSON.stringify(payload, null, 1));
+    console.log(`\n已写出 ${path}`);
+  }
+  console.log(`\n（总耗时 ${Date.now() - t0}ms）`);
+  if (errors.length) process.exit(1);
+}
