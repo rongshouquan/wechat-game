@@ -1,9 +1,0 @@
-[
-  {"schemaVersion":"0.1.0","heroId":"hero_isen","name":"艾森","rarity":"protagonist","role":"firepower","element":"fire","positionType":"front","baseHp":680,"baseAtk":92,"baseDef":40,"aspd":1.0,"skillIds":["skill_isen_attack","skill_isen_active","skill_isen_passive"],"obtain":"main_story"},
-  {"schemaVersion":"0.1.0","heroId":"hero_mia","name":"米娅","rarity":"R","role":"medic","element":"light","positionType":"back","baseHp":520,"baseAtk":68,"baseDef":20,"aspd":0.9,"skillIds":["skill_mia_attack","skill_mia_active","skill_mia_passive"],"obtain":"1-10_first_clear"},
-  {"schemaVersion":"0.1.0","heroId":"hero_ryan","name":"莱恩","rarity":"R","role":"guard","element":"electromagnetic","positionType":"front","baseHp":760,"baseAtk":60,"baseDef":55,"aspd":0.85,"skillIds":["sk_ryan_n","sk_ryan_a"],"obtain":"starter_pool"},
-  {"schemaVersion":"0.1.0","heroId":"hero_kora","name":"科拉","rarity":"SR","role":"guard","element":"light","positionType":"front","baseHp":820,"baseAtk":56,"baseDef":68,"aspd":0.8,"skillIds":["sk_kora_n","sk_kora_a"],"obtain":"stage_1_clear"},
-  {"schemaVersion":"0.1.0","heroId":"hero_vex","name":"维克斯","rarity":"R","role":"firepower","element":"fire","positionType":"back","baseHp":560,"baseAtk":105,"baseDef":24,"aspd":1.05,"skillIds":["sk_vex_n","sk_vex_a"],"obtain":"starter_pool"},
-  {"schemaVersion":"0.1.0","heroId":"hero_luna","name":"露娜","rarity":"SR","role":"medic","element":"light","positionType":"back","baseHp":540,"baseAtk":62,"baseDef":24,"aspd":0.95,"skillIds":["sk_luna_n","sk_luna_a"],"obtain":"stage_2_clear"},
-  {"schemaVersion":"0.1.0","heroId":"hero_nox","name":"诺克斯","rarity":"SSR","role":"disruptor","element":"electromagnetic","positionType":"back","baseHp":600,"baseAtk":78,"baseDef":30,"aspd":1.0,"skillIds":["sk_nox_n","sk_nox_a"],"obtain":"event_reward"}
-]

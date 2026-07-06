@@ -1,4 +1,0 @@
-[
-  {"schemaVersion":"0.1.0","enemyId":"enemy_mech_drone","name":"机械侦察兵","faction":"mechanical","elementWeakness":"electromagnetic","hp":320,"atk":28,"def":5,"aspd":1.1,"mechanicTags":[]},
-  {"schemaVersion":"0.1.0","enemyId":"enemy_mech_hammer_boss","name":"机械重锤","faction":"mechanical","elementWeakness":"electromagnetic","hp":4200,"atk":85,"def":45,"aspd":0.8,"mechanicTags":["front_pressure"]}
-]

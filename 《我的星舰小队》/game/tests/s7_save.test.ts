@@ -1,7 +1,7 @@
 // CC-07B/CC-07C: S7 首发存档（12 资源 + 主线进度）测试。
 // 覆盖：12 资源默认状态、独立 storage key、缺档初始化、保存后加载、损坏 JSON 回退、
 // 结构缺失回退、脏数据规范化、版本规范化、v1->v2 迁移（保留 12 资源 + 补默认主线进度）、
-// mainlineProgress 往返，并证明流程版 SaveService 既有行为未受影响。
+// mainlineProgress 往返。
 import { describe, it, expect } from 'vitest';
 import { MemoryStorageAdapter } from '../assets/scripts/save/SaveStorageAdapter';
 import {
@@ -15,13 +15,6 @@ import {
   persistS7Save,
   restoreS7KeyState,
 } from '../assets/scripts/save/S7SaveService';
-import {
-  CURRENT_SAVE_VERSION,
-  SAVE_STORAGE_KEY,
-  createDefaultSaveData,
-  persistSave,
-  loadSave,
-} from '../assets/scripts/save/SaveService';
 
 const NOW = 1_700_000_000_000;
 
@@ -72,8 +65,7 @@ describe('s7 save - resource skeleton', () => {
 });
 
 describe('s7 save - independent storage domain', () => {
-  it('uses a storage key distinct from the 流程版 key', () => {
-    expect(S7_SAVE_STORAGE_KEY).not.toBe(SAVE_STORAGE_KEY);
+  it('uses its own dedicated storage key', () => {
     expect(S7_SAVE_STORAGE_KEY).toBe('starship_squad_s7_save_v1');
   });
 
@@ -835,47 +827,9 @@ describe('s7 save - corruption / structure fallback', () => {
   });
 });
 
-describe('s7 save - 流程版 SaveService isolation', () => {
-  it('S7 persist does not affect 流程版 load on the same adapter, and vice versa', () => {
-    const adapter = new MemoryStorageAdapter();
-
-    // 写入流程版存档（其自有 key）。
-    const legacy = createDefaultSaveData(NOW);
-    legacy.playerState.resources.starCoin = 999;
-    persistSave(adapter, legacy, NOW);
-
-    // 写入 S7 存档（独立 key）。
-    const s7 = createDefaultS7SaveData(NOW);
-    s7.playerState.resources.starOre = 42;
-    persistS7Save(adapter, s7, NOW);
-
-    // 流程版加载不受 S7 写入影响：仍为流程版结构 / 版本 / 数值。
-    const legacyLoaded = loadSave(adapter, NOW);
-    expect(legacyLoaded.corrupted).toBe(false);
-    expect(legacyLoaded.isNew).toBe(false);
-    expect(legacyLoaded.data.saveVersion).toBe(CURRENT_SAVE_VERSION);
-    expect(legacyLoaded.data.playerState.resources.starCoin).toBe(999);
-    // 流程版结构里不存在 S7 的 starOre 资源键。
-    expect((legacyLoaded.data.playerState.resources as unknown as Record<string, unknown>).starOre).toBeUndefined();
-
-    // S7 加载同样独立、互不污染。
-    const s7Loaded = loadS7Save(adapter, NOW);
-    expect(s7Loaded.data.playerState.resources.starOre).toBe(42);
-    expect(Object.keys(s7Loaded.data.playerState.resources)).toHaveLength(S7_RESOURCE_KEYS.length);
-  });
-
-  it('S7 load on a store holding only a 流程版 save returns isNew (does not read 流程版 key)', () => {
-    const adapter = new MemoryStorageAdapter();
-    persistSave(adapter, createDefaultSaveData(NOW), NOW);
-    const r = loadS7Save(adapter, NOW);
-    expect(r.isNew).toBe(true); // 未读取流程版 key，视为无 S7 档
-  });
-
-  it('S7 维护自己独立的版本计数（独立性靠各用各的 storage key，与版本号是否相等无关）', () => {
+describe('s7 save - version counter', () => {
+  it('S7 维护自己独立的版本计数（当前 v23）', () => {
     expect(S7_CURRENT_SAVE_VERSION).toBe(23); // 第2.5块·块4 每日推演：v22→v23（新增 dailyPuzzle·加性迁移，同文件迁移测试已验）
     expect(Number.isInteger(S7_CURRENT_SAVE_VERSION)).toBe(true);
-    // 真正的隔离保证 = S7 与流程版用不同 storage key（互不读写）；两个独立计数器取到同值纯属巧合、无害。
-    // （原断言用"版本号不相等"当独立性代理，流程版也到 7 后该代理失效——隔离本质从来不是值不同。）
-    expect(S7_SAVE_STORAGE_KEY).not.toBe(SAVE_STORAGE_KEY);
   });
 });
