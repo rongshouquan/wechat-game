@@ -18,10 +18,10 @@
             "_value": false
           },
           "animation": {
-            "_value": true
+            "_value": false
           },
           "skeletal-animation": {
-            "_value": true
+            "_value": false
           },
           "3d": {
             "_value": true
@@ -101,7 +101,7 @@
             "_value": false
           },
           "primitive": {
-            "_value": true
+            "_value": false
           },
           "profiler": {
             "_value": true
@@ -168,7 +168,7 @@
             "_value": false
           },
           "marionette": {
-            "_value": true
+            "_value": false
           },
           "procedural-animation": {
             "_value": false
@@ -195,18 +195,14 @@
           "2d",
           "3d",
           "affine-transform",
-          "animation",
           "audio",
           "base",
           "custom-pipeline",
           "gfx-webgl",
           "graphics",
-          "marionette",
           "mask",
           "meshopt",
-          "primitive",
           "profiler",
-          "skeletal-animation",
           "tween",
           "ui",
           "ui-skew"
