@@ -250,10 +250,10 @@ export const PARAMS = {
 
   // 商人小站
   merchant: {
-    ticketPrice: 80, ticketDailyCap: 40,
+    ticketPrice: 80, ticketDailyCap: 50, // 40→55：B3 打捞券下架的等量补回主口（星贝可负担时才买=顺带加宽星贝 sink）
     cargoReserve: 150,
     richThreshold: 800,
-    basket: { beaconCommon: { p: 1.8, price: 200 }, finePlugin: { p: 0.35, price: 320 }, coreFrag5: { p: 0.15, price: 500 } },
+    basket: { beaconRare: { p: 1.2, price: 300 }, finePlugin: { p: 0.35, price: 320 }, coreFrag5: { p: 0.15, price: 500 } }, // 篮子停售普通信标改售稀有（审计矩阵建议·星贝真 sink+全档稳定稀有流·治轻度末期掉速）
     minutes: 0.8,
   },
 
@@ -267,17 +267,17 @@ export const PARAMS = {
       common: {
         ore: 30, cargo: 14, universal: 1.5, fixed: {},
         rolls: { h2: 1.6, h8: 3.8, h24: 8.2 },
-        rollEV: { universal: 0.5, supplyTicket: 0.25, beaconCommon: 0.16, coreFrag: 0.015, finePlugin: 0.05, resident: 0.02, worker: 0.02, cargoChest: 0.01 },
+        rollEV: { universal: 0.5, beaconCommon: 0.16, coreFrag: 0.015, finePlugin: 0.05, resident: 0.02, worker: 0.02, cargoChest: 0.01 }, // 券下架=B3（S10.1 无此渠道）
       },
       rare: {
         ore: 70, cargo: 38, universal: 2.5, fixed: { coreFrag: 1 },
         rolls: { h2: 2.6, h8: 5.0, h24: 10.4 },
-        rollEV: { universal: 0.8, supplyTicket: 0.3, beaconRare: 0.10, coreFrag: 0.03, superiorPlugin: 0.05, starGem: 0.05, resident: 0.03, worker: 0.03, cargoChest: 0.015 },
+        rollEV: { universal: 0.8, beaconRare: 0.075, coreFrag: 0.03, superiorPlugin: 0.05, starGem: 0.05, resident: 0.03, worker: 0.03, cargoChest: 0.015 }, // 券下架=B3；稀有自繁殖 0.10→0.075（24h 1.04→0.78 拆永动·A3）
       },
       epic: {
         ore: 160, cargo: 95, universal: 4, fixed: { coreFrag: 2, starGem: 2 },
         rolls: { h2: 3.8, h8: 7.0, h24: 12.6 },
-        rollEV: { universal: 1.2, supplyTicket: 0.4, beaconEpic: 0.05, coreFrag: 0.05, superiorPlugin: 0.07, legendaryPlugin: 0.035, starGem: 0.15, resident: 0.04, worker: 0.04, cargoChest: 0.02 },
+        rollEV: { universal: 1.2, beaconEpic: 0.05, coreFrag: 0.05, superiorPlugin: 0.07, legendaryPlugin: 0.035, starGem: 0.15, resident: 0.04, worker: 0.04, cargoChest: 0.02 }, // 券下架=B3
       },
     },
     // 打捞加速券（商人·星贝→时间转换器）：把一趟 2h 短趟的产出升到 8h 档
@@ -313,12 +313,12 @@ export const PARAMS = {
 
   // 事件（3天行动/7天扩张·自然游玩推进；周期过程奖平摊+周期末完成/结算两笔）
   events: {
-    cycle3: { supplyTicket: 8, beaconCommon: 2, beaconRare: 1, universal: 8, starOre: 400, completionChest: 1 },
+    cycle3: { supplyTicket: 14, beaconCommon: 2, beaconRare: 2, universal: 8, starOre: 400, completionChest: 1 }, // 券 8→10：B3 补回副口
     // 7天扩张三层（S10.5 2026-07-06 复原·任务单③核对修正）：过程奖=基础资源/居民/工人/
     // 稀有信标/通用碎片（平摊）；完成奖=史诗信标+星核碎片（completion7·周期末一笔）；
     // 结算奖=扩张宝藏完整星核（completionCore·另一笔）。v0 曾把史诗信标折进过程平摊=口径错，
     // 本版拆两笔；星核碎片量值 8/周期为数值域自定（星核通胀红旗下取低·记档）。
-    cycle7: { supplyTicket: 12, beaconCommon: 2, beaconRare: 2, universal: 16, starOre: 900, resident: 1, worker: 1 },
+    cycle7: { supplyTicket: 24, beaconCommon: 2, beaconRare: 3, universal: 16, starOre: 900, resident: 1, worker: 1 }, // 券 12→16：B3 补回副口
     completion7: { beaconEpic: 1, coreFrag: 8 },
     completionCore: 1,
     // 3天结算奖=行动宝藏三选一（2026-07-06 自 v1.0 复原进 S10.5）：传奇插件 / 舰通用碎片 / 员通用碎片
@@ -336,7 +336,7 @@ export const PARAMS = {
   // 星辉货舱（Boss 大奖/打捞稀有/3天活动完成；#7 广告=期望 ×1.5）
   cargoChest: {
     coreFrag: 4, starGem: 2,
-    beacons: { beaconCommon: 2.0, beaconRare: 1.4, beaconEpic: 0.6 },
+    beacons: { beaconCommon: 1.0, beaconRare: 1.4, beaconEpic: 0.6 }, // A2 提前并入步1：普通权重转稀有（货舱=高稀有浓缩包身份·补 A3 收口后的稀有流量·不走自繁殖链）
     adPickMult: 1.5,
   },
 
@@ -374,7 +374,7 @@ export const PARAMS = {
   },
 
   // 广告点位量值（S13 十点位·全点位每日 1 次）
-  ads: { ticketPerAd: 7, salvageInstantDur: 'h8' },
+  ads: { ticketPerAd: 10, salvageInstantDur: 'h8' }, // #6 赞助券 7→10：B2 加肥（削 #1 省出的份额往肥点挪）
 
   // 黑市（GDD S13.6 · 广告"类充值"轨 · 任务单③入模）
   blackMarket: {
@@ -939,7 +939,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       if (opts.pause && day === opts.pause.from + opts.pause.days) hours += opts.pause.days * 24;
       hours = Math.min(hours, storageH);
       const rateMult = 1 + (T.habitatRatePct(st.buildings.habitat) + st.residents * 1) / 100;
-      const adDouble = watcher && useAd() ? 2 : 1; // #1 回港报告翻倍
+      const adDouble = watcher && useAd() ? 1.5 : 1; // #1 回港报告 ×2→×1.5（B2 削峰第一刀·Ron 已拍·治单点独大+步1后广告差回上限内）
       if (!dis.offline) {
         const oreCoef = Math.pow(offCoef, P.oreCoefPow ?? 1);
         credit('offline', 'starOre', P.offline.starOre * oreCoef * rateMult * hours * adDouble);
@@ -980,7 +980,8 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     }
     if (!paused && !dis.merchant && st.buildings.merchant >= 1) {
       minutes -= P.merchant.minutes;
-      const afford = Math.floor(Math.max(0, st.res.starCargo - P.merchant.cargoReserve) / P.merchant.ticketPrice);
+      // 买券给货架留预算（步1）：留足 richThreshold 再买券——防"券吃光星贝、篮子/加速券饿死"（券中后期边际低、货架是真价值）
+      const afford = Math.floor(Math.max(0, st.res.starCargo - P.merchant.richThreshold) / P.merchant.ticketPrice);
       const buy = Math.min(P.merchant.ticketDailyCap, afford);
       if (buy > 0 && debit('merchantTicket', 'starCargo', buy * P.merchant.ticketPrice)) {
         credit('merchantTicket', 'supplyTicket', buy);
@@ -993,7 +994,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
           const q = entry.p * basketMult;
           if (q > 0 && st.res.starCargo - entry.price * q > P.merchant.richThreshold / 2 && debit('merchantBasket', 'starCargo', entry.price * q)) give(q);
         };
-        tryBuy(B.beaconCommon, (q) => credit('merchantBasket', 'beaconCommon', q));
+        tryBuy(B.beaconRare, (q) => credit('merchantBasket', 'beaconRare', q)); // 篮子改售稀有信标（步1）
         tryBuy(B.finePlugin, (q) => { st.plugins.fine += q; });
         tryBuy(B.coreFrag5, (q) => credit('merchantBasket', 'coreFrag', q * 5));
       }
@@ -1149,7 +1150,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         credit('corridor', 'starCargo', P.corridor.layerCargo.base + P.corridor.layerCargo.per * L);
         if (L % T.corridorMilestoneEvery === 0) {
           const i = L / T.corridorMilestoneEvery;
-          const msMult = watcher && adsLeft > 0 && useAd() ? 2 : 1; // #10 里程碑翻倍
+          const msMult = watcher && adsLeft > 0 && useAd() ? 2.5 : 1; // #10 里程碑 ×2→×2.5：B2 加肥
           credit('corridor', 'starOre', (P.corridor.msOre.base + P.corridor.msOre.per * i) * msMult);
           credit('corridor', 'starCargo', (P.corridor.msCargo.base + P.corridor.msCargo.per * i) * msMult);
           const uni = (P.corridor.msUniversal.base + P.corridor.msUniversal.per * i) * msMult;
