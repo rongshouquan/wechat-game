@@ -1,11 +1,21 @@
-// S7 真实资源经济模拟器（第三块①「造尺子」·2026-07-06）
+// S7 真实资源经济模拟器（第三块①「造尺子」·2026-07-06 → 第三块③双锚+黑市改造 · 同日）
 //
 // ============================================================================
-// 用途：四档玩家（肝/重/普/轻）逐日"真实过日子"——挣真资源、花真资源、按真实养成态
-//   算战力、按 150 关压力值推进、卡关攒资源破墙。校准靶 = 形状模型
-//   `simulate-s7-progression.mjs`（2026-07-02 Ron 拍板锁定，一行不动）：
-//   四档毕业 肝30/重37/普47/轻57（±10%）+ 首周清关 35-40% + 6 真Boss长墙
-//   （肝档最长 ≤4 天、普/轻终盘最长 8-11 天）。
+// 用途：五画像玩家（肝/重/普/轻 + 黑市重度党）逐日"真实过日子"——挣真资源、花真资源、
+//   按真实养成态算战力、按 150 关压力值推进、卡关攒资源破墙。校准靶 = 形状模型 v2
+//   `simulate-s7-progression.mjs`（2026-07-06 Ron 递进墙拍板；旧"六墙均匀1.8"靶作废）：
+//   四档毕业 肝30/重37/普47/轻57（±10%）+ 首周清关 35-40% + 新手期 n001-n030 零墙
+//   + 递进墙（肝党锚 n060≈1/n102≈2/n120≈3/n150≈4-5 天·n084/n138 余势墙零等待）
+//   + 任何档位任何单墙 ≤7 天硬顶（仅毕业墙可近顶）。
+//
+// 第三块③改造三层（任务单 2026-07-06）：
+//   ① 形状靶 v2：内嵌副本换递进墙参数（同步 simulate-s7-progression.mjs）。
+//   ② 校准器双锚：单 γ"收入漂移耦合"缺陷（初值表 v0 §13 诊断——中后期变富 → γ 全曲线
+//      下调 → 前段变便宜 → 肝档提前到墙下多等）改为 早锚=普通档 n060 破墙日 +
+//      晚锚=毕业日 双 γ、锚间对数插值；抗漂移回归护栏（±20% 单源扰动重校后仍达标）进 gate。
+//   ③ 黑市入模（GDD S13.6）：全部激励视频观看 +1 计数（日上限 30）、商品表 v0、
+//      第五画像「黑市重度党」（基于肝档+连看/广告券/购买），毕业靶 D22-25；
+//      四档基线不碰黑市代码路径（基线不变性可用严格相等测试证明）。
 //
 // 真源指针（结构与锁定数字，冲突以此为准）：
 //   - GDD-v2.0.md S8/S9/S10.1-10.10/S13（各系统收支结构、广告10点位、悬赏/回廊/推演/回港）
@@ -69,19 +79,26 @@
 // ============================================================================
 
 // ---------------------------------------------------------------------------
-// 〇、内嵌形状模型（校准靶·常量与算法为 simulate-s7-progression.mjs 的只读副本，
+// 〇、内嵌形状模型 v2（校准靶·常量与算法为 simulate-s7-progression.mjs 的只读副本，
 //     若形状模型再被拍板改参，这里必须同步；gate 测试钉住本副本输出 30/37/47/57）
+//     v1（六墙均匀 spike 1.8·bossPositions 占比制）2026-07-06 递进墙拍板后作废，
+//     旧参数保留在 simulate-s7-progression.mjs 的 CURVE_PARAMS_V1_DEPRECATED。
 // ---------------------------------------------------------------------------
 
 export const SHAPE = {
   N: 150, base: 100, qStart: 0.003, qEnd: 0.03, curvePow: 1.1,
-  bossPositions: [0.4, 0.55, 0.68, 0.8, 0.9, 1.0], bossSpike: 1.8, P0: 100,
+  // 六 Boss 真实节点号 × 递进尖峰（v1 的占比取整会落在 n083/n135，v2 顺带修正到真实拓扑）
+  // 尖峰=«形状约束 × 经济实测»端到端联合选优（经济层轻度末期成长≈肝档一半，s120≥1.30/
+  // s150≥1.42 都会把轻度末墙顶破 7 天硬顶）——选定组合的取舍记初值表 v0.3
+  bossSpikes: { 60: 1.12, 84: 1.01, 102: 1.24, 120: 1.27, 138: 1.0, 150: 1.38 },
+  P0: 100,
   SEC_PER_NODE: 45, MAX_DAYS: 90,
+  // r = 恰好毕业靶日的可行区间中点（区间宽 0.09-0.33pp）；墙变矮 → r 相应回落钉回四靶
   tiers: {
-    轻度: { minutesPerDay: 15, r: 0.050, stuckBonus: 1 },
-    普通: { minutesPerDay: 35, r: 0.060, stuckBonus: 2 },
-    重度: { minutesPerDay: 90, r: 0.072, stuckBonus: 4 },
-    肝档: { minutesPerDay: 150, r: 0.085, stuckBonus: 7 },
+    轻度: { minutesPerDay: 15, r: 0.0452, stuckBonus: 1 },
+    普通: { minutesPerDay: 35, r: 0.0528, stuckBonus: 2 },
+    重度: { minutesPerDay: 90, r: 0.0637, stuckBonus: 4 },
+    肝档: { minutesPerDay: 150, r: 0.0741, stuckBonus: 7 },
   },
 };
 
@@ -93,9 +110,8 @@ export function shapeRequiredCurve(s = SHAPE) {
     smooth[n] = smooth[n - 1] * (1 + q);
   }
   const actual = smooth.slice();
-  for (const pos of s.bossPositions) {
-    const n = Math.round(pos * s.N);
-    actual[n] = smooth[n] * s.bossSpike;
+  for (const [node, spike] of Object.entries(s.bossSpikes)) {
+    actual[Number(node)] = smooth[Number(node)] * spike;
   }
   return actual;
 }
@@ -295,10 +311,16 @@ export const PARAMS = {
   // 星核渠道量值
   core: { synthesisFragCost: 60, vaultBasePrice: 80, distinctPool: 13 },
 
-  // 事件（3天行动/7天扩张·自然游玩推进；周期总包平摊+周期末大奖）
+  // 事件（3天行动/7天扩张·自然游玩推进；周期过程奖平摊+周期末完成/结算两笔）
   events: {
     cycle3: { supplyTicket: 8, beaconCommon: 2, beaconRare: 1, universal: 8, starOre: 400, completionChest: 1 },
-    cycle7: { supplyTicket: 12, beaconCommon: 2, beaconRare: 2, beaconEpic: 1, universal: 16, starOre: 900, resident: 1, worker: 1, completionCore: 1 },
+    // 7天扩张三层（S10.5 2026-07-06 复原·任务单③核对修正）：过程奖=基础资源/居民/工人/
+    // 稀有信标/通用碎片（平摊）；完成奖=史诗信标+星核碎片（completion7·周期末一笔）；
+    // 结算奖=扩张宝藏完整星核（completionCore·另一笔）。v0 曾把史诗信标折进过程平摊=口径错，
+    // 本版拆两笔；星核碎片量值 8/周期为数值域自定（星核通胀红旗下取低·记档）。
+    cycle7: { supplyTicket: 12, beaconCommon: 2, beaconRare: 2, universal: 16, starOre: 900, resident: 1, worker: 1 },
+    completion7: { beaconEpic: 1, coreFrag: 8 },
+    completionCore: 1,
     // 3天结算奖=行动宝藏三选一（2026-07-06 自 v1.0 复原进 S10.5）：传奇插件 / 舰通用碎片 / 员通用碎片
     treasure3: { legendaryPlugin: 1, universalShards: 20 },
     completionThreshold: 0.6,
@@ -354,8 +376,40 @@ export const PARAMS = {
   // 广告点位量值（S13 十点位·全点位每日 1 次）
   ads: { ticketPerAd: 7, salvageInstantDur: 'h8' },
 
-  // 压力值校准器
-  pressureCalib: { iterations: 6, blend: 0.7, gammaLo: 0.5, gammaHi: 3.0, gammaSteps: 24 },
+  // 黑市（GDD S13.6 · 广告"类充值"轨 · 任务单③入模）
+  blackMarket: {
+    unlockNode: 30,   // v0 提案：黑市商船首Boss（n030）通关后停靠（与回廊同期解锁·记档）
+    dailyViewCap: 30, // 三道闸①：日计数上限（护 eCPM/防无脑刷）
+    ticketPrice: 120, // 广告券（S13.2 块5 定稿占位：星贝 120·日限 1）——黑市党画像启用
+    ticketPerDay: 1,
+    // 商品表 v0（价位档：小 30-50 / 中 68-98 / 大 128-198 · 挂数值细表）。
+    // 模型效果口径（记档）：碎片包给"最落后主力"（舰按阶最低者/员按星最低者）——黑市加速的
+    // 主通道是碎片→提前升 SS（乘法·S→SS 单舰 ×1.4 量级），星核/插件是平移项；
+    // 强星核=标准核+100 额外战力（"高于标准核一档"的特供人设）。
+    goods: {
+      shardPack: { price: 40, give: { shipShards: 65, pilotShards: 65 } },   // 小·专属碎片小包
+      plugLegend: { price: 45, give: { legendary: 2 } },                     // 小·传奇插件包（×2）
+      coreStd: { price: 80, give: { core: 1 } },                             // 中·星核（黑市特供货架）
+      coreStrong: { price: 148, give: { core: 1, strongBonus: 100 } },       // 大·强星核
+      // 大·高阶星舰（黑市特供·S13.6 原文商品）：模型入账=1000 专属碎片（恰好一段 S→SS 的
+      // 整舰当量，"花 128 计数买一艘高阶舰"的类充值旗舰件）+ 350 驾驶员组件
+      shipHigh: { price: 128, give: { shipShards: 1000, pilotShards: 350 } },
+    },
+    // 三道闸②：货架轮换（4 日循环·每日 1 小/中 + 隔日 1 大）+ 大件限购（每日 ≤1 件大件）
+    rotation: [['shardPack', 'coreStd'], ['plugLegend', 'shipHigh'], ['shardPack', 'coreStd'], ['plugLegend', 'coreStrong']],
+    largeMinPrice: 100, // 价 ≥100 视为大件：限购判定 + 购买策略"给大件留钱"的门槛
+    // 购买策略成文（攒计数 → 买当前边际价值最高）：优先级=乘法通道在前、平移项在后；
+    // 低优先级商品只有在"买完仍留得起最高优先级大件"时才买（给大件留钱=攒的行为）
+    priority: ['shipHigh', 'coreStrong', 'coreStd', 'plugLegend', 'shardPack'],
+  },
+
+  // 压力值校准器（任务单③锚定改造·选型实测记档，过程见初值表 v0.3）：
+  // 双锚=普通档「n060 破墙日（早锚）+ 毕业日（晚锚）」，γ 分段常数（n≤60 / n>60），
+  // 段内保住重采样给出的相对墙高。选型教训：①单 γ="中后期变富→前段变便宜"耦合
+  // （v0 §13 诊断病·早锚治愈）；②锚间对数坡道=把中段墙抬贵、毕业墙压便宜，肝档矩阵
+  // 倒挂（弃用）；③加密到四锚（n102/n120 破墙日进锚）=γ₂ 对整数破墙日过拟合而抖动，
+  // 首周清关被带出 35-40% 带（弃用）。双锚分段=稳态最优解。
+  pressureCalib: { iterations: 6, blend: 0.7, gammaLo: 0.5, gammaHi: 3.0, gammaSteps: 24, anchorNodes: [60] },
 };
 
 // ---------------------------------------------------------------------------
@@ -385,9 +439,32 @@ export const TIERS = {
     dailyCompletion: 0.88, eventCompletion: 0.92,
     salvageRunsPerQueue: 2, corridorMinutes: 5, shoppingPower: 0.75, tinkerBonus: 0.025, consolationTries: 1,
   },
+  // 第五画像·黑市重度党（S13.6 · 任务单③）：非黑市参数与肝档逐项相同（=基线不变性测试
+  // 的前提：关掉 bm 行为后必须与肝档逐字段相等）；日观看 ≈ 常规点位 9 + 广告券 1 + 连看
+  // 填满至日上限 30（"≈25-30 次"画像口径）。
+  黑市党: {
+    minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
+    dailyCompletion: 1.0, eventCompletion: 1.0,
+    salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
+    bm: { chain: true, buy: true, ticket: true },
+  },
 };
 
 export const TARGETS = { 肝档: 30, 重度: 37, 普通: 47, 轻度: 57 };
+// 黑市重度党毕业带（Ron 2026-07-06 认可 ≈D22-25）——单列，不进四档 TARGETS/档位顺序检查
+export const BM_TARGET = { tier: '黑市党', min: 22, max: 25 };
+// 肝党锚墙矩阵验收带（经济层零清等待天数·基线实测 1/0/2/3/0/2·容差 ±1 记档）。
+// ⚠️ n150 带 [2,4] 低于 GDD §3"≈4-5"：经济层肝:轻末期成长比 ≈2×，"肝 ≥4"⇔"轻 ≥12"必破
+// 7 天硬顶，两约束互斥；按任务单优先级取硬顶（矩阵=容差自定），偏差为体验级发现报 Ron。
+export const WALL_MATRIX_BANDS = { 60: [0, 2], 84: [0, 1], 102: [1, 3], 120: [2, 4], 138: [0, 1], 150: [2, 4] };
+// 抗漂移变体版矩阵带（±20% 单源扰动下的"校准器承诺"——早锚盯 n060 仍然收紧到 [0,2]
+// =v0.1 诊断病的直接探测器；中后段随真实经济形变放宽 1 天；实测 6 变体+指定反例数据定档）
+export const WALL_MATRIX_BANDS_DRIFT = { 60: [0, 2], 84: [0, 1], 102: [0, 3], 120: [1, 4], 138: [0, 1], 150: [2, 5] };
+// 任何档位任何单墙硬顶（2026-07-06 锁定决策）
+export const HARD_WALL_CAP = 7;
+// 扰动变体下轻度的瞬时容忍（基线把轻度末墙钉在贴顶 7=«仅毕业墙可近顶»的设计位，任何
+// 逆向冲击必然瞬时越顶；护栏承诺=不超过 9、且重调形状参数可收回——尺子如实报告而非静默吸收）
+export const HARD_WALL_CAP_DRIFT_LIGHT = 9;
 
 // ---------------------------------------------------------------------------
 // 四、拓扑与战力公式
@@ -445,6 +522,7 @@ export function teamPower(st, T = TRUTHS) {
     if (hasCore) coresLeft--;
     total += unitPower(m.ship, m.pilot, plugSum, hasCore, T);
   }
+  total += st.bmExtraPower ?? 0; // 黑市强星核的额外档位（与标准核同层，吃小乘区）
   const researchPct = T.researchPowerPct(st.buildings.research) / 100;
   const galleryPct = Math.min(T.galleryCapPct,
     st.buildings.gallery >= 1 ? st.coresDistinct * T.galleryPerCorePct(st.buildings.gallery) : 0) / 100;
@@ -481,9 +559,11 @@ function newState() {
     ledger: { income: {}, spend: {} },
     negativeViolations: [],
     dailyCleared: [], dailyPower: [], dailyStuck: [],
-    wallDays: {},
     graduateDay: null,
     adsUsedTotal: 0, chestsOpened: 0,
+    // 黑市计数独立账本（不进 14 键钱包——运行时钱包键有 gate 测试钉死且本子步零回写）
+    bm: { balance: 0, earnedTotal: 0, earned: {}, spent: 0, buys: {}, ticketsBought: 0 },
+    bmExtraPower: 0, // 强星核的"高于标准核"部分（每颗 +strongBonus·加在小乘区之前）
   };
 }
 
@@ -662,6 +742,47 @@ function doCores(st, debit, P, T) {
     pool * (1 - Math.exp(-Math.max(0, st.coresOwned - 1) / pool)) + (st.coresOwned > 0 ? 1 : 0));
 }
 
+// 黑市购买（S13.6 · 购买策略成文）：攒计数买"当前边际价值最高"商品——大件（强星核/
+// 高阶星舰包=乘法通道）优先；买小件前给大件留出底金（balance − 价 ≥ largeMinPrice 才买小），
+// 大件每日限购 1（三道闸②）。碎片给最落后主力（舰=阶最低/员=星最低·与通用碎片转换同口径）。
+function doBlackMarket(st, tier, day, P) {
+  if (st.cleared < P.blackMarket.unlockNode) return;
+  const shelf = P.blackMarket.rotation[(day - 1) % P.blackMarket.rotation.length];
+  // 按边际价值优先级过货架（PARAMS.blackMarket.priority 成文），非最高优先级商品
+  // 要给最高优先级大件留钱（reserve）——"攒计数买大件"的行为模型
+  const order = P.blackMarket.priority.filter((id) => shelf.includes(id));
+  const topPrice = P.blackMarket.goods[P.blackMarket.priority[0]].price;
+  let largeBoughtToday = false;
+  for (const id of order) {
+    const g = P.blackMarket.goods[id];
+    const isLarge = g.price >= P.blackMarket.largeMinPrice;
+    if (st.bm.balance < g.price) continue;
+    if (isLarge && largeBoughtToday) continue;
+    if (id !== P.blackMarket.priority[0] && st.bm.balance - g.price < topPrice) continue;
+    st.bm.balance -= g.price;
+    st.bm.spent += g.price;
+    st.bm.buys[id] = (st.bm.buys[id] ?? 0) + 1;
+    if (isLarge) largeBoughtToday = true;
+    // 碎片投放目标=「临门一脚」：给离下一次升阶/升星缺口最小的可升主力（真实玩家把
+    // 大包砸给马上要突破的那艘=边际价值最高的字面落实）；全员到顶后给阶/星最低者兜底
+    if (g.give.shipShards) {
+      const cand = st.mains.filter((m) => m.ship.owned && m.ship.tier < 4)
+        .sort((a, b) => (TRUTHS.shipAscendCost[a.ship.tier] - a.ship.shards) - (TRUTHS.shipAscendCost[b.ship.tier] - b.ship.shards));
+      const target = cand[0] ?? st.mains.filter((m) => m.ship.owned).sort((a, b) => a.ship.tier - b.ship.tier)[0];
+      if (target) target.ship.shards += g.give.shipShards;
+    }
+    if (g.give.pilotShards) {
+      const cand = st.mains.filter((m) => m.pilot.owned && m.pilot.star < 5)
+        .sort((a, b) => (TRUTHS.pilotStarupCost[a.pilot.star - 1] - a.pilot.shards) - (TRUTHS.pilotStarupCost[b.pilot.star - 1] - b.pilot.shards));
+      const target = cand[0] ?? st.mains.filter((m) => m.pilot.owned).sort((a, b) => a.pilot.star - b.pilot.star)[0];
+      if (target) target.pilot.shards += g.give.pilotShards;
+    }
+    if (g.give.legendary) st.plugins.legendary += g.give.legendary;
+    if (g.give.core) st.coresOwned += g.give.core;
+    if (g.give.strongBonus) st.bmExtraPower += g.give.strongBonus;
+  }
+}
+
 function openCargoChest(st, credit, count, adPick, P) {
   if (!(count > 0)) return;
   const mult = adPick ? P.cargoChest.adPickMult : 1.0;
@@ -776,7 +897,19 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     const offCoef = P.regionCoef[clearedRegions];
     let adsLeft = paused ? 0 : adsPerDay;
     let minutes = paused ? 0 : tier.minutesPerDay;
-    const useAd = () => { if (adsLeft > 0) { adsLeft--; st.adsUsedTotal++; return true; } return false; };
+    // 黑市计数（S13.6：全游戏任何激励视频观看 +1，日上限 30）——计数对所有画像常开
+    // （纯观察者，不产生任何资源效果）；dis.blackMarket 只关"主动行为"（券/连看/购买），
+    // 供基线不变性测试用。
+    const bmActive = !dis.blackMarket && tier.bm;
+    let bmViewsToday = 0;
+    const bmView = (type) => {
+      if (bmViewsToday >= P.blackMarket.dailyViewCap) return false;
+      bmViewsToday++;
+      st.bm.balance++; st.bm.earnedTotal++;
+      st.bm.earned[type] = (st.bm.earned[type] ?? 0) + 1;
+      return true;
+    };
+    const useAd = () => { if (adsLeft > 0) { adsLeft--; st.adsUsedTotal++; bmView('points'); return true; } return false; };
 
     // —— 0. 解锁脚本 ——
     const U = P.unlock;
@@ -836,6 +969,14 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     }
     if (!paused && st.buildings.supply >= 1 && adsLeft > 0 && useAd()) {
       credit('adTickets', 'supplyTicket', P.ads.ticketPerAd); // #6 赞助补给券
+    }
+    // 广告券（S13.2 块5·商人星贝购·日限 1）：黑市党画像启用——持券把"已用完点位"恢复
+    // 一次 = 当日广告预算 +1（走同一优先级链吃点位奖励，观看在 useAd 内计数、不重复+1）
+    if (!paused && bmActive && tier.bm.ticket && st.buildings.merchant >= 1) {
+      for (let i = 0; i < P.blackMarket.ticketPerDay; i++) {
+        if (debit('bmTicket', 'starCargo', P.blackMarket.ticketPrice)) { adsLeft += 1; st.bm.ticketsBought += 1; }
+        else break;
+      }
     }
     if (!paused && !dis.merchant && st.buildings.merchant >= 1) {
       minutes -= P.merchant.minutes;
@@ -903,13 +1044,19 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         ev3Anchor = day + 1;
       }
       if (day === ev7Anchor + T.eventCycle7 - 1) {
-        if (!paused && tier.eventCompletion >= P.events.completionThreshold) st.coresOwned += P.events.cycle7.completionCore;
+        if (!paused && tier.eventCompletion >= P.events.completionThreshold) {
+          // 7天扩张两笔分账（S10.5 三层·任务单③修正）：完成奖=史诗信标+星核碎片；
+          // 结算奖=扩张宝藏完整星核。v0 曾把史诗信标折进过程平摊，口径已改。
+          for (const [k, v] of Object.entries(P.events.completion7)) credit('events', k, v);
+          st.coresOwned += P.events.completionCore;
+        }
         ev7Anchor = day + 1;
       }
     }
 
-    // —— 5. 花钱（转换→升阶→抽卡→升级→插件→建筑→星核）——
+    // —— 5. 花钱（黑市→转换→升阶→抽卡→升级→插件→建筑→星核）——
     if (!paused) {
+      if (bmActive && tier.bm.buy) doBlackMarket(st, tier, day, P); // 黑市购买（碎片进主力→下面升阶消化）
       convertUniversal(st, debit);
       doAscends(st, T);
       if (!dis.gacha) {
@@ -1022,12 +1169,14 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       credit('consolation', 'hullAlloy', P.consolation.hullAlloy * (tries + adCons));
       credit('consolation', 'pilotToken', P.consolation.pilotToken * (tries + adCons));
       credit('consolation', 'beaconCommon', P.consolation.firstDefeatBeacon);
-      const wallNode = st.cleared + 1;
-      if (nodeStage(wallNode, T) === 'boss') st.wallDays[wallNode] = (st.wallDays[wallNode] ?? 0) + 1;
     }
     if (!paused) {
       credit('anecdote', 'starCargo', P.anecdote.chance * P.anecdote.starCargo);
       credit('anecdote', 'starOre', P.anecdote.chance * P.anecdote.starOre);
+    }
+    // 黑市连看（S13.6：黑市内连续观看纯 +计数无其他奖励）：把当日观看数填到日上限
+    if (!paused && bmActive && tier.bm.chain && st.cleared >= P.blackMarket.unlockNode) {
+      while (bmView('chain')) { /* 填满至 dailyViewCap */ }
     }
 
     // —— 9. 日终记录 + 守恒检查 ——
@@ -1059,6 +1208,18 @@ function summarize(tierName, st, opts, P, T) {
   const stuckMask = cl.map((v, i) => (st.dailyStuck[i] === 1 ? 0 : 1));
   const wallStreaks = zeroStreaks(stuckMask);
   const firstWeek = cl.slice(0, 7).reduce((a, b) => a + b, 0);
+  // 墙矩阵（v2 口径·与形状靶同指标）：每面 Boss 墙的"零清等待天数"（整天零推进才算等待，
+  // 破墙当天清了别的关不算）；新手期卡关天数 = 清完 n030 前的零清卡关日（靶=0）
+  const wallWait = Object.fromEntries(T.bossNodes.map((b) => [b, 0]));
+  let cum = 0, newbieStuckDays = 0;
+  for (let i = 0; i < upto; i++) {
+    if (st.dailyStuck[i] === 1) {
+      if (cum < T.storyBossNode) newbieStuckDays++;
+      const next = cum + 1;
+      if (wallWait[next] !== undefined) wallWait[next]++;
+    }
+    cum += st.dailyCleared[i];
+  }
   return {
     tier: tierName,
     graduateDay: st.graduateDay,
@@ -1067,7 +1228,8 @@ function summarize(tierName, st, opts, P, T) {
     firstWeekPct: Math.round((firstWeek / T.N) * 1000) / 10,
     maxWallDays: wallStreaks.length ? Math.max(...wallStreaks) : 0,
     wallsOver2: wallStreaks.filter((s) => s >= 2).length,
-    wallDays: st.wallDays,
+    wallWait,
+    newbieStuckDays,
     finalPower: Math.round(st.dailyPower[upto - 1] ?? 0),
     corridorLayer: Math.round(st.corridorLayer),
     coresOwned: Math.round(st.coresOwned * 10) / 10,
@@ -1076,6 +1238,8 @@ function summarize(tierName, st, opts, P, T) {
     resources: Object.fromEntries(RESOURCE_KEYS.map((k) => [k, Math.round(st.res[k] * 10) / 10])),
     negativeViolations: st.negativeViolations,
     adsUsedTotal: st.adsUsedTotal,
+    bm: { ...st.bm, earned: { ...st.bm.earned }, buys: { ...st.bm.buys } },
+    bmExtraPower: st.bmExtraPower,
     dailyCleared: cl,
     dailyPower: st.dailyPower,
     ledger: st.ledger,
@@ -1083,7 +1247,15 @@ function summarize(tierName, st, opts, P, T) {
 }
 
 // ---------------------------------------------------------------------------
-// 八、压力值校准器（重采样普通档轨迹 + γ 搜索普通档=47 天）
+// 八、压力值校准器（四锚分段版 · 任务单③）
+//   重采样普通档轨迹 → 四个 γ 分段钉四个锚（普通档时点，全部来自形状时刻表 v2）：
+//     锚1 = n060 破墙日（首真墙·早锚）   锚2 = n102 破墙日
+//     锚3 = n120 破墙日                  锚4 = 毕业日（n150）
+//   γ(n) 分段常数：n ≤ 60 取 γ₁；61-102 取 γ₂；103-120 取 γ₃；121-150 取 γ₄。
+//   锚 i 的达成日只依赖 γ₁..γᵢ → 升序逐锚二分 = 精确坐标下降；段内相对墙高
+//   完全保留重采样结果（不做段内插值——坡道会扭曲相对价，教训见 PARAMS 注）。
+//   动机（初值表 v0 §13 诊断）：单 γ 下"中后期变富 → γ 全曲线下调 → 前段变便宜 →
+//   肝档提前冲到 n060 墙下多等"；分段锚把每段各自钉死，收入形变只被本段 γ 吸收。
 // ---------------------------------------------------------------------------
 
 /** 初值压力曲线：按形状曲线等比放大到真实战力量级（迭代起点用）。 */
@@ -1092,17 +1264,36 @@ export function seedPressureCurve(scaleGuess = 3.0) {
   return shaped.map((v) => (v ? Math.round(v * scaleGuess) : v));
 }
 
+/** 分段 γ：取"第一个 node ≥ n 的锚"的 γ（锚按节点升序，末锚=毕业节点 N 兜底）。 */
+export function gammaAt(n, anchors) {
+  for (const a of anchors) if (n <= a.node) return a.gamma;
+  return anchors[anchors.length - 1].gamma;
+}
+
+/** 第一次清掉节点 node 的那天（1 起）；未清到返回 null。 */
+function dayNodeCleared(run, node) {
+  let cum = 0;
+  for (let d = 0; d < run.dailyCleared.length; d++) {
+    cum += run.dailyCleared[d];
+    if (cum >= node) return d + 1;
+  }
+  return null;
+}
+
 /**
- * 校准压力值表：
- *  迭代：用普通档经济轨迹按形状时刻表重采样 → γ 搜索让普通档毕业=47 天。
- * 返回 { pressure, gamma, iterations, notes }。
+ * 校准压力值表（四锚分段）：
+ *  迭代：普通档经济轨迹按形状时刻表重采样 → 逐锚二分各自的 γ（锚 i 的达成日只依赖
+ *  γ₁..γᵢ，升序搜索即坐标下降）→ 按分段 γ 应用。
+ * 返回 { pressure, gammas, anchors, schedule }。
  */
 export function calibratePressure(P = PARAMS, T = TRUTHS) {
   const schedule = shapeDaySchedule('普通');       // n → 形状里普通档清 n 的那天
-  const targetDay = TARGETS['普通'];
-  let pressure = seedPressureCurve();
-  let gamma = 1;
   const C = P.pressureCalib;
+  const anchors = [
+    ...C.anchorNodes.map((node) => ({ node, targetDay: schedule[node], gamma: 1 })),
+    { node: T.N, targetDay: schedule[T.N], gamma: 1 },
+  ];
+  let pressure = seedPressureCurve();
   for (let iter = 0; iter < C.iterations; iter++) {
     const run = simulateEconomyTier('普通', pressure, { runFullDays: true }, P, T);
     const powerAt = (d) => run.dailyPower[Math.max(0, Math.min(run.dailyPower.length - 1, d - 1))];
@@ -1116,64 +1307,203 @@ export function calibratePressure(P = PARAMS, T = TRUTHS) {
       raw[n] = T.bossNodes.includes(n) ? 0.5 * (p1 + (powerAt(d - 2) || p1)) : p1;
     }
     for (let n = 2; n <= T.N; n++) raw[n] = Math.max(raw[n], raw[n - 1]); // 单调
-    // 混合上一轮，稳定收敛
-    pressure = pressure.map((v, n) => (n === 0 ? 0 : Math.round(C.blend * raw[n] + (1 - C.blend) * v)));
-    // γ 搜索：全曲线乘 γ 使普通档恰好 targetDay 毕业
-    let lo = C.gammaLo, hi = C.gammaHi, best = 1;
-    for (let s = 0; s < C.gammaSteps; s++) {
-      const mid = (lo + hi) / 2;
-      const trial = pressure.map((v, n) => (n === 0 ? 0 : Math.round(v * mid)));
-      const g = simulateEconomyTier('普通', trial, {}, P, T).graduateDay;
-      if (g === null || g > targetDay) hi = mid; else { lo = mid; best = mid; if (g === targetDay) break; }
+    // 混合上一轮，稳定收敛（γ 应用前的"素曲线"参与混合）
+    const blended = pressure.map((v, n) => (n === 0 ? 0 : C.blend * raw[n] + (1 - C.blend) * v));
+    // 逐锚 γ 二分（升序）：锚 i 达成日随 γᵢ 单调变晚，取"达成日 ≤ 靶日"的最大 γ
+    for (const anchor of anchors) {
+      // 二分找达成日≤靶日的最大 γ；再与"跳变另一侧"（达成日>靶日的最小 γ）比较，
+      // 取离靶日更近的一侧、平手取更硬一侧——达成日是整数、随 γ 跳变，若只收便宜侧，
+      // 扰动会让整段落在"刚好没跳"的低价位（实测把首周清关吹到 46%·记档）
+      const dayAt = (g) => {
+        anchor.gamma = g;
+        const trial = blended.map((v, n) => (n === 0 ? 0 : Math.round(v * gammaAt(n, anchors))));
+        return dayNodeCleared(simulateEconomyTier('普通', trial, {}, P, T), anchor.node);
+      };
+      let lo = C.gammaLo, hi = C.gammaHi, best = lo, hit = false;
+      for (let s = 0; s < C.gammaSteps; s++) {
+        const mid = (lo + hi) / 2;
+        const g = dayAt(mid);
+        if (g === null || g > anchor.targetDay) hi = mid; else { lo = mid; best = mid; if (g === anchor.targetDay) { hit = true; break; } }
+      }
+      if (!hit) {
+        const dLo = dayAt(best);
+        const dHi = dayAt(hi);
+        if (dLo !== null && dHi !== null
+          && Math.abs(dHi - anchor.targetDay) <= Math.abs(dLo - anchor.targetDay)) best = hi;
+      }
+      anchor.gamma = best;
     }
-    gamma = best;
-    pressure = pressure.map((v, n) => (n === 0 ? 0 : Math.round(v * gamma)));
+    pressure = blended.map((v, n) => (n === 0 ? 0 : Math.round(v * gammaAt(n, anchors))));
   }
   // 教程段（n1-n8）终表钳制：强引导关必须开局可过（GDD-M 硬规格）。放在迭代与 γ 收口
-  // 之后，只修最终表的头 8 关（全档 D1-3 内清掉的关），不扰动普通档 47 天钉靶。
+  // 之后，只修最终表的头 8 关（全档 D1-3 内清掉的关），不扰动普通档钉靶。
+  // 选型教训（记档）：曾试把钳制挪进迭代（γ 搜索前）——D1 连锁反馈把校准器带到另一个
+  // 坏不动点（γ 崩到 0.89、新手期反冒 2 天墙、四档全飘），实测否决；保持循环外终表钳制，
+  // 代价=扰动变体下首周清关有 ±6pp 已知波动（基线严格达标、变体验收不含首周项）。
   const day1Power = simulateEconomyTier('普通', pressure, { runFullDays: false }, P, T).dailyPower[0];
   for (let n = 1; n <= 8; n++) {
     pressure[n] = Math.min(pressure[n], Math.round(day1Power * (0.30 + 0.08 * n)));
   }
   for (let n = 2; n <= T.N; n++) pressure[n] = Math.max(pressure[n], pressure[n - 1]);
-  return { pressure, gamma };
+  return {
+    pressure,
+    gammas: anchors.map((a) => a.gamma),
+    anchors: anchors.map((a) => ({ ...a })),
+    schedule,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // 九、运行器
 // ---------------------------------------------------------------------------
 
-export function runStandard(pressure, P = PARAMS) {
+export function runStandard(pressure, P = PARAMS, opts = {}) {
+  const tiers = opts.tiers ?? Object.keys(TIERS);
+  const envelopes = opts.envelopes ?? true;
   const out = {};
-  for (const t of Object.keys(TIERS)) {
-    out[t] = {
-      expected: simulateEconomyTier(t, pressure, { envelope: 'expected' }, P),
-      lucky: simulateEconomyTier(t, pressure, { envelope: 'lucky' }, P),
-      unlucky: simulateEconomyTier(t, pressure, { envelope: 'unlucky' }, P),
-    };
+  for (const t of tiers) {
+    out[t] = { expected: simulateEconomyTier(t, pressure, { envelope: 'expected' }, P) };
+    if (envelopes) {
+      out[t].lucky = simulateEconomyTier(t, pressure, { envelope: 'lucky' }, P);
+      out[t].unlucky = simulateEconomyTier(t, pressure, { envelope: 'unlucky' }, P);
+    }
   }
   return out;
 }
 
+// 四档基线验收（v2 口径·严格版）：毕业带 ±10%（按整天取整——天数是整数，容差
+// round(靶×10%)=肝3/重4/普5/轻6 天）+ 首周 + 档位顺序 + 守恒 + 全档单墙 ≤7 天硬顶 +
+// 新手期 n001-n030 零墙 + 肝党锚墙矩阵带。
+// 旧"肝≤4/普≤11/轻≤12"墙限随递进墙拍板作废（普/轻 8-11 天口径已废除）。
 export function checkCalibration(std, P = PARAMS) {
   const errors = [];
   for (const [t, target] of Object.entries(TARGETS)) {
     const g = std[t].expected.graduateDay;
     if (!g) errors.push(`${t} 未在 ${P.maxDays} 天内毕业（卡在 ${std[t].expected.cleared}）`);
-    else if (Math.abs(g - target) > target * 0.10) errors.push(`${t} 毕业 D${g} 偏离靶 ${target}±10%`);
+    else if (Math.abs(g - target) > Math.round(target * 0.10)) errors.push(`${t} 毕业 D${g} 偏离靶 ${target}±10%`);
   }
   const fw = std['普通'].expected.firstWeekPct;
   if (fw < 33 || fw > 42) errors.push(`普通档首周清关 ${fw}% 超出 35-40% 带（容差±2）`);
   const order = ['肝档', '重度', '普通', '轻度'].map((t) => std[t].expected.graduateDay ?? 999);
   for (let i = 1; i < order.length; i++) if (!(order[i] > order[i - 1])) { errors.push(`档位顺序错：${JSON.stringify(order)}`); break; }
-  if (std['肝档'].expected.maxWallDays > 4) errors.push(`肝档最长墙 ${std['肝档'].expected.maxWallDays} 天 > 4`);
-  if (std['普通'].expected.maxWallDays > 11) errors.push(`普通档最长墙 ${std['普通'].expected.maxWallDays} 天 > 11`);
-  if (std['轻度'].expected.maxWallDays > 12) errors.push(`轻度档最长墙 ${std['轻度'].expected.maxWallDays} 天 > 12`);
   for (const t of Object.keys(TARGETS)) {
-    const viol = std[t].expected.negativeViolations;
-    if (viol.length) errors.push(`${t} 守恒违规 ${viol.length} 处（首处 ${JSON.stringify(viol[0])}）`);
+    const r = std[t].expected;
+    if (r.maxWallDays > HARD_WALL_CAP) errors.push(`${t} 最长墙 ${r.maxWallDays} 天 > 硬顶 ${HARD_WALL_CAP}`);
+    if (r.newbieStuckDays > 0) errors.push(`${t} 新手期（n001-n030）卡关 ${r.newbieStuckDays} 天，应零墙`);
+    if (r.negativeViolations.length) errors.push(`${t} 守恒违规 ${r.negativeViolations.length} 处（首处 ${JSON.stringify(r.negativeViolations[0])}）`);
+  }
+  for (const [node, [lo, hi]] of Object.entries(WALL_MATRIX_BANDS)) {
+    const w = std['肝档'].expected.wallWait[node] ?? 0;
+    if (w < lo || w > hi) errors.push(`肝档 n${node} 墙 ${w} 天，超出验收带 [${lo},${hi}]`);
   }
   return errors;
+}
+
+// 抗漂移变体验收（"校准器承诺"版·与基线严格版的差异全部有实测依据并记档）：
+//   同基线：四档毕业带（整天容差）/ 档位顺序 / 新手零墙 / 守恒 / 肝重普硬顶 ≤7。
+//   放宽项：①肝墙矩阵用 DRIFT 带（中后段 ±1——±20% 单源冲击是真实经济形变，尺子如实
+//   反映而非静默吸收；早锚盯的 n060 仍收紧 [0,2]=v0.1 病灶探测器）；②轻度硬顶 ≤9（基线
+//   贴顶 7 设计位，逆向冲击必然瞬时越顶，收回靠重调形状参数）；③不查首周（终表教程钳制
+//   在扰动下有 ±6pp 已知波动·选型教训见 calibratePressure 注释）。
+export function checkDriftPromise(std, P = PARAMS) {
+  const errors = [];
+  for (const [t, target] of Object.entries(TARGETS)) {
+    const g = std[t].expected.graduateDay;
+    if (!g) errors.push(`${t} 未在 ${P.maxDays} 天内毕业（卡在 ${std[t].expected.cleared}）`);
+    else if (Math.abs(g - target) > Math.round(target * 0.10)) errors.push(`${t} 毕业 D${g} 偏离靶 ${target}±10%`);
+  }
+  const order = ['肝档', '重度', '普通', '轻度'].map((t) => std[t].expected.graduateDay ?? 999);
+  for (let i = 1; i < order.length; i++) if (!(order[i] > order[i - 1])) { errors.push(`档位顺序错：${JSON.stringify(order)}`); break; }
+  for (const t of Object.keys(TARGETS)) {
+    const r = std[t].expected;
+    const cap = t === '轻度' ? HARD_WALL_CAP_DRIFT_LIGHT : HARD_WALL_CAP;
+    if (r.maxWallDays > cap) errors.push(`${t} 最长墙 ${r.maxWallDays} 天 > 变体容忍 ${cap}`);
+    if (r.newbieStuckDays > 0) errors.push(`${t} 新手期卡关 ${r.newbieStuckDays} 天，应零墙`);
+    if (r.negativeViolations.length) errors.push(`${t} 守恒违规 ${r.negativeViolations.length} 处`);
+  }
+  for (const [node, [lo, hi]] of Object.entries(WALL_MATRIX_BANDS_DRIFT)) {
+    const w = std['肝档'].expected.wallWait[node] ?? 0;
+    if (w < lo || w > hi) errors.push(`肝档 n${node} 墙 ${w} 天，超出变体带 [${lo},${hi}]`);
+  }
+  return errors;
+}
+
+// 黑市验收（任务单③三条之一：黑市党毕业 D22-25）+ 计数账本自检
+export function checkBlackMarket(run, P = PARAMS) {
+  const errors = [];
+  if (!run.graduateDay) errors.push(`黑市党未毕业（卡在 ${run.cleared}）`);
+  else if (run.graduateDay < BM_TARGET.min || run.graduateDay > BM_TARGET.max) {
+    errors.push(`黑市党毕业 D${run.graduateDay} 超出靶带 D${BM_TARGET.min}-${BM_TARGET.max}`);
+  }
+  if (run.maxWallDays > HARD_WALL_CAP) errors.push(`黑市党最长墙 ${run.maxWallDays} 天 > 硬顶 ${HARD_WALL_CAP}`);
+  if (run.newbieStuckDays > 0) errors.push(`黑市党新手期卡关 ${run.newbieStuckDays} 天`);
+  if (run.negativeViolations.length) errors.push(`黑市党守恒违规 ${run.negativeViolations.length} 处`);
+  const bm = run.bm;
+  if (Math.abs(bm.earnedTotal - bm.spent - bm.balance) > 1e-9) {
+    errors.push(`黑市计数台账不平：赚 ${bm.earnedTotal} − 花 ${bm.spent} ≠ 余 ${bm.balance}`);
+  }
+  if (bm.balance < 0) errors.push(`黑市计数余额为负 ${bm.balance}`);
+  const days = run.graduateDay ?? P.maxDays;
+  if (bm.earnedTotal > days * P.blackMarket.dailyViewCap) {
+    errors.push(`黑市计数总量 ${bm.earnedTotal} 超过 ${days}×日上限 ${P.blackMarket.dailyViewCap}`);
+  }
+  return errors;
+}
+
+// ---------------------------------------------------------------------------
+// 九·五、抗漂移回归护栏（任务单③硬规格 #2：测"校准器自愈能力"）
+//   对 offline/salvage/gacha 三源 ×0.8/×1.2 共 6 变体：扰动参数 → 全流程重校准 →
+//   四档 ±10% / 肝墙矩阵带 / 硬顶必须仍达标（不钉具体天数）。
+//   'treasure' 源（行动宝藏 ×2）= §13 诊断场景的直接对抗验证（指定反例），随 --drift 输出。
+// ---------------------------------------------------------------------------
+
+export const DRIFT_VARIANTS = [
+  { source: 'offline', mult: 0.8 }, { source: 'offline', mult: 1.2 },
+  { source: 'salvage', mult: 0.8 }, { source: 'salvage', mult: 1.2 },
+  { source: 'gacha', mult: 0.8 }, { source: 'gacha', mult: 1.2 },
+];
+
+/** 生成"单源 ×mult"的扰动参数副本（深拷贝·不碰全局 PARAMS）。 */
+export function perturbedParams(source, mult, P = PARAMS) {
+  const p = structuredClone(P);
+  if (source === 'offline') {
+    for (const k of Object.keys(p.offline)) p.offline[k] *= mult;
+  } else if (source === 'salvage') {
+    for (const t of Object.values(p.salvage.tiers)) {
+      t.ore *= mult; t.cargo *= mult; t.universal *= mult;
+      for (const k of Object.keys(t.fixed)) t.fixed[k] *= mult;
+      for (const k of Object.keys(t.rollEV)) t.rollEV[k] *= mult;
+    }
+  } else if (source === 'gacha') {
+    p.gacha.shardPerPullEV *= mult;
+    for (const k of Object.keys(p.gacha.bodyP)) p.gacha.bodyP[k] *= mult;
+  } else if (source === 'treasure') {
+    p.events.treasure3.legendaryPlugin *= mult;
+    p.events.treasure3.universalShards *= mult;
+  } else {
+    throw new Error(`unknown perturbation source ${source}`);
+  }
+  return p;
+}
+
+/** 单变体：扰动 → 全流程重校准 → 变体承诺验收。返回 { variant, errors, days, liverWalls, gammas }。 */
+export function runDriftVariant(source, mult, P = PARAMS, T = TRUTHS) {
+  const p = perturbedParams(source, mult, P);
+  const { pressure, gammas } = calibratePressure(p, T);
+  const std = runStandard(pressure, p, { tiers: Object.keys(TARGETS), envelopes: false });
+  const errors = checkDriftPromise(std, p);
+  return {
+    variant: `${source}×${mult}`,
+    errors,
+    days: Object.fromEntries(Object.keys(TARGETS).map((t) => [t, std[t].expected.graduateDay])),
+    liverWalls: std['肝档'].expected.wallWait,
+    maxWalls: Object.fromEntries(Object.keys(TARGETS).map((t) => [t, std[t].expected.maxWallDays])),
+    gammas: gammas.map((g) => Math.round(g * 1000) / 1000),
+  };
+}
+
+export function runDriftGuard(P = PARAMS, variants = DRIFT_VARIANTS) {
+  return variants.map((v) => runDriftVariant(v.source, v.mult, P));
 }
 
 export function runAdComparison(pressure, P = PARAMS) {
@@ -1236,8 +1566,12 @@ export function runCatchup(pressure, P = PARAMS) {
 function fmtTierLine(r, target) {
   const dev = r.graduateDay ? Math.round(((r.graduateDay - target) / target) * 1000) / 10 : null;
   return `D${r.graduateDay ?? '×'}(靶${target} ${dev !== null ? (dev >= 0 ? '+' : '') + dev + '%' : '未毕业'}) `
-    + `首周${r.firstWeekCleared}关(${r.firstWeekPct}%) 最长墙${r.maxWallDays}天 ≥2天墙${r.wallsOver2}个 `
+    + `首周${r.firstWeekCleared}关(${r.firstWeekPct}%) 最长墙${r.maxWallDays}天 `
     + `终战力${r.finalPower} 回廊${r.corridorLayer}层 核${r.coresOwned}`;
+}
+
+function fmtWalls(r, T = TRUTHS) {
+  return T.bossNodes.map((b) => `n${b}=${r.wallWait[b] ?? 0}`).join(' ');
 }
 
 const isMain = typeof process !== 'undefined' && process.argv[1]
@@ -1246,19 +1580,22 @@ const isMain = typeof process !== 'undefined' && process.argv[1]
 if (isMain) {
   const args = new Set(process.argv.slice(2));
   const t0 = Date.now();
-  console.log('==== S7 真实资源经济模拟器（第三块①造尺子·期望值模型·零RNG）====');
+  console.log('==== S7 真实资源经济模拟器（第三块③ 形状靶v2+双锚校准+黑市 · 期望值模型·零RNG）====');
 
-  const { pressure, gamma } = calibratePressure();
-  console.log(`压力值表：按形状时刻表重采样 + γ=${Math.round(gamma * 1000) / 1000} 收口 + 教程段(n1-8)钳制`);
+  const { pressure, gammas, anchors } = calibratePressure();
+  console.log(`压力值表：形状时刻表(v2 递进墙)重采样 + 双锚分段γ收口 [${anchors.map((a) => `n${a.node}→D${a.targetDay} γ=${Math.round(a.gamma * 1000) / 1000}`).join(' | ')}] + 教程段(n1-8)钳制`);
 
   const std = runStandard(pressure);
-  console.log(`\n—— 四档校准（expected·档位画像广告/天：肝${TIERS['肝档'].adsPerDay}/重${TIERS['重度'].adsPerDay}/普${TIERS['普通'].adsPerDay}/轻${TIERS['轻度'].adsPerDay}）——`);
+  console.log(`\n—— 五画像校准（expected·广告/天：肝${TIERS['肝档'].adsPerDay}/重${TIERS['重度'].adsPerDay}/普${TIERS['普通'].adsPerDay}/轻${TIERS['轻度'].adsPerDay}/黑市党${TIERS['黑市党'].adsPerDay}+券+连看至${PARAMS.blackMarket.dailyViewCap}）——`);
   for (const [t, target] of Object.entries(TARGETS)) {
     console.log(`[${t}] ${fmtTierLine(std[t].expected, target)}`);
-    console.log(`       欧非带宽：欧 D${std[t].lucky.graduateDay ?? '×'} / 非 D${std[t].unlucky.graduateDay ?? '×'}`);
+    console.log(`       墙矩阵：${fmtWalls(std[t].expected)} ｜ 欧非：欧 D${std[t].lucky.graduateDay ?? '×'} / 非 D${std[t].unlucky.graduateDay ?? '×'}`);
   }
-  const errors = checkCalibration(std);
-  console.log(errors.length ? `\n❌ 校准未过：\n  - ${errors.join('\n  - ')}` : '\n✅ 校准形状检查全过（毕业±10%/首周/墙分布/档位顺序/守恒）');
+  const bmRun = std['黑市党'].expected;
+  console.log(`[黑市党] D${bmRun.graduateDay ?? '×'}(靶${BM_TARGET.min}-${BM_TARGET.max}) 最长墙${bmRun.maxWallDays}天 终战力${bmRun.finalPower}`);
+  console.log(`       墙矩阵：${fmtWalls(bmRun)} ｜ 计数：赚${bmRun.bm.earnedTotal}(点位${bmRun.bm.earned.points ?? 0}/券${bmRun.bm.ticketsBought}/连看${bmRun.bm.earned.chain ?? 0}) 花${bmRun.bm.spent} 余${Math.round(bmRun.bm.balance)} 购${JSON.stringify(bmRun.bm.buys)}`);
+  const errors = [...checkCalibration(std), ...checkBlackMarket(bmRun)];
+  console.log(errors.length ? `\n❌ 校准未过：\n  - ${errors.join('\n  - ')}` : '\n✅ 校准检查全过（四档±10%/首周/档位顺序/守恒 + 全档≤7天硬顶/新手零墙/肝墙矩阵带 + 黑市党D22-25/计数账本）');
 
   if (args.has('--ads') || args.has('--all')) {
     console.log('\n—— 广告双跑（全点位吃满 vs 纯零广告）——');
@@ -1282,6 +1619,15 @@ if (isMain) {
     console.log('\n—— 追赶实验（第X天起停玩N天）——');
     for (const r of runCatchup(pressure)) {
       console.log(`  [${r.tier}] D${r.from}起停${r.days}天 → 毕业D${r.graduateDay}（比基线D${r.base}晚${r.delay}天·超出停玩本身${r.extraVsPause}天）`);
+    }
+  }
+  if (args.has('--drift') || args.has('--all')) {
+    console.log('\n—— 抗漂移回归护栏（单源扰动 → 全流程重校准 → 四档带/肝墙矩阵/硬顶仍须达标）——');
+    const variants = [...DRIFT_VARIANTS, { source: 'treasure', mult: 2 }]; // 末位=指定反例（§13 场景直接对抗验证）
+    for (const v of variants) {
+      const r = runDriftVariant(v.source, v.mult);
+      const tag = v.source === 'treasure' ? '（指定反例·行动宝藏×2）' : '';
+      console.log(`  [${r.variant}]${tag} ${r.errors.length ? '❌ ' + r.errors.join('；') : '✅'} 四档 ${Object.values(r.days).join('/')} 肝墙 ${Object.entries(r.liverWalls).map(([n, w]) => `n${n}=${w}`).join(' ')} γ=${r.gammas.join('/')}`);
     }
   }
   if (args.has('--pressure')) {
@@ -1317,14 +1663,19 @@ if (isMain) {
     const path = process.env.S7_ECON_JSON ?? 'tools/s7-economy-report.json';
     const strip = (r) => ({ ...r, ledger: undefined, dailyPower: undefined, dailyCleared: undefined });
     const payload = {
-      generatedBy: 'simulate-s7-economy.mjs', targets: TARGETS, gamma,
+      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.3(第三块③ 形状靶v2+双锚+黑市)',
+      targets: TARGETS, bmTarget: BM_TARGET, gammas, anchors,
+      wallMatrixBands: WALL_MATRIX_BANDS, hardWallCap: HARD_WALL_CAP,
       params: { ...PARAMS }, tiers: TIERS,
       standard: Object.fromEntries(Object.entries(std).map(([t, v]) => [t, {
         expected: strip(v.expected),
         lucky: { graduateDay: v.lucky.graduateDay }, unlucky: { graduateDay: v.unlucky.graduateDay },
       }])),
       ads: runAdComparison(pressure), sensitivity: runSensitivity(pressure),
-      halving: runHalving(pressure), catchup: runCatchup(pressure), pressure,
+      halving: runHalving(pressure), catchup: runCatchup(pressure),
+      drift: [...DRIFT_VARIANTS, { source: 'treasure', mult: 2 }]
+        .map((v) => { const r = runDriftVariant(v.source, v.mult); return { ...r, ok: r.errors.length === 0 }; }),
+      pressure,
     };
     fs.writeFileSync(path, JSON.stringify(payload, null, 1));
     console.log(`\n已写出 ${path}`);

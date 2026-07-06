@@ -4,7 +4,7 @@
 export interface S7ShapeTierParams { minutesPerDay: number; r: number; stuckBonus: number }
 export declare const SHAPE: {
   N: number; base: number; qStart: number; qEnd: number; curvePow: number;
-  bossPositions: number[]; bossSpike: number; P0: number;
+  bossSpikes: Record<number, number>; P0: number;
   SEC_PER_NODE: number; MAX_DAYS: number;
   tiers: Record<string, S7ShapeTierParams>;
 };
@@ -57,15 +57,40 @@ export declare const TRUTHS: {
   eventCycle7: number;
 };
 
-export declare const PARAMS: Record<string, any> & { maxDays: number };
+export interface S7SalvageTierDef {
+  ore: number; cargo: number; universal: number;
+  fixed: Record<string, number>; rolls: Record<string, number>; rollEV: Record<string, number>;
+}
+export interface S7BlackMarketGood { price: number; give: Record<string, number> }
+export declare const PARAMS: {
+  maxDays: number;
+  salvage: { minutes: number; tiers: Record<'common' | 'rare' | 'epic', S7SalvageTierDef>; accel: { price: number } };
+  events: {
+    cycle3: Record<string, number>; cycle7: Record<string, number>;
+    completion7: Record<string, number>; completionCore: number;
+    treasure3: { legendaryPlugin: number; universalShards: number };
+    completionThreshold: number;
+  };
+  blackMarket: {
+    unlockNode: number; dailyViewCap: number; ticketPrice: number; ticketPerDay: number;
+    goods: Record<string, S7BlackMarketGood>; rotation: string[][]; largeMinPrice: number; priority: string[];
+  };
+  pressureCalib: { iterations: number; blend: number; gammaLo: number; gammaHi: number; gammaSteps: number; anchorNodes: number[] };
+} & Record<string, any>;
 export interface S7EconTierProfile {
   minutesPerDay: number; sessionsPerDay: number; adsPerDay: number;
   dailyCompletion: number; eventCompletion: number;
   salvageRunsPerQueue: number; corridorMinutes: number; shoppingPower: number;
   tinkerBonus: number; consolationTries?: number; stallCorridorMult?: number;
+  bm?: { chain: boolean; buy: boolean; ticket: boolean };
 }
 export declare const TIERS: Record<string, S7EconTierProfile>;
 export declare const TARGETS: Record<string, number>;
+export declare const BM_TARGET: { tier: string; min: number; max: number };
+export declare const WALL_MATRIX_BANDS: Record<string, [number, number]>;
+export declare const WALL_MATRIX_BANDS_DRIFT: Record<string, [number, number]>;
+export declare const HARD_WALL_CAP: number;
+export declare const HARD_WALL_CAP_DRIFT_LIGHT: number;
 export declare const RESOURCE_KEYS: string[];
 
 export declare function regionOfNode(n: number, truths?: typeof TRUTHS): number;
@@ -81,7 +106,7 @@ export declare function teamPower(st: unknown, truths?: typeof TRUTHS): number;
 export interface S7EconRunOpts {
   envelope?: 'expected' | 'lucky' | 'unlucky';
   ads?: 'profile' | 'none' | 'full';
-  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards', boolean>>;
+  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket', boolean>>;
   incomeScale?: Record<string, number>;
   pause?: { from: number; days: number };
   runFullDays?: boolean;
@@ -94,7 +119,8 @@ export interface S7EconResult {
   firstWeekPct: number;
   maxWallDays: number;
   wallsOver2: number;
-  wallDays: Record<string, number>;
+  wallWait: Record<string, number>;
+  newbieStuckDays: number;
   finalPower: number;
   corridorLayer: number;
   coresOwned: number;
@@ -103,15 +129,30 @@ export interface S7EconResult {
   resources: Record<string, number>;
   negativeViolations: { day: number; key: string; value: number }[];
   adsUsedTotal: number;
+  bm: { balance: number; earnedTotal: number; earned: Record<string, number>; spent: number; buys: Record<string, number>; ticketsBought: number };
+  bmExtraPower: number;
   dailyCleared: number[];
   dailyPower: number[];
   ledger: { income: Record<string, Record<string, number>>; spend: Record<string, Record<string, number>> };
 }
+export interface S7PressureAnchor { node: number; targetDay: number; gamma: number }
 export declare function simulateEconomyTier(tierName: string, pressure: number[], opts?: S7EconRunOpts, P?: typeof PARAMS, T?: typeof TRUTHS): S7EconResult;
 export declare function seedPressureCurve(scaleGuess?: number): number[];
-export declare function calibratePressure(P?: typeof PARAMS, T?: typeof TRUTHS): { pressure: number[]; gamma: number };
-export declare function runStandard(pressure: number[], P?: typeof PARAMS): Record<string, { expected: S7EconResult; lucky: S7EconResult; unlucky: S7EconResult }>;
+export declare function gammaAt(n: number, anchors: S7PressureAnchor[]): number;
+export declare function calibratePressure(P?: typeof PARAMS, T?: typeof TRUTHS): {
+  pressure: number[]; gammas: number[]; anchors: S7PressureAnchor[]; schedule: number[];
+};
+export declare function runStandard(pressure: number[], P?: typeof PARAMS, opts?: { tiers?: string[]; envelopes?: boolean }): Record<string, { expected: S7EconResult; lucky?: S7EconResult; unlucky?: S7EconResult }>;
 export declare function checkCalibration(std: ReturnType<typeof runStandard>, P?: typeof PARAMS): string[];
+export declare function checkDriftPromise(std: ReturnType<typeof runStandard>, P?: typeof PARAMS): string[];
+export declare function checkBlackMarket(run: S7EconResult, P?: typeof PARAMS): string[];
+export declare const DRIFT_VARIANTS: { source: string; mult: number }[];
+export declare function perturbedParams(source: string, mult: number, P?: typeof PARAMS): typeof PARAMS;
+export declare function runDriftVariant(source: string, mult: number, P?: typeof PARAMS, T?: typeof TRUTHS): {
+  variant: string; errors: string[]; days: Record<string, number | null>;
+  liverWalls: Record<string, number>; maxWalls: Record<string, number>; gammas: number[];
+};
+export declare function runDriftGuard(P?: typeof PARAMS, variants?: { source: string; mult: number }[]): ReturnType<typeof runDriftVariant>[];
 export declare function runAdComparison(pressure: number[], P?: typeof PARAMS): Record<string, { fullDays: number | null; zeroDays: number | null; speedup: number | null; zeroMaxWall: number }>;
 export declare function runSensitivity(pressure: number[], P?: typeof PARAMS): { base: number | null; rows: { source: string; graduateDay: number | null; delta: number | string }[] };
 export declare function runHalving(pressure: number[], P?: typeof PARAMS): { base: number | null; rows: { source: string; graduateDay: number | null; delta: number | string }[] };

@@ -1,29 +1,35 @@
-// S7 毕业节奏模拟器（2026-07-02 重写）。
+// S7 毕业节奏模拟器（形状靶）。
 //
-// 背景：旧版本对着 Codex 03-04 v0.2 草案的 D7/D14/D21/D28 锚点校验 growth_band_param 等配置表——
-// 那套数值属于"Codex 旧配置"，按项目铁律（数值真源=B1+v1.0/v2.0设计，Codex 旧配置可无视/自由改，
-// 见记忆 numeric-truth-b1-v1-ignore-codex）已不再适用，随旧结论一起作废。
+// ============================================================================
+// 【v2 · 2026-07-06 递进墙拍板版（现行靶）】
+// Ron 2026-07-06 重定节奏形状（GDD-v2.0 §3"节奏取向"改写）：
+//   - 新手期 n001-n030 零墙纯爽推（全档）；
+//   - 墙时长随进度递进（肝党锚：n060≈1天 → n102≈2天 → n120≈3天 → n150≈4-5天）；
+//   - n084/n138 余势墙零等待（全档）；
+//   - 任何档位任何单墙 ≤7 天硬顶（仅毕业墙可近顶——轻度 n150=7 恰在顶上）；
+//   - 四档毕业 肝30/重37/普47/轻57 与首周清关 35-40% 不变。
+// 旧 v1 靶（六墙均匀 spike 1.8，2026-07-02 版）随该拍板【作废】，参数保留在下方
+// CURVE_PARAMS_V1_DEPRECATED 仅供历史对照，不再参与任何校验。
 //
-// 本版用途：GDD-v2.0 S2/S14"肝档≥30天毕业+每天不断档"拍板（2026-07-02）的落地模型。
-// 只建"形状"——用抽象战力单位模拟"关卡所需战力曲线" vs "玩家战力增长"，反推：
-//   ① 主线关卡大致要多少个 ② 难度曲线什么形状 ③ 轻/普/重/肝四档各自哪天毕业
-// 不是最终数值——真实星矿/合金/驾驶记录换算、抽卡出率、打捞产出等精确值留给阶段三"数值一次性校准"，
-// 那一步会把这里的"抽象战力"换成真实资源公式，曲线形状/关卡量以这里锁定的结果为基准。
+// v2 相对 v1 的实现差异（拟合过程见 任务单③ 完成报告 / 初值表 v0.3）：
+//   ① 光滑曲线完全不动（qStart/qEnd/curvePow 与 v1 相同）——递进感全部由尖峰表达；
+//   ② Boss 尖峰从"位置占比×统一 1.8"改为"真实节点号 × 每墙独立尖峰"
+//      （v1 用占比取整会算出 n083/n135，与真实拓扑 n084/n138 差 1-3 关，v2 顺带修正）；
+//   ③ 四档日成长率 r 相应回落（墙变矮 → 等待变少 → 毕业提前，r 下调把毕业日钉回四靶；
+//      各 r 取"恰好毕业靶日"可行区间的中点，区间宽 0.09-0.34pp，不在参数刀刃上）。
 //
-// 参考依据：
-// - GDD-v2.0.md S2/S14（肝档≥30天+每天不断档、毕业=主线全清、难度曲线参考《放置军团》）
-// - 放置军团实测节奏（2026-07-02 调研）：前期能连续快速推进，中期渐慢，
-//   少数几个"真大Boss"（如"魔导师"/"人王"）形成数天到更久的长墙，过了大Boss后明显加速——
-//   不是"每隔几关一个小卡点"的均匀分布，是"大量可连续推的关卡 + 少数几个真正难啃的大关卡"。
+// 用途不变：只建"形状"（抽象战力单位），是经济模拟器 simulate-s7-economy.mjs 的校准靶；
+// 该文件内嵌本模型只读副本（SHAPE），两处必须同步改、gate 测试钉住副本输出。
+// ============================================================================
 
 /**
- * 关卡所需战力曲线：
- * - 平滑段按 q(n) 复利增长，q 本身随 n 从 qStart 渐进抬升到 qEnd（curvePow 控制"前松后紧"的陡峭程度，
- *   越大越front-loaded：前期几乎不设防，后期才明显变陡）。
- * - bossPositions（0~1 的进度占比）标记"真大Boss"节点，该节点所需战力在平滑值基础上乘 bossSpike，
- *   形成真正的长墙（呼应放置军团"卡在少数几个大Boss"的体验）。
+ * 关卡所需战力曲线 v2：
+ * - 平滑段与 v1 同构：按 q(n) 复利增长，q 随 n 从 qStart 渐进抬升到 qEnd（curvePow 控制前松后紧）。
+ * - bossSpikes：{节点号: 尖峰倍数}，该节点所需战力 = 平滑值 × 尖峰。
+ *   递进墙 = 尖峰随进度抬升（1.12 → 1.26 → 1.30 → 1.42）；
+ *   n084/n138 尖峰 ≈1（余势墙：叙事上是 Boss，数值上破前墙的余势当天带过、零等待）。
  */
-function buildRequiredCurve({ N, base, qStart, qEnd, curvePow, bossPositions, bossSpike }) {
+function buildRequiredCurveV2({ N, base, qStart, qEnd, curvePow, bossSpikes }) {
   const smooth = [0, base];
   for (let n = 2; n <= N; n++) {
     const t = Math.pow((n - 1) / (N - 1), curvePow);
@@ -31,19 +37,16 @@ function buildRequiredCurve({ N, base, qStart, qEnd, curvePow, bossPositions, bo
     smooth[n] = smooth[n - 1] * (1 + q);
   }
   const actual = [...smooth];
-  for (const pos of bossPositions) {
-    const n = Math.round(pos * N);
-    actual[n] = smooth[n] * bossSpike;
+  for (const [node, spike] of Object.entries(bossSpikes)) {
+    actual[Number(node)] = smooth[Number(node)] * spike;
   }
   return actual;
 }
 
 /**
- * 单档玩家逐日模拟：
- * - power 按每日复利 r 增长（对应"离线/建筑/打捞都随进度滚雪球"，时间锁为主）。
- * - 撞墙（power 不够下一关）当天额外加 stuckBonus（对应"卡关缓冲"重刷已首通关卡的小额奖励，
- *   固定量、不随 power 增大而增大——天然形成"越到后期边际作用越小"）。
- * - maxNodesPerDay 是会话时长换算的"物理能点得过来的关数"上限（安全阀，正常不应触发到）。
+ * 单档玩家逐日模拟（与 v1 逐行同算法）：
+ * - power 按每日复利 r 增长；撞墙当天额外加 stuckBonus（固定量，后期边际递减）。
+ * - maxNodesPerDay 是会话时长换算的"物理能点得过来的关数"上限。
  */
 function simulateTier({ N, required, P0, r, stuckBonus, maxNodesPerDay, maxDays }) {
   let power = P0;
@@ -64,86 +67,133 @@ function simulateTier({ N, required, P0, r, stuckBonus, maxNodesPerDay, maxDays 
   return { graduateDay: null, dailyLog, cleared };
 }
 
-function zeroStreaks(log) {
-  const streaks = [];
+/** 逐墙零清等待天数 + 新手期卡关天数 + 最长零清连段（v2 墙指标口径：整天零推进才算等待）。 */
+function wallMetrics(dailyLog, bossNodes, newbieUntil) {
+  const wallWait = Object.fromEntries(bossNodes.map((b) => [b, 0]));
+  let cleared = 0;
+  let newbieStuck = 0;
+  let maxWall = 0;
   let cur = 0;
-  for (const v of log) {
-    if (v === 0) cur++;
-    else { if (cur > 0) streaks.push(cur); cur = 0; }
+  for (const c of dailyLog) {
+    if (c === 0) {
+      cur++;
+      if (cleared < newbieUntil) newbieStuck++;
+      const next = cleared + 1;
+      if (wallWait[next] !== undefined) wallWait[next]++;
+    } else {
+      cur = 0;
+    }
+    maxWall = Math.max(maxWall, cur);
+    cleared += c;
   }
-  if (cur > 0) streaks.push(cur);
-  return streaks;
+  return { wallWait, newbieStuck, maxWall };
 }
 
-// ---- 2026-07-02 锁定参数（Ron 确认的"形状"，见 GDD-v2.0.md S2/S14）----
-// N=150 是本轮建模的工作基线；综合前后两轮探索，150-190 都是合理量级，
-// 精确关卡量由阶段二"内容铺量"实际填充节奏 + 阶段三数值校准共同定稿，此处先按 150 出结果。
-const CURVE_PARAMS = {
+// ---- v1 参数（2026-07-02 锁定 → 2026-07-06 作废·仅历史对照）----
+// 作废原因：Ron 2026-07-06 拍板"递进墙"，六墙均匀 1.8× 的旧形状不再是靶。
+const CURVE_PARAMS_V1_DEPRECATED = {
   N: 150,
   base: 100,
   qStart: 0.003,
   qEnd: 0.03,
   curvePow: 1.1,
-  bossPositions: [0.4, 0.55, 0.68, 0.8, 0.9, 1.0], // 6 个"真大Boss"节点位置（进度占比）
+  bossPositions: [0.4, 0.55, 0.68, 0.8, 0.9, 1.0],
   bossSpike: 1.8,
+  P0: 100,
+  tiers: {
+    轻度: { minutesPerDay: 15, r: 0.050, stuckBonus: 1 },
+    普通: { minutesPerDay: 35, r: 0.060, stuckBonus: 2 },
+    重度: { minutesPerDay: 90, r: 0.072, stuckBonus: 4 },
+    肝档: { minutesPerDay: 150, r: 0.085, stuckBonus: 7 },
+  },
+};
+
+// ---- v2 锁定参数（2026-07-06 递进墙拍板 · 任务单③拟合定稿）----
+// 尖峰选定说明（端到端扫描定稿·过程记初值表 v0.3）：s102/s120/s150 不是只按形状层
+// 拟合，而是"形状约束 × 经济模拟实测"联合选优——经济层轻度末期日成长 ≈ 肝档一半，
+// s120≥1.30 会让轻度 n120 卡 8 天破硬顶；s150≥1.42 让轻度 n150 破顶。最终组合让
+// 经济层肝档矩阵落 1/2/3/2、轻度双末墙贴顶 7、全档硬顶不破。
+// ⚠️ 已知偏差（体验级·报 Ron）：经济层肝档"毕业墙 n150"实测 2-3 天，达不到 GDD §3
+// 的 ≈4-5 天——肝:轻末期成长比 ≈2×，同一堵墙"肝 ≥4 天"⇔"轻 ≥12 天"必破 7 天硬顶，
+// 两约束在经济层互斥；按任务单优先级（硬顶=锁定决策 > 矩阵=容差自定）取硬顶。
+const CURVE_PARAMS_V2 = {
+  N: 150,
+  base: 100,
+  qStart: 0.003,
+  qEnd: 0.03,
+  curvePow: 1.1,
+  // 六 Boss 真实节点号（= generate-s7-mainline-topology 墙位）× 递进尖峰
+  bossSpikes: { 60: 1.12, 84: 1.01, 102: 1.24, 120: 1.27, 138: 1.0, 150: 1.38 },
   P0: 100,
 };
 
-const SEC_PER_NODE = 45; // 一关"已有把握"的处理耗时估算：想阵容+确认+观战+收奖+推进
-const TIERS = {
-  轻度: { minutesPerDay: 15, r: 0.050, stuckBonus: 1 },
-  普通: { minutesPerDay: 35, r: 0.060, stuckBonus: 2 },
-  重度: { minutesPerDay: 90, r: 0.072, stuckBonus: 4 },
-  肝档: { minutesPerDay: 150, r: 0.085, stuckBonus: 7 },
+const SEC_PER_NODE = 45;
+const NEWBIE_UNTIL = 30; // n001-n030 新手期零墙（含首Boss n030 本身当天可过）
+const HARD_WALL_CAP = 7; // 任何档位任何单墙 ≤7 天（锁定决策）
+const TIERS_V2 = {
+  // r = 恰好毕业靶日可行区间中点（区间宽 0.09-0.33pp·不在刀刃上）
+  轻度: { minutesPerDay: 15, r: 0.0452, stuckBonus: 1 },
+  普通: { minutesPerDay: 35, r: 0.0528, stuckBonus: 2 },
+  重度: { minutesPerDay: 90, r: 0.0637, stuckBonus: 4 },
+  肝档: { minutesPerDay: 150, r: 0.0741, stuckBonus: 7 },
 };
+const GRAD_TARGETS = { 肝档: 30, 重度: 37, 普通: 47, 轻度: 57 };
+// 肝党锚墙矩阵靶（形状层·零清等待天数）：n060=1 / n102=2 / n120=2-3（GDD ≈3 的 −1 容差，
+// 换轻度经济层不破硬顶·记档）/ n150=4-5（形状层毕业墙保持最长）；n084/n138=0
+const LIVER_WALL_TARGET = { 60: [1, 1], 84: [0, 0], 102: [2, 2], 120: [2, 3], 138: [0, 0], 150: [4, 5] };
 const MAX_DAYS = 90;
 
 function run() {
-  const required = buildRequiredCurve(CURVE_PARAMS);
-  console.log(`==== S7 毕业节奏模拟（N=${CURVE_PARAMS.N}，抽象战力单位，非最终数值）====`);
-  console.log(`难度曲线：qStart=${CURVE_PARAMS.qStart} qEnd=${CURVE_PARAMS.qEnd} curvePow=${CURVE_PARAMS.curvePow}（前松后紧）；真Boss节点=${CURVE_PARAMS.bossPositions.length}个，spike=${CURVE_PARAMS.bossSpike}x`);
+  const P = CURVE_PARAMS_V2;
+  const required = buildRequiredCurveV2(P);
+  const bossNodes = Object.keys(P.bossSpikes).map(Number);
+  console.log(`==== S7 毕业节奏模拟 v2（N=${P.N}，递进墙 · 抽象战力单位，非最终数值）====`);
+  console.log(`光滑曲线：qStart=${P.qStart} qEnd=${P.qEnd} curvePow=${P.curvePow}（与 v1 相同）`);
+  console.log(`递进尖峰：${bossNodes.map((b) => `n${b}=${P.bossSpikes[b]}`).join(' ')}（旧 v1 均匀 1.8× 已作废）`);
 
   const results = {};
-  for (const [tier, t] of Object.entries(TIERS)) {
+  for (const [tier, t] of Object.entries(TIERS_V2)) {
     const maxNodesPerDay = Math.max(1, Math.floor((t.minutesPerDay * 60) / SEC_PER_NODE));
-    const sim = simulateTier({ N: CURVE_PARAMS.N, required, P0: CURVE_PARAMS.P0, r: t.r, stuckBonus: t.stuckBonus, maxNodesPerDay, maxDays: MAX_DAYS });
-    const clearedLog = sim.dailyLog.slice(0, sim.graduateDay ?? sim.dailyLog.length);
-    const streaks = zeroStreaks(clearedLog);
+    const sim = simulateTier({ N: P.N, required, P0: P.P0, r: t.r, stuckBonus: t.stuckBonus, maxNodesPerDay, maxDays: MAX_DAYS });
+    const log = sim.dailyLog.slice(0, sim.graduateDay ?? sim.dailyLog.length);
+    const m = wallMetrics(log, bossNodes, NEWBIE_UNTIL);
     results[tier] = {
-      minutesPerDay: t.minutesPerDay,
       graduateDay: sim.graduateDay,
-      firstWeekCleared: clearedLog.slice(0, 7).reduce((a, b) => a + b, 0),
-      maxWallDays: streaks.length ? Math.max(...streaks) : 0,
-      wallsOver2Days: streaks.filter((s) => s >= 2).length,
+      firstWeekCleared: log.slice(0, 7).reduce((a, b) => a + b, 0),
+      ...m,
     };
-    const status = sim.graduateDay
-      ? `第${sim.graduateDay}天毕业`
-      : `MAX_DAYS(${MAX_DAYS})内未毕业，卡在第${sim.cleared}关`;
-    console.log(`\n[${tier}档 ${t.minutesPerDay}分钟/天] ${status}`);
-    console.log(`  首周清关数=${results[tier].firstWeekCleared}（共${CURVE_PARAMS.N}关的${Math.round((results[tier].firstWeekCleared / CURVE_PARAMS.N) * 100)}%）`);
-    console.log(`  最长单次卡关=${results[tier].maxWallDays}天，≥2天的卡关次数=${results[tier].wallsOver2Days}`);
+    const status = sim.graduateDay ? `第${sim.graduateDay}天毕业` : `MAX_DAYS(${MAX_DAYS})内未毕业，卡在第${sim.cleared}关`;
+    console.log(`\n[${tier}档 ${t.minutesPerDay}分钟/天 r=${t.r}] ${status}`);
+    console.log(`  首周清关=${results[tier].firstWeekCleared}（${Math.round((results[tier].firstWeekCleared / P.N) * 1000) / 10}%）  最长墙=${m.maxWall}天  新手期卡关=${m.newbieStuck}天`);
+    console.log(`  墙矩阵（零清等待天数）：${bossNodes.map((b) => `n${b}=${m.wallWait[b]}`).join(' ')}`);
   }
 
-  // ---- 校验：呼应 GDD-v2.0 S2 拍板的方向性约束（不是精确数值断言，是形状健康度检查）----
+  // ---- v2 形状校验（任务单③硬规格#1 全量）----
   const errors = [];
-  if (!results['肝档'].graduateDay || Math.abs(results['肝档'].graduateDay - 30) > 5) {
-    errors.push(`肝档毕业天数偏离30天目标过多：${results['肝档'].graduateDay}`);
+  for (const [tier, target] of Object.entries(GRAD_TARGETS)) {
+    if (results[tier].graduateDay !== target) errors.push(`${tier}毕业 D${results[tier].graduateDay} ≠ 靶 ${target}（v2 靶四档钉死）`);
   }
-  const order = ['肝档', '重度', '普通', '轻度'].map((t) => results[t].graduateDay);
-  for (let i = 1; i < order.length; i++) {
-    if (!(order[i] > order[i - 1])) errors.push(`档位毕业天数顺序不对：应肝<重<普<轻，实际=${JSON.stringify(order)}`);
+  for (const [node, [lo, hi]] of Object.entries(LIVER_WALL_TARGET)) {
+    const w = results['肝档'].wallWait[node];
+    if (w < lo || w > hi) errors.push(`肝档 n${node} 墙 ${w} 天，靶 ${lo === hi ? lo : `${lo}-${hi}`}`);
   }
-  if (results['肝档'].firstWeekCleared < CURVE_PARAMS.N * 0.25) {
-    errors.push(`肝档首周清关占比过低（<25%），不满足"前期推得爽"的形状要求`);
+  for (const [tier, r] of Object.entries(results)) {
+    if (r.newbieStuck > 0) errors.push(`${tier}新手期（n001-n030）卡关 ${r.newbieStuck} 天，应零墙`);
+    if (r.maxWall > HARD_WALL_CAP) errors.push(`${tier}最长墙 ${r.maxWall} 天 > 硬顶 ${HARD_WALL_CAP}`);
+    for (const b of [84, 138]) {
+      if (r.wallWait[b] > 0) errors.push(`${tier} n${b} 余势墙等待 ${r.wallWait[b]} 天，应零等待`);
+    }
   }
+  const fwPct = (results['普通'].firstWeekCleared / P.N) * 100;
+  if (fwPct < 35 || fwPct > 40) errors.push(`普通档首周清关 ${Math.round(fwPct * 10) / 10}% 超出 35-40%`);
 
   console.log(`\n==== 结果 ====`);
   if (errors.length > 0) {
-    console.error('形状校验未通过:');
+    console.error('v2 形状校验未通过:');
     for (const e of errors) console.error(`  - ${e}`);
     process.exit(1);
   }
-  console.log('形状校验通过（肝档≈30天毕业、四档顺序正确、首周清关占比达标）');
+  console.log('v2 形状校验通过（四档毕业钉靶、肝墙递进 1/2/3/4-5、新手零墙、全档 ≤7 天硬顶、n084/n138 零等待、普通首周 35-40%）');
 }
 
 run();
