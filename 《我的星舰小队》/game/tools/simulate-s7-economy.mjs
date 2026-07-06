@@ -1235,6 +1235,9 @@ function summarize(tierName, st, opts, P, T) {
     coresOwned: Math.round(st.coresOwned * 10) / 10,
     mains: st.mains.map((m) => ({ shipTier: m.ship.tier, shipLv: m.ship.level, star: m.pilot.star, pilotLv: m.pilot.level })),
     offShards: { ship: Math.round(st.offShardsShip), pilot: Math.round(st.offShardsPilot) },
+    // 观测口（②审计补查·2026-07-06）：插件池与人口终态——插件/人口不在 14 键钱包，此前无源池汇可见性
+    plugins: { fine: Math.round(st.plugins.fine * 10) / 10, superior: Math.round(st.plugins.superior * 10) / 10, legendary: Math.round(st.plugins.legendary * 10) / 10 },
+    population: { residents: Math.round(st.residents * 10) / 10, workers: Math.round(st.workers * 10) / 10 },
     resources: Object.fromEntries(RESOURCE_KEYS.map((k) => [k, Math.round(st.res[k] * 10) / 10])),
     negativeViolations: st.negativeViolations,
     adsUsedTotal: st.adsUsedTotal,
