@@ -195,10 +195,12 @@ export const TRUTHS = {
 
   salvageTimeMult: { h2: 1, h8: 2.2, h24: 3.8 }, // 每小时效率递减（0.50/0.28/0.16），每信标收益随时长递增
 
-  bountyDailyCards: 4,
+  // 护航委托（任务单⑧总修订案：张数 4→3、明保底替代"金8%+暗保底"、难度四档自选）
+  bountyDailyCards: 3,
   bountyQualityMult: { bronze: 1, silver: 1.6, gold: 3 },
-  bountyGoldPity: 4,
-  bountyPerfectMult: 1.25,
+  bountyGoldEveryDays: 3,  // 明保底：每 3 天必出 1 张金色
+  bountySilverPerDay: 1,   // 明保底：每天 3 张必含 ≥1 张银色
+  bountyPerfectMult: 1.25, // 运输船满血 ×1.25 彩蛋（沿用·达成率=画像 bountyPerfect）
   bountyAmbushRate: 0.15,
   bountyAmbushLossPct: 0.30,
   bountyBoardCap: [12, 16, 20],
@@ -234,14 +236,25 @@ export const PARAMS = {
   patrolDockPctPerShip: 4,
   patrolDockMax: 10,
 
-  // 悬赏板（基础/张·×星域系数×品质期望；护航=合金+星贝、演习=驾驶记录）
-  // 任务单⑤参与度真分层：可打张数=min(积压, 意愿, 剩余分钟, 画像辅助战斗预算 bountyMinutes)；
-  // 恶补意愿 bountyCatchup 按画像（见 TIERS）；卡关日预算 ×stallBudgetMult（墙期"有仗可打"
-  // 由悬赏/回廊承担=S8 口径，与 stallCorridorMult 同一先例——不是放水，是卡关日玩家真有闲）。
+  // 护航委托（任务单⑧重构：3 张全护航＋难度四档自选，演习记录剥离进 drill 木桩）
+  // 张数四约束沿用任务单⑤（min(积压, 意愿, 剩余分钟, 分钟预算)·恶补/预算按画像·真墙日 ×2）。
+  // 量值推导（§18 记档）：老模型 4 张=2 护航×550+2 演习×370；"单张 ×4/3"在护航/演习拆分口径下
+  // 换算为"委托日总额不变"起步——3 张全护航锚老 2 张护航日总额 1100 合金基值 → 单张 base≈520
+  //（×难度均值后正中）；难度倍率接管一半进度缩放（coefPow 0.5，同星矿 ^0.5 先例），
+  // 早期(新手档×0.7·coef1)≈老量、后期(噩梦×2.2·coef10.5^0.5)≈老量——总弧形状不动、份额不漂。
   bounty: {
-    escortAlloy: 550, escortCargo: 20, // B1 任务单⑤：200→550（×2.75·悬赏=军饷第一单源 40-55%）
-    drillToken: 370,                   // B1 任务单⑤：135→370（×2.74·演习=驾驶记录第一单源）
-    goldRate: 0.08,
+    escortAlloy: 495, escortCargo: 20, // 第4轮 520→495：普通档委托份额 54.4% 贴带顶回中（靶≈50±3）
+    coefPow: 0.6, // 星域系数取 ^0.6（第3轮 0.5→0.6：末段委托成长太平→零广告终局墙9天/bounty×1.2 普通墙8）：难度爬档已是显式进度倍率，全系数会双重计progression
+    // 难度四档（总修订案 1a·倍率表与推荐战力=数值域自定·曲线节奏锚 Ron 方向）：
+    // 推荐战力挂压力值表定点（新手n10/普通n55/困难n98/噩梦n130）——随校准器自动重校，
+    // 节奏兑现：普通档 D1 碾新手→D8-9 碾普通→D24-26 碾困难→D38-40 碾噩梦收菜。
+    difficulty: {
+      mults: { novice: 0.7, normal: 1.0, hard: 1.5, nightmare: 2.2 },
+      recNodes: { novice: 10, normal: 55, hard: 98, nightmare: 130 },
+      crushRatio: 1.15,   // 战力 ≥1.15×推荐 = 稳赢（模型胜率 1.0）
+      probeMinRatio: 0.90, // 试探上一档的战力下限（第2轮 0.75→0.85→第5轮 0.90：试探红利太靠前反复熔肝 n120 墙）
+      failFloor: 0.55,    // 胜率线性带下沿：ratio≤0.55 必败、≥crushRatio 必胜
+    },
     goldPhysical: { beaconCommon: 1 / 3, shipBlueprint: 1 / 3, supplyTicket: 1 / 3 },
     ambushWinBonus: { shipBlueprint: 0.5, supplyTicket: 0.5 },
     perfectRate: 0.5, // 画像无 bountyPerfect 时的回退值（分层见 TIERS·任务单⑤）
@@ -250,18 +263,57 @@ export const PARAMS = {
     stallBudgetMult: 2,
   },
 
+  // 演习木桩（任务单⑧总修订案 1b·产驾驶记录=原演习份额移此）：60 秒计分窗、20 档
+  // （15-20 带上限·低档密高档疏=等比阈值），打到第 N 档领 1..N 全部奖励、每日重置。
+  // 档位阈值挂队伍 DPS（⑥细表 §9 量纲 d≈0.40 DPS/战力 → 60 秒总伤 ≈24×战力）：
+  // 阈值 8k×1.2655^k 覆盖战力 ≈333（新手前）到 ≈29k（毕业+）；奖励表=记录币配平位，
+  // 无星域系数（档位表自身即进度缩放——老演习 2×370×1.42×coef 的轨迹由 cum(档) 复现：
+  // 档7≈1050/档20≈11000 对齐老 coef 1→10.5 弧）。
+  // 结构修正（第6轮记档）：18 档→20 档——18 档时顶部档距 30%、战力 2.2-2.9 万整段
+  // 零跨档，全档终局记录收入平掉（普通/轻度 n150 贴顶 7、黑市党 D26 差 1 天的共同根因）。
+  drill: {
+    dps: 0.40, windowSec: 60,
+    thresholdBase: 8000, thresholdGrowth: 1.2577, tiers: 20, // 顶档=战力≈26k（毕业段可达·1.2655 时顶档 29k 全档摸不到=白档）
+    rewardBase: 90, rewardGrowth: 1.165,
+    minutes: 2, // 打到可达档的强制日常耗时（自愿实验时长不计=1c 口径）
+  },
+
   // 每日推演（n040 后·首胜）
   puzzle: { starCargo: 30, shipBlueprint: 2.5, minutes: 2.0 },
 
   // 今日补给箱（#2 广告点位）
   supplyChest: { hullAlloy: 35, pilotToken: 25, starCargo: 10, beaconCommon: 0.25, universal: 1.0 },
 
-  // 商人小站
+  // 商人小站（任务单⑧总修订案四：百货商店化——常驻区应急+稀有格 Lv 节奏+广告券不限购+Lv10 九折）
   merchant: {
-    ticketPrice: 80, ticketDailyCap: 50, // 40→55：B3 打捞券下架的等量补回主口（星贝可负担时才买=顺带加宽星贝 sink）
+    ticketPrice: 80, ticketDailyCap: 50, // 补给券：每日限购=抽卡节奏唯一阀门（铁律例外·照旧）
+    adTicketPrice: 70,                   // 广告券：常驻不限购·价适中偏低（60-80 带取 70·购买=画像按需 TIERS.adTickets）
     cargoReserve: 150,
     richThreshold: 800,
-    basket: { beaconRare: { p: 1.2, price: 300 }, finePlugin: { p: 0.35, price: 320 }, coreFrag5: { p: 0.10, price: 500 } }, // 篮子停售普通信标改售稀有（审计矩阵建议·星贝真 sink+全档稳定稀有流·治轻度末期掉速）；coreFrag5 p 0.15→0.10（B4）
+    // 稀有格（Lv1×1 / Lv4×2 / Lv7×3 满·每日互不重复各限购 1·权重升级 Lv2/5/8）：
+    // 池 6 品类；流通核 Lv5 极低频入池 → Lv8 升低频（S10.3 终版）。旧"轮换篮子"三件
+    // （稀有信标/核碎包）归入本结构，精良插件移常驻区——起步流量对齐 v0.5 篮子防校准冲击。
+    rare: {
+      slotsByLv: [0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3], // 下标=商人小站等级
+      pool: {
+        beaconRare:   { w: 0.34, price: 300, minLv: 1, give: { beaconRare: 1 } },
+        superiorPlugin: { w: 0.20, price: 450, minLv: 1, give: { superior: 1 } },
+        coreFragSmall: { w: 0.10, price: 500, minLv: 1, give: { coreFrag: 5 } },   // 第1轮：0.18→0.10（核心跳超发主源之一）
+        beaconEpic:   { w: 0.08, price: 800, minLv: 2, give: { beaconEpic: 1 } },  // Lv2 权重①：史诗信标现身
+        coreFragBig:  { w: 0.05, price: 1150, minLv: 2, give: { coreFrag: 12 } },  // 星核碎片大包（低频·第1轮 0.12→0.05）
+        flowCore:     { w: 0.02, wLv8: 0.05, price: 1200, minLv: 5, give: { flowCore: 1 } }, // 流通核彩蛋 Lv5→Lv8 升频
+      },
+    },
+    // 常驻区应急（"比正常渠道贵一截→平时不买、关键应急"·缺料触发建模两项+精良插件常驻）：
+    // ①打捞队闲置（信标<队数）→ 按贵价补普通信标保打捞不断档；②真墙日军饷应急小包
+    //（价劣·墙期星贝富余才买）。星矿包/合金包日常价劣不建常购模型（=设计"平时不买"的如实体现）。
+    staple: {
+      beaconCommonPrice: 60,          // vs 回收价 25 = "贵一截"的应急定位
+      wallPack: { cargoCost: 120, hullAlloy: 90, pilotToken: 60, capPerDay: 3 },
+      finePlugin: { p: 0.35, price: 320 }, // 精良插件不限（沿用 v0.5 篮子流量）
+    },
+    discountLv10: 0.9,               // Lv10 全场商品 9 折（满级终身被动）
+    recycleStep: { beacon: 3, plugin: 15 }, // Lv3/6/9 回收价各升一档（信标 25→28→31→34·插件 150→165→180→195）
     minutes: 0.8,
   },
 
@@ -309,7 +361,11 @@ export const PARAMS = {
     adExtraPickMult: 0.9,
   },
 
-  // 教程期定向投放（GDD-M"首Boss前刚好养出 1 艘 S 阶"·人人相同·计入初值表）
+  // 教程期定向投放（GDD-M"首Boss前刚好养出 1 艘 S 阶"·人人相同·计入初值表）。
+  // ⚠️ 模型粒度如实记档（任务单⑧ milestones 导出口曝光）：模型普通档 D2 即打 n030
+  //（首个 3 天行动宝藏 D3 才结算），n030 开打时主力1=A 阶+257 碎片、S 阶落 D3-4（n040 前）
+  // ——与 GDD-M 铁律差半步是"事件未到"的时序问题非碎片量问题（15/关实测治不了还搅首周），
+  // 与"行动宝藏对首Boss助力"验收补充一并挂第二段校。
   tutorialGrant: { perNodeMainShard: 13, untilNode: 30, firstEventMainShard: 60 },
 
   // 抽卡（S10.1 碎片化）
@@ -320,8 +376,17 @@ export const PARAMS = {
     poolSizeShips: 18, poolSizePilots: 20,
   },
 
-  // 星核渠道量值
-  core: { synthesisFragCost: 60, vaultBasePrice: 70, distinctPool: 13 }, // B4/B7 联动：宝库 80→70——宝石线=扰动免疫渠道（回廊+货舱），降基价给第 2-4 颗核提前量，治轻度事件粮打折的结构性韧性缺口（§15）
+  // 星核渠道矩阵（任务单⑧总修订案二：常规14+毕业2 两层·合成改开蛋·宝库 8流通统一价+2毕业更贵）
+  core: {
+    synthesisFragCost: 60,
+    eggStrongWeight: 0.035, // 开蛋 13 常规池：2 颗强常规各 3.5%（合成头奖低权重）、其余 11 颗均分
+    // 宝库价格重排（任务单⑧·B7 msGem 攒钱线口径保持=回廊宝石收入线不动）：统一价拉平了
+    // 老 ×1.5 递增梯度（同量宝石可买核数翻倍=第 1 轮实测核通胀主源），基价上调对冲：
+    vaultFlowPrice: 110,    // 8 流通款统一价（第3轮 95→110：中后期心跳 2.8 天/颗仍偏热）
+    vaultGradPrice: 200,    // 2 毕业核更贵（≈2.1×·"性价比略低于流通核但不悬殊"）
+    treasureGradP: 0.04,    // 扩张宝藏三选一池（11 常规）混入曲率星门低概率＝欧皇线
+    gradSaveAfterCores: 5,  // 宝石线策略：5 核槽填满后转攒毕业核（=B7"攒宝石换想要的核"落名）
+  },
 
   // 事件（3天行动/7天扩张·自然游玩推进；周期过程奖平摊+周期末完成/结算两笔）
   events: {
@@ -392,43 +457,62 @@ export const PARAMS = {
   // SS 饱和假象（步3 记档）：舰包碎片在满阶后流入板凳池继续产生边际价值，BM 带收回 D22-25。
   bench: { cap: 0.03, scale: 6000 },
 
-  // 欧非包络（三个关键随机项·任务单硬规格 #3）
+  // 欧非包络（三个关键随机项·任务单硬规格 #3）——任务单⑧：委托金卡改明保底后
+  // 品质随机轴消亡（受控方差哲学的机器体现），欧非第三轴换成星核运气 coreLuck
+  //（乘 扩张宝藏曲率星门概率 + 宝箱整核/毕业核尾概率 = 开蛋/宝箱类渠道的欧非表达）。
   envelope: {
-    expected: { mainShardShare: 0.34, goldRate: 1.0, salvageRollMult: 1.0 },
-    lucky: { mainShardShare: 0.44, goldRate: 1.5, salvageRollMult: 1.15 },
-    unlucky: { mainShardShare: 0.25, goldRate: 0.6, salvageRollMult: 0.85 },
+    expected: { mainShardShare: 0.34, coreLuck: 1.0, salvageRollMult: 1.0 },
+    lucky: { mainShardShare: 0.44, coreLuck: 2.0, salvageRollMult: 1.15 },
+    unlucky: { mainShardShare: 0.25, coreLuck: 0, salvageRollMult: 0.85 },
   },
 
-  // 广告点位量值（S13 十点位·全点位每日 1 次）
-  // offlineDoubleMult = #1 回港报告倍率（B2 削峰 ×2→×1.5·Ron 已拍）——任务单⑤广告口径
-  // 三档包络的扫描位（×1.5/×1.7/×2.0 实测表交 Ron 拍，见 --adenv；在拍板前维持 1.5）
-  ads: { ticketPerAd: 10, salvageInstantDur: 'h8', offlineDoubleMult: 1.5 }, // #6 赞助券 7→10：B2 加肥（削 #1 省出的份额往肥点挪）
+  // 广告点位量值（S13 十一点位·任务单⑧总修订案五：广告券不限购新规）
+  // offlineDoubleMult = #1 回港报告倍率（×1.5 Ron 2026-07-07 拍A 定案）。
+  // #1 口径改"每次上线结算一次离线期收益均可翻倍"：日离线时长拆 会话数 段——首会话
+  // 结算隔夜大段（overnightShare），其余会话均分小段；每段翻倍各耗 1 次观看（免费或券）。
+  // 福利广告（#5 打捞秒完/#6 赞助券/#10 回廊里程碑）＝每日 1 次铁顶·广告券不可恢复；
+  // 其余点位券可无限恢复（#3/#4 全关首通可用=常规轨新大头，25% 总账重验=本单验收 7）。
+  ads: { ticketPerAd: 10, salvageInstantDur: 'h8', offlineDoubleMult: 1.5, overnightShare: 0.65 },
 
-  // 黑市（GDD S13.6 · 广告"类充值"轨 · 任务单③入模）
+  // 黑市（GDD S13.6 · 任务单⑧总修订案三重构：2大轮换+4小坑+宝箱位·强星核退役·n060 解锁）
   blackMarket: {
-    unlockNode: 30,   // v0 提案：黑市商船首Boss（n030）通关后停靠（与回廊同期解锁·记档）
+    unlockNode: 60,   // Ron 2026-07-07 拍板：n060 首通后（"打赢难 Boss 解锁"奖励叙事·旧 v0 提案 30 作废）
     dailyViewCap: 30, // 三道闸①：日计数上限（护 eCPM/防无脑刷）
-    ticketPrice: 120, // 广告券（S13.2 块5 定稿占位：星贝 120·日限 1）——黑市党画像启用
-    ticketPerDay: 1,
-    // 商品表 v0（价位档：小 30-50 / 中 68-98 / 大 128-198 · 挂数值细表）。
-    // 模型效果口径（记档）：碎片包给"最落后主力"（舰按阶最低者/员按星最低者）——黑市加速的
-    // 主通道是碎片→提前升 SS（乘法·S→SS 单舰 ×1.4 量级），星核/插件是平移项；
-    // 强星核=标准核+100 额外战力（"高于标准核一档"的特供人设）。
-    goods: {
-      shardPack: { price: 40, give: { shipShards: 65, pilotShards: 65 } },   // 小·专属碎片小包
-      plugLegend: { price: 45, give: { legendary: 2 } },                     // 小·传奇插件包（×2）
-      coreStd: { price: 80, give: { core: 1 } },                             // 中·星核（黑市特供货架）
-      coreStrong: { price: 148, give: { core: 1, strongBonus: 100 } },       // 大·强星核
-      // 大·高阶星舰（黑市特供·S13.6 原文商品）：模型入账=1000 专属碎片（恰好一段 S→SS 的
-      // 整舰当量，"花 128 计数买一艘高阶舰"的类充值旗舰件）+ 350 驾驶员组件
-      shipHigh: { price: 128, give: { shipShards: 1000, pilotShards: 350 } },
+    // 黑市宝箱（Ron 设计·福利定位）：价 10 计数·每日限购 1·期望回报＞箱价（普惠稳赚）。
+    // 购买者=全部看广告画像（"正常看广告玩家每天开得起的固定小确幸"）——频率是计数收入的
+    // 自然结果（肝 9-10/日≈每日一箱、重 6≈隔日、普 2≈5 天一箱、轻 0 买不了·Ron 口径修正）。
+    // 内容=全游戏物品期望值表（概率塔挂细表·此处为塔的期望值折算）；毕业核极低概率 <1%
+    // ＝欧线彩蛋（挂欧非包络 coreLuck），期望线上以 gradCoreP 小数入账。
+    box: {
+      price: 10,
+      give: { hullAlloy: 45, pilotToken: 30, starCargo: 25, universal: 2.5, mainShards: 28, beaconCommon: 0.2, beaconRare: 0.10, beaconEpic: 0.03, coreFrag: 0.5, superiorPlugin: 0.05, legendaryPlugin: 0.02, starGem: 0.3 },
+      fullCoreP: 0.004, gradCoreP: 0.002, // 完整流通核/毕业核极低概率（<1% 铁律内）
     },
-    // 三道闸②：货架轮换（4 日循环·每日 1 小/中 + 隔日 1 大）+ 大件限购（每日 ≤1 件大件）
-    rotation: [['shardPack', 'shipHigh'], ['plugLegend', 'coreStd'], ['shardPack', 'shipHigh'], ['plugLegend', 'coreStrong']], // 步3：毕业前舰包=硬需求上双大件槽（实测核类毕业前0购·B8 毕业后货架换核）
-    largeMinPrice: 100, // 价 ≥100 视为大件：限购判定 + 购买策略"给大件留钱"的门槛
-    // 购买策略成文（攒计数 → 买当前边际价值最高）：优先级=乘法通道在前、平移项在后；
-    // 低优先级商品只有在"买完仍留得起最高优先级大件"时才买（给大件留钱=攒的行为）
-    priority: ['shipHigh', 'coreStrong', 'coreStd', 'plugLegend', 'shardPack'],
+    // 2 大件坑（固定轮换·日程公示）：高阶星舰 128 / 毕业核·超新星 198（时间成本线）。
+    // "强星核（+100 额外战力）"概念退役——bmExtraPower 相关模型量已全部清理。
+    goods: {
+      shipHigh: { price: 128, give: { shipShards: 1000, pilotShards: 350 } }, // 舰专属+1000(S→SS 整舰当量)+员 350
+      supernova: { price: 198, give: { gradCore: 1 } },                       // 毕业核第二渠道（黑市不垄断任何核）
+    },
+    largeMinPrice: 100,
+    // 4 小件坑（每日随机·各限购 1/日·8 品类加权：材料高频打底/信标中频/核低频惊喜）；
+    // 期望值口径：每坑=池加权独立抽 → 品类日均可购件数 = 坑数×权重（×手动再刷 1 次/日）。
+    smalls: {
+      slots: 4, adRerollMult: 2, // 看广告手动再刷 1 次/日（只重掷小坑·该次照计数）→ 可选池翻倍
+      pool: {
+        shardSmall:  { w: 0.20, price: 40, give: { shipShards: 65, pilotShards: 65 } }, // 专属碎片小包（临门一脚）
+        plugSuperior:{ w: 0.16, price: 30, give: { superior: 2 } },                      // 优秀插件包
+        plugLegend:  { w: 0.10, price: 45, give: { legendary: 2 } },                     // 传奇插件包
+        uniPack:     { w: 0.14, price: 32, give: { universalShards: 60 } },              // 通用碎片包（舰/员）
+        coreFragPack:{ w: 0.13, price: 35, give: { coreFrag: 15 } },                     // 星核碎片包
+        beaconPack:  { w: 0.12, price: 36, give: { beaconRare: 1, beaconEpic: 0.25 } },  // 稀有·史诗信标
+        accelPack:   { w: 0.10, price: 25, give: { accelCredits: 3 } },                  // 打捞加速券三档（免耗星贝的加速额度）
+        flowCore:    { w: 0.05, price: 133, give: { flowCore: 1 } },                     // 流通核（8 池随机1·低频压轴·128-138 带）
+      },
+    },
+    // 黑市党购买策略成文（总修订案）：宝箱必买 → 大件攒钱（毕业前=高阶舰；五主力满 SS 后
+    // 边际转向超新星=毕业核时间成本线）→ 小件机会型（给大件留足底金才买·优先乘法通道）。
+    smallPriority: ['shardSmall', 'plugLegend', 'uniPack', 'plugSuperior', 'coreFragPack', 'beaconPack', 'accelPack'], // flowCore 毕业前不买（大件价·舰包边际碾压=步3 实证沿用·毕业后货架 B8 主场）
   },
 
   // 压力值校准器（任务单③锚定改造·选型实测记档，过程见初值表 v0.3）：
@@ -459,39 +543,55 @@ export const TIERS = {
   //     自己带档差、不能全靠打捞背（salvage×0.8 扰动实测教训）。量级记档：肝 0.7 实测把
   //     肝档末墙熔到贴带下沿+扰动带破下限（墙"太便宜"探测器报警），0.6/0.55 是天数与
   //     墙双边都留余量的收敛值（9 变体全绿）。
+  // 任务单⑧新增三参数（成文策略假设·§5）：
+  //   bountyProbe = 委托难度试探（肝/重/黑市党"打可碾压最高档+试探上一档"，普/轻打稳档）；
+  //     试探意愿门槛挂 bountyPerfect（会玩度）：胜率 ≥ (1−bountyPerfect) 才敢上探——
+  //     肝 0.6→胜率 40% 就敢试，轻 0.35（不试探）。失败丢单由 #11 保卡兜（免费 1 次/日+券）。
+  //   drillSkill = 木桩输出压榨系数（全输出流/搭配实验的会玩差·1.0=量纲标称）；
+  //   drillRate = 木桩参与率（打木桩的天数占比·在 dailyCompletion 之外）——木桩是
+  //     "自愿实验场"性质、无积压无惩罚，15 分钟玩家时间最紧优先委托/推主线，
+  //     ≈1/4 的天不打（轻 0.75）；其余档日常习惯内（1.0）。成文 §5 最软参数。
+  //   adTickets = 广告券日购上限（画像按需·总修订案"不限购"下的行为学约束=观看忍耐度：
+  //     普通档 2 次/日是忍耐度不是钱包约束，券≈0；肝/重才愿意为肥点位加看；黑市党最高）。
   肝档: {
     minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
     bountyMinutes: 10, bountyCatchup: 3, bountyPerfect: 0.6,
+    bountyProbe: true, drillSkill: 1.08, adTickets: 4,
   },
   重度: {
     minutesPerDay: 90, sessionsPerDay: 4, adsPerDay: 6,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 3, corridorMinutes: 14, shoppingPower: 1.0, tinkerBonus: 0.055, consolationTries: 2, stallCorridorMult: 2.2,
     bountyMinutes: 8, bountyCatchup: 2, bountyPerfect: 0.55,
+    bountyProbe: true, drillSkill: 1.04, adTickets: 2,
   },
   普通: {
     minutesPerDay: 35, sessionsPerDay: 2.5, adsPerDay: 2,
     dailyCompletion: 0.92, eventCompletion: 0.95,
     salvageRunsPerQueue: 2, corridorMinutes: 7, shoppingPower: 0.8, tinkerBonus: 0.03, consolationTries: 1,
     bountyMinutes: 6, bountyCatchup: 1, bountyPerfect: 0.5,
+    bountyProbe: false, drillSkill: 1.0, adTickets: 0,
   },
   轻度: {
     minutesPerDay: 15, sessionsPerDay: 1.5, adsPerDay: 0,
     dailyCompletion: 0.88, eventCompletion: 0.92,
     salvageRunsPerQueue: 2, corridorMinutes: 5, shoppingPower: 0.75, tinkerBonus: 0.025, consolationTries: 1,
     bountyMinutes: 3, bountyCatchup: 0, bountyPerfect: 0.35,
+    bountyProbe: false, drillSkill: 0.95, drillRate: 0.75, adTickets: 0,
   },
   // 第五画像·黑市重度党（S13.6 · 任务单③）：非黑市参数与肝档逐项相同（=基线不变性测试
-  // 的前提：关掉 bm 行为后必须与肝档逐字段相等）；日观看 ≈ 常规点位 9 + 广告券 1 + 连看
-  // 填满至日上限 30（"≈25-30 次"画像口径）。
+  // 的前提：关掉 bm 行为后必须与肝档逐字段相等）；日观看 ≈ 常规点位 9 + 券 + 连看
+  // 填满至日上限 30。任务单⑧：券改"商店按需"（adTickets 上限内点位恢复），bm.ticket 旧
+  // 专项购券口径退役；宝箱=全部看广告画像通用行为（不在 bm 开关内·Ron 口径修正）。
   黑市党: {
     minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
     bountyMinutes: 10, bountyCatchup: 3, bountyPerfect: 0.6,
-    bm: { chain: true, buy: true, ticket: true },
+    bountyProbe: true, drillSkill: 1.08, adTickets: 4, // 基础券口味=肝档同值（非黑市参数逐项相同=基线不变性前提）
+    bm: { chain: true, buy: true, extraTickets: 2 },   // 追加券口味=黑市行为的一部分（类充值投入·随 dis.blackMarket 一起关）
   },
 };
 
@@ -505,8 +605,10 @@ export const BM_TARGET = { tier: '黑市党', min: 22, max: 25 };
 // 7 天硬顶，两约束互斥；按任务单优先级取硬顶（矩阵=容差自定），偏差为体验级发现报 Ron。
 export const WALL_MATRIX_BANDS = { 60: [0, 2], 84: [0, 1], 102: [1, 3], 120: [2, 4], 138: [0, 1], 150: [2, 4] };
 // 抗漂移变体版矩阵带（±20% 单源扰动下的"校准器承诺"——早锚盯 n060 仍然收紧到 [0,2]
-// =v0.1 诊断病的直接探测器；中后段随真实经济形变放宽 1 天；实测 6 变体+指定反例数据定档）
-export const WALL_MATRIX_BANDS_DRIFT = { 60: [0, 2], 84: [0, 1], 102: [0, 3], 120: [1, 4], 138: [0, 1], 150: [2, 5] };
+// =v0.1 诊断病的直接探测器；中后段随真实经济形变放宽；实测变体数据定档）。
+// 任务单⑧：n120 下沿 1→0——难度自选经济下 bounty×0.8 重校后肝 n120 实测 0（±20% 冲击
+// 的中段整数抖动·同㉓"放宽项须有实测依据"结构；基线带 [2,4] 不动=真验收门），扫描数据 §18。
+export const WALL_MATRIX_BANDS_DRIFT = { 60: [0, 2], 84: [0, 1], 102: [0, 3], 120: [0, 4], 138: [0, 1], 150: [2, 5] };
 // 任何档位任何单墙硬顶（2026-07-06 锁定决策）
 export const HARD_WALL_CAP = 7;
 // 扰动变体下轻度的瞬时容忍（基线把轻度末墙钉在贴顶 7=«仅毕业墙可近顶»的设计位，任何
@@ -569,7 +671,6 @@ export function teamPower(st, T = TRUTHS) {
     if (hasCore) coresLeft--;
     total += unitPower(m.ship, m.pilot, plugSum, hasCore, T);
   }
-  total += st.bmExtraPower ?? 0; // 黑市强星核的额外档位（与标准核同层，吃小乘区）
   const researchPct = T.researchPowerPct(st.buildings.research) / 100;
   const galleryPct = Math.min(T.galleryCapPct,
     st.buildings.gallery >= 1 ? st.coresDistinct * T.galleryPerCorePct(st.buildings.gallery) : 0) / 100;
@@ -611,6 +712,83 @@ export function bountyCardsFor(tier, backlog, minutesLeft, wallDay, P = PARAMS, 
   return Math.max(0, Math.min(backlog, want, canByTime, byBudget));
 }
 
+/** 委托明保底品质期望（任务单⑧·替代旧"金8%+暗保底"随机口径）：
+ *  每天 3 张必含 ≥1 银、每 3 天必出 1 金 → 单张期望 金1/9 银1/3 铜5/9（保底=日程表，零方差）。 */
+export function commissionQualityEV(T = TRUTHS) {
+  const goldPerCard = 1 / T.bountyGoldEveryDays / T.bountyDailyCards;
+  const silverPerCard = T.bountySilverPerDay / T.bountyDailyCards;
+  const bronzePerCard = 1 - goldPerCard - silverPerCard;
+  const qMult = goldPerCard * T.bountyQualityMult.gold
+    + silverPerCard * T.bountyQualityMult.silver + bronzePerCard * T.bountyQualityMult.bronze;
+  return { goldPerCard, silverPerCard, bronzePerCard, qMult };
+}
+
+/** 委托难度选择策略（任务单⑧·成文 §5·纯函数供 gate 直测）。
+ *  稳档 = 战力 ≥ crushRatio×推荐战力 的最高档（新手档无门槛兜底）；
+ *  试探（仅 bountyProbe 画像）= 稳档的上一档：战力比 ≥ probeMinRatio 且
+ *  胜率 ≥ (1−bountyPerfect)（会玩度决定敢不敢上探）才试；胜率=线性带
+ *  clamp((ratio−failFloor)/(crushRatio−failFloor))。失败丢单 → #11 保卡重打稳档。
+ *  返回 { safe, safeMult, probe|null, probeMult, pWin }。 */
+export function pickCommissionDifficulty(tier, power, pressure, P = PARAMS) {
+  const D = P.bounty.difficulty;
+  const names = ['novice', 'normal', 'hard', 'nightmare'];
+  const rec = (d) => pressure[D.recNodes[d]] ?? 1;
+  let safeIdx = 0;
+  for (let i = 1; i < names.length; i++) if (power >= D.crushRatio * rec(names[i])) safeIdx = i;
+  const out = { safe: names[safeIdx], safeMult: D.mults[names[safeIdx]], probe: null, probeMult: 0, pWin: 1 };
+  if (tier.bountyProbe && safeIdx < names.length - 1) {
+    const next = names[safeIdx + 1];
+    const ratio = power / rec(next);
+    if (ratio >= D.probeMinRatio) {
+      const pWin = Math.max(0, Math.min(1, (ratio - D.failFloor) / (D.crushRatio - D.failFloor)));
+      if (pWin >= 1 - (tier.bountyPerfect ?? P.bounty.perfectRate)) {
+        out.probe = next; out.probeMult = D.mults[next]; out.pWin = pWin;
+      }
+    }
+  }
+  return out;
+}
+
+/** 木桩档位（任务单⑧·纯函数）：60 秒总伤 = 战力×d×60×压榨系数，打到阈值表最高可达档。 */
+export function drillTierFor(power, skill, P = PARAMS) {
+  const D = P.drill;
+  const dmg = power * D.dps * D.windowSec * (skill ?? 1);
+  let k = 0;
+  for (let i = 1; i <= D.tiers; i++) {
+    if (dmg >= D.thresholdBase * Math.pow(D.thresholdGrowth, i - 1)) k = i; else break;
+  }
+  return k;
+}
+
+/** 木桩累计奖励（打到第 N 档领 1..N 全部·每日重置）。 */
+export function drillCumReward(k, P = PARAMS) {
+  const D = P.drill;
+  let sum = 0;
+  for (let i = 1; i <= Math.min(k, D.tiers); i++) sum += D.rewardBase * Math.pow(D.rewardGrowth, i - 1);
+  return sum;
+}
+
+/** 星核收藏（种类数）期望（任务单⑧渠道矩阵·期望值口径）：
+ *  常规 14 = 陨星弹1 + 强常规2（只出开蛋·低权重）+ 池子款3（开蛋+宝藏池）+ 流通款8
+ *  （开蛋+宝藏池+宝库定向+黑市小件+商店稀有格）；毕业核 2（宝库/宝藏欧线/黑市超新星）。
+ *  各随机渠道按"每抽命中该核概率"的补集幂计算；宝库定向买必得新种类，与随机渠道的
+ *  重叠用比例折算（期望值近似·记模型简化声明）。 */
+export function expectedDistinctCores(st, P = PARAMS, T = TRUTHS) {
+  const d = st.coreDraws;
+  const ws = P.core.eggStrongWeight;
+  const wReg = (1 - 2 * ws) / 11;              // 开蛋：11 颗常规均分
+  const tReg = (1 - P.core.treasureGradP) / 11; // 宝藏池：11 颗常规均分（毕业核概率之外）
+  const meteor = st.cleared >= T.storyBossNode ? 1 : 0;
+  const strong2 = 2 * (1 - Math.pow(1 - ws, d.egg));
+  const pool3 = 3 * (1 - Math.pow(1 - wReg, d.egg) * Math.pow(1 - tReg, d.treasure));
+  const flowRand = 8 * (1 - Math.pow(1 - wReg, d.egg) * Math.pow(1 - tReg, d.treasure)
+    * Math.pow(1 - 1 / 8, d.bmFlow + d.shopFlow));
+  const vaultDistinct = Math.min(8, d.vaultFlow);
+  const flow8 = Math.min(8, vaultDistinct + flowRand * (8 - vaultDistinct) / 8);
+  const grad = Math.min(2, (st.gradCores?.vault ?? 0) + (st.gradCores?.bm ?? 0) + (st.gradCores?.treasureEV ?? 0));
+  return meteor + strong2 + pool3 + flow8 + grad;
+}
+
 // ---------------------------------------------------------------------------
 // 五、状态与台账
 // ---------------------------------------------------------------------------
@@ -633,12 +811,18 @@ function newState() {
     plugins: { fine: 0, superior: 0, legendary: 0 },
     coresOwned: 0, coresDistinct: 0,
     coreDays: [], // 观测口（步4 稀缺线）：第 i 颗核的到手日（B4 验"前5颗节奏不动+中后期3-5天/颗"）
+    // 任务单⑧星核渠道矩阵：分渠道抽数（种类期望用）+ 毕业核分账（到手时点分布=新验收口径）
+    coreDraws: { egg: 0, treasure: 0, bmFlow: 0, shopFlow: 0, vaultFlow: 0, vaultDupes: 0 },
+    gradCores: { vault: 0, bm: 0, treasureEV: 0 },
+    gradCoreDays: [], // 毕业核到手日（宝库/黑市=确定日；宝藏欧线走 treasureEV+欧非包络）
+    accelCredits: 0,  // 打捞加速券额度（黑市小件·免耗星贝的 2h→8h 升档次数）
+    drillTier: 0,     // 木桩当日档位（观测口）
+    milestones: [],   // 逐关养成态快照（任务单⑧交付 8·⑥第三段接口）
     buildings: { dock: 0, training: 0, habitat: 0, salvage: 0, merchant: 0, supply: 0, research: 0, gallery: 0 },
     residents: 0, workers: 0,
     cleared: 0, corridorLayer: 0, corridorUnlocked: false,
     pityCounter: { ship: 0, pilot: 0 },
-    vaultBought: 0,
-    bountyBacklog: 0, bountyCardsPlayed: 0,
+    bountyBacklog: 0, bountyCardsPlayed: 0, bountyDiffMult: 0,
     ledger: { income: {}, spend: {} },
     // 节奏观察口（只读统计·2026-07-07）：逐日×渠道×资源 收/支账 + 专属碎片/插件件数逐日，
     // 供 --pacing 窗口切分；不参与任何经济决策，curDay 由主循环每日更新
@@ -647,9 +831,9 @@ function newState() {
     dailyCleared: [], dailyPower: [], dailyStuck: [],
     graduateDay: null,
     adsUsedTotal: 0, chestsOpened: 0,
-    // 黑市计数独立账本（不进 14 键钱包——运行时钱包键有 gate 测试钉死且本子步零回写）
-    bm: { balance: 0, earnedTotal: 0, earned: {}, spent: 0, buys: {}, ticketsBought: 0 },
-    bmExtraPower: 0, // 强星核的"高于标准核"部分（每颗 +strongBonus·加在小乘区之前）
+    // 黑市计数独立账本（不进 14 键钱包——运行时钱包键有 gate 测试钉死且本子步零回写）；
+    // boxes=宝箱累计开数（全部看广告画像通用·计数余额自然约束）；ticketsBought=广告券累计
+    bm: { balance: 0, earnedTotal: 0, earned: {}, spent: 0, buys: {}, ticketsBought: 0, boxes: 0 },
   };
 }
 
@@ -824,58 +1008,111 @@ function doBuildings(st, debit, P, T) {
   }
 }
 
-function doCores(st, debit, P, T) {
+function doCores(st, debit, day, env, P, T) {
+  // 合成=随机开蛋（任务单⑧·13 常规池·2 强常规低权重）：总数照常 +1，种类走期望收藏
   while (st.res.coreFrag >= P.core.synthesisFragCost && debit('coreSynthesis', 'coreFrag', P.core.synthesisFragCost)) {
-    st.coresOwned += 1;
+    st.coresOwned += 1; st.coreDraws.egg += 1;
   }
+  // 宝库（8 流通统一价 + 2 毕业更贵）：①5 核槽未满=流通款定向补新（战力边际最高）；
+  // ②槽满后转攒毕业核（B7"攒宝石换想要的核"落名——攒钱期不买流通款）；③2 颗毕业核
+  // 到手后回流通复购（同款第 2 份起 ×1.5 递增="全队配同款"慢速线=终局宝石 sink）。
   for (let guard = 0; guard < 10; guard++) {
-    const price = Math.round(P.core.vaultBasePrice * Math.pow(T.vaultRepeatPriceGrowth, st.vaultBought));
-    if (st.res.starGem >= price && debit('coreVault', 'starGem', price)) { st.coresOwned += 1; st.vaultBought += 1; }
-    else break;
+    const gradLeft = 2 - Math.min(2, st.gradCores.vault + st.gradCores.bm);
+    if (st.coresOwned >= P.core.gradSaveAfterCores && gradLeft > 0) {
+      if (st.res.starGem >= P.core.vaultGradPrice && debit('coreVault', 'starGem', P.core.vaultGradPrice)) {
+        st.coresOwned += 1; st.gradCores.vault += 1; st.gradCoreDays.push(day);
+        continue;
+      }
+      break;
+    }
+    const price = st.coreDraws.vaultFlow < 8
+      ? P.core.vaultFlowPrice
+      : Math.round(P.core.vaultFlowPrice * Math.pow(T.vaultRepeatPriceGrowth, st.coreDraws.vaultDupes + 1));
+    if (st.res.starGem >= price && debit('coreVault', 'starGem', price)) {
+      st.coresOwned += 1;
+      if (st.coreDraws.vaultFlow < 8) st.coreDraws.vaultFlow += 1; else st.coreDraws.vaultDupes += 1;
+    } else break;
   }
-  const pool = P.core.distinctPool;
-  st.coresDistinct = Math.min(pool + 3,
-    pool * (1 - Math.exp(-Math.max(0, st.coresOwned - 1) / pool)) + (st.coresOwned > 0 ? 1 : 0));
+  st.coresDistinct = Math.min(16, expectedDistinctCores(st, P, T));
 }
 
-// 黑市购买（S13.6 · 购买策略成文）：攒计数买"当前边际价值最高"商品——大件（强星核/
-// 高阶星舰包=乘法通道）优先；买小件前给大件留出底金（balance − 价 ≥ largeMinPrice 才买小），
-// 大件每日限购 1（三道闸②）。碎片给最落后主力（舰=阶最低/员=星最低·与通用碎片转换同口径）。
-function doBlackMarket(st, tier, day, P) {
+// 临门一脚碎片投放（黑市/宝箱共用口径）：给离下一次升阶/升星缺口最小的可升主力；
+// 全员到顶后给阶/星最低者兜底（溢出碎片流入板凳池继续产边际价值）。
+function grantTargetedShards(st, shipShards, pilotShards) {
+  if (shipShards > 0) {
+    const cand = st.mains.filter((m) => m.ship.owned && m.ship.tier < 4)
+      .sort((a, b) => (TRUTHS.shipAscendCost[a.ship.tier] - a.ship.shards) - (TRUTHS.shipAscendCost[b.ship.tier] - b.ship.shards));
+    const target = cand[0] ?? st.mains.filter((m) => m.ship.owned).sort((a, b) => a.ship.tier - b.ship.tier)[0];
+    if (target) target.ship.shards += shipShards;
+  }
+  if (pilotShards > 0) {
+    const cand = st.mains.filter((m) => m.pilot.owned && m.pilot.star < 5)
+      .sort((a, b) => (TRUTHS.pilotStarupCost[a.pilot.star - 1] - a.pilot.shards) - (TRUTHS.pilotStarupCost[b.pilot.star - 1] - b.pilot.shards));
+    const target = cand[0] ?? st.mains.filter((m) => m.pilot.owned).sort((a, b) => a.pilot.star - b.pilot.star)[0];
+    if (target) target.pilot.shards += pilotShards;
+  }
+}
+
+// 黑市宝箱（任务单⑧·Ron 口径修正版）：全部看广告画像的通用行为、每日限购 1，
+// 购买受"计数余额 ≥ 箱价"自然约束——频率是计数收入的自然结果（肝 9-10/日≈每日一箱、
+// 重 6≈隔日、普 2≈5 天一箱、轻 0 买不了），不做凭空扣负或全档拉平。
+// 账目归 bmBox 源（黑市轨）：25% 常规轨硬线不计宝箱、另报一行透明化（Ron 拍板口径）。
+function doBmBox(st, credit, env, P) {
   if (st.cleared < P.blackMarket.unlockNode) return;
-  const shelf = P.blackMarket.rotation[(day - 1) % P.blackMarket.rotation.length];
-  // 按边际价值优先级过货架（PARAMS.blackMarket.priority 成文），非最高优先级商品
-  // 要给最高优先级大件留钱（reserve）——"攒计数买大件"的行为模型
-  const order = P.blackMarket.priority.filter((id) => shelf.includes(id));
-  const topPrice = P.blackMarket.goods[P.blackMarket.priority[0]].price;
-  let largeBoughtToday = false;
-  for (const id of order) {
-    const g = P.blackMarket.goods[id];
-    const isLarge = g.price >= P.blackMarket.largeMinPrice;
-    if (st.bm.balance < g.price) continue;
-    if (isLarge && largeBoughtToday) continue;
-    if (id !== P.blackMarket.priority[0] && st.bm.balance - g.price < topPrice) continue;
-    st.bm.balance -= g.price;
-    st.bm.spent += g.price;
-    st.bm.buys[id] = (st.bm.buys[id] ?? 0) + 1;
-    if (isLarge) largeBoughtToday = true;
-    // 碎片投放目标=「临门一脚」：给离下一次升阶/升星缺口最小的可升主力（真实玩家把
-    // 大包砸给马上要突破的那艘=边际价值最高的字面落实）；全员到顶后给阶/星最低者兜底
-    if (g.give.shipShards) {
-      const cand = st.mains.filter((m) => m.ship.owned && m.ship.tier < 4)
-        .sort((a, b) => (TRUTHS.shipAscendCost[a.ship.tier] - a.ship.shards) - (TRUTHS.shipAscendCost[b.ship.tier] - b.ship.shards));
-      const target = cand[0] ?? st.mains.filter((m) => m.ship.owned).sort((a, b) => a.ship.tier - b.ship.tier)[0];
-      if (target) target.ship.shards += g.give.shipShards;
+  const B = P.blackMarket.box;
+  if (st.bm.balance < B.price) return;
+  st.bm.balance -= B.price; st.bm.spent += B.price;
+  st.bm.boxes += 1; st.bm.buys.box = (st.bm.buys.box ?? 0) + 1;
+  for (const [k, v] of Object.entries(B.give)) {
+    if (k === 'universal') { credit('bmBox', 'shipBlueprint', v / 2); credit('bmBox', 'pilotShardUniversal', v / 2); }
+    else if (k === 'mainShards') grantTargetedShards(st, v / 2, v / 2);
+    else if (k === 'superiorPlugin') st.plugins.superior += v;
+    else if (k === 'legendaryPlugin') st.plugins.legendary += v;
+    else credit('bmBox', k, v);
+  }
+  const luck = env.coreLuck ?? 1;
+  if (B.fullCoreP > 0) { st.coresOwned += B.fullCoreP * luck; st.coreDraws.bmFlow += B.fullCoreP * luck; }
+  if (B.gradCoreP > 0) { st.coresOwned += B.gradCoreP * luck; st.gradCores.treasureEV += B.gradCoreP * luck; }
+}
+
+// 黑市货架（任务单⑧总修订案三·黑市党画像）：2 大件坑（高阶舰 128/超新星 198 固定轮换）
+// ＋4 小件坑（8 品类加权随机·各限购 1/日·看广告手动再刷 1 次/日→可选池翻倍）。
+// 购买策略成文：宝箱必买（doBmBox 已先行）→ 大件攒钱（毕业前=高阶舰；五主力满 SS 后
+// 边际转向超新星=毕业核时间成本线·"核类毕业前 0 购"步3 实证的如实延续）→ 小件机会型
+// （给下一个大件留足底金才买——20/日结余几乎全喂大件，小件只吃攒钱途中的溢出）。
+function doBlackMarket(st, credit, day, P) {
+  if (st.cleared < P.blackMarket.unlockNode) return;
+  const BM = P.blackMarket;
+  const shipsSaturated = st.mains.every((m) => m.ship.owned && m.ship.tier >= 4);
+  const bigId = shipsSaturated && st.gradCores.bm < 1 ? 'supernova' : 'shipHigh';
+  const big = BM.goods[bigId];
+  if (st.bm.balance >= big.price) {
+    st.bm.balance -= big.price; st.bm.spent += big.price;
+    st.bm.buys[bigId] = (st.bm.buys[bigId] ?? 0) + 1;
+    if (big.give.shipShards) grantTargetedShards(st, big.give.shipShards, big.give.pilotShards ?? 0);
+    if (big.give.gradCore) { st.coresOwned += big.give.gradCore; st.gradCores.bm += big.give.gradCore; st.gradCoreDays.push(day); }
+  }
+  const reserve = big.price; // 给下一个大件留底金=攒计数行为
+  const offers = BM.smalls.slots * BM.smalls.adRerollMult;
+  for (const id of BM.smallPriority) {
+    const g = BM.smalls.pool[id];
+    const avail = Math.min(1, offers * g.w); // 每坑独立抽+每品类限购 1/日 → 期望件数封顶 1
+    if (!(avail > 0) || st.bm.balance - g.price * avail < reserve) continue;
+    st.bm.balance -= g.price * avail; st.bm.spent += g.price * avail;
+    st.bm.buys[id] = (st.bm.buys[id] ?? 0) + avail;
+    const gv = g.give;
+    if (gv.shipShards) grantTargetedShards(st, gv.shipShards * avail, (gv.pilotShards ?? 0) * avail);
+    if (gv.universalShards) {
+      credit('bmShelf', 'shipBlueprint', (gv.universalShards / 2) * avail);
+      credit('bmShelf', 'pilotShardUniversal', (gv.universalShards / 2) * avail);
     }
-    if (g.give.pilotShards) {
-      const cand = st.mains.filter((m) => m.pilot.owned && m.pilot.star < 5)
-        .sort((a, b) => (TRUTHS.pilotStarupCost[a.pilot.star - 1] - a.pilot.shards) - (TRUTHS.pilotStarupCost[b.pilot.star - 1] - b.pilot.shards));
-      const target = cand[0] ?? st.mains.filter((m) => m.pilot.owned).sort((a, b) => a.pilot.star - b.pilot.star)[0];
-      if (target) target.pilot.shards += g.give.pilotShards;
-    }
-    if (g.give.legendary) st.plugins.legendary += g.give.legendary;
-    if (g.give.core) st.coresOwned += g.give.core;
-    if (g.give.strongBonus) st.bmExtraPower += g.give.strongBonus;
+    if (gv.beaconRare) credit('bmShelf', 'beaconRare', gv.beaconRare * avail);
+    if (gv.beaconEpic) credit('bmShelf', 'beaconEpic', gv.beaconEpic * avail);
+    if (gv.coreFrag) credit('bmShelf', 'coreFrag', gv.coreFrag * avail);
+    if (gv.superior) st.plugins.superior += gv.superior * avail;
+    if (gv.legendary) st.plugins.legendary += gv.legendary * avail;
+    if (gv.accelCredits) st.accelCredits += gv.accelCredits * avail;
+    if (gv.flowCore) { st.coresOwned += gv.flowCore * avail; st.coreDraws.bmFlow += gv.flowCore * avail; }
   }
 }
 
@@ -901,8 +1138,9 @@ function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
     if (!bkey || !debit('salvage', bkey, 1)) break;
     const def = P.salvage.tiers[bkey === 'beaconEpic' ? 'epic' : bkey === 'beaconRare' ? 'rare' : 'common'];
     let dur = isAd ? P.ads.salvageInstantDur : isLong ? 'h24' : 'h2';
-    if (dur === 'h2' && st.res.starCargo > P.merchant.richThreshold
-      && debit('salvageAccel', 'starCargo', P.salvage.accel.price)) dur = 'h8'; // 加速券
+    if (dur === 'h2' && st.accelCredits >= 1) { st.accelCredits -= 1; dur = 'h8'; } // 黑市加速券额度优先
+    else if (dur === 'h2' && st.res.starCargo > P.merchant.richThreshold
+      && debit('salvageAccel', 'starCargo', P.salvage.accel.price)) dur = 'h8'; // 加速券（星贝）
     const mult = T.salvageTimeMult[dur];
     credit('salvage', 'starOre', def.ore * mult);
     credit('salvage', 'starCargo', def.cargo * mult);
@@ -996,9 +1234,9 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     const offCoef = P.regionCoef[clearedRegions];
     let adsLeft = paused ? 0 : adsPerDay;
     let minutes = paused ? 0 : tier.minutesPerDay;
-    // 黑市计数（S13.6：全游戏任何激励视频观看 +1，日上限 30）——计数对所有画像常开
-    // （纯观察者，不产生任何资源效果）；dis.blackMarket 只关"主动行为"（券/连看/购买），
-    // 供基线不变性测试用。
+    // 黑市计数（S13.6：全游戏任何激励视频观看 +1，日上限 30）——计数对所有画像常开；
+    // dis.blackMarket 只关"货架/连看"主动行为（基线不变性测试用）；宝箱=看广告画像通用
+    // 行为不在此开关内（dis.bmBox 单独门·供 25% 常规轨口径测量）。
     const bmActive = !dis.blackMarket && tier.bm;
     let bmViewsToday = 0;
     const bmView = (type) => {
@@ -1008,7 +1246,31 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       st.bm.earned[type] = (st.bm.earned[type] ?? 0) + 1;
       return true;
     };
-    const useAd = () => { if (adsLeft > 0) { adsLeft--; st.adsUsedTotal++; bmView('points'); return true; } return false; };
+    // 广告券新规（任务单⑧总修订案五）：福利广告 #5/#6/#10 每日 1 次铁顶、券不可恢复；
+    // 其余点位免费额度用尽后可用券恢复（商店常驻 70 星贝·画像按需上限 adTickets）。
+    // ads:'full' 双跑=满口径（9 免费+肝档券策略 4）——测设计暴露度而非单画像口味。
+    const merchDisc = () => (st.buildings.merchant >= 10 ? P.merchant.discountLv10 : 1);
+    let ticketsLeft = paused ? 0 : opts.ads === 'none' ? 0
+      : opts.ads === 'full' ? 4
+        : (tier.adTickets ?? 0) + (bmActive ? (tier.bm?.extraTickets ?? 0) : 0);
+    const WELFARE = new Set(['#5', '#6', '#10']);
+    // keepFree/keepTickets = 给后续肥点位留的储备（#10 回廊里程碑走免费·#11 保卡走免费或券）
+    const useView = (point, { keepFree = 0, keepTickets = 0 } = {}) => {
+      if (adsLeft > keepFree && adsLeft > 0) { adsLeft--; st.adsUsedTotal++; bmView('points'); return true; }
+      if (WELFARE.has(point)) return false; // 福利广告：不可券恢复（一天多一次都不行）
+      if (ticketsLeft > keepTickets && ticketsLeft > 0 && st.buildings.merchant >= 1) {
+        const price = P.merchant.adTicketPrice * merchDisc();
+        if (st.res.starCargo - price >= P.merchant.richThreshold / 2 && debit('adTicket', 'starCargo', price)) {
+          ticketsLeft--; st.bm.ticketsBought++; st.adsUsedTotal++; bmView('ticket');
+          return true;
+        }
+      }
+      return false;
+    };
+    // 储备位：回廊里程碑 #10（福利·免费额度）、委托保卡 #11（试探画像·免费或券）
+    const prober = !paused && tier.bountyProbe && st.cleared >= 5;
+    const reserveFree = (watcher && st.corridorUnlocked ? 1 : 0) + (watcher && prober ? 1 : 0);
+    const reserveTickets = prober ? 1 : 0;
 
     // —— 0. 解锁脚本 ——
     const U = P.unlock;
@@ -1038,7 +1300,20 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       if (opts.pause && day === opts.pause.from + opts.pause.days) hours += opts.pause.days * 24;
       hours = Math.min(hours, storageH);
       const rateMult = 1 + (T.habitatRatePct(st.buildings.habitat) + st.residents * 1) / 100;
-      const adDouble = watcher && useAd() ? P.ads.offlineDoubleMult : 1; // #1 回港报告（B2 削峰 ×2→×1.5·Ron 已拍；倍率=广告口径三档包络扫描位）
+      // #1 回港报告（任务单⑧口径修正：回港=每次上线结算一次离线期收益、每段各可翻倍）：
+      // 首会话结算隔夜大段（overnightShare·吃免费额度=当日最肥单点），其余会话小段均分——
+      // 小段边际低，只花"留足 #3/#4/#11 之外"的券、不占免费额度（keepFree 99）。
+      let dblShare = 0;
+      if (watcher && useView('#1')) dblShare += P.ads.overnightShare;
+      if (watcher && dblShare > 0) {
+        const smallSegs = Math.max(0, Math.round(tier.sessionsPerDay) - 1);
+        const perSeg = smallSegs > 0 ? (1 - P.ads.overnightShare) / smallSegs : 0;
+        for (let i = 0; i < smallSegs; i++) {
+          if (!useView('#1', { keepFree: 99, keepTickets: reserveTickets + 2 })) break;
+          dblShare += perSeg;
+        }
+      }
+      const adDouble = 1 + (P.ads.offlineDoubleMult - 1) * dblShare;
       if (!dis.offline) {
         const oreCoef = Math.pow(offCoef, P.oreCoefPow ?? 1);
         credit('offline', 'starOre', P.offline.starOre * oreCoef * rateMult * hours * adDouble);
@@ -1056,8 +1331,8 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     }
 
     // —— 3. 快速打理：商人 + 打捞 + 赞助券/补给箱广告 ——
-    if (!paused && adsLeft > 0) { // #2 今日补给箱（看广告开箱）
-      if (useAd()) {
+    if (!paused && adsLeft > 0) { // #2 今日补给箱（看广告开箱·结构自限每日 1 箱）
+      if (useView('#2')) {
         credit('supplyChest', 'hullAlloy', P.supplyChest.hullAlloy);
         credit('supplyChest', 'pilotToken', P.supplyChest.pilotToken);
         credit('supplyChest', 'starCargo', P.supplyChest.starCargo);
@@ -1066,54 +1341,92 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         credit('supplyChest', 'pilotShardUniversal', P.supplyChest.universal / 2);
       }
     }
-    if (!paused && st.buildings.supply >= 1 && adsLeft > 0 && useAd()) {
-      credit('adTickets', 'supplyTicket', P.ads.ticketPerAd); // #6 赞助补给券
-    }
-    // 广告券（S13.2 块5·商人星贝购·日限 1）：黑市党画像启用——持券把"已用完点位"恢复
-    // 一次 = 当日广告预算 +1（走同一优先级链吃点位奖励，观看在 useAd 内计数、不重复+1）
-    if (!paused && bmActive && tier.bm.ticket && st.buildings.merchant >= 1) {
-      for (let i = 0; i < P.blackMarket.ticketPerDay; i++) {
-        if (debit('bmTicket', 'starCargo', P.blackMarket.ticketPrice)) { adsLeft += 1; st.bm.ticketsBought += 1; }
-        else break;
-      }
+    if (!paused && st.buildings.supply >= 1 && adsLeft > 0 && useView('#6')) {
+      credit('adTickets', 'supplyTicket', P.ads.ticketPerAd); // #6 赞助补给券（福利广告·铁顶）
     }
     if (!paused && !dis.merchant && st.buildings.merchant >= 1) {
       minutes -= P.merchant.minutes;
-      // 买券给货架留预算（步1）：留足 richThreshold 再买券——防"券吃光星贝、篮子/加速券饿死"（券中后期边际低、货架是真价值）
-      const afford = Math.floor(Math.max(0, st.res.starCargo - P.merchant.richThreshold) / P.merchant.ticketPrice);
+      const disc = merchDisc(); // Lv10 全场 9 折（满级终身被动）
+      // 补给券（每日限购·抽卡节奏唯一阀门铁律照旧）：留足 richThreshold 再买（步1 口径）
+      const tPrice = P.merchant.ticketPrice * disc;
+      const afford = Math.floor(Math.max(0, st.res.starCargo - P.merchant.richThreshold) / tPrice);
       const buy = Math.min(P.merchant.ticketDailyCap, afford);
-      if (buy > 0 && debit('merchantTicket', 'starCargo', buy * P.merchant.ticketPrice)) {
+      if (buy > 0 && debit('merchantTicket', 'starCargo', buy * tPrice)) {
         credit('merchantTicket', 'supplyTicket', buy);
       }
+      // 稀有格（任务单⑧百货化）：槽数 Lv1×1/Lv4×2/Lv7×3，池 6 品类各限购 1/日；
+      // #8 商人刷新=重掷稀有格（免费 1 次/日·券可无限恢复——模型取 1 次=可选池翻倍，
+      // 追加刷新对 6 品类小池边际递减、不建模·记简化声明）
       if (st.res.starCargo > P.merchant.richThreshold) {
-        let basketMult = tier.shoppingPower;
-        if (watcher && adsLeft > 0 && useAd()) basketMult *= 1.5; // #8 商人刷新
-        const B = P.merchant.basket;
-        const tryBuy = (entry, give) => {
-          const q = entry.p * basketMult;
-          if (q > 0 && st.res.starCargo - entry.price * q > P.merchant.richThreshold / 2 && debit('merchantBasket', 'starCargo', entry.price * q)) give(q);
-        };
-        tryBuy(B.beaconRare, (q) => credit('merchantBasket', 'beaconRare', q)); // 篮子改售稀有信标（步1）
-        tryBuy(B.finePlugin, (q) => { st.plugins.fine += q; });
-        tryBuy(B.coreFrag5, (q) => credit('merchantBasket', 'coreFrag', q * 5));
-        // B5 步3：高价大件货位=限周"定向专属碎片包"（650 星贝 → 最弱主力 舰/员各+18；审计原案"传奇插件包"因插件死库存改品·记档）
-        if (day % 7 === 0 && st.res.starCargo > 2500 && debit('merchantBigItem', 'starCargo', 650)) {
+        let slotsEff = P.merchant.rare.slotsByLv[Math.min(10, st.buildings.merchant)];
+        if (watcher && useView('#8', { keepFree: reserveFree })) slotsEff *= 2;
+        for (const [, g] of Object.entries(P.merchant.rare.pool)) {
+          if (st.buildings.merchant < (g.minLv ?? 1)) continue;
+          const w = st.buildings.merchant >= 8 && g.wLv8 ? g.wLv8 : g.w;
+          const q = Math.min(1, slotsEff * w) * tier.shoppingPower;
+          const cost = g.price * disc * q;
+          if (!(q > 0) || st.res.starCargo - cost < P.merchant.richThreshold / 2) continue;
+          if (!debit('merchantRare', 'starCargo', cost)) continue;
+          const gv = g.give;
+          if (gv.beaconRare) credit('merchantRare', 'beaconRare', gv.beaconRare * q);
+          if (gv.beaconEpic) credit('merchantRare', 'beaconEpic', gv.beaconEpic * q);
+          if (gv.coreFrag) credit('merchantRare', 'coreFrag', gv.coreFrag * q);
+          if (gv.superior) st.plugins.superior += gv.superior * q;
+          if (gv.flowCore) { st.coresOwned += gv.flowCore * q; st.coreDraws.shopFlow += gv.flowCore * q; }
+        }
+      }
+      // 常驻区应急①（缺料触发·价贵一截）：打捞队要断粮（信标<队数）才按贵价补普通信标
+      {
+        const queuesNow = T.salvageQueues(st.buildings.salvage);
+        const beaconsNow = st.res.beaconCommon + st.res.beaconRare + st.res.beaconEpic;
+        if (queuesNow > 0 && beaconsNow < queuesNow) {
+          const need = Math.min(queuesNow - beaconsNow, 3);
+          const cost = P.merchant.staple.beaconCommonPrice * disc * need;
+          if (st.res.starCargo - cost > P.merchant.richThreshold / 2 && debit('merchantStaple', 'starCargo', cost)) {
+            credit('merchantStaple', 'beaconCommon', need);
+          }
+        }
+      }
+      // 常驻区应急②（真墙日军饷小包·价劣=平时不买）：昨日整天零推进才触发、星贝富余才买
+      {
+        const prevWall = st.dailyStuck.length > 0 && st.dailyStuck[st.dailyStuck.length - 1] === 1;
+        const W = P.merchant.staple.wallPack;
+        if (prevWall && st.res.starCargo > P.merchant.richThreshold) {
+          const n = Math.min(W.capPerDay, Math.floor((st.res.starCargo - P.merchant.richThreshold) / (W.cargoCost * disc)));
+          if (n > 0 && debit('merchantStaple', 'starCargo', n * W.cargoCost * disc)) {
+            credit('merchantStaple', 'hullAlloy', n * W.hullAlloy);
+            credit('merchantStaple', 'pilotToken', n * W.pilotToken);
+          }
+        }
+      }
+      // 常驻区：精良插件不限（沿用 v0.5 篮子流量口径）
+      if (st.res.starCargo > P.merchant.richThreshold) {
+        const q = P.merchant.staple.finePlugin.p * tier.shoppingPower;
+        const cost = P.merchant.staple.finePlugin.price * disc * q;
+        if (q > 0 && st.res.starCargo - cost > P.merchant.richThreshold / 2 && debit('merchantStaple', 'starCargo', cost)) {
+          st.plugins.fine += q;
+        }
+        // B5 步3：高价大件货位=限周"定向专属碎片包"（650 星贝·照旧）
+        if (day % 7 === 0 && st.res.starCargo > 2500 && debit('merchantBigItem', 'starCargo', 650 * disc)) {
           let weakest = st.mains[0];
           for (const m of st.mains) if (m.ship.tier < weakest.ship.tier) weakest = m;
           weakest.ship.shards += 18; weakest.pilot.shards += 18;
         }
       }
-      // A6 步3：商人信标回收上架（S10.3 真源既有·治 332 枚死信标）：留 40 张打捞粮，超出按 25 星贝/枚回收
+      // 回收台（Lv3/6/9 回收价升档=升级节奏表"回收①②③"）：信标 25→28→31→34
       if (st.res.beaconCommon > 40) {
+        const recycleLv = st.buildings.merchant >= 9 ? 3 : st.buildings.merchant >= 6 ? 2 : st.buildings.merchant >= 3 ? 1 : 0;
         const rec = st.res.beaconCommon - 40;
-        if (debit('beaconRecycle', 'beaconCommon', rec)) credit('beaconRecycle', 'starCargo', rec * 25);
+        if (debit('beaconRecycle', 'beaconCommon', rec)) {
+          credit('beaconRecycle', 'starCargo', rec * (25 + recycleLv * P.merchant.recycleStep.beacon));
+        }
       }
     }
     if (!paused && !dis.salvage && st.buildings.salvage >= 1) {
       minutes -= P.salvage.minutes;
       const queues = T.salvageQueues(st.buildings.salvage);
       const adRun = watcher && adsLeft > 0
-        && (st.res.beaconCommon + st.res.beaconRare + st.res.beaconEpic) > queues && useAd(); // #5
+        && (st.res.beaconCommon + st.res.beaconRare + st.res.beaconEpic) > queues && useView('#5'); // #5 打捞秒完（福利广告·铁顶）
       // 昨日卡关 → 今天更勤地倒腾打捞（卡关日会话时间全闲着）
       const prevStuck = st.dailyStuck.length > 0 && st.dailyStuck[st.dailyStuck.length - 1] === 1;
       const boostTier = prevStuck ? { ...tier, salvageRunsPerQueue: tier.salvageRunsPerQueue * 1.5 } : tier;
@@ -1136,7 +1449,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       if (!paused) { drip(P.events.cycle3, T.eventCycle3); drip(P.events.cycle7, T.eventCycle7); }
       if (day === ev3Anchor + T.eventCycle3 - 1) {
         if (!paused && tier.eventCompletion >= P.events.completionThreshold) {
-          openCargoChest(st, credit, P.events.cycle3.completionChest, watcher && adsLeft > 0 && useAd(), P);
+          openCargoChest(st, credit, P.events.cycle3.completionChest, watcher && adsLeft > 0 && useView('#7'), P);
           if (day <= T.eventCycle3) st.mains[0].ship.shards += P.tutorialGrant.firstEventMainShard;
           // 结算奖=行动宝藏三选一（v1.0 复原）·边际贪心：插件会顶掉精良/空槽（Δ≥55）才拿；
           // 槽位已铺满优秀及以上（再拿只赚 Δ35）→ 改拿通用碎片对半（喂升阶升星的边际更高）。
@@ -1157,17 +1470,22 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       if (day === ev7Anchor + T.eventCycle7 - 1) {
         if (!paused && tier.eventCompletion >= P.events.completionThreshold) {
           // 7天扩张两笔分账（S10.5 三层·任务单③修正）：完成奖=史诗信标+星核碎片；
-          // 结算奖=扩张宝藏完整星核。v0 曾把史诗信标折进过程平摊，口径已改。
+          // 结算奖=扩张宝藏随机星核三选一（池=11 常规＋曲率星门低概率=任务单⑧欧皇线：
+          // 概率挂欧非包络 coreLuck——期望线小数入账、欧线毕业核可提前、非酋线=0 全走宝库兜底）
           for (const [k, v] of Object.entries(P.events.completion7)) credit('events', k, v);
+          const pGrad = Math.min(1, P.core.treasureGradP * (env.coreLuck ?? 1));
           st.coresOwned += P.events.completionCore;
+          st.coreDraws.treasure += P.events.completionCore * (1 - pGrad);
+          st.gradCores.treasureEV += P.events.completionCore * pGrad;
         }
         ev7Anchor = day + 1;
       }
     }
 
-    // —— 5. 花钱（黑市→转换→升阶→抽卡→升级→插件→建筑→星核）——
+    // —— 5. 花钱（宝箱→黑市货架→转换→升阶→抽卡→升级→插件→建筑→星核）——
     if (!paused) {
-      if (bmActive && tier.bm.buy) doBlackMarket(st, tier, day, P); // 黑市购买（碎片进主力→下面升阶消化）
+      if (!dis.bmBox) doBmBox(st, credit, env, P); // 宝箱=看广告画像通用（计数余额自然约束·bmBox 账目=黑市轨）
+      if (bmActive && tier.bm.buy) doBlackMarket(st, credit, day, P); // 货架=黑市党（碎片进主力→下面升阶消化）
       convertUniversal(st, debit);
       doAscends(st, T);
       if (!dis.gacha) {
@@ -1181,17 +1499,19 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       doAscends(st, T);
       doLevelUps(st, debit, T);
       doPluginCraft(st);
-      { // 步3 插件回收入模（②审计盲区修复·运行时块6d-3 已实现回收→星贝）：槽位+4 备件之外的传奇=死库存，回收 150 星贝/件
+      { // 步3 插件回收入模（②审计盲区修复·运行时块6d-3 已实现回收→星贝）：槽位+4 备件之外的传奇=死库存；
+        // 回收价随商人升级节奏表"回收①②③"升档（150→165→180→195·任务单⑧百货化）
         let slotsNow = 0;
         for (const m of st.mains) slotsNow += T.pluginSlotsByTier[m.ship.tier];
         const plugSurplus = st.plugins.legendary - (slotsNow + 4);
         if (plugSurplus > 0) {
+          const recycleLv = st.buildings.merchant >= 9 ? 3 : st.buildings.merchant >= 6 ? 2 : st.buildings.merchant >= 3 ? 1 : 0;
           st.plugins.legendary -= plugSurplus;
-          credit('pluginRecycle', 'starCargo', plugSurplus * 150);
+          credit('pluginRecycle', 'starCargo', plugSurplus * (150 + recycleLv * P.merchant.recycleStep.plugin));
         }
       }
       doBuildings(st, debit, P, T);
-      doCores(st, debit, P, T);
+      doCores(st, debit, day, env, P, T);
     }
 
     // —— 6. 推主线（主线优先吃时间预算；有效战力 = 战力 ×(1+试错折算+板凳折算)）——
@@ -1202,15 +1522,23 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     const eff = 1 + (tier.tinkerBonus ?? 0) + benchEffPct(benchPool(st, T), P);
     if (!paused && st.cleared < T.N) {
       let nodeBudget = Math.floor(Math.max(0, minutes) / P.mainline.minutesPerNode);
-      let adDoubleLeft = watcher && adsLeft > 0; // #3 首通翻倍（用在当日最后一关）
-      let adPickLeft = watcher && adsLeft > 1;   // #4 再选一个
       while (st.cleared < T.N && nodeBudget > 0 && power * eff >= pressure[st.cleared + 1]) {
         const n = st.cleared + 1;
-        const isLast = nodeBudget === 1 || (st.cleared + 1 < T.N && power * eff < pressure[n + 1] && true);
+        // 逐关养成态快照（任务单⑧交付 8·⑥第三段接口）：打这关时点的开盘养成态
+        st.milestones.push({
+          node: n, day, power: Math.round(power),
+          mains: st.mains.map((m) => [m.ship.tier, Math.round(m.ship.level), m.pilot.star, Math.round(m.pilot.level)]),
+          plugins: { fine: Math.round(st.plugins.fine * 10) / 10, superior: Math.round(st.plugins.superior * 10) / 10, legendary: Math.round(st.plugins.legendary * 10) / 10 },
+          cores: Math.round(st.coresOwned * 10) / 10,
+        });
+        // #3 首通翻倍 + #4 再选一（任务单⑧块5 扩围转全量：主线全部关卡首通可用·券可无限恢复）
+        // ——每关各耗 1 次观看；#4 期望值更肥（含专属碎片）优先；两者都给 #10/#11 留储备。
         const opts2 = { watcherChest: watcher && adsLeft > 0, adDouble: false, adExtraPick: false };
-        if (isLast && adDoubleLeft && useAd()) { opts2.adDouble = true; adDoubleLeft = false; }
-        if (isLast && adPickLeft && useAd()) { opts2.adExtraPick = true; adPickLeft = false; }
-        if (opts2.watcherChest && nodeStage(n, T) === 'boss') useAd(); // #7 货舱多选
+        if (watcher && !dis.mainlineRewards) {
+          if (useView('#4', { keepFree: reserveFree, keepTickets: reserveTickets })) opts2.adExtraPick = true;
+          if (useView('#3', { keepFree: reserveFree, keepTickets: reserveTickets })) opts2.adDouble = true;
+        }
+        if (opts2.watcherChest && nodeStage(n, T) === 'boss') useView('#7'); // #7 货舱多选（不限）
         if (!dis.mainlineRewards) nodeClearIncome(st, credit, n, opts2, P, T);
         else if (n === T.storyBossNode) { st.coresOwned += 1; st.corridorUnlocked = true; }
         st.cleared = n;
@@ -1236,32 +1564,50 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         T.bountyBoardCap[st.buildings.habitat >= 10 ? 2 : st.buildings.habitat >= 5 ? 1 : 0]);
     }
     if (!paused && !dis.bounty && st.cleared >= 5 && st.bountyBacklog > 0) {
-      // 参与度真分层（任务单⑤·结构三件之一二）：
-      // ① 张数×预算耦合：可打张数 ≤ 画像"辅助战斗分钟预算"（bountyMinutes）——此前只受
-      //    "剩余分钟"约束，对 15 分钟档几乎不咬合（悬赏近乎全档拉平=步2 B1 互斥根因之一）；
-      // ② 恶补分层：积压回补意愿 bountyCatchup 按画像（此前全档统一 +3=根因之二，
-      //    15 分钟玩家不恶补）。决策逻辑=bountyCardsFor 纯函数（gate 直测）。
-      const cards = bountyCardsFor(tier, st.bountyBacklog, minutes, wallDay, P, T);
+      // 护航委托（任务单⑧：3 张全护航·难度四档自选·明保底品质·失败丢单+#11 保卡）。
+      // 张数四约束沿用任务单⑤（bountyCardsFor 纯函数）；试探画像的失败重打时间按
+      // (1+失败率) 折进预算（分钟预算/剩余分钟同折——重打也是真时间）。
+      const pick = pickCommissionDifficulty(tier, power, pressure, P);
+      const probing = !!pick.probe;
+      const replayFrac = probing ? 1 - pick.pWin : 0;
+      const cards = bountyCardsFor(tier, st.bountyBacklog, minutes / (1 + replayFrac), wallDay, P, T);
       if (cards > 0) {
-        minutes -= cards * P.bounty.minutesPerCard;
+        minutes -= cards * P.bounty.minutesPerCard * (1 + replayFrac);
         st.bountyBacklog -= cards;
         st.bountyCardsPlayed += cards;
-        const gBase = Math.min(0.5, P.bounty.goldRate * env.goldRate);
-        const pNoGoldDay = Math.pow(1 - gBase, T.bountyDailyCards);
-        const gEff = gBase + Math.pow(pNoGoldDay, T.bountyGoldPity) * (1 / T.bountyDailyCards) * 0.5;
-        const qMult = (1 - 0.32 - gEff) + 0.32 * T.bountyQualityMult.silver + gEff * T.bountyQualityMult.gold;
-        // 完美通关率按画像分层（任务单⑤·bountyPerfect）：张数 4 张/日封顶之后，打法质量
-        // 是悬赏板剩下的参与度轴——投入深的玩家更常打出完美（看戏找策略的直接回报）
+        // #11 委托失败保卡（基础每日 1 次免费·券可无限恢复）：保住=换稳档重打
+        let saved = 0;
+        const failures = probing ? cards * (1 - pick.pWin) : 0;
+        for (let f = failures; f > 0.01; f -= 1) {
+          if (useView('#11')) saved += Math.min(1, f); else break;
+        }
+        const saveFrac = failures > 0 ? Math.min(1, saved / failures) : 0;
+        // 期望难度倍率/张：胜=上档全额；败而保=稳档重打全额；败未保=丢单零奖励
+        const diffEV = probing
+          ? pick.pWin * pick.probeMult + (1 - pick.pWin) * saveFrac * pick.safeMult
+          : pick.safeMult;
+        st.bountyDiffMult = diffEV;
+        const { qMult, goldPerCard } = commissionQualityEV(T);
+        const coefP = Math.pow(offCoef, P.bounty.coefPow ?? 1);
+        // 完美通关率按画像（任务单⑤沿用·两层制：赢=品质×难度全额、满血 ×1.25 彩蛋）
         const perfect = 1 + (tier.bountyPerfect ?? P.bounty.perfectRate) * (T.bountyPerfectMult - 1);
         const ambushLoss = 1 - T.bountyAmbushRate * (1 - P.bounty.ambushWinRate) * T.bountyAmbushLossPct;
-        const half = cards / 2;
-        credit('bounty', 'hullAlloy', P.bounty.escortAlloy * offCoef * qMult * perfect * ambushLoss * half);
-        credit('bounty', 'starCargo', P.bounty.escortCargo * offCoef * qMult * perfect * ambushLoss * half);
-        credit('bounty', 'pilotToken', P.bounty.drillToken * offCoef * qMult * half);
-        for (const [k, share] of Object.entries(P.bounty.goldPhysical)) credit('bounty', k, gEff * cards * share);
-        const winEV = T.bountyAmbushRate * P.bounty.ambushWinRate * half;
+        credit('bounty', 'hullAlloy', P.bounty.escortAlloy * coefP * qMult * diffEV * perfect * ambushLoss * cards);
+        credit('bounty', 'starCargo', P.bounty.escortCargo * coefP * qMult * diffEV * perfect * ambushLoss * cards);
+        // 金卡附赠实物（明保底 1/9 张·品质管实物、难度不乘）；遇袭小包按胜场张数
+        for (const [k, share] of Object.entries(P.bounty.goldPhysical)) credit('bounty', k, goldPerCard * cards * share);
+        const winCards = probing ? cards * (pick.pWin + (1 - pick.pWin) * saveFrac) : cards;
+        const winEV = T.bountyAmbushRate * P.bounty.ambushWinRate * winCards;
         for (const [k, v] of Object.entries(P.bounty.ambushWinBonus)) credit('bounty', k, winEV * v);
       }
+    }
+    // 演习木桩（任务单⑧·驾驶记录主渠道）：60 秒计分窗、打到当前战力可达档、
+    // 奖励=1..N 档累计一次性、每日重置；无星域系数（档位表即进度缩放）。
+    if (!paused && !dis.drill && st.cleared >= 5 && minutes >= P.drill.minutes) {
+      minutes -= P.drill.minutes;
+      const k = drillTierFor(power, tier.drillSkill, P);
+      if (k > 0) credit('drill', 'pilotToken', drillCumReward(k, P) * tier.dailyCompletion * (tier.drillRate ?? 1));
+      st.drillTier = k;
     }
     if (!paused && !dis.puzzle && st.cleared >= 40 && minutes >= P.puzzle.minutes * tier.dailyCompletion) {
       minutes -= P.puzzle.minutes * tier.dailyCompletion;
@@ -1285,7 +1631,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         credit('corridor', 'starCargo', P.corridor.layerCargo.base + P.corridor.layerCargo.per * L);
         if (L % T.corridorMilestoneEvery === 0) {
           const i = L / T.corridorMilestoneEvery;
-          const msMult = watcher && adsLeft > 0 && useAd() ? 2.5 : 1; // #10 里程碑 ×2→×2.5：B2 加肥
+          const msMult = watcher && adsLeft > 0 && useView('#10') ? 2.5 : 1; // #10 里程碑翻倍（福利广告·铁顶）
           credit('corridor', 'starOre', (P.corridor.msOre.base + P.corridor.msOre.per * i) * msMult);
           credit('corridor', 'starCargo', (P.corridor.msCargo.base + P.corridor.msCargo.per * i) * msMult);
           const uni = (P.corridor.msUniversal.base + P.corridor.msUniversal.per * i) * msMult;
@@ -1301,7 +1647,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     // —— 8. 卡关：安慰包（白送每日≤3 次·按档位尝试次数领）+ 趣事 ——
     if (stuckToday) {
       const tries = Math.min(3, tier.consolationTries ?? 1); // 肝档一天多试几次墙
-      const adCons = watcher && adsLeft > 0 && useAd() ? 1 : 0; // #9 战败安慰双倍（首次那单）
+      const adCons = watcher && adsLeft > 0 && useView('#9') ? 1 : 0; // #9 战败安慰双倍（首次那单）
       credit('consolation', 'hullAlloy', P.consolation.hullAlloy * (tries + adCons));
       credit('consolation', 'pilotToken', P.consolation.pilotToken * (tries + adCons));
       credit('consolation', 'beaconCommon', P.consolation.firstDefeatBeacon);
@@ -1372,7 +1718,14 @@ function summarize(tierName, st, opts, P, T) {
     finalPower: Math.round(st.dailyPower[upto - 1] ?? 0),
     corridorLayer: Math.round(st.corridorLayer),
     coresOwned: Math.round(st.coresOwned * 10) / 10,
+    coresDistinct: Math.round(st.coresDistinct * 10) / 10,
     coreDays: st.coreDays,
+    // 任务单⑧观测口：毕业核到手（分渠道）+ 渠道抽数 + 木桩档位 + 委托难度期望倍率
+    gradCoreDays: st.gradCoreDays,
+    gradCores: { ...st.gradCores },
+    coreDraws: { ...st.coreDraws },
+    drillTier: st.drillTier,
+    bountyDiffMult: Math.round(st.bountyDiffMult * 100) / 100,
     // 观测口（任务单⑤）：悬赏实打张数（分层验证）与板凳终态折算（%·一位小数）
     bountyCards: Math.round(st.bountyCardsPlayed * 10) / 10,
     benchPct: Math.round(benchEffPct(benchPool(st, T), P) * 1000) / 10,
@@ -1385,7 +1738,7 @@ function summarize(tierName, st, opts, P, T) {
     negativeViolations: st.negativeViolations,
     adsUsedTotal: st.adsUsedTotal,
     bm: { ...st.bm, earned: { ...st.bm.earned }, buys: { ...st.bm.buys } },
-    bmExtraPower: st.bmExtraPower,
+    milestones: st.milestones,
     dailyCleared: cl,
     dailyPower: st.dailyPower,
     ledger: st.ledger,
@@ -1521,13 +1874,14 @@ export function runStandard(pressure, P = PARAMS, opts = {}) {
   return out;
 }
 
-// 军饷身份份额（B1 落地·任务单⑤·GDD §3 转正口径）：普通档 悬赏=第一单源（带 40-55%）、
-// 挂机+巡逻=底垫、主线=风味 ≤10%——对 合金/驾驶记录 两币分别判。
+// 军饷身份份额（B1 落地·任务单⑤·GDD §3 转正口径；任务单⑧：记录第一单源随演习剥离
+// 搬进木桩——"悬赏 40-55%"护栏按作战大厅渠道继承：合金看护航委托、驾驶记录看演习木桩，
+// 各自 40-55% 第一单源；主线 ≤10% 风味护栏两币对称继承（Ron 2026-07-07 口径确认）。
 export function incomeShares(run, key) {
   let total = 0;
   for (const kv of Object.values(run.ledger.income)) total += kv[key] ?? 0;
   const of = (src) => (total > 0 ? ((run.ledger.income[src]?.[key] ?? 0) / total) * 100 : 0);
-  return { bounty: of('bounty'), offline: of('offline'), patrol: of('patrol'), mainline: of('mainline'), total };
+  return { bounty: of('bounty'), drill: of('drill'), offline: of('offline'), patrol: of('patrol'), mainline: of('mainline'), total };
 }
 
 // 四档基线验收（v2 口径·严格版）：毕业带 ±10%（按整天取整——天数是整数，容差
@@ -1555,11 +1909,13 @@ export function checkCalibration(std, P = PARAMS) {
     const w = std['肝档'].expected.wallWait[node] ?? 0;
     if (w < lo || w > hi) errors.push(`肝档 n${node} 墙 ${w} 天，超出验收带 [${lo},${hi}]`);
   }
-  // B1 军饷身份（普通档·合金/记录两币分别判）：悬赏 40-55% 第一单源、主线风味 ≤10%
-  for (const key of ['hullAlloy', 'pilotToken']) {
+  // B1 军饷身份（普通档·合金/记录两币分别判·任务单⑧作战大厅口径）：
+  // 合金第一单源=护航委托、记录第一单源=演习木桩，各 40-55%；主线风味 ≤10% 两币对称。
+  for (const [key, srcName] of [['hullAlloy', 'bounty'], ['pilotToken', 'drill']]) {
     const s = incomeShares(std['普通'].expected, key);
-    if (s.bounty < 40 || s.bounty > 55) errors.push(`B1 身份：普通档 ${key} 悬赏份额 ${Math.round(s.bounty)}% 出 40-55 带`);
-    if (s.bounty <= Math.max(s.offline, s.patrol)) errors.push(`B1 身份：普通档 ${key} 悬赏未成第一单源（悬赏 ${Math.round(s.bounty)}% vs 离线 ${Math.round(s.offline)}%/巡逻 ${Math.round(s.patrol)}%）`);
+    const share = s[srcName];
+    if (share < 40 || share > 55) errors.push(`B1 身份：普通档 ${key} ${srcName === 'bounty' ? '委托' : '木桩'}份额 ${Math.round(share)}% 出 40-55 带`);
+    if (share <= Math.max(s.offline, s.patrol)) errors.push(`B1 身份：普通档 ${key} ${srcName} 未成第一单源（${Math.round(share)}% vs 离线 ${Math.round(s.offline)}%/巡逻 ${Math.round(s.patrol)}%）`);
     if (s.mainline > 10) errors.push(`B1 身份：普通档 ${key} 主线份额 ${Math.round(s.mainline)}% 超风味上限 10%`);
   }
   return errors;
@@ -1647,9 +2003,10 @@ export function perturbedParams(source, mult, P = PARAMS) {
     p.gacha.shardPerPullEV *= mult;
     for (const k of Object.keys(p.gacha.bodyP)) p.gacha.bodyP[k] *= mult;
   } else if (source === 'bounty') {
+    // 任务单⑧：军饷第一单源扰动=作战大厅两渠道（护航委托+演习木桩）同扰
     p.bounty.escortAlloy *= mult;
     p.bounty.escortCargo *= mult;
-    p.bounty.drillToken *= mult;
+    p.drill.rewardBase *= mult;
   } else if (source === 'treasure') {
     p.events.treasure3.legendaryPlugin *= mult;
     p.events.treasure3.universalShards *= mult;
@@ -1699,15 +2056,21 @@ export function runAdEnvelope(P = PARAMS, mults = [1.5, 1.7, 2.0]) {
   });
 }
 
+// 广告双跑（任务单⑧验收 7=本单最重要新验收）：满/零广告实测常规轨加速。
+// 口径（Ron 2026-07-07 拍板）：黑市宝箱=黑市轨商品、25% 硬线不计（双跑两侧都关宝箱=
+// 纯常规轨口径 speedup）；含宝箱数字另报一行透明化（speedupWithBox）。
 export function runAdComparison(pressure, P = PARAMS) {
   const out = {};
   for (const t of ['肝档', '重度', '普通']) {
-    const full = simulateEconomyTier(t, pressure, { ads: 'full' }, P);
-    const none = simulateEconomyTier(t, pressure, { ads: 'none' }, P);
+    const full = simulateEconomyTier(t, pressure, { ads: 'full', disable: { bmBox: true } }, P);
+    const none = simulateEconomyTier(t, pressure, { ads: 'none', disable: { bmBox: true } }, P);
+    const fullBox = simulateEconomyTier(t, pressure, { ads: 'full' }, P);
     out[t] = {
       fullDays: full.graduateDay, zeroDays: none.graduateDay,
       speedup: none.graduateDay && full.graduateDay
         ? Math.round(((none.graduateDay - full.graduateDay) / none.graduateDay) * 1000) / 10 : null,
+      speedupWithBox: none.graduateDay && fullBox.graduateDay
+        ? Math.round(((none.graduateDay - fullBox.graduateDay) / none.graduateDay) * 1000) / 10 : null,
       zeroMaxWall: none.maxWallDays,
     };
   }
@@ -1716,7 +2079,7 @@ export function runAdComparison(pressure, P = PARAMS) {
 
 export function runSensitivity(pressure, P = PARAMS) {
   const base = simulateEconomyTier('普通', pressure, {}, P).graduateDay;
-  const sources = ['offline', 'patrol', 'bounty', 'corridor', 'salvage', 'gacha', 'events', 'mail', 'merchant', 'puzzle', 'mainlineRewards'];
+  const sources = ['offline', 'patrol', 'bounty', 'drill', 'corridor', 'salvage', 'gacha', 'events', 'mail', 'merchant', 'puzzle', 'mainlineRewards', 'bmBox'];
   const rows = [];
   for (const s of sources) {
     const r = simulateEconomyTier('普通', pressure, { disable: { [s]: true } }, P);

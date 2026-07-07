@@ -1,6 +1,8 @@
 // 第三块①「造尺子」→ 第三块③「形状靶v2+双锚+黑市」→ 任务单⑤「B1军饷落地+参与度真分层」
-// gate 测试（如实重定基）。⑤新增面：参与度分层（张数纯函数/发卡不变量/质量分层阶梯/板凳
-// 性质与方向/B1 身份份额+活性检查），抗漂移护栏扩至 8 变体（+bounty×0.8/×1.2）。
+// → 任务单⑧「经济尺重构」gate 测试（如实重定基）。⑧新增面：委托 3 张+明保底+难度四档
+//（品质期望/难度选择纯函数/试探胜率）、演习木桩档位函数（记录第一单源搬家）、星核渠道
+// 矩阵（开蛋收藏期望/宝库两层价/毕业核到手时点）、黑市 2大+4小+宝箱（计数余额约束·强星核
+// 退役）、商店百货化与广告券新规（福利广告铁顶）、逐关养成态导出口（⑥第三段接口）。
 // 口径：毕业天数【不】进 gate（后续调数值天天变）；进 gate 的是——
 //   ① 内嵌形状靶 v2 副本没漂移（四档 30/37/47/57 + 递进墙矩阵——"靶"不是"尺"，靶变=有人动了锁定决策）
 //   ② 战力公式对 B1 手算例 ③ 附录D 升阶/升星消耗与等级上限 ④ 建筑成本公式对 6b3 草案例值
@@ -15,6 +17,7 @@ import {
   WALL_MATRIX_BANDS, HARD_WALL_CAP,
   shipBasePower, pilotCoef, unitPower, nodeStage, regionOfNode,
   benchEffPct, bountyCardsFor, incomeShares,
+  commissionQualityEV, pickCommissionDifficulty, drillTierFor, drillCumReward, expectedDistinctCores,
   calibratePressure, simulateEconomyTier, runStandard,
   checkCalibration, checkBlackMarket, DRIFT_VARIANTS, runDriftVariant,
 } from '../tools/simulate-s7-economy.mjs';
@@ -336,56 +339,71 @@ describe('S7 经济尺 · 黑市（S13.6 入模 · 任务单③验收三条）',
     expect({ ...bmOff, tier: null }).toEqual({ ...liver, tier: null });
   });
 
-  it('四档画像不碰黑市：计数只累计不消费、无广告券购买', () => {
+  it('四档货架零接触：宝箱以外零消费、券按画像口味、轻度全零（任务单⑧重定基）', () => {
+    // 为什么对（重定基·任务单⑧）：宝箱=全部看广告画像的通用日常（Ron 口径修正：受计数
+    // 余额自然约束），故四档 spent 不再恒 0——但必须恰好等于宝箱支出（10×箱数=货架零接触）；
+    // 券改"商店按需"（肝/重有口味、普/轻 0）；轻度零广告→计数/宝箱/券全零（红线跑法纯净）。
     for (const t of Object.keys(TARGETS)) {
-      expect(std[t].expected.bm.spent, `${t} 不应有黑市消费`).toBe(0);
-      expect(std[t].expected.bm.ticketsBought, `${t} 不应买广告券`).toBe(0);
+      const b = std[t].expected.bm;
+      expect(b.spent, `${t} 黑市支出=宝箱支出（不碰货架）`).toBeCloseTo(b.boxes * PARAMS.blackMarket.box.price, 9);
+      expect(Object.keys(b.buys).filter((k) => k !== 'box'), `${t} 不应买货架商品`).toEqual([]);
     }
-    // 轻度=纯无广告画像：计数也必须为 0（零广告红线的黑市侧影）
+    expect(std['普通'].expected.bm.ticketsBought, '普通档券口味=0').toBe(0);
     expect(std['轻度'].expected.bm.earnedTotal).toBe(0);
+    expect(std['轻度'].expected.bm.boxes).toBe(0);
+    expect(std['轻度'].expected.bm.ticketsBought).toBe(0);
   });
 
-  it('商品表价位档合规：小 30-50 / 中 68-98 / 大 128-198（S13.6 v0 价位带）', () => {
+  it('货架结构合规（任务单⑧）：大件 128-198、小件坑 8 品类、宝箱价 10、强星核退役', () => {
+    // 为什么对：总修订案三终拍——2 大件（高阶舰 128/超新星 198=GDD 点名价）+4 小件坑
+    // （8 品类·流通核 128-138 带压轴）+宝箱位（价 10 日 1）；"强星核+100 额外战力"概念
+    // 退役=商品、字段、战力公式加项全清（bmExtraPower 不复存在）。
     const g = PARAMS.blackMarket.goods;
-    for (const id of ['shardPack', 'plugLegend']) expect(g[id].price).toBeGreaterThanOrEqual(30);
-    for (const id of ['shardPack', 'plugLegend']) expect(g[id].price).toBeLessThanOrEqual(50);
-    expect(g.coreStd.price).toBeGreaterThanOrEqual(68);
-    expect(g.coreStd.price).toBeLessThanOrEqual(98);
-    for (const id of ['coreStrong', 'shipHigh']) {
-      expect(g[id].price).toBeGreaterThanOrEqual(128);
-      expect(g[id].price).toBeLessThanOrEqual(198);
+    expect(g.shipHigh.price).toBe(128);
+    expect(g.supernova.price).toBe(198);
+    expect((g as Record<string, unknown>).coreStrong).toBeUndefined();
+    for (const item of Object.values(g)) expect((item.give as Record<string, number>).strongBonus).toBeUndefined();
+    expect(PARAMS.blackMarket.box.price).toBe(10);
+    const pool = PARAMS.blackMarket.smalls.pool;
+    expect(Object.keys(pool).length).toBe(8);
+    expect(pool.flowCore.price).toBeGreaterThanOrEqual(128);
+    expect(pool.flowCore.price).toBeLessThanOrEqual(138);
+    expect((std['黑市党'].expected as unknown as Record<string, unknown>).bmExtraPower).toBeUndefined();
+    // 补给券/星空宝石不进小件池（守铁律：抽卡唯一阀门/宝库黑市分工）
+    for (const item of Object.values(pool)) {
+      expect((item.give as Record<string, number>).supplyTicket).toBeUndefined();
+      expect((item.give as Record<string, number>).starGem).toBeUndefined();
     }
   });
 });
 
 describe('S7 经济尺 · 参与度真分层（任务单⑤·结构三件+质量分层）', () => {
-  it('张数决策纯函数：预算/意愿/时间/积压四约束按画像分层（意愿=期望值不取整）', () => {
-    // 为什么对（各值逐一手核·第二段重定基）：轻度预算 3 分钟→floor(3/1.2)=2 张（15 分钟
-    // 玩家掐表打卡）；轻度真墙日预算×2→floor(6/1.2)=5，被意愿 4×0.88+恶补0=3.52 封顶
-    //（意愿改期望值口径不取整——round 曾把普通档 3.68 吞成 4、张数期望被拉平，与全模型
-    // 小数件/小数抽的期望值语义不一致=历史遗留）；肝档积压>4 → 意愿 4+3=7（回来清板）；
-    // 普通 4×0.92+1=4.68＜预算 floor(6/1.2)=5；重度 4+2=6=floor(8/1.2)；剩余分钟
-    // floor(2.5/1.2)=2 仍兜底；零积压=0。
+  it('张数决策纯函数：预算/意愿/时间/积压四约束按画像分层（任务单⑧重定基 3 张制）', () => {
+    // 为什么对（各值逐一手核·⑧张数 4→3 重定基）：轻度预算 3 分钟→floor(3/1.2)=2 张
+    //（15 分钟玩家掐表打卡）；轻度真墙日预算×2→floor(6/1.2)=5，被意愿 3×0.88+恶补0=2.64
+    // 封顶（期望值口径不取整）；肝档积压>3 → 意愿 3+3=6（回来清板·预算 floor(10/1.2)=8
+    // 兜得住）；肝档积压 3 时不触发恶补=min(3,…)=3；普通 3×0.92+1=3.76＜预算
+    // floor(6/1.2)=5；重度 3+2=5＜floor(8/1.2)=6；剩余分钟 floor(2.5/1.2)=2 仍兜底；零积压=0。
     expect(bountyCardsFor(TIERS['轻度'], 12, 10, false)).toBe(2);
-    expect(bountyCardsFor(TIERS['轻度'], 12, 10, true)).toBeCloseTo(3.52, 9);
-    expect(bountyCardsFor(TIERS['肝档'], 12, 100, false)).toBe(7);
-    expect(bountyCardsFor(TIERS['肝档'], 4, 100, false)).toBe(4);
-    expect(bountyCardsFor(TIERS['普通'], 12, 100, false)).toBeCloseTo(4.68, 9);
-    expect(bountyCardsFor(TIERS['重度'], 12, 100, false)).toBe(6);
+    expect(bountyCardsFor(TIERS['轻度'], 12, 10, true)).toBeCloseTo(2.64, 9);
+    expect(bountyCardsFor(TIERS['肝档'], 12, 100, false)).toBe(6);
+    expect(bountyCardsFor(TIERS['肝档'], 3, 100, false)).toBe(3);
+    expect(bountyCardsFor(TIERS['普通'], 12, 100, false)).toBeCloseTo(3.76, 9);
+    expect(bountyCardsFor(TIERS['重度'], 12, 100, false)).toBe(5);
     expect(bountyCardsFor(TIERS['普通'], 12, 2.5, false)).toBe(2);
     expect(bountyCardsFor(TIERS['轻度'], 0, 10, false)).toBe(0);
   });
 
-  it('全程实跑分层：轻度 <3 张/日，其余档 ≈4 张/日（张数分层在底部咬合）', () => {
-    // 为什么对：步2 实证"悬赏近乎全档拉平（人人 4 张打得完+恶补抹差）"是 B1 互斥根因；
-    // 分层后轻度日均 ≈2.7（常规日 2 张+真墙日 3.52 张的混合·板上积压掉最旧=真损失），
-    // 肝/重/普 4.0（板留卡设计下 92% 完成率的欠账被次日轻恶补回收——张数分层只在
-    // 预算掐死的档位产生净损失，这是板机制的诚实结果；肝/重对普通的顶端分层走打法
-    // 质量 bountyPerfect + 进度耦合，见下一测）。此差异是 B1 档差不塌的结构前提。
+  it('全程实跑分层：轻度 <2.6 张/日，其余档 ≈3 张/日（张数分层在底部咬合·⑧重定基）', () => {
+    // 为什么对（⑧张数 4→3 重定基·实测 肝/重/普 3.00、轻 2.22）：3 张制下张数分层带
+    // 整体下移且档差绝对值变窄（0.78 张/日）——这是设计有意的（张数轴让位难度轴），
+    // 底部咬合仍在：轻度预算掐死 ≈2.2、其余打满 3.0；肝/重对普通的顶端分层改走
+    // 难度试探（bountyProbe·pickCommissionDifficulty）+打法质量（bountyPerfect），
+    // 与木桩压榨（drillSkill）三轴——张数不再是唯一分层轴是⑧的结构本意。
     const avg = (t: string) => std[t].expected.bountyCards / std[t].expected.graduateDay!;
-    expect(avg('轻度')).toBeLessThan(3.0);
-    for (const t of ['肝档', '重度', '普通']) expect(avg(t), `${t} 张/日`).toBeGreaterThanOrEqual(3.9);
-    expect(avg('普通') - avg('轻度')).toBeGreaterThan(0.8);
+    expect(avg('轻度')).toBeLessThan(2.6);
+    for (const t of ['肝档', '重度', '普通']) expect(avg(t), `${t} 张/日`).toBeGreaterThanOrEqual(2.85);
+    expect(avg('普通') - avg('轻度')).toBeGreaterThan(0.5);
   });
 
   it('打法质量分层：完美通关率 肝>重>普>轻、黑市党=肝档（顶端参与度轴）', () => {
@@ -398,31 +416,34 @@ describe('S7 经济尺 · 参与度真分层（任务单⑤·结构三件+质量
     expect(TIERS['黑市党'].bountyPerfect).toBe(TIERS['肝档'].bountyPerfect);
   });
 
-  it('发卡=每登录日 +4（S10.8 原文）：实打张数 ≤ 4×活跃天（停玩天不发卡）', () => {
-    // 为什么对：S10.8"每登录日 +4、超上限掉最旧"——修正前模型停玩天照发，停 2 天回来
-    // 白多 8 张可打（实测修正前 肝档停2 实打 128 > 发卡上限 4×活跃天 120=靠"攒卡银行"
-    // 凭空多打）；对齐后任何跑法实打张数都不可能超过 4×(毕业日−停玩天)。此不变量在
-    // 回退发卡门控时必红，且对毕业日漂移稳健（不钉具体张数）。
+  it('发卡=每登录日 +3（S10.8 任务单⑧委托制）：实打张数 ≤ 3×活跃天（停玩天不发卡）', () => {
+    // 为什么对：S10.8 重构"每登录日 +3、超上限掉最旧"（张数 4→3 随委托制）——停玩天不发卡
+    // 的门控沿任务单⑤修正（修正前停玩=攒卡银行凭空多打）；不变量挂 TRUTHS.bountyDailyCards
+    // 自动随真源，回退发卡门控时必红，且对毕业日漂移稳健（不钉具体张数）。
     const paused = simulateEconomyTier('肝档', pressure, { pause: { from: 10, days: 2 } });
     expect(paused.bountyCards).toBeLessThanOrEqual(TRUTHS.bountyDailyCards * (paused.graduateDay! - 2) + 1e-6);
     const base = std['肝档'].expected;
     expect(base.bountyCards).toBeLessThanOrEqual(TRUTHS.bountyDailyCards * base.graduateDay! + 1e-6);
   });
 
-  it('B1 军饷身份进 gate 且检查是活的：普通档份额带内 + 悬赏清零必报身份错', () => {
-    // 为什么对：身份口径（GDD §3 转正）=悬赏 40-55% 第一单源/主线 ≤10%，已并入
-    // checkCalibration（基线全绿测试覆盖）；此测防"检查本体被删/绕过"——把悬赏收入
-    // 清零喂进去，必须报 B1 身份错，否则说明 gate 里根本没在查身份。
-    for (const key of ['hullAlloy', 'pilotToken'] as const) {
+  it('B1 军饷身份进 gate 且检查是活的：两币各自第一单源带内 + 清零必报身份错（⑧作战大厅口径）', () => {
+    // 为什么对（⑧重定基）：演习记录随木桩剥离，"悬赏 40-55%"护栏按作战大厅渠道继承——
+    // 合金第一单源=护航委托、记录第一单源=演习木桩，各 40-55%；主线 ≤10% 两币对称继承
+    //（Ron 2026-07-07 口径确认）。活性检查两条腿分别验：清零委托→合金身份错、清零木桩
+    // →记录身份错，防"检查本体被删/绕过"。
+    for (const [key, src] of [['hullAlloy', 'bounty'], ['pilotToken', 'drill']] as const) {
       const s = incomeShares(std['普通'].expected, key);
-      expect(s.bounty, `${key} 悬赏份额`).toBeGreaterThanOrEqual(40);
-      expect(s.bounty, `${key} 悬赏份额`).toBeLessThanOrEqual(55);
+      expect(s[src], `${key} 第一单源份额`).toBeGreaterThanOrEqual(40);
+      expect(s[src], `${key} 第一单源份额`).toBeLessThanOrEqual(55);
       expect(s.mainline, `${key} 主线份额`).toBeLessThanOrEqual(10);
-      expect(s.bounty).toBeGreaterThan(Math.max(s.offline, s.patrol));
+      expect(s[src]).toBeGreaterThan(Math.max(s.offline, s.patrol));
     }
     const doctored = structuredClone(std);
-    doctored['普通'].expected.ledger.income.bounty = { hullAlloy: 0, pilotToken: 0 };
-    expect(checkCalibration(doctored).some((e) => e.includes('B1 身份'))).toBe(true);
+    doctored['普通'].expected.ledger.income.bounty = { hullAlloy: 0 };
+    expect(checkCalibration(doctored).some((e) => e.includes('B1 身份') && e.includes('hullAlloy'))).toBe(true);
+    const doctored2 = structuredClone(std);
+    doctored2['普通'].expected.ledger.income.drill = { pilotToken: 0 };
+    expect(checkCalibration(doctored2).some((e) => e.includes('B1 身份') && e.includes('pilotToken'))).toBe(true);
   });
 
   it('板凳折算：零池为零、随池单调、cap 封顶，cap 处在"小乘区"量级（≤3%）', () => {
@@ -497,5 +518,239 @@ describe('S7 经济尺 · 机制冒烟（不断言具体毕业天数）', () => 
       'coreFrag', 'fullCore', 'starGem', 'supplyTicket',
       'beaconCommon', 'beaconRare', 'beaconEpic', 'starCargo', 'adTicket',
     ]);
+  });
+});
+
+describe('S7 经济尺 · 任务单⑧ 护航委托（3 张明保底 + 难度四档自选）', () => {
+  it('真源常量：3 张/日、每 3 天 1 金、每天 ≥1 银（明保底替代旧金8%+暗保底）', () => {
+    expect(TRUTHS.bountyDailyCards).toBe(3);
+    expect(TRUTHS.bountyGoldEveryDays).toBe(3);
+    expect(TRUTHS.bountySilverPerDay).toBe(1);
+    expect((TRUTHS as Record<string, unknown>).bountyGoldPity, '旧暗保底常量应退役').toBeUndefined();
+  });
+
+  it('明保底品质期望：单张 金1/9 银1/3 铜5/9、期望倍率 ≈1.4222（保底=日程表零方差）', () => {
+    // 为什么对：日 3 张含 1 银、每 3 天 1 金 → 单张金 (1/3)/3=1/9、银 1/3、铜=余 5/9；
+    // qMult = 1/9×3 + 1/3×1.6 + 5/9×1 = 1.4222——与旧随机口径均值几乎相同（1.42），
+    // 明保底改变的是方差与下限、不是均值（受控方差哲学的机器体现）。
+    const q = commissionQualityEV();
+    expect(q.goldPerCard).toBeCloseTo(1 / 9, 9);
+    expect(q.silverPerCard).toBeCloseTo(1 / 3, 9);
+    expect(q.bronzePerCard).toBeCloseTo(5 / 9, 9);
+    expect(q.qMult).toBeCloseTo(1 / 9 * 3 + 1 / 3 * 1.6 + 5 / 9 * 1, 9);
+  });
+
+  it('难度选择纯函数：稳档=碾压线最高档、普/轻不试探、肝/重试探过意愿门槛、顶档收菜', () => {
+    // 为什么对（合成压力表手核）：推荐战力=压力表定点 n10/n55/n98/n130=300/3000/10000/20000；
+    // 战力 500：碾 1.15×300=345 → 稳档新手；普通(不试探)拿 0.7 倍率；
+    // 肝档 2800：2800/3000=0.933 ≥ probeMinRatio 0.9、胜率 (0.933−0.55)/0.6=0.639 ≥
+    // 1−0.6=0.4 意愿门槛 → 试探普通档；轻度同战力不试探（bountyProbe=false）；
+    // 肝档 23000 ≥ 1.15×20000 → 稳档噩梦（顶档无可试探=后期收菜）。
+    const pr: number[] = new Array(151).fill(0);
+    pr[10] = 300; pr[55] = 3000; pr[98] = 10000; pr[130] = 20000;
+    const D = PARAMS.bounty.difficulty;
+    const low = pickCommissionDifficulty(TIERS['普通'], 500, pr);
+    expect(low.safe).toBe('novice');
+    expect(low.safeMult).toBe(D.mults.novice);
+    expect(low.probe).toBeNull();
+    const liver = pickCommissionDifficulty(TIERS['肝档'], 2800, pr);
+    expect(liver.probe).toBe('normal');
+    expect(liver.pWin).toBeCloseTo((2800 / 3000 - D.failFloor) / (D.crushRatio - D.failFloor), 9);
+    const light = pickCommissionDifficulty(TIERS['轻度'], 2800, pr);
+    expect(light.probe).toBeNull();
+    const top = pickCommissionDifficulty(TIERS['肝档'], 23000, pr);
+    expect(top.safe).toBe('nightmare');
+    expect(top.probe).toBeNull();
+    // 试探胜率边界：ratio≤failFloor 必败、≥crushRatio 满胜（意愿门槛外仍可核曲线）
+    const edge = pickCommissionDifficulty(TIERS['肝档'], 3450, pr); // =1.15×3000 → 稳档普通
+    expect(edge.safe).toBe('normal');
+  });
+
+  it('难度倍率单调且"难度越高奖励越多"（新手<普通<困难<噩梦）', () => {
+    const m = PARAMS.bounty.difficulty.mults;
+    expect(m.novice).toBeLessThan(m.normal);
+    expect(m.normal).toBeLessThan(m.hard);
+    expect(m.hard).toBeLessThan(m.nightmare);
+  });
+});
+
+describe('S7 经济尺 · 任务单⑧ 演习木桩（档位函数·记录第一单源）', () => {
+  it('档位表 15-20 档内、阈值等比、战力→档位单调、覆盖新手到毕业', () => {
+    // 为什么对：GDD S10.8"进度条分 15-20 档"（取 20=结构修正记档：18 档时顶部档距 30%
+    // 全档终局零跨档）；阈值=8k×1.2577^k：战力 333(dmg 8k)→1 档、500→2 档、
+    // 顶档 ≈ 战力 26k（毕业段真实可达·d=0.40 换算）。
+    const D = PARAMS.drill;
+    expect(D.tiers).toBeGreaterThanOrEqual(15);
+    expect(D.tiers).toBeLessThanOrEqual(20);
+    expect(D.dps).toBe(0.40); // ⑥细表 §9 量纲合同
+    expect(drillTierFor(100, 1)).toBe(0);
+    expect(drillTierFor(334, 1)).toBe(1);
+    expect(drillTierFor(500, 1)).toBe(2);
+    let prev = 0;
+    for (const w of [500, 1000, 3000, 8000, 15000, 22000, 26100]) {
+      const k = drillTierFor(w, 1);
+      expect(k, `战力 ${w} 档位应单调`).toBeGreaterThanOrEqual(prev);
+      prev = k;
+    }
+    expect(drillTierFor(26100, 1)).toBe(D.tiers); // 毕业段摸到顶档
+    expect(drillTierFor(22000, 1.08), '压榨系数=会玩差应能多跨档').toBeGreaterThanOrEqual(drillTierFor(22000, 0.95));
+  });
+
+  it('累计奖励：cum(0)=0、随档严格递增、复现老演习弧（档7≈1050/档20≈11000 带）', () => {
+    expect(drillCumReward(0)).toBe(0);
+    for (let k = 1; k <= PARAMS.drill.tiers; k++) {
+      expect(drillCumReward(k)).toBeGreaterThan(drillCumReward(k - 1));
+    }
+    expect(drillCumReward(7)).toBeGreaterThan(900);
+    expect(drillCumReward(7)).toBeLessThan(1250);
+    expect(drillCumReward(20)).toBeGreaterThan(9500);
+    expect(drillCumReward(20)).toBeLessThan(12500);
+  });
+
+  it('实跑：木桩=记录第一单源（checkCalibration 覆盖）+ 无星域系数（档位表即进度缩放）', () => {
+    // 为什么对：drill 源只发 pilotToken；若有人给木桩挂 offCoef 会双重缩放（档位随战力
+    // 已含进度），此测钉"份额来自 drill 源"+日收入=cum(档)×完成率×参与率的期望值语义。
+    const r = std['普通'].expected;
+    const s = incomeShares(r, 'pilotToken');
+    expect(s.drill).toBeGreaterThan(Math.max(s.offline, s.patrol, s.mainline));
+    expect(r.drillTier).toBeGreaterThanOrEqual(15); // 毕业时点应在高档区
+  });
+});
+
+describe('S7 经济尺 · 任务单⑧ 星核渠道矩阵（开蛋/宝库两层/毕业核时点）', () => {
+  it('开蛋收藏期望：零抽=只陨星弹、随抽数单调、封顶 16、强常规=低权重头奖', () => {
+    const mk = (egg: number, cleared = 30) => ({
+      cleared,
+      coreDraws: { egg, treasure: 0, bmFlow: 0, shopFlow: 0, vaultFlow: 0, vaultDupes: 0 },
+      gradCores: { vault: 0, bm: 0, treasureEV: 0 },
+    });
+    expect(expectedDistinctCores(mk(0, 0))).toBe(0);
+    expect(expectedDistinctCores(mk(0))).toBe(1); // 首Boss 后=陨星弹
+    let prev = 0;
+    for (const n of [1, 3, 8, 20, 60]) {
+      const d = expectedDistinctCores(mk(n));
+      expect(d).toBeGreaterThan(prev);
+      prev = d;
+    }
+    expect(expectedDistinctCores(mk(10000))).toBeLessThanOrEqual(16);
+    expect(PARAMS.core.eggStrongWeight * 2, '2 颗强常规合计权重=低权重头奖').toBeLessThan(0.15);
+  });
+
+  it('宝库两层价：8 流通统一价、毕业核更贵但不悬殊（≤2.5×）、同款复购 ×1.5 递增沿用', () => {
+    expect(PARAMS.core.vaultGradPrice).toBeGreaterThan(PARAMS.core.vaultFlowPrice);
+    expect(PARAMS.core.vaultGradPrice / PARAMS.core.vaultFlowPrice).toBeLessThanOrEqual(2.5);
+    expect(TRUTHS.vaultRepeatPriceGrowth).toBe(1.5);
+  });
+
+  it('毕业核到手时点分布（新验收口径）：肝/重/普 期望线毕业前 ≥1 颗、时点落中后期窗', () => {
+    // 为什么对：⑧验收口径改"不锁核数——验 常规核心跳+毕业核到手时点分布+欧非带"；
+    // 期望线=宝库攒宝石（5 槽满后转攒 200）——实测 肝 D15/重 D28/普 D23 首颗，全部落
+    // [0.35G, G] 中后期窗（毕业前拿到=对毕业墙有用；不过早=不冲烂常规核策略期）。
+    for (const t of ['肝档', '重度', '普通'] as const) {
+      const r = std[t].expected;
+      expect(r.gradCoreDays.length, `${t} 毕业前应有毕业核`).toBeGreaterThanOrEqual(1);
+      expect(r.gradCoreDays[0]).toBeGreaterThanOrEqual(Math.floor(r.graduateDay! * 0.35));
+      expect(r.gradCoreDays[0]).toBeLessThanOrEqual(r.graduateDay!);
+    }
+    // 欧线：扩张宝藏曲率星门低概率（coreLuck 包络轴）——期望跑有小数 EV、欧跑放大、非跑=0
+    const lucky = simulateEconomyTier('普通', pressure, { envelope: 'lucky' });
+    const unlucky = simulateEconomyTier('普通', pressure, { envelope: 'unlucky' });
+    expect(lucky.gradCores.treasureEV).toBeGreaterThan(std['普通'].expected.gradCores.treasureEV);
+    expect(unlucky.gradCores.treasureEV).toBe(0);
+  });
+
+  it('常规核心跳节奏：普通档中后期 2.5-5 天/颗带内（B4 稀缺线口径沿用）', () => {
+    const r = std['普通'].expected;
+    const mid = r.coreDays.filter((d: number) => d >= r.graduateDay! * 0.4);
+    const gaps: number[] = [];
+    for (let i = 1; i < mid.length; i++) gaps.push(mid[i] - mid[i - 1]);
+    const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    expect(avg).toBeGreaterThanOrEqual(2.0);
+    expect(avg).toBeLessThanOrEqual(5.0);
+  });
+});
+
+describe('S7 经济尺 · 任务单⑧ 黑市宝箱（计数余额约束）与广告券新规', () => {
+  it('宝箱频率=计数收入的自然结果：肝≈每日、重≈2/3、普≈5天一箱、轻=0（Ron 口径）', () => {
+    // 为什么对：宝箱必买但受"余额 ≥10"约束——肝 9-10 计数/日≈日日开、重 6/日≈2/3 频率、
+    // 普 2/日≈5 天攒一箱、轻 0 广告=永远开不起；不变量=箱数 ≤ 计数总收入/箱价。
+    const per = (t: string) => std[t].expected.bm.boxes / std[t].expected.graduateDay!;
+    expect(per('肝档')).toBeGreaterThan(0.7);
+    expect(per('重度')).toBeGreaterThan(0.5);
+    expect(per('重度')).toBeLessThan(per('肝档'));
+    expect(per('普通')).toBeGreaterThan(0.1);
+    expect(per('普通')).toBeLessThan(0.3);
+    expect(std['轻度'].expected.bm.boxes).toBe(0);
+    for (const t of [...Object.keys(TARGETS), BM_TARGET.tier]) {
+      const b = std[t].expected.bm;
+      expect(b.boxes * PARAMS.blackMarket.box.price, `${t} 箱支出 ≤ 计数收入`).toBeLessThanOrEqual(b.earnedTotal + 1e-9);
+    }
+  });
+
+  it('宝箱期望回报＞箱价（跨币种保守折算 ≥10 计数当量）+ 毕业核极低概率 <1%', () => {
+    // 为什么对（保守折算表·只计四大硬通货）：专属碎片按黑市小件比价 130 碎片=40 计数
+    // →0.3077 计数/碎片；通用碎片同比价 60=32 → 0.533/枚；核碎按小件 15=35 → 2.33/枚；
+    // 传奇插件按小件 2=45 → 22.5/件；优秀 2=30 → 15/件——其余（军饷/星贝/信标/宝石）
+    // 一律记 0，折算下限仍须 ≥ 箱价=期望回报＞箱价的机器化（Ron"普惠稳赚"）。
+    const g = PARAMS.blackMarket.box.give;
+    const lower = g.mainShards * (40 / 130) + g.universal * (32 / 60)
+      + g.coreFrag * (35 / 15) + g.legendaryPlugin * 22.5 + g.superiorPlugin * 15;
+    expect(lower).toBeGreaterThanOrEqual(PARAMS.blackMarket.box.price);
+    expect(PARAMS.blackMarket.box.gradCoreP).toBeLessThan(0.01);
+    expect(PARAMS.blackMarket.box.gradCoreP).toBeGreaterThan(0);
+  });
+
+  it('黑市解锁=n060 首通（Ron 拍板）·黑市党大件=舰包优先、毕业前不买超新星/流通核（记档）', () => {
+    expect(PARAMS.blackMarket.unlockNode).toBe(60);
+    const bmRun = std[BM_TARGET.tier].expected;
+    expect(bmRun.bm.buys.shipHigh).toBeGreaterThanOrEqual(2);
+    expect(bmRun.bm.buys.supernova ?? 0, '毕业前超新星 0 购=舰包边际碾压的如实结果').toBe(0);
+    expect(bmRun.bm.buys.flowCore ?? 0).toBe(0);
+    expect(bmRun.bm.buys.box).toBeGreaterThan(10);
+  });
+
+  it('广告券新规：肝/重按需购券（>0）、观看总量=免费+券有上界、轻度纯零广告', () => {
+    // 为什么对：券不限购但画像有口味上限（adTickets 肝4/重2/普0/轻0·黑市党+2）；
+    // 观看总量 ≤ (免费口味+券口味)×毕业日=结构上界；轻度全链路零（红线跑法纯净）。
+    expect(std['肝档'].expected.bm.ticketsBought).toBeGreaterThan(0);
+    for (const t of ['肝档', '重度'] as const) {
+      const r = std[t].expected;
+      const cap = (TIERS[t].adsPerDay + TIERS[t].adTickets) * r.graduateDay!;
+      expect(r.adsUsedTotal, `${t} 观看总量上界`).toBeLessThanOrEqual(cap + 1e-9);
+    }
+    expect(std['轻度'].expected.adsUsedTotal).toBe(0);
+  });
+
+  it('福利广告铁顶（#6 赞助券）：券不可恢复→补给券广告收入 ≤ 10×毕业日', () => {
+    // 为什么对：#6=福利广告每日 1 次铁顶（10 券/次）；若券恢复漏进 #6，收入会超
+    // 10×天数上界——此不变量对"WELFARE 集合被删/绕过"敏感（肝档券 >0 且有富余动机）。
+    for (const t of ['肝档', '重度', '黑市党'] as const) {
+      const r = std[t].expected;
+      const sponsor = (r.ledger.income.adTickets as Record<string, number> | undefined)?.supplyTicket ?? 0;
+      expect(sponsor, `${t} #6 铁顶`).toBeLessThanOrEqual(PARAMS.ads.ticketPerAd * r.graduateDay! + 1e-9);
+    }
+  });
+});
+
+describe('S7 经济尺 · 任务单⑧ 逐关养成态导出口（⑥第三段接口）', () => {
+  it('普通档 milestones=150 条、节点升序、字段完备（5 主力四元组/插件/核/战力>0）', () => {
+    const r = std['普通'].expected;
+    expect(r.milestones.length).toBe(150);
+    for (let i = 0; i < r.milestones.length; i++) {
+      const m = r.milestones[i];
+      expect(m.node).toBe(i + 1);
+      expect(m.power).toBeGreaterThan(0);
+      expect(m.mains.length).toBe(5);
+      for (const u of m.mains) expect(u.length).toBe(4);
+      expect(m.cores).toBeGreaterThanOrEqual(0);
+      if (i > 0) expect(m.day).toBeGreaterThanOrEqual(r.milestones[i - 1].day);
+    }
+    // 教程段交叉验证（模型真实承诺·粒度记档）：n030 开打时主力1 ≥A 阶（压力 628 可过），
+    // S 阶在 n040 前落位——模型 D2 即打首Boss、3天行动宝藏 D3 才到，与 GDD-M"首Boss前
+    // 刚好 1 艘 S"差半步是事件时序粒度（§18 记档·挂第二段与行动宝藏助力验收一并校）。
+    const n30 = r.milestones[29];
+    expect(Math.max(...n30.mains.map((u: number[]) => u[0]))).toBeGreaterThanOrEqual(2);
+    const n40 = r.milestones[39];
+    expect(Math.max(...n40.mains.map((u: number[]) => u[0]))).toBeGreaterThanOrEqual(3);
   });
 });

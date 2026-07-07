@@ -44,7 +44,8 @@ export declare const TRUTHS: {
   salvageTimeMult: { h2: number; h8: number; h24: number };
   bountyDailyCards: number;
   bountyQualityMult: { bronze: number; silver: number; gold: number };
-  bountyGoldPity: number;
+  bountyGoldEveryDays: number;
+  bountySilverPerDay: number;
   bountyPerfectMult: number;
   bountyAmbushRate: number;
   bountyAmbushLossPct: number;
@@ -71,9 +72,39 @@ export declare const PARAMS: {
     treasure3: { legendaryPlugin: number; universalShards: number };
     completionThreshold: number;
   };
+  bounty: {
+    escortAlloy: number; escortCargo: number; coefPow: number;
+    difficulty: {
+      mults: Record<'novice' | 'normal' | 'hard' | 'nightmare', number>;
+      recNodes: Record<'novice' | 'normal' | 'hard' | 'nightmare', number>;
+      crushRatio: number; probeMinRatio: number; failFloor: number;
+    };
+    goldPhysical: Record<string, number>; ambushWinBonus: Record<string, number>;
+    perfectRate: number; ambushWinRate: number; minutesPerCard: number; stallBudgetMult: number;
+  };
+  drill: {
+    dps: number; windowSec: number;
+    thresholdBase: number; thresholdGrowth: number; tiers: number;
+    rewardBase: number; rewardGrowth: number; minutes: number;
+  };
+  core: {
+    synthesisFragCost: number; eggStrongWeight: number;
+    vaultFlowPrice: number; vaultGradPrice: number; treasureGradP: number; gradSaveAfterCores: number;
+  };
+  ads: { ticketPerAd: number; salvageInstantDur: string; offlineDoubleMult: number; overnightShare: number };
   blackMarket: {
-    unlockNode: number; dailyViewCap: number; ticketPrice: number; ticketPerDay: number;
-    goods: Record<string, S7BlackMarketGood>; rotation: string[][]; largeMinPrice: number; priority: string[];
+    unlockNode: number; dailyViewCap: number;
+    box: { price: number; give: Record<string, number>; fullCoreP: number; gradCoreP: number };
+    goods: Record<string, S7BlackMarketGood>; largeMinPrice: number;
+    smalls: { slots: number; adRerollMult: number; pool: Record<string, { w: number; wLv8?: number; price: number; give: Record<string, number> }> };
+    smallPriority: string[];
+  };
+  merchant: {
+    ticketPrice: number; ticketDailyCap: number; adTicketPrice: number;
+    cargoReserve: number; richThreshold: number;
+    rare: { slotsByLv: number[]; pool: Record<string, { w: number; wLv8?: number; price: number; minLv: number; give: Record<string, number> }> };
+    staple: { beaconCommonPrice: number; wallPack: { cargoCost: number; hullAlloy: number; pilotToken: number; capPerDay: number }; finePlugin: { p: number; price: number } };
+    discountLv10: number; recycleStep: { beacon: number; plugin: number }; minutes: number;
   };
   pressureCalib: { iterations: number; blend: number; gammaLo: number; gammaHi: number; gammaSteps: number; anchorNodes: number[] };
 } & Record<string, any>;
@@ -83,7 +114,8 @@ export interface S7EconTierProfile {
   salvageRunsPerQueue: number; corridorMinutes: number; shoppingPower: number;
   tinkerBonus: number; consolationTries?: number; stallCorridorMult?: number;
   bountyMinutes: number; bountyCatchup: number; bountyPerfect: number;
-  bm?: { chain: boolean; buy: boolean; ticket: boolean };
+  bountyProbe: boolean; drillSkill: number; drillRate?: number; adTickets: number;
+  bm?: { chain: boolean; buy: boolean; extraTickets?: number };
 }
 export declare const TIERS: Record<string, S7EconTierProfile>;
 export declare const TARGETS: Record<string, number>;
@@ -110,13 +142,27 @@ export declare function bountyCardsFor(
   P?: typeof PARAMS, T?: typeof TRUTHS,
 ): number;
 export declare function incomeShares(run: S7EconResult, key: string): {
-  bounty: number; offline: number; patrol: number; mainline: number; total: number;
+  bounty: number; drill: number; offline: number; patrol: number; mainline: number; total: number;
 };
+// 任务单⑧新纯函数（gate 直测面）
+export declare function commissionQualityEV(T?: typeof TRUTHS): {
+  goldPerCard: number; silverPerCard: number; bronzePerCard: number; qMult: number;
+};
+export declare function pickCommissionDifficulty(tier: S7EconTierProfile, power: number, pressure: number[], P?: typeof PARAMS): {
+  safe: string; safeMult: number; probe: string | null; probeMult: number; pWin: number;
+};
+export declare function drillTierFor(power: number, skill?: number, P?: typeof PARAMS): number;
+export declare function drillCumReward(k: number, P?: typeof PARAMS): number;
+export declare function expectedDistinctCores(st: {
+  cleared: number;
+  coreDraws: { egg: number; treasure: number; bmFlow: number; shopFlow: number; vaultFlow: number; vaultDupes: number };
+  gradCores: { vault: number; bm: number; treasureEV: number };
+}, P?: typeof PARAMS, T?: typeof TRUTHS): number;
 
 export interface S7EconRunOpts {
   envelope?: 'expected' | 'lucky' | 'unlucky';
   ads?: 'profile' | 'none' | 'full';
-  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket', boolean>>;
+  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'drill' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket' | 'bmBox', boolean>>;
   incomeScale?: Record<string, number>;
   pause?: { from: number; days: number };
   runFullDays?: boolean;
@@ -134,6 +180,13 @@ export interface S7EconResult {
   finalPower: number;
   corridorLayer: number;
   coresOwned: number;
+  coresDistinct: number;
+  coreDays: number[];
+  gradCoreDays: number[];
+  gradCores: { vault: number; bm: number; treasureEV: number };
+  coreDraws: { egg: number; treasure: number; bmFlow: number; shopFlow: number; vaultFlow: number; vaultDupes: number };
+  drillTier: number;
+  bountyDiffMult: number;
   mains: { shipTier: number; shipLv: number; star: number; pilotLv: number }[];
   offShards: { ship: number; pilot: number };
   bountyCards: number;
@@ -141,8 +194,8 @@ export interface S7EconResult {
   resources: Record<string, number>;
   negativeViolations: { day: number; key: string; value: number }[];
   adsUsedTotal: number;
-  bm: { balance: number; earnedTotal: number; earned: Record<string, number>; spent: number; buys: Record<string, number>; ticketsBought: number };
-  bmExtraPower: number;
+  bm: { balance: number; earnedTotal: number; earned: Record<string, number>; spent: number; buys: Record<string, number>; ticketsBought: number; boxes: number };
+  milestones: { node: number; day: number; power: number; mains: number[][]; plugins: { fine: number; superior: number; legendary: number }; cores: number }[];
   dailyCleared: number[];
   dailyPower: number[];
   ledger: { income: Record<string, Record<string, number>>; spend: Record<string, Record<string, number>> };
@@ -165,7 +218,7 @@ export declare function runDriftVariant(source: string, mult: number, P?: typeof
   liverWalls: Record<string, number>; maxWalls: Record<string, number>; gammas: number[];
 };
 export declare function runDriftGuard(P?: typeof PARAMS, variants?: { source: string; mult: number }[]): ReturnType<typeof runDriftVariant>[];
-export declare function runAdComparison(pressure: number[], P?: typeof PARAMS): Record<string, { fullDays: number | null; zeroDays: number | null; speedup: number | null; zeroMaxWall: number }>;
+export declare function runAdComparison(pressure: number[], P?: typeof PARAMS): Record<string, { fullDays: number | null; zeroDays: number | null; speedup: number | null; speedupWithBox: number | null; zeroMaxWall: number }>;
 export declare function runSensitivity(pressure: number[], P?: typeof PARAMS): { base: number | null; rows: { source: string; graduateDay: number | null; delta: number | string }[] };
 export declare function runHalving(pressure: number[], P?: typeof PARAMS): { base: number | null; rows: { source: string; graduateDay: number | null; delta: number | string }[] };
 export declare function runCatchup(pressure: number[], P?: typeof PARAMS): { tier: string; from: number; days: number; base: number | null; graduateDay: number | null; delay: number | null; extraVsPause: number | null }[];
