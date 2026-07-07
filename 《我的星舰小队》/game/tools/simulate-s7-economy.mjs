@@ -640,6 +640,9 @@ function newState() {
     vaultBought: 0,
     bountyBacklog: 0, bountyCardsPlayed: 0,
     ledger: { income: {}, spend: {} },
+    // 节奏观察口（只读统计·2026-07-07）：逐日×渠道×资源 收/支账 + 专属碎片/插件件数逐日，
+    // 供 --pacing 窗口切分；不参与任何经济决策，curDay 由主循环每日更新
+    dailyIncomeBySource: [], dailySpendBySource: [], dailyMainShards: [], dailyPlugins: [], curDay: 0,
     negativeViolations: [],
     dailyCleared: [], dailyPower: [], dailyStuck: [],
     graduateDay: null,
@@ -657,6 +660,8 @@ function mkLedgerFns(st, incomeScale) {
     st.res[key] = (st.res[key] ?? 0) + scaled;
     const s = (st.ledger.income[source] ??= {});
     s[key] = (s[key] ?? 0) + scaled;
+    const ds = ((st.dailyIncomeBySource[st.curDay] ??= {})[source] ??= {});
+    ds[key] = (ds[key] ?? 0) + scaled;
   };
   const debit = (source, key, amount) => {
     if (!(amount > 0)) return true;
@@ -664,6 +669,8 @@ function mkLedgerFns(st, incomeScale) {
     st.res[key] -= amount;
     const s = (st.ledger.spend[source] ??= {});
     s[key] = (s[key] ?? 0) + amount;
+    const ds = ((st.dailySpendBySource[st.curDay] ??= {})[source] ??= {});
+    ds[key] = (ds[key] ?? 0) + amount;
     return true;
   };
   return { credit, debit };
@@ -689,6 +696,10 @@ function creditMainShards(st, kind, totalShards, share) {
   }
   if (kind === 'ship') st.offShardsShip += totalShards * (1 - share);
   else st.offShardsPilot += totalShards * (1 - share);
+  // 节奏观察口：专属碎片不走 14 键 res，逐日单记（main=主力5单位合计、off=非主力沉淀）
+  const dm = (st.dailyMainShards[st.curDay] ??= { shipMain: 0, shipOff: 0, pilotMain: 0, pilotOff: 0 });
+  if (kind === 'ship') { dm.shipMain += totalShards * share; dm.shipOff += totalShards * (1 - share); }
+  else { dm.pilotMain += totalShards * share; dm.pilotOff += totalShards * (1 - share); }
 }
 
 function doGachaPulls(st, pool, pulls, env, P, T) {
@@ -807,6 +818,8 @@ function doBuildings(st, debit, P, T) {
       st.res.starCargo += surplus / 8; // A1 步3：回收率 4:1→8:1（回收阀退回应急位，不再制造星贝死水）
       const s = (st.ledger.income.oreRecycle ??= {});
       s.starCargo = (s.starCargo ?? 0) + surplus / 8;
+      const ds = ((st.dailyIncomeBySource[st.curDay] ??= {}).oreRecycle ??= {});
+      ds.starCargo = (ds.starCargo ?? 0) + surplus / 8;
     }
   }
 }
@@ -977,6 +990,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
   let ev3Anchor = 1, ev7Anchor = 1;
 
   for (let day = 1; day <= P.maxDays; day++) {
+    st.curDay = day;
     const paused = opts.pause && day >= opts.pause.from && day < opts.pause.from + opts.pause.days;
     const clearedRegions = T.regionSpans.filter((r) => st.cleared >= r.to).length;
     const offCoef = P.regionCoef[clearedRegions];
@@ -1306,6 +1320,8 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     st.dailyCleared.push(clearedToday);
     st.dailyPower.push(power);
     st.dailyStuck.push(wallDay ? 1 : 0);
+    // 节奏观察口：件数类存量日终快照（插件走 7+ 入账点，存量差分比流水贴"每天到手可用"口径）
+    st.dailyPlugins.push({ fine: st.plugins.fine, superior: st.plugins.superior, legendary: st.plugins.legendary });
     for (const k of RESOURCE_KEYS) {
       if (st.res[k] < -1e-6) st.negativeViolations.push({ day, key: k, value: st.res[k] });
     }
@@ -1373,6 +1389,10 @@ function summarize(tierName, st, opts, P, T) {
     dailyCleared: cl,
     dailyPower: st.dailyPower,
     ledger: st.ledger,
+    dailyIncomeBySource: st.dailyIncomeBySource,
+    dailySpendBySource: st.dailySpendBySource,
+    dailyMainShards: st.dailyMainShards,
+    dailyPlugins: st.dailyPlugins,
   };
 }
 
@@ -1851,6 +1871,52 @@ if (isMain) {
     for (let d = 0; d < r.dailyCleared.length; d++) {
       cum += r.dailyCleared[d];
       console.log(`${d + 1} ${r.dailyCleared[d]} ${cum} ${Math.round(r.dailyPower[d])} ${cum < 150 ? pressure[cum + 1] : '-'}`);
+    }
+  }
+  if (args.has('--pacing')) {
+    // 资源节奏观察口（2026-07-07 Ron 拍板"节奏方向"工序的取数口）：
+    // 三窗口（前期=首周 / 中期=毕业中点±3 / 后期=毕业前7天）逐资源 收/支 日均 + 末窗主渠道。
+    for (const tierName of args.has('--pacing-all') ? Object.keys(TIERS) : ['普通']) {
+      const r = std[tierName].expected;
+      const G = r.graduateDay ?? r.dailyCleared.length;
+      const mid = Math.round(G / 2);
+      const wins = [[1, 7], [mid - 3, mid + 3], [G - 6, G]];
+      const agg = (dailyBySource, [from, to]) => {
+        const byKey = {}, bySrc = {};
+        for (let d = from; d <= to; d++) {
+          const dayRec = dailyBySource[d]; if (!dayRec) continue;
+          for (const [src, kv] of Object.entries(dayRec)) for (const [k, v] of Object.entries(kv)) {
+            byKey[k] = (byKey[k] ?? 0) + v;
+            (bySrc[k] ??= {})[src] = (bySrc[k][src] ?? 0) + v;
+          }
+        }
+        return { byKey, bySrc, days: to - from + 1 };
+      };
+      const NAME = { starOre: '星矿', hullAlloy: '合金', pilotToken: '驾驶记录', starCargo: '星贝', supplyTicket: '补给券', shipBlueprint: '通碎·舰', pilotShardUniversal: '通碎·员', coreFrag: '星核碎片', starGem: '星空宝石', beaconCommon: '信标普', beaconRare: '信标稀', beaconEpic: '信标史' };
+      const incW = wins.map((w) => agg(r.dailyIncomeBySource, w));
+      const spdW = wins.map((w) => agg(r.dailySpendBySource, w));
+      console.log(`\n—— 资源节奏观察口 [${tierName}] G=D${G} · 窗口 前D1-7 / 中D${mid - 3}-${mid + 3} / 后D${G - 6}-${G} · 每格=收/支 日均 ——`);
+      for (const k of Object.keys(NAME)) {
+        const cells = wins.map((_, i) => `${((incW[i].byKey[k] ?? 0) / incW[i].days).toFixed(1)}/${((spdW[i].byKey[k] ?? 0) / spdW[i].days).toFixed(1)}`);
+        const lateTop = Object.entries(incW[2].bySrc[k] ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 2)
+          .map(([s, v]) => `${s}${Math.round((v / (incW[2].byKey[k] || 1)) * 100)}%`).join('+');
+        console.log(`  ${NAME[k]}\t前 ${cells[0]}\t中 ${cells[1]}\t后 ${cells[2]}\t末窗主源 ${lateTop || '-'}`);
+      }
+      const shardW = wins.map(([f, t]) => {
+        const s = { shipMain: 0, shipOff: 0, pilotMain: 0, pilotOff: 0 };
+        for (let d = f; d <= t; d++) { const x = r.dailyMainShards[d]; if (x) for (const kk of Object.keys(s)) s[kk] += x[kk]; }
+        return { s, days: t - f + 1 };
+      });
+      const sm = (q) => shardW.map((w) => (w.s[q] / w.days).toFixed(1)).join(' / ');
+      console.log(`  专属碎片(前/中/后 日均)：舰主力 ${sm('shipMain')}｜员主力 ${sm('pilotMain')}｜沉淀舰 ${sm('shipOff')}｜沉淀员 ${sm('pilotOff')}`);
+      const plugW = wins.map(([f, t]) => {
+        const a = r.dailyPlugins[f - 2] ?? { fine: 0, superior: 0, legendary: 0 };
+        const b = r.dailyPlugins[t - 1] ?? a;
+        return ['fine', 'superior', 'legendary'].map((q) => (((b[q] ?? 0) - (a[q] ?? 0)) / (t - f + 1)).toFixed(2)).join('/');
+      });
+      console.log(`  插件净增件/日(精良/优秀/传奇)：前 ${plugW[0]}｜中 ${plugW[1]}｜后 ${plugW[2]}`);
+      const coreGaps = wins.map(([f, t]) => { const n = r.coreDays.filter((d) => d >= f && d <= t).length; return (n / (t - f + 1)).toFixed(2); });
+      console.log(`  星核到手颗/日：前 ${coreGaps[0]}｜中 ${coreGaps[1]}｜后 ${coreGaps[2]}（到手日全序列见 --cores）`);
     }
   }
   if (args.has('--json')) {
