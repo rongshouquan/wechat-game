@@ -82,7 +82,7 @@ export interface S7EconTierProfile {
   dailyCompletion: number; eventCompletion: number;
   salvageRunsPerQueue: number; corridorMinutes: number; shoppingPower: number;
   tinkerBonus: number; consolationTries?: number; stallCorridorMult?: number;
-  bountyMinutes: number; bountyCatchup: number;
+  bountyMinutes: number; bountyCatchup: number; bountyPerfect: number;
   bm?: { chain: boolean; buy: boolean; ticket: boolean };
 }
 export declare const TIERS: Record<string, S7EconTierProfile>;
@@ -109,6 +109,9 @@ export declare function bountyCardsFor(
   tier: S7EconTierProfile, backlog: number, minutesLeft: number, wallDay: boolean,
   P?: typeof PARAMS, T?: typeof TRUTHS,
 ): number;
+export declare function incomeShares(run: S7EconResult, key: string): {
+  bounty: number; offline: number; patrol: number; mainline: number; total: number;
+};
 
 export interface S7EconRunOpts {
   envelope?: 'expected' | 'lucky' | 'unlucky';

@@ -1,6 +1,6 @@
 {
  "generatedBy": "simulate-s7-economy.mjs",
- "version": "v0.3(第三块③ 形状靶v2+双锚+黑市)",
+ "version": "v0.5(任务单⑤ B1军饷落地+参与度真分层)",
  "targets": {
   "肝档": 30,
   "重度": 37,
@@ -10,11 +10,11 @@
  "bmTarget": {
   "tier": "黑市党",
   "min": 22,
-  "max": 26
+  "max": 25
  },
  "gammas": [
   1.0859375,
-  1.02734375
+  1.037109375
  ],
  "anchors": [
   {
@@ -25,7 +25,7 @@
   {
    "node": 150,
    "targetDay": 47,
-   "gamma": 1.02734375
+   "gamma": 1.037109375
   }
  ],
  "wallMatrixBands": {
@@ -68,21 +68,21 @@
   ],
   "offline": {
    "starOre": 62,
-   "hullAlloy": 30,
-   "pilotToken": 20
+   "hullAlloy": 24,
+   "pilotToken": 16
   },
   "oreCoefPow": 0.5,
   "patrol": {
-   "hullAlloy": 14,
-   "pilotToken": 9,
+   "hullAlloy": 11.2,
+   "pilotToken": 7.2,
    "starCargo": 4
   },
   "patrolDockPctPerShip": 4,
   "patrolDockMax": 10,
   "bounty": {
-   "escortAlloy": 200,
+   "escortAlloy": 550,
    "escortCargo": 20,
-   "drillToken": 135,
+   "drillToken": 370,
    "goldRate": 0.08,
    "goldPhysical": {
     "beaconCommon": 0.3333333333333333,
@@ -95,7 +95,8 @@
    },
    "perfectRate": 0.5,
    "ambushWinRate": 0.85,
-   "minutesPerCard": 1.2
+   "minutesPerCard": 1.2,
+   "stallBudgetMult": 2
   },
   "puzzle": {
    "starCargo": 30,
@@ -124,7 +125,7 @@
      "price": 320
     },
     "coreFrag5": {
-     "p": 0.15,
+     "p": 0.1,
      "price": 500
     }
    },
@@ -146,7 +147,7 @@
      "rollEV": {
       "universal": 0.5,
       "beaconCommon": 0.16,
-      "coreFrag": 0.015,
+      "coreFrag": 0.004,
       "finePlugin": 0.05,
       "resident": 0.02,
       "worker": 0.02,
@@ -158,7 +159,7 @@
      "cargo": 38,
      "universal": 2.5,
      "fixed": {
-      "coreFrag": 1
+      "coreFrag": 0.25
      },
      "rolls": {
       "h2": 2.6,
@@ -168,9 +169,9 @@
      "rollEV": {
       "universal": 0.8,
       "beaconRare": 0.075,
-      "coreFrag": 0.03,
+      "coreFrag": 0.008,
       "superiorPlugin": 0.05,
-      "starGem": 0.05,
+      "starGem": 0.015,
       "resident": 0.03,
       "worker": 0.03,
       "cargoChest": 0.015
@@ -181,8 +182,8 @@
      "cargo": 95,
      "universal": 4,
      "fixed": {
-      "coreFrag": 2,
-      "starGem": 2
+      "coreFrag": 0.5,
+      "starGem": 0.5
      },
      "rolls": {
       "h2": 3.8,
@@ -192,10 +193,10 @@
      "rollEV": {
       "universal": 1.2,
       "beaconEpic": 0.05,
-      "coreFrag": 0.05,
+      "coreFrag": 0.012,
       "superiorPlugin": 0.07,
       "legendaryPlugin": 0.035,
-      "starGem": 0.15,
+      "starGem": 0.05,
       "resident": 0.04,
       "worker": 0.04,
       "cargoChest": 0.02
@@ -218,7 +219,7 @@
     "normal": {
      "mainShipShard": 1.3,
      "mainPilotShard": 1.3,
-     "offShard": 2.6,
+     "offShard": 1.82,
      "supplyTicket": 0.85,
      "coreFrag": 0.4,
      "starOreBase": 11,
@@ -228,7 +229,7 @@
     "elite": {
      "mainShipShard": 2,
      "mainPilotShard": 2,
-     "offShard": 4,
+     "offShard": 2.8,
      "supplyTicket": 1.4,
      "coreFrag": 1,
      "starOreBase": 16,
@@ -238,7 +239,7 @@
     "boss": {
      "mainShipShard": 2.6,
      "mainPilotShard": 2.6,
-     "offShard": 5.2,
+     "offShard": 3.64,
      "supplyTicket": 2.6,
      "coreFrag": 3,
      "starOreBase": 26,
@@ -268,7 +269,7 @@
   },
   "core": {
    "synthesisFragCost": 60,
-   "vaultBasePrice": 80,
+   "vaultBasePrice": 70,
    "distinctPool": 13
   },
   "events": {
@@ -291,7 +292,7 @@
    },
    "completion7": {
     "beaconEpic": 1,
-    "coreFrag": 8
+    "coreFrag": 6
    },
    "completionCore": 1,
    "treasure3": {
@@ -317,7 +318,7 @@
    }
   },
   "cargoChest": {
-   "coreFrag": 4,
+   "coreFrag": 1.5,
    "starGem": 2,
    "beacons": {
     "beaconCommon": 1,
@@ -357,7 +358,11 @@
    },
    "msBeacon": 2,
    "rareBeaconLayer": 25,
-   "epicBeaconLayer": 50
+   "epicBeaconLayer": 50,
+   "msGem": {
+    "base": 16,
+    "per": 1.8
+   }
   },
   "consolation": {
    "hullAlloy": 45,
@@ -396,6 +401,10 @@
   ],
   "oreReserve": 0,
   "buildingCostMult": 3,
+  "bench": {
+   "cap": 0.03,
+   "scale": 6000
+  },
   "envelope": {
    "expected": {
     "mainShardShare": 0.34,
@@ -415,7 +424,8 @@
   },
   "ads": {
    "ticketPerAd": 10,
-   "salvageInstantDur": "h8"
+   "salvageInstantDur": "h8",
+   "offlineDoubleMult": 1.5
   },
   "blackMarket": {
    "unlockNode": 30,
@@ -507,7 +517,10 @@
    "shoppingPower": 1,
    "tinkerBonus": 0.16,
    "consolationTries": 3,
-   "stallCorridorMult": 2.5
+   "stallCorridorMult": 2.5,
+   "bountyMinutes": 10,
+   "bountyCatchup": 3,
+   "bountyPerfect": 0.6
   },
   "重度": {
    "minutesPerDay": 90,
@@ -520,7 +533,10 @@
    "shoppingPower": 1,
    "tinkerBonus": 0.055,
    "consolationTries": 2,
-   "stallCorridorMult": 2.2
+   "stallCorridorMult": 2.2,
+   "bountyMinutes": 8,
+   "bountyCatchup": 2,
+   "bountyPerfect": 0.55
   },
   "普通": {
    "minutesPerDay": 35,
@@ -532,7 +548,10 @@
    "corridorMinutes": 7,
    "shoppingPower": 0.8,
    "tinkerBonus": 0.03,
-   "consolationTries": 1
+   "consolationTries": 1,
+   "bountyMinutes": 6,
+   "bountyCatchup": 1,
+   "bountyPerfect": 0.5
   },
   "轻度": {
    "minutesPerDay": 15,
@@ -544,7 +563,10 @@
    "corridorMinutes": 5,
    "shoppingPower": 0.75,
    "tinkerBonus": 0.025,
-   "consolationTries": 1
+   "consolationTries": 1,
+   "bountyMinutes": 3,
+   "bountyCatchup": 0,
+   "bountyPerfect": 0.35
   },
   "黑市党": {
    "minutesPerDay": 150,
@@ -558,6 +580,9 @@
    "tinkerBonus": 0.16,
    "consolationTries": 3,
    "stallCorridorMult": 2.5,
+   "bountyMinutes": 10,
+   "bountyCatchup": 3,
+   "bountyPerfect": 0.6,
    "bm": {
     "chain": true,
     "buy": true,
@@ -573,7 +598,7 @@
     "cleared": 150,
     "firstWeekCleared": 77,
     "firstWeekPct": 51.3,
-    "maxWallDays": 3,
+    "maxWallDays": 2,
     "wallsOver2": 2,
     "wallWait": {
      "60": 0,
@@ -581,47 +606,66 @@
      "102": 1,
      "120": 2,
      "138": 0,
-     "150": 3
+     "150": 2
     },
     "newbieStuckDays": 0,
-    "finalPower": 20777,
-    "corridorLayer": 56,
-    "coresOwned": 25,
+    "finalPower": 22317,
+    "corridorLayer": 58,
+    "coresOwned": 15,
+    "coreDays": [
+     1,
+     4,
+     7,
+     7,
+     9,
+     11,
+     14,
+     16,
+     16,
+     21,
+     21,
+     25,
+     28,
+     28,
+     31
+    ],
+    "bountyCards": 124,
+    "benchPct": 1.7,
     "mains": [
      {
       "shipTier": 4,
-      "shipLv": 35,
+      "shipLv": 39,
       "star": 5,
-      "pilotLv": 37
+      "pilotLv": 40
      },
      {
       "shipTier": 4,
-      "shipLv": 35,
+      "shipLv": 39,
       "star": 4,
-      "pilotLv": 37
+      "pilotLv": 40
      },
      {
       "shipTier": 3,
-      "shipLv": 35,
+      "shipLv": 38,
       "star": 4,
-      "pilotLv": 37
+      "pilotLv": 40
      },
      {
       "shipTier": 3,
-      "shipLv": 35,
+      "shipLv": 38,
       "star": 4,
-      "pilotLv": 36
+      "pilotLv": 39
      },
      {
       "shipTier": 3,
-      "shipLv": 35,
+      "shipLv": 38,
       "star": 4,
-      "pilotLv": 36
+      "pilotLv": 39
      }
     ],
     "offShards": {
-     "ship": 2296,
-     "pilot": 2290
+     "ship": 2219,
+     "pilot": 2213
     },
     "plugins": {
      "fine": 12,
@@ -634,27 +678,27 @@
     },
     "resources": {
      "starOre": 2213.6,
-     "hullAlloy": 8380.6,
+     "hullAlloy": 15300.5,
      "shipBlueprint": 2.8,
      "pilotShardUniversal": 0,
-     "pilotToken": 4795.2,
-     "coreFrag": 21.5,
+     "pilotToken": 10821.6,
+     "coreFrag": 43.9,
      "fullCore": 0,
-     "starGem": 201.8,
-     "supplyTicket": 2.9,
+     "starGem": 9,
+     "supplyTicket": 3.3,
      "beaconCommon": 41,
-     "beaconRare": 3.7,
-     "beaconEpic": 1.8,
-     "starCargo": 7792.1,
+     "beaconRare": 4.1,
+     "beaconEpic": 1.7,
+     "starCargo": 7980.6,
      "adTicket": 0
     },
     "negativeViolations": [],
-    "adsUsedTotal": 244,
+    "adsUsedTotal": 246,
     "bm": {
-     "balance": 244,
-     "earnedTotal": 244,
+     "balance": 246,
+     "earnedTotal": 246,
      "earned": {
-      "points": 244
+      "points": 246
      },
      "spent": 0,
      "buys": {},
@@ -682,49 +726,69 @@
      "60": 1,
      "84": 0,
      "102": 2,
-     "120": 3,
+     "120": 2,
      "138": 0,
      "150": 4
     },
     "newbieStuckDays": 0,
-    "finalPower": 23015,
-    "corridorLayer": 57,
-    "coresOwned": 26,
+    "finalPower": 24503,
+    "corridorLayer": 58,
+    "coresOwned": 16,
+    "coreDays": [
+     2,
+     4,
+     7,
+     8,
+     10,
+     13,
+     14,
+     19,
+     19,
+     21,
+     25,
+     28,
+     30,
+     35,
+     36,
+     38
+    ],
+    "bountyCards": 156,
+    "benchPct": 1.9,
     "mains": [
      {
       "shipTier": 4,
-      "shipLv": 39,
+      "shipLv": 43,
       "star": 5,
-      "pilotLv": 41
+      "pilotLv": 44
      },
      {
       "shipTier": 4,
-      "shipLv": 39,
+      "shipLv": 42,
       "star": 4,
-      "pilotLv": 41
+      "pilotLv": 44
      },
      {
       "shipTier": 3,
-      "shipLv": 39,
+      "shipLv": 42,
       "star": 4,
-      "pilotLv": 41
+      "pilotLv": 44
      },
      {
       "shipTier": 3,
-      "shipLv": 39,
+      "shipLv": 42,
       "star": 4,
-      "pilotLv": 41
+      "pilotLv": 44
      },
      {
       "shipTier": 3,
-      "shipLv": 39,
+      "shipLv": 42,
       "star": 4,
-      "pilotLv": 41
+      "pilotLv": 43
      }
     ],
     "offShards": {
-     "ship": 2857,
-     "pilot": 2850
+     "ship": 2809,
+     "pilot": 2802
     },
     "plugins": {
      "fine": 12,
@@ -737,18 +801,18 @@
     },
     "resources": {
      "starOre": 2213.6,
-     "hullAlloy": 7244.6,
+     "hullAlloy": 17415.5,
      "shipBlueprint": 2.8,
      "pilotShardUniversal": 0,
-     "pilotToken": 3826.7,
-     "coreFrag": 38.7,
+     "pilotToken": 12643.6,
+     "coreFrag": 43.2,
      "fullCore": 0,
-     "starGem": 225.1,
+     "starGem": 18.4,
      "supplyTicket": 3.7,
-     "beaconCommon": 45,
-     "beaconRare": 16.1,
-     "beaconEpic": 2.6,
-     "starCargo": 6454.5,
+     "beaconCommon": 45.1,
+     "beaconRare": 16,
+     "beaconEpic": 2.4,
+     "starCargo": 8378.4,
      "adTicket": 0
     },
     "negativeViolations": [],
@@ -766,7 +830,7 @@
     "bmExtraPower": 0
    },
    "lucky": {
-    "graduateDay": 38
+    "graduateDay": 37
    },
    "unlucky": {
     "graduateDay": 44
@@ -775,59 +839,78 @@
   "普通": {
    "expected": {
     "tier": "普通",
-    "graduateDay": 47,
+    "graduateDay": 46,
     "cleared": 150,
     "firstWeekCleared": 59,
     "firstWeekPct": 39.3,
-    "maxWallDays": 6,
+    "maxWallDays": 5,
     "wallsOver2": 3,
     "wallWait": {
      "60": 1,
      "84": 0,
-     "102": 3,
+     "102": 2,
      "120": 3,
      "138": 0,
-     "150": 6
+     "150": 5
     },
     "newbieStuckDays": 0,
-    "finalPower": 23673,
-    "corridorLayer": 57,
-    "coresOwned": 24,
+    "finalPower": 24987,
+    "corridorLayer": 58,
+    "coresOwned": 15,
+    "coreDays": [
+     2,
+     4,
+     7,
+     9,
+     13,
+     14,
+     18,
+     21,
+     23,
+     25,
+     28,
+     33,
+     35,
+     41,
+     42
+    ],
+    "bountyCards": 184,
+    "benchPct": 1.7,
     "mains": [
      {
       "shipTier": 4,
-      "shipLv": 43,
+      "shipLv": 46,
       "star": 5,
-      "pilotLv": 46
+      "pilotLv": 49
      },
      {
       "shipTier": 3,
-      "shipLv": 43,
+      "shipLv": 46,
       "star": 4,
-      "pilotLv": 46
+      "pilotLv": 48
      },
      {
       "shipTier": 3,
-      "shipLv": 43,
+      "shipLv": 46,
       "star": 4,
-      "pilotLv": 45
+      "pilotLv": 48
      },
      {
       "shipTier": 3,
-      "shipLv": 43,
+      "shipLv": 46,
       "star": 4,
-      "pilotLv": 45
+      "pilotLv": 48
      },
      {
       "shipTier": 3,
-      "shipLv": 43,
+      "shipLv": 46,
       "star": 4,
-      "pilotLv": 45
+      "pilotLv": 48
      }
     ],
     "offShards": {
-     "ship": 2703,
-     "pilot": 2696
+     "ship": 2553,
+     "pilot": 2546
     },
     "plugins": {
      "fine": 12,
@@ -840,27 +923,27 @@
     },
     "resources": {
      "starOre": 2213.6,
-     "hullAlloy": 10399.3,
+     "hullAlloy": 18252.3,
      "shipBlueprint": 2.6,
      "pilotShardUniversal": 0,
-     "pilotToken": 5855.7,
-     "coreFrag": 41.1,
+     "pilotToken": 10413.3,
+     "coreFrag": 41.3,
      "fullCore": 0,
-     "starGem": 181.1,
-     "supplyTicket": 2.9,
-     "beaconCommon": 43,
-     "beaconRare": 91.8,
-     "beaconEpic": 1.3,
-     "starCargo": 11311.3,
+     "starGem": 210.8,
+     "supplyTicket": 3,
+     "beaconCommon": 43.1,
+     "beaconRare": 92.7,
+     "beaconEpic": 1.4,
+     "starCargo": 10952.2,
      "adTicket": 0
     },
     "negativeViolations": [],
-    "adsUsedTotal": 94,
+    "adsUsedTotal": 92,
     "bm": {
-     "balance": 94,
-     "earnedTotal": 94,
+     "balance": 92,
+     "earnedTotal": 92,
      "earned": {
-      "points": 94
+      "points": 92
      },
      "spent": 0,
      "buys": {},
@@ -869,7 +952,7 @@
     "bmExtraPower": 0
    },
    "lucky": {
-    "graduateDay": 44
+    "graduateDay": 45
    },
    "unlucky": {
     "graduateDay": 49
@@ -878,59 +961,82 @@
   "轻度": {
    "expected": {
     "tier": "轻度",
-    "graduateDay": 54,
+    "graduateDay": 57,
     "cleared": 150,
     "firstWeekCleared": 59,
     "firstWeekPct": 39.3,
-    "maxWallDays": 7,
+    "maxWallDays": 6,
     "wallsOver2": 5,
     "wallWait": {
-     "60": 1,
+     "60": 2,
      "84": 0,
      "102": 3,
      "120": 6,
      "138": 0,
-     "150": 7
+     "150": 6
     },
     "newbieStuckDays": 0,
-    "finalPower": 23754,
-    "corridorLayer": 57,
-    "coresOwned": 28,
+    "finalPower": 25293,
+    "corridorLayer": 58,
+    "coresOwned": 19,
+    "coreDays": [
+     2,
+     7,
+     7,
+     11,
+     13,
+     14,
+     18,
+     21,
+     26,
+     26,
+     28,
+     35,
+     35,
+     42,
+     42,
+     49,
+     50,
+     53,
+     56
+    ],
+    "bountyCards": 152.6,
+    "benchPct": 1.8,
     "mains": [
      {
       "shipTier": 4,
-      "shipLv": 41,
+      "shipLv": 44,
       "star": 5,
-      "pilotLv": 43
+      "pilotLv": 46
      },
      {
       "shipTier": 4,
-      "shipLv": 40,
+      "shipLv": 43,
       "star": 4,
-      "pilotLv": 42
+      "pilotLv": 46
      },
      {
       "shipTier": 3,
-      "shipLv": 40,
+      "shipLv": 43,
       "star": 4,
-      "pilotLv": 42
+      "pilotLv": 45
      },
      {
       "shipTier": 3,
-      "shipLv": 40,
+      "shipLv": 43,
       "star": 4,
-      "pilotLv": 42
+      "pilotLv": 45
      },
      {
       "shipTier": 3,
-      "shipLv": 40,
+      "shipLv": 43,
       "star": 4,
-      "pilotLv": 42
+      "pilotLv": 45
      }
     ],
     "offShards": {
-     "ship": 2695,
-     "pilot": 2688
+     "ship": 2689,
+     "pilot": 2682
     },
     "plugins": {
      "fine": 12,
@@ -943,18 +1049,18 @@
     },
     "resources": {
      "starOre": 2213.6,
-     "hullAlloy": 7645.5,
-     "shipBlueprint": 2.5,
+     "hullAlloy": 12163.9,
+     "shipBlueprint": 2.3,
      "pilotShardUniversal": 0,
-     "pilotToken": 4123,
-     "coreFrag": 13.3,
+     "pilotToken": 7814.9,
+     "coreFrag": 55.2,
      "fullCore": 0,
-     "starGem": 243.6,
-     "supplyTicket": 3.6,
+     "starGem": 27.5,
+     "supplyTicket": 3.5,
      "beaconCommon": 44.1,
-     "beaconRare": 80.2,
-     "beaconEpic": 2,
-     "starCargo": 3358.2,
+     "beaconRare": 87.4,
+     "beaconEpic": 1.9,
+     "starCargo": 3419.2,
      "adTicket": 0
     },
     "negativeViolations": [],
@@ -970,7 +1076,7 @@
     "bmExtraPower": 0
    },
    "lucky": {
-    "graduateDay": 50
+    "graduateDay": 54
    },
    "unlucky": {
     "graduateDay": 58
@@ -983,55 +1089,71 @@
     "cleared": 150,
     "firstWeekCleared": 81,
     "firstWeekPct": 54,
-    "maxWallDays": 2,
-    "wallsOver2": 2,
+    "maxWallDays": 1,
+    "wallsOver2": 0,
     "wallWait": {
      "60": 0,
      "84": 0,
-     "102": 0,
-     "120": 2,
+     "102": 1,
+     "120": 1,
      "138": 0,
-     "150": 2
+     "150": 1
     },
     "newbieStuckDays": 0,
-    "finalPower": 21247,
-    "corridorLayer": 57,
-    "coresOwned": 21,
+    "finalPower": 22476,
+    "corridorLayer": 58,
+    "coresOwned": 12,
+    "coreDays": [
+     1,
+     4,
+     7,
+     7,
+     9,
+     10,
+     14,
+     14,
+     15,
+     19,
+     21,
+     22
+    ],
+    "bountyCards": 96,
+    "benchPct": 2,
     "mains": [
      {
       "shipTier": 4,
-      "shipLv": 31,
+      "shipLv": 34,
       "star": 5,
-      "pilotLv": 32
+      "pilotLv": 35
      },
      {
       "shipTier": 4,
-      "shipLv": 31,
+      "shipLv": 34,
       "star": 5,
-      "pilotLv": 32
+      "pilotLv": 35
      },
      {
       "shipTier": 4,
-      "shipLv": 31,
+      "shipLv": 33,
       "star": 4,
-      "pilotLv": 32
+      "pilotLv": 34
      },
      {
       "shipTier": 3,
-      "shipLv": 31,
+      "shipLv": 33,
       "star": 4,
-      "pilotLv": 32
+      "pilotLv": 34
      },
      {
       "shipTier": 4,
-      "shipLv": 30,
+      "shipLv": 33,
       "star": 4,
-      "pilotLv": 32
+      "pilotLv": 34
      }
     ],
     "offShards": {
-     "ship": 1766,
-     "pilot": 1760
+     "ship": 1694,
+     "pilot": 1687
     },
     "plugins": {
      "fine": 12,
@@ -1044,28 +1166,28 @@
     },
     "resources": {
      "starOre": 2213.6,
-     "hullAlloy": 8314.6,
+     "hullAlloy": 16919.9,
      "shipBlueprint": 2.8,
      "pilotShardUniversal": 0,
-     "pilotToken": 5264.7,
-     "coreFrag": 25.9,
+     "pilotToken": 9311.2,
+     "coreFrag": 36.4,
      "fullCore": 0,
-     "starGem": 102.5,
-     "supplyTicket": 3.3,
-     "beaconCommon": 45.6,
-     "beaconRare": 5.8,
-     "beaconEpic": 2.5,
-     "starCargo": 8889.9,
+     "starGem": 191.7,
+     "supplyTicket": 3.4,
+     "beaconCommon": 43.2,
+     "beaconRare": 6.1,
+     "beaconEpic": 2.7,
+     "starCargo": 10438.4,
      "adTicket": 0
     },
     "negativeViolations": [],
-    "adsUsedTotal": 199,
+    "adsUsedTotal": 201,
     "bm": {
      "balance": 80,
      "earnedTotal": 720,
      "earned": {
-      "points": 199,
-      "chain": 521
+      "points": 201,
+      "chain": 519
      },
      "spent": 640,
      "buys": {
@@ -1079,107 +1201,175 @@
     "graduateDay": 23
    },
    "unlucky": {
-    "graduateDay": 25
+    "graduateDay": 26
    }
   }
  },
  "ads": {
   "肝档": {
    "fullDays": 31,
-   "zeroDays": 41,
-   "speedup": 24.4,
-   "zeroMaxWall": 6
+   "zeroDays": 38,
+   "speedup": 18.4,
+   "zeroMaxWall": 3
   },
   "重度": {
-   "fullDays": 39,
-   "zeroDays": 49,
-   "speedup": 20.4,
-   "zeroMaxWall": 7
+   "fullDays": 38,
+   "zeroDays": 47,
+   "speedup": 19.1,
+   "zeroMaxWall": 5
   },
   "普通": {
    "fullDays": 41,
-   "zeroDays": 55,
-   "speedup": 25.5,
-   "zeroMaxWall": 7
+   "zeroDays": 52,
+   "speedup": 21.2,
+   "zeroMaxWall": 6
   }
  },
+ "adEnvelope": [
+  {
+   "mult": 1.5,
+   "days": {
+    "肝档": 31,
+    "重度": 39,
+    "普通": 46,
+    "轻度": 57
+   },
+   "speedups": {
+    "肝档": 18.4,
+    "重度": 19.1,
+    "普通": 21.2
+   },
+   "zeroMaxWalls": {
+    "肝档": 3,
+    "重度": 5,
+    "普通": 6
+   },
+   "gateErrors": []
+  },
+  {
+   "mult": 1.7,
+   "days": {
+    "肝档": 31,
+    "重度": 38,
+    "普通": 46,
+    "轻度": 58
+   },
+   "speedups": {
+    "肝档": 20.5,
+    "重度": 20.8,
+    "普通": 24.1
+   },
+   "zeroMaxWalls": {
+    "肝档": 5,
+    "重度": 7,
+    "普通": 9
+   },
+   "gateErrors": [
+    "肝档 n120 墙 1 天，超出验收带 [2,4]"
+   ]
+  },
+  {
+   "mult": 2,
+   "days": {
+    "肝档": 32,
+    "重度": 39,
+    "普通": 46,
+    "轻度": 62
+   },
+   "speedups": {
+    "肝档": 23.8,
+    "重度": 24,
+    "普通": 26.8
+   },
+   "zeroMaxWalls": {
+    "肝档": 7,
+    "重度": 7,
+    "普通": 9
+   },
+   "gateErrors": [
+    "轻度 最长墙 9 天 > 硬顶 7",
+    "B1 身份：普通档 pilotToken 悬赏份额 39% 出 40-55 带",
+    "B1 身份：普通档 pilotToken 悬赏未成第一单源（悬赏 39% vs 离线 40%/巡逻 17%）"
+   ]
+  }
+ ],
  "sensitivity": {
-  "base": 47,
+  "base": 46,
   "rows": [
    {
     "source": "offline",
-    "graduateDay": 69,
-    "delta": 22
+    "graduateDay": 62,
+    "delta": 16
    },
    {
     "source": "patrol",
-    "graduateDay": 54,
+    "graduateDay": 53,
     "delta": 7
    },
    {
     "source": "bounty",
-    "graduateDay": 52,
-    "delta": 5
+    "graduateDay": 61,
+    "delta": 15
    },
    {
     "source": "corridor",
     "graduateDay": 48,
-    "delta": 1
+    "delta": 2
    },
    {
     "source": "salvage",
-    "graduateDay": 90,
-    "delta": 43
+    "graduateDay": 87,
+    "delta": 41
    },
    {
     "source": "gacha",
-    "graduateDay": 79,
-    "delta": 32
+    "graduateDay": 75,
+    "delta": 29
    },
    {
     "source": "events",
-    "graduateDay": 53,
-    "delta": 6
+    "graduateDay": 54,
+    "delta": 8
    },
    {
     "source": "mail",
-    "graduateDay": 47,
+    "graduateDay": 46,
     "delta": 0
    },
    {
     "source": "merchant",
     "graduateDay": 49,
-    "delta": 2
+    "delta": 3
    },
    {
     "source": "puzzle",
     "graduateDay": 47,
-    "delta": 0
+    "delta": 1
    },
    {
     "source": "mainlineRewards",
     "graduateDay": 52,
-    "delta": 5
+    "delta": 6
    }
   ]
  },
  "halving": {
-  "base": 47,
+  "base": 46,
   "rows": [
    {
     "source": "offline×0.5",
-    "graduateDay": 54,
-    "delta": 7
+    "graduateDay": 51,
+    "delta": 5
    },
    {
     "source": "salvage×0.5",
-    "graduateDay": 60,
+    "graduateDay": 59,
     "delta": 13
    },
    {
     "source": "bounty×0.5",
-    "graduateDay": 49,
-    "delta": 2
+    "graduateDay": 52,
+    "delta": 6
    }
   ]
  },
@@ -1188,62 +1378,62 @@
    "tier": "普通",
    "from": 10,
    "days": 1,
-   "base": 47,
+   "base": 46,
    "graduateDay": 47,
-   "delay": 0,
-   "extraVsPause": -1
+   "delay": 1,
+   "extraVsPause": 0
   },
   {
    "tier": "普通",
    "from": 10,
    "days": 2,
-   "base": 47,
+   "base": 46,
    "graduateDay": 48,
-   "delay": 1,
-   "extraVsPause": -1
+   "delay": 2,
+   "extraVsPause": 0
   },
   {
    "tier": "普通",
    "from": 10,
    "days": 3,
-   "base": 47,
+   "base": 46,
    "graduateDay": 49,
-   "delay": 2,
-   "extraVsPause": -1
+   "delay": 3,
+   "extraVsPause": 0
   },
   {
    "tier": "普通",
    "from": 10,
    "days": 4,
-   "base": 47,
-   "graduateDay": 49,
-   "delay": 2,
-   "extraVsPause": -2
+   "base": 46,
+   "graduateDay": 50,
+   "delay": 4,
+   "extraVsPause": 0
   },
   {
    "tier": "普通",
    "from": 25,
    "days": 2,
-   "base": 47,
-   "graduateDay": 47,
-   "delay": 0,
-   "extraVsPause": -2
+   "base": 46,
+   "graduateDay": 48,
+   "delay": 2,
+   "extraVsPause": 0
   },
   {
    "tier": "普通",
    "from": 25,
    "days": 4,
-   "base": 47,
-   "graduateDay": 49,
-   "delay": 2,
-   "extraVsPause": -2
+   "base": 46,
+   "graduateDay": 50,
+   "delay": 4,
+   "extraVsPause": 0
   },
   {
    "tier": "轻度",
    "from": 10,
    "days": 1,
-   "base": 54,
-   "graduateDay": 55,
+   "base": 57,
+   "graduateDay": 58,
    "delay": 1,
    "extraVsPause": 0
   },
@@ -1251,17 +1441,17 @@
    "tier": "轻度",
    "from": 10,
    "days": 2,
-   "base": 54,
-   "graduateDay": 56,
-   "delay": 2,
-   "extraVsPause": 0
+   "base": 57,
+   "graduateDay": 58,
+   "delay": 1,
+   "extraVsPause": -1
   },
   {
    "tier": "轻度",
    "from": 10,
    "days": 3,
-   "base": 54,
-   "graduateDay": 56,
+   "base": 57,
+   "graduateDay": 59,
    "delay": 2,
    "extraVsPause": -1
   },
@@ -1269,26 +1459,26 @@
    "tier": "轻度",
    "from": 10,
    "days": 4,
-   "base": 54,
-   "graduateDay": 57,
-   "delay": 3,
-   "extraVsPause": -1
+   "base": 57,
+   "graduateDay": 61,
+   "delay": 4,
+   "extraVsPause": 0
   },
   {
    "tier": "轻度",
    "from": 25,
    "days": 2,
-   "base": 54,
-   "graduateDay": 55,
-   "delay": 1,
-   "extraVsPause": -1
+   "base": 57,
+   "graduateDay": 59,
+   "delay": 2,
+   "extraVsPause": 0
   },
   {
    "tier": "轻度",
    "from": 25,
    "days": 4,
-   "base": 54,
-   "graduateDay": 57,
+   "base": 57,
+   "graduateDay": 60,
    "delay": 3,
    "extraVsPause": -1
   }
@@ -1298,16 +1488,16 @@
    "variant": "offline×0.8",
    "errors": [],
    "days": {
-    "肝档": 30,
+    "肝档": 31,
     "重度": 39,
     "普通": 46,
-    "轻度": 53
+    "轻度": 56
    },
    "liverWalls": {
     "60": 0,
     "84": 0,
-    "102": 1,
-    "120": 2,
+    "102": 2,
+    "120": 1,
     "138": 0,
     "150": 4
    },
@@ -1315,7 +1505,7 @@
     "肝档": 4,
     "重度": 5,
     "普通": 5,
-    "轻度": 7
+    "轻度": 8
    },
    "gammas": [
     1.086,
@@ -1327,42 +1517,13 @@
    "variant": "offline×1.2",
    "errors": [],
    "days": {
-    "肝档": 31,
+    "肝档": 32,
     "重度": 39,
     "普通": 47,
-    "轻度": 53
+    "轻度": 56
    },
    "liverWalls": {
     "60": 1,
-    "84": 0,
-    "102": 2,
-    "120": 1,
-    "138": 0,
-    "150": 4
-   },
-   "maxWalls": {
-    "肝档": 4,
-    "重度": 6,
-    "普通": 6,
-    "轻度": 7
-   },
-   "gammas": [
-    1.125,
-    1.027
-   ],
-   "ok": true
-  },
-  {
-   "variant": "salvage×0.8",
-   "errors": [],
-   "days": {
-    "肝档": 32,
-    "重度": 39,
-    "普通": 46,
-    "轻度": 53
-   },
-   "liverWalls": {
-    "60": 0,
     "84": 0,
     "102": 1,
     "120": 2,
@@ -1371,9 +1532,38 @@
    },
    "maxWalls": {
     "肝档": 3,
-    "重度": 3,
+    "重度": 5,
+    "普通": 6,
+    "轻度": 7
+   },
+   "gammas": [
+    1.125,
+    1.047
+   ],
+   "ok": true
+  },
+  {
+   "variant": "salvage×0.8",
+   "errors": [],
+   "days": {
+    "肝档": 32,
+    "重度": 40,
+    "普通": 45,
+    "轻度": 57
+   },
+   "liverWalls": {
+    "60": 0,
+    "84": 0,
+    "102": 1,
+    "120": 1,
+    "138": 0,
+    "150": 3
+   },
+   "maxWalls": {
+    "肝档": 3,
+    "重度": 4,
     "普通": 5,
-    "轻度": 3
+    "轻度": 7
    },
    "gammas": [
     1.125,
@@ -1386,14 +1576,72 @@
    "errors": [],
    "days": {
     "肝档": 29,
-    "重度": 38,
-    "普通": 45,
-    "轻度": 53
+    "重度": 37,
+    "普通": 46,
+    "轻度": 54
    },
    "liverWalls": {
     "60": 0,
     "84": 0,
-    "102": 0,
+    "102": 1,
+    "120": 2,
+    "138": 0,
+    "150": 3
+   },
+   "maxWalls": {
+    "肝档": 3,
+    "重度": 4,
+    "普通": 5,
+    "轻度": 6
+   },
+   "gammas": [
+    1.125,
+    1.047
+   ],
+   "ok": true
+  },
+  {
+   "variant": "gacha×0.8",
+   "errors": [],
+   "days": {
+    "肝档": 30,
+    "重度": 39,
+    "普通": 46,
+    "轻度": 55
+   },
+   "liverWalls": {
+    "60": 1,
+    "84": 0,
+    "102": 1,
+    "120": 3,
+    "138": 0,
+    "150": 3
+   },
+   "maxWalls": {
+    "肝档": 3,
+    "重度": 6,
+    "普通": 5,
+    "轻度": 6
+   },
+   "gammas": [
+    1.086,
+    1.047
+   ],
+   "ok": true
+  },
+  {
+   "variant": "gacha×1.2",
+   "errors": [],
+   "days": {
+    "肝档": 32,
+    "重度": 39,
+    "普通": 46,
+    "轻度": 57
+   },
+   "liverWalls": {
+    "60": 0,
+    "84": 0,
+    "102": 1,
     "120": 2,
     "138": 0,
     "150": 4
@@ -1402,22 +1650,22 @@
     "肝档": 4,
     "重度": 5,
     "普通": 6,
-    "轻度": 7
+    "轻度": 8
    },
    "gammas": [
-    1.125,
-    1.027
+    1.086,
+    1.057
    ],
    "ok": true
   },
   {
-   "variant": "gacha×0.8",
+   "variant": "bounty×0.8",
    "errors": [],
    "days": {
     "肝档": 31,
     "重度": 39,
     "普通": 46,
-    "轻度": 53
+    "轻度": 56
    },
    "liverWalls": {
     "60": 0,
@@ -1434,37 +1682,37 @@
     "轻度": 8
    },
    "gammas": [
-    1.125,
+    1.086,
     1.047
    ],
    "ok": true
   },
   {
-   "variant": "gacha×1.2",
+   "variant": "bounty×1.2",
    "errors": [],
    "days": {
     "肝档": 31,
-    "重度": 38,
+    "重度": 39,
     "普通": 46,
-    "轻度": 53
+    "轻度": 56
    },
    "liverWalls": {
     "60": 0,
     "84": 0,
     "102": 1,
-    "120": 2,
+    "120": 3,
     "138": 0,
-    "150": 2
+    "150": 4
    },
    "maxWalls": {
-    "肝档": 2,
-    "重度": 3,
-    "普通": 6,
-    "轻度": 5
+    "肝档": 4,
+    "重度": 5,
+    "普通": 5,
+    "轻度": 8
    },
    "gammas": [
     1.086,
-    1.027
+    1.037
    ],
    "ok": true
   },
@@ -1474,8 +1722,8 @@
    "days": {
     "肝档": 31,
     "重度": 39,
-    "普通": 47,
-    "轻度": 53
+    "普通": 46,
+    "轻度": 56
    },
    "liverWalls": {
     "60": 0,
@@ -1488,8 +1736,8 @@
    "maxWalls": {
     "肝档": 3,
     "重度": 4,
-    "普通": 7,
-    "轻度": 7
+    "普通": 6,
+    "轻度": 6
    },
    "gammas": [
     1.086,
@@ -1534,121 +1782,121 @@
   628,
   628,
   628,
-  1384,
-  1384,
-  1384,
-  1384,
-  1384,
-  1384,
-  1384,
-  1384,
-  1851,
-  1851,
-  1851,
-  1851,
-  1851,
-  1851,
-  2000,
-  2000,
-  2000,
-  2000,
-  2000,
-  2000,
-  2374,
-  2374,
-  2374,
-  2374,
-  2374,
-  2929,
-  2929,
-  2929,
-  2929,
-  2929,
-  2929,
-  2929,
-  2929,
-  2929,
-  2929,
-  3048,
-  3048,
-  3048,
-  3048,
-  3708,
-  3708,
-  3708,
-  3708,
-  4161,
-  4161,
-  4161,
-  4161,
-  4770,
-  4770,
-  4770,
-  5555,
-  5555,
-  5555,
-  5992,
-  5992,
-  5992,
-  5992,
-  6467,
-  6467,
-  6467,
-  6754,
-  6754,
-  6754,
-  7643,
-  7643,
-  7643,
-  7966,
-  9674,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  9912,
-  10232,
-  10232,
-  10232,
-  11149,
-  11149,
-  11702,
-  13916,
-  14179,
-  14179,
-  14179,
-  14179,
-  14180,
-  14180,
-  14180,
-  14180,
-  14180,
-  14645,
-  14645,
-  15082,
-  15082,
-  15634,
-  15634,
-  16098,
-  16098,
-  16294,
-  16490,
-  16988,
-  16988,
-  17460,
-  17460,
-  17956,
-  17956,
-  18413,
-  18413,
-  19207,
-  19207,
-  23976
+  1437,
+  1437,
+  1437,
+  1437,
+  1437,
+  1437,
+  1437,
+  1437,
+  1916,
+  1916,
+  1916,
+  1916,
+  1916,
+  1916,
+  2080,
+  2080,
+  2080,
+  2080,
+  2080,
+  2080,
+  2468,
+  2468,
+  2468,
+  2468,
+  2468,
+  3072,
+  3104,
+  3105,
+  3105,
+  3105,
+  3105,
+  3105,
+  3105,
+  3105,
+  3105,
+  3264,
+  3264,
+  3264,
+  3264,
+  3860,
+  3860,
+  3860,
+  3860,
+  4388,
+  4388,
+  4388,
+  4388,
+  4972,
+  4972,
+  4972,
+  5766,
+  5766,
+  5766,
+  6233,
+  6233,
+  6233,
+  6233,
+  6777,
+  6777,
+  6777,
+  7241,
+  7241,
+  7241,
+  8012,
+  8012,
+  8012,
+  8530,
+  10216,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10460,
+  10711,
+  10711,
+  10711,
+  11952,
+  11952,
+  12360,
+  14776,
+  15070,
+  15070,
+  15070,
+  15070,
+  15070,
+  15070,
+  15070,
+  15070,
+  15070,
+  15659,
+  15659,
+  16156,
+  16156,
+  16606,
+  16606,
+  17208,
+  17208,
+  17459,
+  17711,
+  18262,
+  18262,
+  18832,
+  18832,
+  19374,
+  19374,
+  19894,
+  19894,
+  21531,
+  21531,
+  26028
  ]
 }

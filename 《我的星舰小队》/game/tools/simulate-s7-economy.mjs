@@ -223,12 +223,14 @@ export const PARAMS = {
   regionCoef: [1.0, 1.7, 2.7, 4.0, 5.8, 8.2, 10.5],
 
   // 离线产出（/小时·×星域系数×(1+居住舱%+居民%)）——星矿为主（S10.10 侧重口径）；
-  // 合金/记录刻意小额：离线是"回来有得领"的底垫，不是战力主粮（护 #1 广告翻倍 ≤ 加速上限）
-  offline: { starOre: 62, hullAlloy: 30, pilotToken: 20 }, // A1 步3：星矿减产 100→62（治离线超发=三大死水共同源头；合金记录不动·B1 暂缓中）
+  // 合金/记录=「回来有得领」的底垫（B1 落地·任务单⑤：军饷主渠道让位悬赏，离线 ×0.7 降档
+  // ——底垫身份不是战力主粮；顺带护 #1 广告翻倍 ≤ 加速上限）
+  offline: { starOre: 62, hullAlloy: 24, pilotToken: 16 }, // A1 步3：星矿减产 100→62；B1 任务单⑤：合金 30→24/记录 20→16（×0.8——×0.7 实测把肝档打捞暴露度顶过抗漂移带，底垫少砍一档·调参记档）
   // 星矿的星域乘区用开方衰减（星矿=建筑币·十级封顶的有限 sink，全速乘区必然溢出成死水）
   oreCoefPow: 0.5,
   // 巡逻收益（/小时·×星域系数×(1+派驻加成)）——战斗养成资源小额（≈离线同币种 45% 档）
-  patrol: { hullAlloy: 14, pilotToken: 9, starCargo: 4 },
+  // B1 任务单⑤：军饷随离线同降 ×0.8（14→11.2/9→7.2·底垫身份），星贝不动
+  patrol: { hullAlloy: 11.2, pilotToken: 7.2, starCargo: 4 },
   patrolDockPctPerShip: 4,
   patrolDockMax: 10,
 
@@ -237,12 +239,12 @@ export const PARAMS = {
   // 恶补意愿 bountyCatchup 按画像（见 TIERS）；卡关日预算 ×stallBudgetMult（墙期"有仗可打"
   // 由悬赏/回廊承担=S8 口径，与 stallCorridorMult 同一先例——不是放水，是卡关日玩家真有闲）。
   bounty: {
-    escortAlloy: 200, escortCargo: 20,
-    drillToken: 135,
+    escortAlloy: 550, escortCargo: 20, // B1 任务单⑤：200→550（×2.75·悬赏=军饷第一单源 40-55%）
+    drillToken: 370,                   // B1 任务单⑤：135→370（×2.74·演习=驾驶记录第一单源）
     goldRate: 0.08,
     goldPhysical: { beaconCommon: 1 / 3, shipBlueprint: 1 / 3, supplyTicket: 1 / 3 },
     ambushWinBonus: { shipBlueprint: 0.5, supplyTicket: 0.5 },
-    perfectRate: 0.5,
+    perfectRate: 0.5, // 画像无 bountyPerfect 时的回退值（分层见 TIERS·任务单⑤）
     ambushWinRate: 0.85,
     minutesPerCard: 1.2,
     stallBudgetMult: 2,
@@ -398,7 +400,9 @@ export const PARAMS = {
   },
 
   // 广告点位量值（S13 十点位·全点位每日 1 次）
-  ads: { ticketPerAd: 10, salvageInstantDur: 'h8' }, // #6 赞助券 7→10：B2 加肥（削 #1 省出的份额往肥点挪）
+  // offlineDoubleMult = #1 回港报告倍率（B2 削峰 ×2→×1.5·Ron 已拍）——任务单⑤广告口径
+  // 三档包络的扫描位（×1.5/×1.7/×2.0 实测表交 Ron 拍，见 --adenv；在拍板前维持 1.5）
+  ads: { ticketPerAd: 10, salvageInstantDur: 'h8', offlineDoubleMult: 1.5 }, // #6 赞助券 7→10：B2 加肥（削 #1 省出的份额往肥点挪）
 
   // 黑市（GDD S13.6 · 广告"类充值"轨 · 任务单③入模）
   blackMarket: {
@@ -443,35 +447,41 @@ export const PARAMS = {
 export const TIERS = {
   // tinkerBonus = 卡关期"换搭配试错"的等效战力折算（S2/S8：墙期体验含换搭配试错；
   // 克制与词缀真实存在，时间多=试出针对性阵容的概率高——按档位折算成小幅有效战力，计入初值表）
-  // bountyMinutes / bountyCatchup = 任务单⑤参与度真分层两参数（成文策略假设·记初值表）：
-  //   bountyMinutes = 悬赏"辅助战斗分钟预算"/日（张数硬约束·卡关日 ×bounty.stallBudgetMult）——
+  // bountyMinutes / bountyCatchup / bountyPerfect = 任务单⑤参与度真分层三参数（成文策略假设·记初值表）：
+  //   bountyMinutes = 悬赏"辅助战斗分钟预算"/日（张数硬约束·真墙日 ×bounty.stallBudgetMult）——
   //     肝 10 分钟打满 4 张+恶补；轻度 3 分钟 ≈2 张/日（15 分钟玩家掐表打卡，板上常年积压）；
-  //     对照锁定口径：普通档悬赏日耗时 ≈4.8-6 分钟，落"辅助战斗 5-10 分钟"带内（B1 红线）。
+  //     对照锁定口径：普通档悬赏日耗时 ≈4.4-6 分钟，落"辅助战斗 5-10 分钟"带内（B1 红线）。
   //   bountyCatchup = 积压>4 时的恶补意愿（张/日附加）——步2 实证全档统一 +3 恶补是"档差
   //     抹平"主漏洞；分层后 15 分钟玩家不恶补（=0），肝档才有"回来清板"行为。
+  //   bountyPerfect = 完美通关率（S10.8 完美 ×1.25 的达成率）——悬赏=看戏找策略的词缀战斗，
+  //     投入深的玩家更常打出完美（肝 0.6/重 0.55/普 0.5/轻 0.35）；这是悬赏板对肝/重的
+  //     顶端分层（张数在 4 张/日封顶后，质量是剩下的参与度轴），B1 后军饷第一源必须
+  //     自己带档差、不能全靠打捞背（salvage×0.8 扰动实测教训）。量级记档：肝 0.7 实测把
+  //     肝档末墙熔到贴带下沿+扰动带破下限（墙"太便宜"探测器报警），0.6/0.55 是天数与
+  //     墙双边都留余量的收敛值（9 变体全绿）。
   肝档: {
     minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
-    bountyMinutes: 10, bountyCatchup: 3,
+    bountyMinutes: 10, bountyCatchup: 3, bountyPerfect: 0.6,
   },
   重度: {
     minutesPerDay: 90, sessionsPerDay: 4, adsPerDay: 6,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 3, corridorMinutes: 14, shoppingPower: 1.0, tinkerBonus: 0.055, consolationTries: 2, stallCorridorMult: 2.2,
-    bountyMinutes: 8, bountyCatchup: 2,
+    bountyMinutes: 8, bountyCatchup: 2, bountyPerfect: 0.55,
   },
   普通: {
     minutesPerDay: 35, sessionsPerDay: 2.5, adsPerDay: 2,
     dailyCompletion: 0.92, eventCompletion: 0.95,
     salvageRunsPerQueue: 2, corridorMinutes: 7, shoppingPower: 0.8, tinkerBonus: 0.03, consolationTries: 1,
-    bountyMinutes: 6, bountyCatchup: 1,
+    bountyMinutes: 6, bountyCatchup: 1, bountyPerfect: 0.5,
   },
   轻度: {
     minutesPerDay: 15, sessionsPerDay: 1.5, adsPerDay: 0,
     dailyCompletion: 0.88, eventCompletion: 0.92,
     salvageRunsPerQueue: 2, corridorMinutes: 5, shoppingPower: 0.75, tinkerBonus: 0.025, consolationTries: 1,
-    bountyMinutes: 3, bountyCatchup: 0,
+    bountyMinutes: 3, bountyCatchup: 0, bountyPerfect: 0.35,
   },
   // 第五画像·黑市重度党（S13.6 · 任务单③）：非黑市参数与肝档逐项相同（=基线不变性测试
   // 的前提：关掉 bm 行为后必须与肝档逐字段相等）；日观看 ≈ 常规点位 9 + 广告券 1 + 连看
@@ -480,7 +490,7 @@ export const TIERS = {
     minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
-    bountyMinutes: 10, bountyCatchup: 3,
+    bountyMinutes: 10, bountyCatchup: 3, bountyPerfect: 0.6,
     bm: { chain: true, buy: true, ticket: true },
   },
 };
@@ -593,8 +603,11 @@ export function bountyCardsFor(tier, backlog, minutesLeft, wallDay, P = PARAMS, 
   const budgetMin = tier.bountyMinutes * (wallDay ? P.bounty.stallBudgetMult : 1);
   const byBudget = Math.floor(budgetMin / P.bounty.minutesPerCard);
   const canByTime = Math.floor(Math.max(0, minutesLeft) / P.bounty.minutesPerCard);
-  const want = Math.round(T.bountyDailyCards * tier.dailyCompletion
-    + (backlog > T.bountyDailyCards ? (tier.bountyCatchup ?? 0) : 0));
+  // 意愿不取整（期望值口径·任务单⑤修正）：完成率 0.92 = 平均每日漏 0.32 张——此前
+  // Math.round 把 3.68 吞成 4，普通档与肝/重在张数上被拉平（B1 后军饷第一源需要
+  // 张数期望如实分层；全模型本就允许小数件/小数抽，张数取整是历史遗留的不一致）。
+  const want = T.bountyDailyCards * tier.dailyCompletion
+    + (backlog > T.bountyDailyCards ? (tier.bountyCatchup ?? 0) : 0);
   return Math.max(0, Math.min(backlog, want, canByTime, byBudget));
 }
 
@@ -1011,7 +1024,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       if (opts.pause && day === opts.pause.from + opts.pause.days) hours += opts.pause.days * 24;
       hours = Math.min(hours, storageH);
       const rateMult = 1 + (T.habitatRatePct(st.buildings.habitat) + st.residents * 1) / 100;
-      const adDouble = watcher && useAd() ? 1.5 : 1; // #1 回港报告 ×2→×1.5（B2 削峰第一刀·Ron 已拍·治单点独大+步1后广告差回上限内）
+      const adDouble = watcher && useAd() ? P.ads.offlineDoubleMult : 1; // #1 回港报告（B2 削峰 ×2→×1.5·Ron 已拍；倍率=广告口径三档包络扫描位）
       if (!dis.offline) {
         const oreCoef = Math.pow(offCoef, P.oreCoefPow ?? 1);
         credit('offline', 'starOre', P.offline.starOre * oreCoef * rateMult * hours * adDouble);
@@ -1223,7 +1236,9 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         const pNoGoldDay = Math.pow(1 - gBase, T.bountyDailyCards);
         const gEff = gBase + Math.pow(pNoGoldDay, T.bountyGoldPity) * (1 / T.bountyDailyCards) * 0.5;
         const qMult = (1 - 0.32 - gEff) + 0.32 * T.bountyQualityMult.silver + gEff * T.bountyQualityMult.gold;
-        const perfect = 1 + P.bounty.perfectRate * (T.bountyPerfectMult - 1);
+        // 完美通关率按画像分层（任务单⑤·bountyPerfect）：张数 4 张/日封顶之后，打法质量
+        // 是悬赏板剩下的参与度轴——投入深的玩家更常打出完美（看戏找策略的直接回报）
+        const perfect = 1 + (tier.bountyPerfect ?? P.bounty.perfectRate) * (T.bountyPerfectMult - 1);
         const ambushLoss = 1 - T.bountyAmbushRate * (1 - P.bounty.ambushWinRate) * T.bountyAmbushLossPct;
         const half = cards / 2;
         credit('bounty', 'hullAlloy', P.bounty.escortAlloy * offCoef * qMult * perfect * ambushLoss * half);
@@ -1486,9 +1501,18 @@ export function runStandard(pressure, P = PARAMS, opts = {}) {
   return out;
 }
 
+// 军饷身份份额（B1 落地·任务单⑤·GDD §3 转正口径）：普通档 悬赏=第一单源（带 40-55%）、
+// 挂机+巡逻=底垫、主线=风味 ≤10%——对 合金/驾驶记录 两币分别判。
+export function incomeShares(run, key) {
+  let total = 0;
+  for (const kv of Object.values(run.ledger.income)) total += kv[key] ?? 0;
+  const of = (src) => (total > 0 ? ((run.ledger.income[src]?.[key] ?? 0) / total) * 100 : 0);
+  return { bounty: of('bounty'), offline: of('offline'), patrol: of('patrol'), mainline: of('mainline'), total };
+}
+
 // 四档基线验收（v2 口径·严格版）：毕业带 ±10%（按整天取整——天数是整数，容差
 // round(靶×10%)=肝3/重4/普5/轻6 天）+ 首周 + 档位顺序 + 守恒 + 全档单墙 ≤7 天硬顶 +
-// 新手期 n001-n030 零墙 + 肝党锚墙矩阵带。
+// 新手期 n001-n030 零墙 + 肝党锚墙矩阵带 + B1 军饷身份份额（任务单⑤起）。
 // 旧"肝≤4/普≤11/轻≤12"墙限随递进墙拍板作废（普/轻 8-11 天口径已废除）。
 export function checkCalibration(std, P = PARAMS) {
   const errors = [];
@@ -1510,6 +1534,13 @@ export function checkCalibration(std, P = PARAMS) {
   for (const [node, [lo, hi]] of Object.entries(WALL_MATRIX_BANDS)) {
     const w = std['肝档'].expected.wallWait[node] ?? 0;
     if (w < lo || w > hi) errors.push(`肝档 n${node} 墙 ${w} 天，超出验收带 [${lo},${hi}]`);
+  }
+  // B1 军饷身份（普通档·合金/记录两币分别判）：悬赏 40-55% 第一单源、主线风味 ≤10%
+  for (const key of ['hullAlloy', 'pilotToken']) {
+    const s = incomeShares(std['普通'].expected, key);
+    if (s.bounty < 40 || s.bounty > 55) errors.push(`B1 身份：普通档 ${key} 悬赏份额 ${Math.round(s.bounty)}% 出 40-55 带`);
+    if (s.bounty <= Math.max(s.offline, s.patrol)) errors.push(`B1 身份：普通档 ${key} 悬赏未成第一单源（悬赏 ${Math.round(s.bounty)}% vs 离线 ${Math.round(s.offline)}%/巡逻 ${Math.round(s.patrol)}%）`);
+    if (s.mainline > 10) errors.push(`B1 身份：普通档 ${key} 主线份额 ${Math.round(s.mainline)}% 超风味上限 10%`);
   }
   return errors;
 }
@@ -1576,6 +1607,9 @@ export const DRIFT_VARIANTS = [
   { source: 'offline', mult: 0.8 }, { source: 'offline', mult: 1.2 },
   { source: 'salvage', mult: 0.8 }, { source: 'salvage', mult: 1.2 },
   { source: 'gacha', mult: 0.8 }, { source: 'gacha', mult: 1.2 },
+  // 任务单⑤：B1 落地后悬赏=军饷第一单源（载重梁），±20% 扰动进永久护栏——同时是本单
+  // 深度自检指定反例的转正（"对分层后的悬赏 ±20% 扰动，验证轻度不再被挤出带"）。
+  { source: 'bounty', mult: 0.8 }, { source: 'bounty', mult: 1.2 },
 ];
 
 /** 生成"单源 ×mult"的扰动参数副本（深拷贝·不碰全局 PARAMS）。 */
@@ -1592,6 +1626,10 @@ export function perturbedParams(source, mult, P = PARAMS) {
   } else if (source === 'gacha') {
     p.gacha.shardPerPullEV *= mult;
     for (const k of Object.keys(p.gacha.bodyP)) p.gacha.bodyP[k] *= mult;
+  } else if (source === 'bounty') {
+    p.bounty.escortAlloy *= mult;
+    p.bounty.escortCargo *= mult;
+    p.bounty.drillToken *= mult;
   } else if (source === 'treasure') {
     p.events.treasure3.legendaryPlugin *= mult;
     p.events.treasure3.universalShards *= mult;
@@ -1619,6 +1657,26 @@ export function runDriftVariant(source, mult, P = PARAMS, T = TRUTHS) {
 
 export function runDriftGuard(P = PARAMS, variants = DRIFT_VARIANTS) {
   return variants.map((v) => runDriftVariant(v.source, v.mult, P));
+}
+
+// 广告口径三档包络（任务单⑤·B1 落地后 #1 ×1.5/×1.7/×2.0 的常规轨自然加速实测——
+// 每档全流程重校准后跑 满/零 广告双跑 + 基线全套验收，产出交 Ron 拍的三选项数据）
+export function runAdEnvelope(P = PARAMS, mults = [1.5, 1.7, 2.0]) {
+  return mults.map((mult) => {
+    const p = structuredClone(P);
+    p.ads.offlineDoubleMult = mult;
+    const { pressure } = calibratePressure(p);
+    const std = runStandard(pressure, p, { envelopes: false });
+    const gateErrors = [...checkCalibration(std, p), ...checkBlackMarket(std[BM_TARGET.tier].expected, p)];
+    const ads = runAdComparison(pressure, p);
+    return {
+      mult,
+      days: Object.fromEntries(Object.keys(TARGETS).map((t) => [t, std[t].expected.graduateDay])),
+      speedups: Object.fromEntries(Object.entries(ads).map(([t, r]) => [t, r.speedup])),
+      zeroMaxWalls: Object.fromEntries(Object.entries(ads).map(([t, r]) => [t, r.zeroMaxWall])),
+      gateErrors,
+    };
+  });
 }
 
 export function runAdComparison(pressure, P = PARAMS) {
@@ -1745,6 +1803,12 @@ if (isMain) {
       console.log(`  [${r.variant}]${tag} ${r.errors.length ? '❌ ' + r.errors.join('；') : '✅'} 四档 ${Object.values(r.days).join('/')} 肝墙 ${Object.entries(r.liverWalls).map(([n, w]) => `n${n}=${w}`).join(' ')} γ=${r.gammas.join('/')}`);
     }
   }
+  if (args.has('--adenv') || args.has('--all')) {
+    console.log('\n—— 广告口径三档包络（#1 回港倍率 ×1.5/×1.7/×2.0 · 每档重校准 · 交 Ron 拍）——');
+    for (const r of runAdEnvelope()) {
+      console.log(`  [#1 ×${r.mult}] 四档 ${Object.values(r.days).join('/')} ｜ 加速 肝${r.speedups['肝档']}%/重${r.speedups['重度']}%/普${r.speedups['普通']}% ｜ 零广告最长墙 ${Object.values(r.zeroMaxWalls).join('/')} ｜ 验收 ${r.gateErrors.length ? '❌ ' + r.gateErrors.join('；') : '✅ 全绿'}`);
+    }
+  }
   if (args.has('--pressure')) {
     console.log('\n—— 150 关压力值表 ——');
     for (let n = 1; n <= TRUTHS.N; n++) {
@@ -1794,7 +1858,7 @@ if (isMain) {
     const path = process.env.S7_ECON_JSON ?? 'tools/s7-economy-report.json';
     const strip = (r) => ({ ...r, ledger: undefined, dailyPower: undefined, dailyCleared: undefined });
     const payload = {
-      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.3(第三块③ 形状靶v2+双锚+黑市)',
+      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.5(任务单⑤ B1军饷落地+参与度真分层)',
       targets: TARGETS, bmTarget: BM_TARGET, gammas, anchors,
       wallMatrixBands: WALL_MATRIX_BANDS, hardWallCap: HARD_WALL_CAP,
       params: { ...PARAMS }, tiers: TIERS,
@@ -1802,7 +1866,7 @@ if (isMain) {
         expected: strip(v.expected),
         lucky: { graduateDay: v.lucky.graduateDay }, unlucky: { graduateDay: v.unlucky.graduateDay },
       }])),
-      ads: runAdComparison(pressure), sensitivity: runSensitivity(pressure),
+      ads: runAdComparison(pressure), adEnvelope: runAdEnvelope(), sensitivity: runSensitivity(pressure),
       halving: runHalving(pressure), catchup: runCatchup(pressure),
       drift: [...DRIFT_VARIANTS, { source: 'treasure', mult: 2 }]
         .map((v) => { const r = runDriftVariant(v.source, v.mult); return { ...r, ok: r.errors.length === 0 }; }),
