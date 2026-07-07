@@ -908,6 +908,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
     'silence', 'control_immune', 'cd_refund',
     'apply_state', // ⑦机制批①：通用状态施加
+    'purify', // ⑨机制批② M5：纯净化/驱散
   ];
   // ⑦机制批① M1 限时修正状态 tag（stateAmount 必填的框架 tag 集·镜像 ConfigValidatorS7.ts）。
   const MOD_STATE_TAGS = [
@@ -919,6 +920,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
   const BATTLE_STATE_TAGS = [
     'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
     'silence', 'control_immune',
+    'debuff_immune', // ⑨机制批② M5：减益免疫
     ...MOD_STATE_TAGS,
     ...PERIODIC_STATE_TAGS,
   ];
@@ -936,6 +938,8 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'short_circuit', 'short_circuit_pulse', 'stun', 'shield_break', 'mark', 'vulnerable', 'berserk',
     'silence', 'control_immune', 'apply_state',
   ];
+  // ⑨机制批② M5：可承载 dispelCount（净化/驱散）的 effectType（镜像 ConfigValidatorS7.ts）。
+  const DISPEL_HOST_TYPES = ['shield', 'shield_bubble', 'repair_burst', 'purify'];
   const BOSS_PHASE_TAGS = ['start', 'mid', 'final'];
   const BOSS_PHASE_TRIGGER_TYPES = ['battle_start', 'hp_pct_below', 'time_elapsed_sec'];
   // 镜像 assets/scripts/core/s7/S7BattleGrid.ts（敌方 5×7）：改尺寸两处都要改。
@@ -1137,6 +1141,22 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const ssc = num(row.summonSourceCap);
       if (ssc === null || !Number.isInteger(ssc) || ssc < 1) fail('battle_effect_param', id, 'summonSourceCap（可选）必须为 >= 1 的整数');
       else if (row.summonUnitRef === 'none') fail('battle_effect_param', id, 'summonSourceCap（可选）要求 summonUnitRef ≠ none');
+    }
+    // ⑨机制批② M5：净化/驱散字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    let dispelN = null;
+    if (row.dispelCount !== undefined) {
+      dispelN = num(row.dispelCount);
+      if (dispelN === null || !Number.isInteger(dispelN) || dispelN < 1) fail('battle_effect_param', id, 'dispelCount（可选）必须为 >= 1 的整数');
+      else if (!DISPEL_HOST_TYPES.includes(row.effectType)) fail('battle_effect_param', id, 'dispelCount（可选）仅允许配在护盾/治疗行或 purify 效果上');
+    }
+    if (row.effectType === 'purify' && (dispelN === null || dispelN < 1)) fail('battle_effect_param', id, 'purify 效果要求 dispelCount >= 1');
+    if (row.dispelHardControl !== undefined) {
+      if (typeof row.dispelHardControl !== 'boolean') fail('battle_effect_param', id, 'dispelHardControl（可选）必须为布尔');
+      else if (row.dispelCount === undefined) fail('battle_effect_param', id, 'dispelHardControl（可选）要求同时配 dispelCount');
+    }
+    if (row.applyUndispellable !== undefined) {
+      if (typeof row.applyUndispellable !== 'boolean') fail('battle_effect_param', id, 'applyUndispellable（可选）必须为布尔');
+      else if (row.stateTag === 'none') fail('battle_effect_param', id, 'applyUndispellable（可选）要求 stateTag ≠ none（标记被施加的状态）');
     }
   }
 

@@ -91,6 +91,7 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
   'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
   'regen', 'burn', // ⑦机制批① M2：同刻先回血后掉血（纸面规则·体验平滑向）
+  'debuff_immune', // ⑨机制批② M5：减益免疫（尾部追加·旧配置不出现=遍历顺序不变）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -118,6 +119,27 @@ const DEBUFF_TAGS: S7BattleStateTag[] = [
 const BUFF_TAGS: S7BattleStateTag[] = [
   'shield', 'control_immune', 'berserk',
   'atk_up', 'atk_speed_up', 'dmg_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
+  'debuff_immune', // ⑨机制批② M5：减益免疫也是增益（沛"无增益友军优先"纳入·尾部追加=旧配置不变）
+];
+
+// ===== ⑨机制批② M5 净化/驱散极性与移除优先级（真源=星舰真源§状态库·优先级序=数值域定序·记数值细表 §16c）=====
+/** 「减益」全集（净化候选 + debuff_immune 拦截判定）：软控（减速/虚弱/破防/易伤/削盾/燃烧）+ 硬控（短路/沉默/晕眩）；
+ *  真源明列 mark 为目标标记非减益 → 排除（净化不清 mark·debuff_immune 不挡 mark）。 */
+const DEBUFF_STATE_TAGS: S7BattleStateTag[] = [
+  'atk_down', 'atk_speed_down', 'armor_down', 'vulnerable', 'dmg_taken_up', 'burn', 'shield_break',
+  'short_circuit', 'stun', 'silence',
+];
+/** 净化移除优先级（友军·最有害先移）：硬控（仅 dispelHardControl 时纳入·队首=最高威胁）→ 燃烧 DoT
+ *  → 破防/易伤（挨更多打）→ 虚弱/减速（削输出/节奏）→ 易伤态/削盾。 */
+const DISPEL_DEBUFF_ORDER: S7BattleStateTag[] = [
+  'short_circuit', 'stun', 'silence',
+  'burn', 'armor_down', 'dmg_taken_up', 'atk_down', 'atk_speed_down', 'vulnerable', 'shield_break',
+];
+/** 驱散移除优先级（敌方·最具威胁先移）：狂暴/加攻（真源"反制狂暴/鼓动"）→ 增伤/加攻速/暴击/急速
+ *  → 减伤/持续回血/护盾 → 免控/减益免疫。 */
+const DISPEL_BUFF_ORDER: S7BattleStateTag[] = [
+  'berserk', 'atk_up', 'dmg_up', 'atk_speed_up', 'crit_dmg_up', 'crit_rate_up', 'skill_haste_up',
+  'dmg_taken_down', 'regen', 'shield', 'control_immune', 'debuff_immune',
 ];
 
 /** 无装配单位（敌人/召唤物/基线舰）的默认定向词条：全 0（冻结共享，战斗中只读不改）。 */
@@ -156,6 +178,8 @@ interface RtStateInst {
   sourceSide?: S7AutoBattleSide;
   /** 施加来源效果行（结算日志 effectRef）。 */
   srcEffectRef?: string;
+  /** ⑨机制批② M5：不可驱散标记（守护铃「守护铃光」·true=dispel 跳过不移除）；缺省=可驱散。 */
+  undispellable?: boolean;
 }
 
 /** ⑦机制批① M3：叠层规则运行态。 */
@@ -850,11 +874,15 @@ class BattleRun {
     } else if (SHIELD_TYPES.has(type)) {
       for (const t of targets) this.addShield(caster, t, effect);
       this.applyFrameworkRider(caster, effect, targets);
+      this.applyDispelRider(caster, effect, targets); // ⑨机制批② M5：晨曦「回响」=护盾附净化
     } else if (HEAL_TYPES.has(type)) {
       for (const t of targets) this.heal(caster, t, effect);
       this.applyFrameworkRider(caster, effect, targets);
+      this.applyDispelRider(caster, effect, targets); // ⑨机制批② M5：回响/涤荡/春风净化=治疗附净化
     } else if (STATE_TYPES.has(type)) {
       for (const t of targets) if (this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
+    } else if (type === 'purify') {
+      this.applyDispelRider(caster, effect, targets); // ⑨机制批② M5：净化模块=纯净化主体（无伤无治）
     }
     // ⑦机制批① 一发多态（山岳「不动」免控+减伤 / 时光糖 加攻速+技能急速 / 侵蚀 破防+虚弱）：
     // 追加状态行按数组序对同一目标集施加；被引用行自身的 alsoApplyStateRefs 不再展开（禁链式）。
@@ -874,6 +902,39 @@ class BattleRun {
   private applyFrameworkRider(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
     if (!MOD_STATE_TAGS.has(effect.stateTag) && !PERIODIC_STATE_TAGS.has(effect.stateTag)) return;
     for (const t of targets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
+  }
+
+  /** ⑨机制批② M5：净化/驱散 rider——对每个存活目标移除状态（缺 dispelCount 或 ≤0=零操作=逐字节不变）。
+   *  挂治疗/护盾行=附带净化（回响/涤荡/春风净化）；作 purify 主体=纯净化（净化模块）。 */
+  private applyDispelRider(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
+    const count = effect.dispelCount ?? 0;
+    if (count <= 0) return;
+    for (const t of targets) if (t.alive) this.applyDispel(caster, t, effect, count);
+  }
+
+  /** ⑨机制批② M5：从 target 移除至多 count 个状态。极性由目标阵营定——
+   *  友军=净化（移除减益·硬控需 dispelHardControl）/ 敌方=驱散（移除增益）；按 §16c 优先级序·跳过不可驱散态。
+   *  移除 shield 态同步清零护盾数值（镜像 stepExpireStates 口径）。 */
+  private applyDispel(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam, count: number): void {
+    const cleanse = target.side === caster.side; // 友军→净化减益；敌方→驱散增益
+    const order = cleanse ? DISPEL_DEBUFF_ORDER : DISPEL_BUFF_ORDER;
+    const allowHardControl = effect.dispelHardControl === true;
+    const removed: S7BattleStateTag[] = [];
+    for (const tag of order) {
+      if (removed.length >= count) break;
+      if (cleanse && HARD_CONTROL_TAGS.includes(tag) && !allowHardControl) continue;
+      const inst = target.states.get(tag);
+      if (!inst || inst.undispellable) continue;
+      target.states.delete(tag);
+      if (tag === 'shield') target.shield = 0;
+      removed.push(tag);
+    }
+    if (removed.length > 0) {
+      this.pushLog('state_dispel', {
+        actorId: caster.unitId, side: caster.side, targetIds: [target.unitId],
+        effectRef: effect.rowId, note: (cleanse ? 'cleanse:' : 'dispel:') + removed.join(','),
+      });
+    }
   }
 
   private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
@@ -1076,6 +1137,8 @@ class BattleRun {
     if (tag === 'none' || !target.alive) return;
     // ⑥8a 免控状态（守护铃/山岳不动）：持有 control_immune 期间硬控（短路/晕眩/沉默）施加直接落空。
     if (HARD_CONTROL_TAGS.includes(tag) && target.states.has('control_immune')) return;
+    // ⑨机制批② M5：减益免疫（霖3★/净化模块传奇）——持有 debuff_immune 期间一切新减益（含硬控·真源"免疫新减益"）落空。
+    if (DEBUFF_STATE_TAGS.includes(tag) && target.states.has('debuff_immune')) return;
     let duration = durationSec > 0 ? durationSec : 1;
     // 块4b-2：控制抗性词条（受控方插件提供）只作用于硬控 → 缩短控制时长；抗性钳到 [0,1]。
     // ⑥8a：硬控集合从 CONTROL_TAGS（短路/晕眩）扩为 HARD_CONTROL_TAGS（+沉默·真源硬控口径）——
@@ -1129,7 +1192,10 @@ class BattleRun {
       return;
     }
     // 同名状态不叠层，只刷新持续时间。
-    target.states.set(tag, { tag, expireAt: this.time + duration });
+    target.states.set(tag, {
+      tag, expireAt: this.time + duration,
+      ...(effect.applyUndispellable ? { undispellable: true } : {}), // ⑨机制批② M5：守护铃「守护铃光」不可驱散
+    });
     this.pushLog('state_apply', {
       actorId: caster.unitId,
       side: caster.side,

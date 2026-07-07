@@ -71,6 +71,7 @@ export type S7AutoBattleLogType =
   | 'core_trigger'
   | 'state_apply'
   | 'state_expire'
+  | 'state_dispel'
   | 'unit_down'
   | 'boss_phase'
   | 'battle_end';

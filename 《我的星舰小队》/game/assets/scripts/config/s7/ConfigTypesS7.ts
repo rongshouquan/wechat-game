@@ -707,7 +707,8 @@ export type S7BattleEffectType =
   | 'shield_bubble' | 'repair_burst' | 'short_circuit_pulse' | 'summon_drone'
   | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
   | 'silence' | 'control_immune' | 'cd_refund'
-  | 'apply_state';
+  | 'apply_state'
+  | 'purify'; // ⑨机制批② M5：纯净化/驱散（无伤无治·按目标阵营移除减益/增益·dispelCount 条）
 // ⑦机制批① M1 限时属性修正状态（幅度=效果行 stateAmount·时长=durationSec·全配置驱动；
 // 方向编码在 tag 里，stateAmount 一律填正数）：
 //   atk_up/atk_down=加攻/虚弱 · atk_speed_up/atk_speed_down=加攻速/减速 · armor_down=破防
@@ -721,7 +722,8 @@ export type S7BattleStateTag =
   | 'silence' | 'control_immune'
   | 'atk_up' | 'atk_down' | 'atk_speed_up' | 'atk_speed_down' | 'armor_down'
   | 'dmg_up' | 'dmg_taken_up' | 'dmg_taken_down' | 'crit_rate_up' | 'crit_dmg_up' | 'skill_haste_up'
-  | 'burn' | 'regen';
+  | 'burn' | 'regen'
+  | 'debuff_immune'; // ⑨机制批② M5：减益免疫（增益·镜像 control_immune·挡一切新减益·霖3★/净化模块传奇）
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -764,6 +766,14 @@ export interface S7BattleEffectParam {
   /** ⑦机制批① 可选：同批对相同目标追加施加的状态效果行（一发多态·山岳「不动」/时光糖/侵蚀）。
    *  仅允许指向状态施加行（stateTag≠none），被引用行自身的 alsoApplyStateRefs 不再展开（禁链式）。 */
   alsoApplyStateRefs?: string[];
+  /** ⑨机制批② M5 可选（净化/驱散）：本效果移除的状态数（>0 才启用；缺省=不净化=逐字节不变）。
+   *  极性由目标阵营定：友军→移除减益（净化）/ 敌方→移除增益（驱散）。可挂治疗/护盾行（附带净化=回响/涤荡），
+   *  或作 effectType='purify' 的纯净化主体（净化模块）。移除优先级=数值细表 §16c 定序（最有害/最具威胁者先移）。 */
+  dispelCount?: number;
+  /** ⑨机制批② M5 可选：净化是否可移除硬控（短路/沉默/晕眩）；缺省 false=只清软减益（春风/霖需 L40/L60 大节点才开）。 */
+  dispelHardControl?: boolean;
+  /** ⑨机制批② M5 可选：true=本效果施加的状态标记为"不可驱散"（守护铃「守护铃光」·不被 dispel 移除）；缺省 false。 */
+  applyUndispellable?: boolean;
   note: string;
 }
 

@@ -833,3 +833,213 @@ describe('⑦M1-D 零回归哨兵', () => {
     }
   });
 });
+
+// ===================== ⑨M5 · 净化/驱散极性 + 减益免疫 =====================
+// 手推口径：基线普攻 100×100/125=80；atk_up/atk_down ±50%→攻150/50→伤120/40（整数）。
+// purify 用 cd 触发 + initialCdSec 延迟首发（t=3），制造"净化前(t0-2)/后(t3-5)"可断言的 damage 序列。
+
+/** 简单态施加行（非 M1 修正 tag·不带 stateAmount·debuff_immune/berserk/short_circuit 用）。 */
+function simpleStateRow(rowId: string, stateTag: string, durationSec: number, targetingTag: string, extra?: Row): { rowId: string; overrides: Row } {
+  return {
+    rowId,
+    overrides: {
+      effectKind: 'state', effectType: 'apply_state', effectPower: 0,
+      targetingTag, durationSec, maxTargets: 9, stateTag, summonUnitRef: 'none',
+      ...(extra ?? {}),
+    },
+  };
+}
+/** 净化/驱散主体行（effectType=purify·无伤无治·dispelCount 条）。cd/initialCdSec 在触发块上、不在效果行。 */
+function purifyRow(rowId: string, targetingTag: string, dispelCount: number, extra?: Row): { rowId: string; overrides: Row } {
+  return {
+    rowId,
+    overrides: {
+      effectKind: 'ultimate', effectType: 'purify', effectPower: 0,
+      targetingTag, durationSec: 0, maxTargets: 9, stateTag: 'none', summonUnitRef: 'none', dispelCount,
+      ...(extra ?? {}),
+    },
+  };
+}
+const dispelsOf = (log: S7AutoBattleLogEntry[], effectRef: string): S7AutoBattleLogEntry[] =>
+  log.filter((e) => e.type === 'state_dispel' && e.effectRef === effectRef);
+const cdPurify = (effectRef: string) => trig('cd', effectRef, { cdSec: 999, initialCdSec: 3 });
+
+describe('⑨M5-A 净化/驱散极性（友军→清减益 / 敌方→清增益）', () => {
+  it('净化清虚弱：受害者伤 40→(t=3 净化后)80·note=cleanse:atk_down·目标只命中受害者', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9_victim' }, { rowId: 'bu_t9_pure' }],
+      enemies: [{ rowId: 'bu_t9_dummy', slot: 'r1c0' }],
+      effects: [
+        stateRow('eff_t9_selfweak', 'atk_down', 0.5, 10, 'self_team', { maxTargets: 1 }),
+        purifyRow('eff_t9_purify1', 'self_team', 1),
+      ],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9_victim', 'p1c2', [trig('battle_start', 'eff_t9_selfweak')]),
+        unitInput('bu_t9_pure', 'p0c2', [cdPurify('eff_t9_purify1')]),
+      ],
+    });
+    // atk_down 0.5→攻50→50×100/125=40（t0-2）；t=3 purify 在普攻步前移除→80（t3-5）。
+    expect(dmgBy(r.log, 'player_p1c2').map((e) => e.amount)).toEqual([40, 40, 40, 80, 80, 80]);
+    const d = dispelsOf(r.log, 'eff_t9_purify1');
+    expect(d.length).toBe(1); // 净化者自身无减益=不产日志；只有受害者一条
+    expect(d[0].note).toBe('cleanse:atk_down');
+    expect(d[0].targetIds).toEqual(['player_p1c2']);
+  });
+
+  it('驱散清敌加攻：敌伤 120→(t=3 驱散后)80·note=dispel:atk_up（极性=敌方侧自动切增益）', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9_buffer' }, { rowId: 'bu_t9_pure2' }],
+      enemies: [{ rowId: 'bu_t9_foe', slot: 'r1c0', overrides: { attack: 100 } }],
+      effects: [
+        stateRow('eff_t9_foeatkup', 'atk_up', 0.5, 10, 'nearest_random_tie'),
+        purifyRow('eff_t9_purify2', 'nearest_random_tie', 1),
+      ],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9_buffer', 'p1c2', [trig('battle_start', 'eff_t9_foeatkup')]),
+        unitInput('bu_t9_pure2', 'p0c2', [cdPurify('eff_t9_purify2')]),
+      ],
+    });
+    // 敌攻 100×1.5=150→150×100/125=120（t0-2）；t=3 驱散 atk_up→100×100/125=80（t3-5）。
+    expect(dmgBy(r.log, 'enemy_0000').map((e) => e.amount)).toEqual([120, 120, 120, 80, 80, 80]);
+    const d = dispelsOf(r.log, 'eff_t9_purify2');
+    expect(d.length).toBe(1);
+    expect(d[0].note).toBe('dispel:atk_up');
+  });
+});
+
+describe('⑨M5-B 硬控门控 dispelHardControl（基座软控 only·L40/L60 才开）', () => {
+  it('基座净化跳过硬控只清软减益；开 dispelHardControl 后硬控最高优先先清', async () => {
+    const mk = async (hard: boolean) => {
+      const b = mechRig({
+        players: [{ rowId: 'bu_t9_v3' }, { rowId: 'bu_t9_p3' }],
+        enemies: [{ rowId: 'bu_t9_d3', slot: 'r1c0' }],
+        effects: [
+          simpleStateRow('eff_t9_sc', 'short_circuit', 10, 'self_team', { maxTargets: 1 }),
+          stateRow('eff_t9_ad', 'atk_down', 0.5, 10, 'self_team', { maxTargets: 1 }),
+          purifyRow('eff_t9_pf3', 'self_team', 1, hard ? { dispelHardControl: true } : undefined),
+        ],
+      });
+      const engine = await engineOf(b);
+      const r = engine.run({
+        encounterRef: ENC, battleSeed: SEED,
+        playerUnits: [
+          unitInput('bu_t9_v3', 'p1c2', [trig('battle_start', 'eff_t9_sc'), trig('battle_start', 'eff_t9_ad')]),
+          unitInput('bu_t9_p3', 'p0c2', [cdPurify('eff_t9_pf3')]),
+        ],
+      });
+      return dispelsOf(r.log, 'eff_t9_pf3');
+    };
+    const soft = await mk(false);
+    expect(soft.length).toBe(1);
+    expect(soft[0].note).toBe('cleanse:atk_down'); // 硬控被跳过，清软减益
+    const withHard = await mk(true);
+    expect(withHard[0].note).toBe('cleanse:short_circuit'); // 开门后硬控队首先清
+  });
+});
+
+describe('⑨M5-C 不可驱散 applyUndispellable（守护铃口径）', () => {
+  it('count=5 驱散跳过 undispellable 的 berserk、只清普通增益 atk_up', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9_b4' }, { rowId: 'bu_t9_p4' }],
+      enemies: [{ rowId: 'bu_t9_f4', slot: 'r1c0', overrides: { attack: 100 } }],
+      effects: [
+        simpleStateRow('eff_t9_undber', 'berserk', 20, 'nearest_random_tie', { applyUndispellable: true }),
+        stateRow('eff_t9_fup', 'atk_up', 0.5, 20, 'nearest_random_tie'),
+        purifyRow('eff_t9_pf4', 'nearest_random_tie', 5),
+      ],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9_b4', 'p1c2', [trig('battle_start', 'eff_t9_undber'), trig('battle_start', 'eff_t9_fup')]),
+        unitInput('bu_t9_p4', 'p0c2', [cdPurify('eff_t9_pf4')]),
+      ],
+    });
+    const d = dispelsOf(r.log, 'eff_t9_pf4');
+    expect(d.length).toBe(1);
+    expect(d[0].note).toBe('dispel:atk_up'); // berserk 不可驱散→count 再大也留
+  });
+});
+
+describe('⑨M5-D 减益免疫 debuff_immune（霖3★/净化模块传奇·挡减益含硬控·不挡增益）', () => {
+  it('免疫态挡 atk_down 与 short_circuit（伤维持120、能出手），放行 atk_up', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9_im' }],
+      enemies: [{ rowId: 'bu_t9_d5', slot: 'r1c0' }],
+      effects: [
+        simpleStateRow('eff_t9_di', 'debuff_immune', 10, 'self_team', { maxTargets: 1 }),
+        stateRow('eff_t9_ad5', 'atk_down', 0.5, 10, 'self_team', { maxTargets: 1 }),
+        stateRow('eff_t9_au5', 'atk_up', 0.5, 10, 'self_team', { maxTargets: 1 }),
+        simpleStateRow('eff_t9_sc5', 'short_circuit', 10, 'self_team', { maxTargets: 1 }),
+      ],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9_im', 'p1c2', [
+          trig('battle_start', 'eff_t9_di'),   // 先上免疫
+          trig('battle_start', 'eff_t9_ad5'),  // 虚弱→被挡
+          trig('battle_start', 'eff_t9_au5'),  // 加攻→放行
+          trig('battle_start', 'eff_t9_sc5'),  // 硬控→被挡
+        ]),
+      ],
+    });
+    // 仅 atk_up 生效→攻150→120 全程；若 atk_down 未挡=80、若短路未挡=零攻击 → [120]×6 三重证伪。
+    expect(dmgBy(r.log, 'player_p1c2').map((e) => e.amount)).toEqual([120, 120, 120, 120, 120, 120]);
+    expect(stateAppliesOf(r.log, 'eff_t9_ad5').length).toBe(0); // 虚弱被挡=无 state_apply
+    expect(stateAppliesOf(r.log, 'eff_t9_au5').length).toBe(1); // 加攻放行
+    expect(stateAppliesOf(r.log, 'eff_t9_sc5').length).toBe(0); // 硬控被挡
+  });
+});
+
+describe('⑨M5-E 计数/优先级 + 缺省哨兵', () => {
+  it('净化 count=2：三减益按序清 armor_down+dmg_taken_up、留 atk_down', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9_v6' }, { rowId: 'bu_t9_p6' }],
+      enemies: [{ rowId: 'bu_t9_d6', slot: 'r1c0' }],
+      effects: [
+        stateRow('eff_t9_ad6', 'atk_down', 0.3, 10, 'self_team', { maxTargets: 1 }),
+        stateRow('eff_t9_ar6', 'armor_down', 0.3, 10, 'self_team', { maxTargets: 1 }),
+        stateRow('eff_t9_du6', 'dmg_taken_up', 0.3, 10, 'self_team', { maxTargets: 1 }),
+        purifyRow('eff_t9_pf6', 'self_team', 2),
+      ],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9_v6', 'p1c2', [
+          trig('battle_start', 'eff_t9_ad6'), trig('battle_start', 'eff_t9_ar6'), trig('battle_start', 'eff_t9_du6'),
+        ]),
+        unitInput('bu_t9_p6', 'p0c2', [cdPurify('eff_t9_pf6')]),
+      ],
+    });
+    // 软段序 burn>armor_down>dmg_taken_up>atk_down>…；present={atk_down,armor_down,dmg_taken_up}·count2→清前二。
+    const d = dispelsOf(r.log, 'eff_t9_pf6');
+    expect(d.length).toBe(1);
+    expect(d[0].note).toBe('cleanse:armor_down,dmg_taken_up');
+  });
+
+  it('哨兵：无 M5 字段的基线战斗·日志无 state_dispel、无 purify effectType', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9_base' }],
+      enemies: [{ rowId: 'bu_t9_base_e', slot: 'r1c0' }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: ENC, battleSeed: SEED, playerUnits: [unitInput('bu_t9_base', 'p1c2')] });
+    for (const e of r.log) {
+      expect(e.type === 'state_dispel').toBe(false);
+      expect(e.effectType === 'purify').toBe(false);
+    }
+  });
+});
