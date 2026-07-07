@@ -723,7 +723,10 @@ export type S7BattleStateTag =
   | 'atk_up' | 'atk_down' | 'atk_speed_up' | 'atk_speed_down' | 'armor_down'
   | 'dmg_up' | 'dmg_taken_up' | 'dmg_taken_down' | 'crit_rate_up' | 'crit_dmg_up' | 'skill_haste_up'
   | 'burn' | 'regen'
-  | 'debuff_immune'; // ⑨机制批② M5：减益免疫（增益·镜像 control_immune·挡一切新减益·霖3★/净化模块传奇）
+  | 'debuff_immune' // ⑨机制批② M5：减益免疫（增益·镜像 control_immune·挡一切新减益·霖3★/净化模块传奇）
+  | 'taunt' // ⑨机制批② M4：嘲讽（受击重定向·被嘲讽单位攻击性选目标强制打嘲讽者·tauntedBy 记施加者=砺/铁壁怒吼/哨卫诱饵/SS）
+  | 'reflect' // ⑨机制批② M4：反弹（受方受击后向攻击者直扣·岩反震/岳荆甲/铁壁A/磐石A/砺5★）
+  | 'guard'; // ⑨机制批② M4：守护替挡（守护者持此态·敌打其保护的后排友军时伤害转守护者·CD 门控·岩「光盾守护」）
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -774,6 +777,17 @@ export interface S7BattleEffectParam {
   dispelHardControl?: boolean;
   /** ⑨机制批② M5 可选：true=本效果施加的状态标记为"不可驱散"（守护铃「守护铃光」·不被 dispel 移除）；缺省 false。 */
   applyUndispellable?: boolean;
+  /** ⑨机制批② M4 可选（仅 stateTag='reflect' 生效·缺省=无反弹=逐字节不变）：反弹给攻击者的量=
+   *  受到伤害 ×reflectPct + 攻击者攻 ×reflectAtkPct + 受方防 ×reflectArmorPct（施加瞬间快照进 reflectBase）。 */
+  reflectPct?: number;
+  reflectAtkPct?: number;
+  reflectArmorPct?: number;
+  /** ⑨机制批② M4 可选（reflect 态·岩「反震」格挡）：受击时先减免的伤害比例 [0,1]；缺省=不减免。 */
+  blockPct?: number;
+  /** ⑨机制批② M4 可选（仅 stateTag='guard' 生效·岩「光盾守护」）：保护范围——backline=比守护者更靠后的友军（缺省）/ all=任意友军；
+   *  guardCooldownSec=替挡冷却秒（岩=2s·冷却中的攻击照常落原目标·缺省 0=每次都替挡）。缺省无 guard 态=逐字节不变。 */
+  guardProtect?: 'backline' | 'all';
+  guardCooldownSec?: number;
   note: string;
 }
 

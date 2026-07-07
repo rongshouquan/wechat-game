@@ -111,6 +111,9 @@ const S7_BATTLE_STATE_TAGS = [
   'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
   'silence', 'control_immune',
   'debuff_immune', // ⑨机制批② M5：减益免疫（增益·挡一切新减益）
+  'taunt', // ⑨机制批② M4：嘲讽（被嘲讽者攻击性选目标强制打嘲讽者）
+  'reflect', // ⑨机制批② M4：反弹（受方受击后向攻击者直扣）
+  'guard', // ⑨机制批② M4：守护替挡（守护者持态·敌打其后排友军→伤害转守护者）
   ...S7_MOD_STATE_TAGS,
   ...S7_PERIODIC_STATE_TAGS,
 ];
@@ -1510,6 +1513,27 @@ function validateBattle(
     if (row.applyUndispellable !== undefined) {
       if (typeof row.applyUndispellable !== 'boolean') errors.push({ table: 'battle_effect_param', id, message: 'applyUndispellable（可选）必须为布尔' });
       else if (stTag === 'none') errors.push({ table: 'battle_effect_param', id, message: 'applyUndispellable（可选）要求 stateTag ≠ none（标记被施加的状态）' });
+    }
+    // ⑨机制批② M4 reflect 字段组（缺席=不校）：仅 stateTag=reflect 可配·数值 >= 0；blockPct 在 [0,1]。
+    const reflectFields = ['reflectPct', 'reflectAtkPct', 'reflectArmorPct', 'blockPct'] as const;
+    if (reflectFields.some((f) => row[f] !== undefined) && stTag !== 'reflect') {
+      errors.push({ table: 'battle_effect_param', id, message: 'reflect/block 字段（可选）仅允许配给 stateTag=reflect' });
+    }
+    for (const f of reflectFields) {
+      if (row[f] === undefined) continue;
+      const v = num(row[f]);
+      if (v === null || v < 0 || !Number.isFinite(v)) errors.push({ table: 'battle_effect_param', id, message: `${f}（可选）必须为 >= 0 的有限数` });
+      else if (f === 'blockPct' && v > 1) errors.push({ table: 'battle_effect_param', id, message: 'blockPct（可选）必须在 [0,1]' });
+    }
+    // ⑨机制批② M4 guard 字段组（缺席=不校）：仅 stateTag=guard 可配。
+    if (row.guardProtect !== undefined) {
+      if (row.guardProtect !== 'backline' && row.guardProtect !== 'all') errors.push({ table: 'battle_effect_param', id, message: 'guardProtect（可选）必须为 backline | all' });
+      else if (stTag !== 'guard') errors.push({ table: 'battle_effect_param', id, message: 'guardProtect（可选）仅允许配给 stateTag=guard' });
+    }
+    if (row.guardCooldownSec !== undefined) {
+      const gc = num(row.guardCooldownSec);
+      if (gc === null || gc < 0 || !Number.isFinite(gc)) errors.push({ table: 'battle_effect_param', id, message: 'guardCooldownSec（可选）必须为 >= 0 的有限数' });
+      else if (stTag !== 'guard') errors.push({ table: 'battle_effect_param', id, message: 'guardCooldownSec（可选）仅允许配给 stateTag=guard' });
     }
   }
 

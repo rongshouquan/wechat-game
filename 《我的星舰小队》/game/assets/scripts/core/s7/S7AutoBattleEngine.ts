@@ -92,6 +92,9 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
   'regen', 'burn', // ⑦机制批① M2：同刻先回血后掉血（纸面规则·体验平滑向）
   'debuff_immune', // ⑨机制批② M5：减益免疫（尾部追加·旧配置不出现=遍历顺序不变）
+  'taunt', // ⑨机制批② M4：嘲讽（尾部追加=遍历顺序不变）
+  'reflect', // ⑨机制批② M4：反弹（尾部追加=遍历顺序不变）
+  'guard', // ⑨机制批② M4：守护替挡（尾部追加=遍历顺序不变）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -180,6 +183,18 @@ interface RtStateInst {
   srcEffectRef?: string;
   /** ⑨机制批② M5：不可驱散标记（守护铃「守护铃光」·true=dispel 跳过不移除）；缺省=可驱散。 */
   undispellable?: boolean;
+  /** ⑨机制批② M4：嘲讽施加者 unitId（taunt 态专用·被嘲讽单位攻击性选目标强制打此单位）。 */
+  tauntedBy?: string;
+  /** ⑨机制批② M4：反弹态参数（reflect 态专用·施加瞬间快照）——反弹量=受伤×reflectPct + 攻击者攻×reflectAtkPct
+   *  + reflectBase(受方防×reflectArmorPct 快照)；blockPct=受击减免比例（岩「反震」格挡）。 */
+  reflectPct?: number;
+  reflectAtkPct?: number;
+  reflectBase?: number;
+  blockPct?: number;
+  /** ⑨机制批② M4 守护替挡（guard 态·守护者持有）：保护范围 / 替挡冷却秒 / 下次可替挡时刻（运行时更新）。 */
+  guardProtect?: 'backline' | 'all';
+  guardCooldownSec?: number;
+  guardReadyAt?: number;
 }
 
 /** ⑦机制批① M3：叠层规则运行态。 */
@@ -293,6 +308,8 @@ class BattleRun {
   private readonly enemyCells = new Set<string>();
   private spawnPlans: RtSpawnPlan[] = [];
   private phases: RtPhase[] = [];
+  /** ⑨机制批② M4：本场是否存在守护替挡态（首次施加 guard 时置真）；false=dealDamage 守护解析整段跳过=逐字节不变。 */
+  private anyGuard = false;
   private time = 0;
   private timeLimitSec = 0;
   private enemySeq = 0;
@@ -939,6 +956,7 @@ class BattleRun {
 
   private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
     if (!target.alive) return;
+    target = this.resolveGuard(caster, target); // ⑨机制批② M4 守护替挡：敌打我方后排友军→伤害转就绪守护者(岩·CD 门控)；无守护态=原目标
     // ⑥8a 闪避（受方词条·警戒雷达）：仅 dodgeRate>0 才掷随机（零回归模式同暴击）；闪避=完全落空，
     // 不掉血不破盾、不触发 on_hit / attack_landed，只记 amount=0 + dodged 标记的伤害日志。
     if (target.affixes.dodgeRate > 0 && this.rng.next() < target.affixes.dodgeRate) {
@@ -974,6 +992,8 @@ class BattleRun {
       });
       return;
     }
+    // ⑨机制批② M4：一次性取受方反弹态（供下方格挡减免 + 尾部反弹直扣复用）；缺省无 reflect 态=两处皆跳过=逐字节不变。
+    const reflectInst = target.states.get('reflect');
     // ⑥8a 破甲（施方词条·藏）：无视目标一部分防御；armorPen=0 时防御原值（零回归）。
     // ⑦机制批① 破防（armor_down 状态·受方）：再乘 (1−幅度)；无状态时乘 1=逐字节不变。
     const armorCut = Math.min(1, Math.max(0, this.stateModSum(target, 'armor_down')));
@@ -1005,6 +1025,8 @@ class BattleRun {
     const takenUp = this.stateModSum(target, 'dmg_taken_up');
     if (takenUp !== 0) raw *= 1 + takenUp;
     if (dmgReduction > 0) raw *= 1 - dmgReduction;
+    // ⑨机制批② M4 格挡（岩「反震」·reflect 态 blockPct）：受击先减免一部分；无 reflect 态/blockPct=跳过=逐字节不变。
+    if (reflectInst && reflectInst.blockPct) raw *= 1 - Math.min(1, Math.max(0, reflectInst.blockPct));
     // 块4b-2：暴击词条。仅 critRate>0 才掷随机数（&& 短路）——保证无暴击单位不消费 RNG、不扰动既有并列裁决序列（零回归）。
     //   命中暴击 → 伤害 ×(1+暴击伤害)。暴击倍率/概率为占位语义，精确值第二块。
     // ⑦机制批①：暴击率/暴伤 buff 状态并入判定与倍率（无状态时和 0=判定阈值与倍率逐字节不变）。
@@ -1077,6 +1099,30 @@ class BattleRun {
       // ⑦M3：受击事件累积——污染体狂暴（被任意伤害命中）/ 铁壁「坚甲」（被技能伤害命中=真源"重击"口径）。
       this.accrueStackEvent(target, 'was_hit');
       if (isSkill) this.accrueStackEvent(target, 'was_hit_by_skill');
+    }
+    // ⑨机制批② M4 反弹（受方 reflect 态·岩反震/岳荆甲/铁壁A/磐石A/砺5★）：把"受到的伤害"一部分直扣攻击者。
+    // 攻击者=caster 天然在手（在 dealDamage 内结算·非走 on_hit·避开 §5"攻击者上下文缺"深坑）；
+    // 反弹伤=直扣不过甲、不再触发反弹/on_hit/attack_landed（无递归、不改既有事件序）；反弹致死镜像既有击杀记账归反弹者。
+    if (reflectInst && caster.alive) {
+      const reflectAmt = Math.round(
+        (reflectInst.reflectPct ?? 0) * dmg
+        + (reflectInst.reflectAtkPct ?? 0) * caster.attack
+        + (reflectInst.reflectBase ?? 0));
+      if (reflectAmt > 0) {
+        caster.hp -= reflectAmt;
+        const reflectorKill = caster.hp <= 0;
+        if (reflectorKill) { caster.hp = 0; caster.alive = false; }
+        this.pushLog('damage', {
+          actorId: target.unitId, side: target.side, targetIds: [caster.unitId],
+          effectRef: 'reflect', amount: reflectAmt, note: 'reflect', hpAfter: caster.hp, shieldAfter: caster.shield,
+        });
+        if (reflectorKill) {
+          target.killedSinceTrigger = true;
+          target.killedRolesSinceTrigger.push(caster.roleTag);
+          this.deadCount[caster.side] += 1;
+          this.accrueStackEvent(target, 'kill');
+        }
+      }
     }
   }
 
@@ -1191,11 +1237,24 @@ class BattleRun {
       });
       return;
     }
-    // 同名状态不叠层，只刷新持续时间。
-    target.states.set(tag, {
-      tag, expireAt: this.time + duration,
-      ...(effect.applyUndispellable ? { undispellable: true } : {}), // ⑨机制批② M5：守护铃「守护铃光」不可驱散
-    });
+    // 同名状态不叠层，只刷新持续时间。⑨M4/M5 可选标记按 tag 附加（旧 tag=纯 {tag,expireAt}=逐字节不变）。
+    const simple: RtStateInst = { tag, expireAt: this.time + duration };
+    if (effect.applyUndispellable) simple.undispellable = true; // ⑨M5 守护铃「守护铃光」不可驱散
+    if (tag === 'taunt') simple.tauntedBy = caster.unitId; // ⑨M4 记嘲讽施加者=被嘲讽者强制打它
+    if (tag === 'reflect') { // ⑨M4 反弹参数施加瞬间快照（岩反震/岳荆甲/铁壁A/磐石A/砺5★）
+      if (effect.reflectPct !== undefined) simple.reflectPct = effect.reflectPct;
+      if (effect.reflectAtkPct !== undefined) simple.reflectAtkPct = effect.reflectAtkPct;
+      const base = (effect.reflectArmorPct ?? 0) * target.armor;
+      if (base !== 0) simple.reflectBase = base;
+      if (effect.blockPct !== undefined) simple.blockPct = effect.blockPct;
+    }
+    if (tag === 'guard') { // ⑨M4 守护替挡（岩·battle_start 上态）；再次施加保留既有冷却进度
+      simple.guardProtect = effect.guardProtect ?? 'backline';
+      if (effect.guardCooldownSec !== undefined) simple.guardCooldownSec = effect.guardCooldownSec;
+      simple.guardReadyAt = target.states.get('guard')?.guardReadyAt ?? 0;
+      this.anyGuard = true;
+    }
+    target.states.set(tag, simple);
     this.pushLog('state_apply', {
       actorId: caster.unitId,
       side: caster.side,
@@ -1254,6 +1313,15 @@ class BattleRun {
       candidates = candidates.filter((u) => this.dist(caster, u) <= rangeLimit);
     }
     if (candidates.length === 0) return [];
+    // ⑨机制批② M4 嘲讽：攻击性选目标（打对方阵营）时，被嘲讽单位强制以嘲讽者为首目标（嘲讽者在候选=存活/在射程内）。
+    // 覆盖一切 tag（含 backline_first/column_line=n102 点名塔被拉回打前排坦克的解）；无 taunt 态=不进此分支=逐字节不变。
+    if (targetSide !== caster.side) {
+      const forced = this.resolveTaunt(caster, candidates);
+      if (forced) {
+        const rest = sortBy(candidates.filter((u) => u !== forced), (u) => [this.dist(caster, u), u.unitId]);
+        return [forced, ...rest].slice(0, maxTargets);
+      }
+    }
 
     switch (tag) {
       case 'self_team':
@@ -1320,6 +1388,34 @@ class BattleRun {
       default:
         return this.pickNearest(caster, candidates, maxTargets);
     }
+  }
+
+  /** ⑨机制批② M4 嘲讽解析：本单位持 taunt 态且嘲讽者仍在候选（存活/在射程/对方阵营）内 → 返回嘲讽者，否则 null（嘲讽自然失效走常规选目标）。 */
+  private resolveTaunt(caster: RtUnit, candidates: RtUnit[]): RtUnit | null {
+    const ts = caster.states.get('taunt');
+    if (!ts || ts.tauntedBy === undefined) return null;
+    return candidates.find((u) => u.unitId === ts.tauntedBy) ?? null;
+  }
+
+  /** ⑨机制批② M4 守护替挡：敌方伤害命中我方某友军时，若存在"就绪+保护该友军"的守护者(岩)→伤害转守护者并进其 CD；否则原目标。
+   *  缺省本场无 guard 态（anyGuard=false）=整段跳过=逐字节不变。 */
+  private resolveGuard(attacker: RtUnit, target: RtUnit): RtUnit {
+    if (!this.anyGuard || target.side === attacker.side) return target; // 只拦敌打我方
+    for (const g of this.units) {
+      if (g === target || g.side !== target.side || !g.alive) continue;
+      const gs = g.states.get('guard');
+      if (!gs || (gs.guardReadyAt ?? 0) > this.time + 1e-9) continue; // 无守护态 / 冷却中
+      const protects = gs.guardProtect === 'all' || this.isMoreBackline(target, g); // backline=被护者比守护者更靠后
+      if (!protects) continue;
+      gs.guardReadyAt = this.time + (gs.guardCooldownSec ?? 0); // 进替挡冷却
+      return g;
+    }
+    return target;
+  }
+
+  /** a 是否比 b 更靠后排（同阵营·玩家列越小越靠后 / 敌方列越大越靠后）。 */
+  private isMoreBackline(a: RtUnit, b: RtUnit): boolean {
+    return a.side === 'player' ? a.col < b.col : a.col > b.col;
   }
 
   /** ⑥8a 空间AoE：主目标=最近规则选 1，随后收其锚点格周围（十字4格/3×3）footprint 相交的单位。

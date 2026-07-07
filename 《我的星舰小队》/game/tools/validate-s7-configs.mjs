@@ -921,6 +921,9 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
     'silence', 'control_immune',
     'debuff_immune', // ⑨机制批② M5：减益免疫
+    'taunt', // ⑨机制批② M4：嘲讽
+    'reflect', // ⑨机制批② M4：反弹
+    'guard', // ⑨机制批② M4：守护替挡
     ...MOD_STATE_TAGS,
     ...PERIODIC_STATE_TAGS,
   ];
@@ -1157,6 +1160,27 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     if (row.applyUndispellable !== undefined) {
       if (typeof row.applyUndispellable !== 'boolean') fail('battle_effect_param', id, 'applyUndispellable（可选）必须为布尔');
       else if (row.stateTag === 'none') fail('battle_effect_param', id, 'applyUndispellable（可选）要求 stateTag ≠ none（标记被施加的状态）');
+    }
+    // ⑨机制批② M4 reflect 字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    const reflectFields = ['reflectPct', 'reflectAtkPct', 'reflectArmorPct', 'blockPct'];
+    if (reflectFields.some((f) => row[f] !== undefined) && row.stateTag !== 'reflect') {
+      fail('battle_effect_param', id, 'reflect/block 字段（可选）仅允许配给 stateTag=reflect');
+    }
+    for (const f of reflectFields) {
+      if (row[f] === undefined) continue;
+      const v = num(row[f]);
+      if (v === null || v < 0 || !Number.isFinite(v)) fail('battle_effect_param', id, `${f}（可选）必须为 >= 0 的有限数`);
+      else if (f === 'blockPct' && v > 1) fail('battle_effect_param', id, 'blockPct（可选）必须在 [0,1]');
+    }
+    // ⑨机制批② M4 guard 字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    if (row.guardProtect !== undefined) {
+      if (row.guardProtect !== 'backline' && row.guardProtect !== 'all') fail('battle_effect_param', id, 'guardProtect（可选）必须为 backline | all');
+      else if (row.stateTag !== 'guard') fail('battle_effect_param', id, 'guardProtect（可选）仅允许配给 stateTag=guard');
+    }
+    if (row.guardCooldownSec !== undefined) {
+      const gc = num(row.guardCooldownSec);
+      if (gc === null || gc < 0 || !Number.isFinite(gc)) fail('battle_effect_param', id, 'guardCooldownSec（可选）必须为 >= 0 的有限数');
+      else if (row.stateTag !== 'guard') fail('battle_effect_param', id, 'guardCooldownSec（可选）仅允许配给 stateTag=guard');
     }
   }
 

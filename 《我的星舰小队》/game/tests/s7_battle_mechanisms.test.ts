@@ -1043,3 +1043,142 @@ describe('⑨M5-E 计数/优先级 + 缺省哨兵', () => {
     }
   });
 });
+
+// ===================== ⑨M4 · 受击重定向族（嘲讽/反弹/守护）=====================
+// 手推口径：嘲讽=选目标强制(零伤害math)；反弹=dealDamage尾部向caster直扣(不再触发反弹/on_hit·无递归)；
+// 守护=dealDamage顶部换目标(护后排)。全部可选通道·缺省缺席=逐字节不变(既有测试探雷)。
+
+const firstDmgTargetOf = (log: S7AutoBattleLogEntry[], actorId: string): string | undefined =>
+  log.find((e) => e.type === 'damage' && e.actorId === actorId)?.targetIds?.[0];
+
+describe('⑨M4-A 嘲讽 taunt（选目标强制重定向·n102护后排解）', () => {
+  it('嘲讽覆盖 backline_first：点名后排的敌被拉去打前排嘲讽者', async () => {
+    const mk = async (taunt: boolean) => {
+      const b = mechRig({
+        players: [{ rowId: 'bu_t9m4_front' }, { rowId: 'bu_t9m4_back' }],
+        enemies: [{ rowId: 'bu_t9m4_foe', slot: 'r1c0', overrides: { attack: 100, targetingTag: 'backline_first' } }],
+        effects: taunt ? [simpleStateRow('eff_t9m4_taunt', 'taunt', 10, 'nearest_random_tie', { maxTargets: 1 })] : [],
+      });
+      const engine = await engineOf(b);
+      const r = engine.run({
+        encounterRef: ENC, battleSeed: SEED,
+        playerUnits: [
+          unitInput('bu_t9m4_front', 'p2c2', taunt ? [trig('battle_start', 'eff_t9m4_taunt')] : undefined),
+          unitInput('bu_t9m4_back', 'p0c0'),
+        ],
+      });
+      return firstDmgTargetOf(r.log, 'enemy_0000');
+    };
+    expect(await mk(false)).toBe('player_p0c0'); // 无嘲讽：backline_first 打后排(col0)
+    expect(await mk(true)).toBe('player_p2c2');  // 嘲讽：拉去打前排嘲讽者(col2·覆盖 backline)
+  });
+
+  it('单体嘲讽最高攻敌（砺口径）：只被嘲讽的强敌改打嘲讽者、弱敌照常打后排', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m4_f2' }, { rowId: 'bu_t9m4_b2' }],
+      enemies: [
+        { rowId: 'bu_t9m4_strong', slot: 'r1c0', overrides: { attack: 100, targetingTag: 'backline_first', attackRangeCells: 99 } },
+        { rowId: 'bu_t9m4_weak', slot: 'r1c6', overrides: { attack: 50, targetingTag: 'backline_first', attackRangeCells: 99 } },
+      ],
+      effects: [simpleStateRow('eff_t9m4_t2', 'taunt', 10, 'highest_attack_enemy', { maxTargets: 1 })],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9m4_f2', 'p2c2', [trig('battle_start', 'eff_t9m4_t2')]),
+        unitInput('bu_t9m4_b2', 'p0c0'),
+      ],
+    });
+    // 嘲讽只落最高攻敌(强)→它打前排嘲讽者；弱敌无 taunt→照常打后排。
+    expect(firstDmgTargetOf(r.log, 'enemy_0000')).toBe('player_p2c2'); // 强敌(先出怪=0000)被嘲讽
+    expect(firstDmgTargetOf(r.log, 'enemy_0001')).toBe('player_p0c0'); // 弱敌照常后排
+  });
+});
+
+describe('⑨M4-B 反弹 reflect + 格挡 block（受方受击后向攻击者直扣·攻击者=caster在手·无§5深坑）', () => {
+  const reflectRun = async (reflectExtra: Row, playerOverrides?: Row) => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m4_ref', overrides: playerOverrides }],
+      enemies: [{ rowId: 'bu_t9m4_atk', slot: 'r1c0', overrides: { attack: 100 } }],
+      effects: [simpleStateRow('eff_t9m4_ref', 'reflect', 20, 'self_team', { maxTargets: 1, ...reflectExtra })],
+    });
+    const engine = await engineOf(b);
+    return engine.run({ encounterRef: ENC, battleSeed: SEED, playerUnits: [unitInput('bu_t9m4_ref', 'p1c2', [trig('battle_start', 'eff_t9m4_ref')])] });
+  };
+  const reflectsOf = (r: { log: S7AutoBattleLogEntry[] }) => r.log.filter((e) => e.type === 'damage' && e.note === 'reflect');
+
+  it('反弹 reflectPct 50%：受 80 → 反弹 round(0.5×80)=40 直扣攻击者', async () => {
+    const rf = reflectsOf(await reflectRun({ reflectPct: 0.5 }));
+    expect(rf.length).toBeGreaterThan(0);
+    expect(rf.every((e) => e.amount === 40 && e.actorId === 'player_p1c2' && e.targetIds?.[0] === 'enemy_0000')).toBe(true);
+  });
+  it('反弹 reflectAtkPct（岳3★口径）：反弹=round(0.2×敌攻100)=20', async () => {
+    const rf = reflectsOf(await reflectRun({ reflectAtkPct: 0.2 }));
+    expect(rf.length).toBeGreaterThan(0);
+    expect(rf.every((e) => e.amount === 20)).toBe(true);
+  });
+  it('反弹 reflectArmorPct（岳荆甲base·施加瞬间快照受方防25）：反弹=round(0.4×25)=10', async () => {
+    const rf = reflectsOf(await reflectRun({ reflectArmorPct: 0.4 }));
+    expect(rf.length).toBeGreaterThan(0);
+    expect(rf.every((e) => e.amount === 10)).toBe(true);
+  });
+  it('格挡 blockPct 25%：敌普攻对格挡者 80→round(80×0.75)=60（无反弹日志）', async () => {
+    const r = await reflectRun({ blockPct: 0.25 });
+    expect(dmgBy(r.log, 'enemy_0000').length).toBeGreaterThan(0);
+    expect(dmgBy(r.log, 'enemy_0000').every((e) => e.amount === 60)).toBe(true);
+    expect(reflectsOf(r).length).toBe(0); // 只格挡不反弹
+  });
+  it('反弹致死：低血攻击者(30)被反弹40打死·反弹者记击杀·玩家胜', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m4_rk', overrides: { attack: 1 } }], // 弱攻=不靠普攻先杀，逼出反弹致死
+      enemies: [{ rowId: 'bu_t9m4_lowatk', slot: 'r1c0', overrides: { attack: 100, maxHp: 30 } }],
+      effects: [simpleStateRow('eff_t9m4_rk', 'reflect', 20, 'self_team', { maxTargets: 1, reflectPct: 0.5 })],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({ encounterRef: ENC, battleSeed: SEED, playerUnits: [unitInput('bu_t9m4_rk', 'p1c2', [trig('battle_start', 'eff_t9m4_rk')])] });
+    const rk = r.log.find((e) => e.type === 'damage' && e.note === 'reflect' && e.targetIds?.[0] === 'enemy_0000');
+    expect(rk?.amount).toBe(40);
+    expect(r.finalState.enemies.find((e) => e.unitId === 'enemy_0000')?.alive).toBe(false);
+    expect(r.winner).toBe('player');
+  });
+});
+
+describe('⑨M4-C 守护替挡 guard（岩·敌打后排→转守护者·CD 门控·n102护后排解②）', () => {
+  it('守护CD2s：敌点名后排→替挡落守护者(t0/2/4)、CD中落回后排(t1/3/5)', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m4_grd' }, { rowId: 'bu_t9m4_ally' }],
+      enemies: [{ rowId: 'bu_t9m4_ge', slot: 'r1c0', overrides: { attack: 100, targetingTag: 'backline_first', attackRangeCells: 99 } }],
+      effects: [simpleStateRow('eff_t9m4_guard', 'guard', 30, 'self_team', { maxTargets: 1, guardProtect: 'backline', guardCooldownSec: 2 })],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9m4_grd', 'p1c2', [trig('battle_start', 'eff_t9m4_guard')]), // 守护者在前(col2)
+        unitInput('bu_t9m4_ally', 'p1c0'), // 后排友军(col0)
+      ],
+    });
+    const seq = r.log.filter((e) => e.type === 'damage' && e.actorId === 'enemy_0000').map((e) => e.targetIds?.[0]);
+    // CD2s：t0替挡(→守护者·CD到t2) / t1落回后排 / t2替挡 / t3后排 / t4替挡 / t5后排。
+    expect(seq).toEqual(['player_p1c2', 'player_p1c0', 'player_p1c2', 'player_p1c0', 'player_p1c2', 'player_p1c0']);
+  });
+
+  it('backline 方向语义：守护者(后)不护更靠前的友军（敌打前排照落前排）', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m4_g2' }, { rowId: 'bu_t9m4_a2' }],
+      enemies: [{ rowId: 'bu_t9m4_ge2', slot: 'r1c0', overrides: { attack: 100, attackRangeCells: 99 } }],
+      effects: [simpleStateRow('eff_t9m4_g2', 'guard', 30, 'self_team', { maxTargets: 1, guardProtect: 'backline', guardCooldownSec: 0 })],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9m4_g2', 'p1c0', [trig('battle_start', 'eff_t9m4_g2')]), // 守护者在后(col0)
+        unitInput('bu_t9m4_a2', 'p1c2'), // 前排友军(col2·离敌更近)
+      ],
+    });
+    // 敌 nearest→前排 a2(更近)；守护者在后·backline 只护更靠后者→a2 更靠前不护→照落 a2。
+    expect(firstDmgTargetOf(r.log, 'enemy_0000')).toBe('player_p1c2');
+  });
+});
