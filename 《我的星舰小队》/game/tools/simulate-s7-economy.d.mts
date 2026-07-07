@@ -122,6 +122,7 @@ export declare const TARGETS: Record<string, number>;
 export declare const BM_TARGET: { tier: string; min: number; max: number };
 export declare const WALL_MATRIX_BANDS: Record<string, [number, number]>;
 export declare const WALL_MATRIX_BANDS_DRIFT: Record<string, [number, number]>;
+export declare const WELFARE_POINTS: Set<string>;
 export declare const HARD_WALL_CAP: number;
 export declare const HARD_WALL_CAP_DRIFT_LIGHT: number;
 export declare const RESOURCE_KEYS: string[];
@@ -194,6 +195,7 @@ export interface S7EconResult {
   resources: Record<string, number>;
   negativeViolations: { day: number; key: string; value: number }[];
   adsUsedTotal: number;
+  adPointUses: Record<string, number>;
   bm: { balance: number; earnedTotal: number; earned: Record<string, number>; spent: number; buys: Record<string, number>; ticketsBought: number; boxes: number };
   milestones: { node: number; day: number; power: number; mains: number[][]; plugins: { fine: number; superior: number; legendary: number }; cores: number }[];
   dailyCleared: number[];
