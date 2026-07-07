@@ -82,6 +82,7 @@ export interface S7EconTierProfile {
   dailyCompletion: number; eventCompletion: number;
   salvageRunsPerQueue: number; corridorMinutes: number; shoppingPower: number;
   tinkerBonus: number; consolationTries?: number; stallCorridorMult?: number;
+  bountyMinutes: number; bountyCatchup: number;
   bm?: { chain: boolean; buy: boolean; ticket: boolean };
 }
 export declare const TIERS: Record<string, S7EconTierProfile>;
@@ -102,6 +103,12 @@ export declare function unitPower(
   pluginSum: number, hasCore: boolean, truths?: typeof TRUTHS,
 ): number;
 export declare function teamPower(st: unknown, truths?: typeof TRUTHS): number;
+export declare function benchPool(st: unknown, truths?: typeof TRUTHS): number;
+export declare function benchEffPct(pool: number, P?: typeof PARAMS): number;
+export declare function bountyCardsFor(
+  tier: S7EconTierProfile, backlog: number, minutesLeft: number, wallDay: boolean,
+  P?: typeof PARAMS, T?: typeof TRUTHS,
+): number;
 
 export interface S7EconRunOpts {
   envelope?: 'expected' | 'lucky' | 'unlucky';
@@ -126,6 +133,8 @@ export interface S7EconResult {
   coresOwned: number;
   mains: { shipTier: number; shipLv: number; star: number; pilotLv: number }[];
   offShards: { ship: number; pilot: number };
+  bountyCards: number;
+  benchPct: number;
   resources: Record<string, number>;
   negativeViolations: { day: number; key: string; value: number }[];
   adsUsedTotal: number;

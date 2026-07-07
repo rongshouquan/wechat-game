@@ -1,4 +1,6 @@
-// S7 真实资源经济模拟器（第三块①「造尺子」·2026-07-06 → 第三块③双锚+黑市改造 · 同日）
+// S7 真实资源经济模拟器（第三块①「造尺子」·2026-07-06 → 第三块③双锚+黑市改造 · 同日
+//   → 任务单⑤参与度真分层 · 2026-07-07：悬赏张数×辅助战斗预算耦合 + 恶补按画像分层 +
+//     板凳深度小乘区 + 发卡"每登录日"真源对齐，详见 PARAMS.bounty/bench 与 TIERS 注释）
 //
 // ============================================================================
 // 用途：五画像玩家（肝/重/普/轻 + 黑市重度党）逐日"真实过日子"——挣真资源、花真资源、
@@ -231,6 +233,9 @@ export const PARAMS = {
   patrolDockMax: 10,
 
   // 悬赏板（基础/张·×星域系数×品质期望；护航=合金+星贝、演习=驾驶记录）
+  // 任务单⑤参与度真分层：可打张数=min(积压, 意愿, 剩余分钟, 画像辅助战斗预算 bountyMinutes)；
+  // 恶补意愿 bountyCatchup 按画像（见 TIERS）；卡关日预算 ×stallBudgetMult（墙期"有仗可打"
+  // 由悬赏/回廊承担=S8 口径，与 stallCorridorMult 同一先例——不是放水，是卡关日玩家真有闲）。
   bounty: {
     escortAlloy: 200, escortCargo: 20,
     drillToken: 135,
@@ -240,6 +245,7 @@ export const PARAMS = {
     perfectRate: 0.5,
     ambushWinRate: 0.85,
     minutesPerCard: 1.2,
+    stallBudgetMult: 2,
   },
 
   // 每日推演（n040 后·首胜）
@@ -374,6 +380,16 @@ export const PARAMS = {
   // 让建筑线成为星矿的真实长期 sink，压死"溢出回收灌爆星贝"的死水；记入初值表待回写）
   buildingCostMult: 3.0,
 
+  // 板凳深度（任务单⑤第一段·结构三件之三）：主力满阶/满星后的溢出专属碎片 + 非主力
+  // 归属碎片（P8 沉淀）不再纯浪费——真实玩家会练第 6+ 艘板凳舰，板凳价值=对词缀/克制
+  // 换搭配的应对空间（S2/S8 克制真实存在），与 tinkerBonus 同一机制层，折算为小幅有效
+  // 战力乘区：benchPct = cap × (1 − e^(−pool/scale))，递减收益 + 封顶。量级第一性：普通
+  // 毕业死碎片池 ≈5000 ≈ 1-2 艘 S 级板凳的换搭配价值 ≈2-3% 有效战力（远小于研究塔 10%/
+  // 展厅 10%=真"小乘区"）；cap 实测上限=0.03（0.035 起板凳把普通档抬快→压力表整体校贵→
+  // salvage×0.8 扰动下肝/重被顶出带=抗漂移护栏红，调参记档任务单⑤）。顺带治黑市党五主力
+  // SS 饱和假象（步3 记档）：舰包碎片在满阶后流入板凳池继续产生边际价值，BM 带收回 D22-25。
+  bench: { cap: 0.03, scale: 6000 },
+
   // 欧非包络（三个关键随机项·任务单硬规格 #3）
   envelope: {
     expected: { mainShardShare: 0.34, goldRate: 1.0, salvageRollMult: 1.0 },
@@ -427,25 +443,35 @@ export const PARAMS = {
 export const TIERS = {
   // tinkerBonus = 卡关期"换搭配试错"的等效战力折算（S2/S8：墙期体验含换搭配试错；
   // 克制与词缀真实存在，时间多=试出针对性阵容的概率高——按档位折算成小幅有效战力，计入初值表）
+  // bountyMinutes / bountyCatchup = 任务单⑤参与度真分层两参数（成文策略假设·记初值表）：
+  //   bountyMinutes = 悬赏"辅助战斗分钟预算"/日（张数硬约束·卡关日 ×bounty.stallBudgetMult）——
+  //     肝 10 分钟打满 4 张+恶补；轻度 3 分钟 ≈2 张/日（15 分钟玩家掐表打卡，板上常年积压）；
+  //     对照锁定口径：普通档悬赏日耗时 ≈4.8-6 分钟，落"辅助战斗 5-10 分钟"带内（B1 红线）。
+  //   bountyCatchup = 积压>4 时的恶补意愿（张/日附加）——步2 实证全档统一 +3 恶补是"档差
+  //     抹平"主漏洞；分层后 15 分钟玩家不恶补（=0），肝档才有"回来清板"行为。
   肝档: {
     minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
+    bountyMinutes: 10, bountyCatchup: 3,
   },
   重度: {
     minutesPerDay: 90, sessionsPerDay: 4, adsPerDay: 6,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 3, corridorMinutes: 14, shoppingPower: 1.0, tinkerBonus: 0.055, consolationTries: 2, stallCorridorMult: 2.2,
+    bountyMinutes: 8, bountyCatchup: 2,
   },
   普通: {
     minutesPerDay: 35, sessionsPerDay: 2.5, adsPerDay: 2,
     dailyCompletion: 0.92, eventCompletion: 0.95,
     salvageRunsPerQueue: 2, corridorMinutes: 7, shoppingPower: 0.8, tinkerBonus: 0.03, consolationTries: 1,
+    bountyMinutes: 6, bountyCatchup: 1,
   },
   轻度: {
     minutesPerDay: 15, sessionsPerDay: 1.5, adsPerDay: 0,
     dailyCompletion: 0.88, eventCompletion: 0.92,
     salvageRunsPerQueue: 2, corridorMinutes: 5, shoppingPower: 0.75, tinkerBonus: 0.025, consolationTries: 1,
+    bountyMinutes: 3, bountyCatchup: 0,
   },
   // 第五画像·黑市重度党（S13.6 · 任务单③）：非黑市参数与肝档逐项相同（=基线不变性测试
   // 的前提：关掉 bm 行为后必须与肝档逐字段相等）；日观看 ≈ 常规点位 9 + 广告券 1 + 连看
@@ -454,15 +480,16 @@ export const TIERS = {
     minutesPerDay: 150, sessionsPerDay: 6, adsPerDay: 9,
     dailyCompletion: 1.0, eventCompletion: 1.0,
     salvageRunsPerQueue: 6, corridorMinutes: 28, shoppingPower: 1.0, tinkerBonus: 0.16, consolationTries: 3, stallCorridorMult: 2.5,
+    bountyMinutes: 10, bountyCatchup: 3,
     bm: { chain: true, buy: true, ticket: true },
   },
 };
 
 export const TARGETS = { 肝档: 30, 重度: 37, 普通: 47, 轻度: 57 };
 // 黑市重度党毕业带（Ron 2026-07-06 认可 ≈D22-25）——单列，不进四档 TARGETS/档位顺序检查。
-// 步3 上沿 25→26（按"≈量级"口径）：模型五主力 SS 顶满后大件碎片无处去=末期抬速饱和假象，
-// 真实游戏有板凳深度（练第 6 艘+），实际黑市党只会更快——记档报 Ron。
-export const BM_TARGET = { tier: '黑市党', min: 22, max: 26 };
+// 步3 曾因"五主力 SS 饱和假象"把上沿松到 26；任务单⑤板凳深度入模后（满阶溢出碎片流入
+// 板凳池继续产边际价值·假象病根已治），带收回 D22-25 严格口径。
+export const BM_TARGET = { tier: '黑市党', min: 22, max: 25 };
 // 肝党锚墙矩阵验收带（经济层零清等待天数·基线实测 1/0/2/3/0/2·容差 ±1 记档）。
 // ⚠️ n150 带 [2,4] 低于 GDD §3"≈4-5"：经济层肝:轻末期成长比 ≈2×，"肝 ≥4"⇔"轻 ≥12"必破
 // 7 天硬顶，两约束互斥；按任务单优先级取硬顶（矩阵=容差自定），偏差为体验级发现报 Ron。
@@ -539,6 +566,38 @@ export function teamPower(st, T = TRUTHS) {
   return total * (1 + researchPct + galleryPct);
 }
 
+// 板凳深度（任务单⑤）：死碎片池 = 非主力归属沉淀（offShards·P8）+ 满阶主力/满星驾驶员
+// 身上再也花不出去的专属碎片——真实玩家用它们练第 6+ 艘板凳舰。
+export function benchPool(st, T = TRUTHS) {
+  let pool = st.offShardsShip + st.offShardsPilot;
+  for (const m of st.mains) {
+    if (m.ship.owned && m.ship.tier >= T.tierBase.length - 1) pool += m.ship.shards;
+    if (m.pilot.owned && m.pilot.star >= T.pilotStarCoef.length) pool += m.pilot.shards;
+  }
+  return pool;
+}
+
+/** 板凳有效战力折算（小乘区·与 tinkerBonus 同层）：cap×(1−e^(−pool/scale))，递减+封顶。 */
+export function benchEffPct(pool, P = PARAMS) {
+  const B = P.bench;
+  if (!B || !(B.cap > 0) || !(pool > 0)) return 0;
+  return B.cap * (1 - Math.exp(-pool / B.scale));
+}
+
+/** 悬赏可打张数（任务单⑤参与度真分层·纯函数供 gate 直测）：
+ *  min(积压, 意愿, 剩余分钟, 辅助战斗预算)——
+ *  意愿 = 日卡4×完成率 + 恶补（仅积压>日卡时·bountyCatchup 按画像·15分钟玩家=0）；
+ *  预算 = bountyMinutes（真墙日 ×stallBudgetMult——零推进的卡关日回来清板）。 */
+export function bountyCardsFor(tier, backlog, minutesLeft, wallDay, P = PARAMS, T = TRUTHS) {
+  if (!(backlog > 0)) return 0;
+  const budgetMin = tier.bountyMinutes * (wallDay ? P.bounty.stallBudgetMult : 1);
+  const byBudget = Math.floor(budgetMin / P.bounty.minutesPerCard);
+  const canByTime = Math.floor(Math.max(0, minutesLeft) / P.bounty.minutesPerCard);
+  const want = Math.round(T.bountyDailyCards * tier.dailyCompletion
+    + (backlog > T.bountyDailyCards ? (tier.bountyCatchup ?? 0) : 0));
+  return Math.max(0, Math.min(backlog, want, canByTime, byBudget));
+}
+
 // ---------------------------------------------------------------------------
 // 五、状态与台账
 // ---------------------------------------------------------------------------
@@ -566,7 +625,7 @@ function newState() {
     cleared: 0, corridorLayer: 0, corridorUnlocked: false,
     pityCounter: { ship: 0, pilot: 0 },
     vaultBought: 0,
-    bountyBacklog: 0,
+    bountyBacklog: 0, bountyCardsPlayed: 0,
     ledger: { income: {}, spend: {} },
     negativeViolations: [],
     dailyCleared: [], dailyPower: [], dailyStuck: [],
@@ -1108,17 +1167,19 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       doCores(st, debit, P, T);
     }
 
-    // —— 6. 推主线（主线优先吃时间预算；有效战力 = 战力 ×(1+换搭配试错折算)）——
+    // —— 6. 推主线（主线优先吃时间预算；有效战力 = 战力 ×(1+试错折算+板凳折算)）——
+    // 板凳深度（任务单⑤）与 tinkerBonus 同层：都是"换搭配应对词缀/克制"的空间折算；
+    // 按当日开盘死碎片池取值、一日一采（与试错折算同步，不在日内追涨）。
     let clearedToday = 0;
     let power = teamPower(st, T);
-    const tinker = 1 + (tier.tinkerBonus ?? 0);
+    const eff = 1 + (tier.tinkerBonus ?? 0) + benchEffPct(benchPool(st, T), P);
     if (!paused && st.cleared < T.N) {
       let nodeBudget = Math.floor(Math.max(0, minutes) / P.mainline.minutesPerNode);
       let adDoubleLeft = watcher && adsLeft > 0; // #3 首通翻倍（用在当日最后一关）
       let adPickLeft = watcher && adsLeft > 1;   // #4 再选一个
-      while (st.cleared < T.N && nodeBudget > 0 && power * tinker >= pressure[st.cleared + 1]) {
+      while (st.cleared < T.N && nodeBudget > 0 && power * eff >= pressure[st.cleared + 1]) {
         const n = st.cleared + 1;
-        const isLast = nodeBudget === 1 || (st.cleared + 1 < T.N && power * tinker < pressure[n + 1] && true);
+        const isLast = nodeBudget === 1 || (st.cleared + 1 < T.N && power * eff < pressure[n + 1] && true);
         const opts2 = { watcherChest: watcher && adsLeft > 0, adDouble: false, adExtraPick: false };
         if (isLast && adDoubleLeft && useAd()) { opts2.adDouble = true; adDoubleLeft = false; }
         if (isLast && adPickLeft && useAd()) { opts2.adExtraPick = true; adPickLeft = false; }
@@ -1134,17 +1195,30 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     }
 
     // —— 7. 剩余时间做日常：悬赏 → 推演 → 回廊 ——
-    if (st.cleared >= 5) {
+    // 两级卡关口径（当日主线推进结束后判定）：
+    //   stuckToday = 日终顶在战力上限（下一关打不动）——推进期几乎天天如此（每天清到上限
+    //     为止），沿用给 回廊 stallCorridorMult / 安慰包（既有校准态行为，任务单⑤不动）；
+    //   wallDay = 整天零推进的真墙日（与 dailyStuck/墙矩阵同口径）——悬赏恶补预算只在
+    //     真墙日放大（"卡关那几天回来清板"），否则 stall 放大天天触发=分层被抹平。
+    const stuckToday = !paused && st.cleared < T.N && power * eff < pressure[st.cleared + 1];
+    const wallDay = stuckToday && clearedToday === 0;
+    // 发卡=「每登录日 +4」（S10.8 原文）——停玩天不发卡（任务单⑤真源对齐修正：此前模型
+    // 停玩也累积，停玩变相成"攒卡银行"，恶补分层下会虚增停玩后回补收入）
+    if (!paused && st.cleared >= 5) {
       st.bountyBacklog = Math.min(st.bountyBacklog + T.bountyDailyCards,
         T.bountyBoardCap[st.buildings.habitat >= 10 ? 2 : st.buildings.habitat >= 5 ? 1 : 0]);
     }
     if (!paused && !dis.bounty && st.cleared >= 5 && st.bountyBacklog > 0) {
-      const canByTime = Math.floor(Math.max(0, minutes) / P.bounty.minutesPerCard);
-      const want = Math.round(T.bountyDailyCards * tier.dailyCompletion + (st.bountyBacklog > T.bountyDailyCards ? 3 : 0));
-      const cards = Math.max(0, Math.min(st.bountyBacklog, want, canByTime));
+      // 参与度真分层（任务单⑤·结构三件之一二）：
+      // ① 张数×预算耦合：可打张数 ≤ 画像"辅助战斗分钟预算"（bountyMinutes）——此前只受
+      //    "剩余分钟"约束，对 15 分钟档几乎不咬合（悬赏近乎全档拉平=步2 B1 互斥根因之一）；
+      // ② 恶补分层：积压回补意愿 bountyCatchup 按画像（此前全档统一 +3=根因之二，
+      //    15 分钟玩家不恶补）。决策逻辑=bountyCardsFor 纯函数（gate 直测）。
+      const cards = bountyCardsFor(tier, st.bountyBacklog, minutes, wallDay, P, T);
       if (cards > 0) {
         minutes -= cards * P.bounty.minutesPerCard;
         st.bountyBacklog -= cards;
+        st.bountyCardsPlayed += cards;
         const gBase = Math.min(0.5, P.bounty.goldRate * env.goldRate);
         const pNoGoldDay = Math.pow(1 - gBase, T.bountyDailyCards);
         const gEff = gBase + Math.pow(pNoGoldDay, T.bountyGoldPity) * (1 / T.bountyDailyCards) * 0.5;
@@ -1168,14 +1242,13 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     if (!paused && !dis.corridor && st.corridorUnlocked) {
       // 卡关日主线时间空出来 → 投回廊（S8 墙期体验："有仗可打"由回廊/悬赏/推演承担）；
       // 投入倍数按档位（肝档卡关日几乎全泡回廊）
-      const stuckToday = st.cleared < T.N && power * tinker < pressure[st.cleared + 1];
       const cmCap = tier.corridorMinutes * (stuckToday ? (tier.stallCorridorMult ?? 2) : 1);
       let cm = Math.min(cmCap, Math.max(0, minutes));
       while (cm >= PARAMS.corridor.minutesPerLayer) {
         const L = st.corridorLayer + 1;
         let req = P.corridor.reqBase * Math.pow(1 + P.corridor.reqGrowth, L - 1);
         if (L % T.corridorEchoEvery === 0) req *= P.corridor.echoSpike;
-        if (power * tinker < req) break; // 回廊戏法层=动脑换搭配可提前过（S10.7），同折算
+        if (power * eff < req) break; // 回廊戏法层=动脑换搭配可提前过（S10.7），同折算（含板凳）
         cm -= P.corridor.minutesPerLayer;
         st.corridorLayer = L;
         credit('corridor', 'hullAlloy', P.corridor.layerAlloy.base + P.corridor.layerAlloy.per * L);
@@ -1197,8 +1270,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     }
 
     // —— 8. 卡关：安慰包（白送每日≤3 次·按档位尝试次数领）+ 趣事 ——
-    const stuckNow = st.cleared < T.N && power * tinker < pressure[st.cleared + 1];
-    if (!paused && stuckNow) {
+    if (stuckToday) {
       const tries = Math.min(3, tier.consolationTries ?? 1); // 肝档一天多试几次墙
       const adCons = watcher && adsLeft > 0 && useAd() ? 1 : 0; // #9 战败安慰双倍（首次那单）
       credit('consolation', 'hullAlloy', P.consolation.hullAlloy * (tries + adCons));
@@ -1218,7 +1290,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     while (st.coreDays.length < Math.floor(st.coresOwned + 1e-9)) st.coreDays.push(day); // 核到手日观测口
     st.dailyCleared.push(clearedToday);
     st.dailyPower.push(power);
-    st.dailyStuck.push(!paused && clearedToday === 0 && stuckNow ? 1 : 0);
+    st.dailyStuck.push(wallDay ? 1 : 0);
     for (const k of RESOURCE_KEYS) {
       if (st.res[k] < -1e-6) st.negativeViolations.push({ day, key: k, value: st.res[k] });
     }
@@ -1270,6 +1342,9 @@ function summarize(tierName, st, opts, P, T) {
     corridorLayer: Math.round(st.corridorLayer),
     coresOwned: Math.round(st.coresOwned * 10) / 10,
     coreDays: st.coreDays,
+    // 观测口（任务单⑤）：悬赏实打张数（分层验证）与板凳终态折算（%·一位小数）
+    bountyCards: Math.round(st.bountyCardsPlayed * 10) / 10,
+    benchPct: Math.round(benchEffPct(benchPool(st, T), P) * 1000) / 10,
     mains: st.mains.map((m) => ({ shipTier: m.ship.tier, shipLv: m.ship.level, star: m.pilot.star, pilotLv: m.pilot.level })),
     offShards: { ship: Math.round(st.offShardsShip), pilot: Math.round(st.offShardsPilot) },
     // 观测口（②审计补查·2026-07-06）：插件池与人口终态——插件/人口不在 14 键钱包，此前无源池汇可见性

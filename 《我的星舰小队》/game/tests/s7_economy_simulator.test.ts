@@ -12,6 +12,7 @@ import {
   SHAPE, shapeSimulate, TRUTHS, PARAMS, TIERS, TARGETS, BM_TARGET, RESOURCE_KEYS,
   WALL_MATRIX_BANDS, HARD_WALL_CAP,
   shipBasePower, pilotCoef, unitPower, nodeStage, regionOfNode,
+  benchEffPct, bountyCardsFor,
   calibratePressure, simulateEconomyTier, runStandard,
   checkCalibration, checkBlackMarket, DRIFT_VARIANTS, runDriftVariant,
 } from '../tools/simulate-s7-economy.mjs';
@@ -352,6 +353,71 @@ describe('S7 经济尺 · 黑市（S13.6 入模 · 任务单③验收三条）',
       expect(g[id].price).toBeGreaterThanOrEqual(128);
       expect(g[id].price).toBeLessThanOrEqual(198);
     }
+  });
+});
+
+describe('S7 经济尺 · 参与度真分层（任务单⑤第一段·结构三件）', () => {
+  it('张数决策纯函数：预算/意愿/时间/积压四约束按画像分层', () => {
+    // 为什么对（各值逐一手核）：轻度预算 3 分钟→floor(3/1.2)=2 张（15 分钟玩家掐表打卡）；
+    // 轻度真墙日预算×2→floor(6/1.2)=5，被意愿 round(4×0.88+恶补0)=4 封顶（不恶补≠不打卡，
+    // 墙日有闲把当天想打的打完）；肝档积压>4 → 意愿 4+3=7（回来清板）；普通 4+1=5 恰好
+    // 贴预算 floor(6/1.2)=5；重度 4+2=6=floor(8/1.2)；剩余分钟 floor(2.5/1.2)=2 仍兜底；
+    // 零积压=0。
+    expect(bountyCardsFor(TIERS['轻度'], 12, 10, false)).toBe(2);
+    expect(bountyCardsFor(TIERS['轻度'], 12, 10, true)).toBe(4);
+    expect(bountyCardsFor(TIERS['肝档'], 12, 100, false)).toBe(7);
+    expect(bountyCardsFor(TIERS['肝档'], 4, 100, false)).toBe(4);
+    expect(bountyCardsFor(TIERS['普通'], 12, 100, false)).toBe(5);
+    expect(bountyCardsFor(TIERS['重度'], 12, 100, false)).toBe(6);
+    expect(bountyCardsFor(TIERS['普通'], 12, 2.5, false)).toBe(2);
+    expect(bountyCardsFor(TIERS['轻度'], 0, 10, false)).toBe(0);
+  });
+
+  it('全程实跑分层：轻度 <3 张/日，其余档 ≥3.9 张/日（悬赏不再全档拉平）', () => {
+    // 为什么对：步2 实证"悬赏近乎全档拉平（人人 4 张打得完+恶补抹差）"是 B1 互斥根因；
+    // 分层后轻度日均 ≈2.9（常规日 2 张+真墙日 4 张的混合）、其余档 4.0——此差异是 B1
+    // 军饷挂上悬赏后档差不塌的结构前提，若被改没 gate 必须先红。
+    const avg = (t: string) => std[t].expected.bountyCards / std[t].expected.graduateDay!;
+    expect(avg('轻度')).toBeLessThan(3.0);
+    for (const t of ['肝档', '重度', '普通']) expect(avg(t), `${t} 张/日`).toBeGreaterThanOrEqual(3.9);
+    expect(avg('普通') - avg('轻度')).toBeGreaterThan(0.8);
+  });
+
+  it('发卡=每登录日 +4（S10.8 原文）：停玩天不发卡、停玩不再是"攒卡银行"', () => {
+    // 为什么对：S10.8"每登录日 +4、超上限掉最旧"——修正前模型停玩天照发（停 2 天回来
+    // 白多 8 张可打，恶补一清=虚增停玩后收入，实测修正前 肝档停2 总张数 128 > 基线 124）；
+    // 对齐后停掉的卡不存在，肝档停 2 天的总张数必须低于基线（毕业晚 1 天多打的 4 张
+    // 补不回停掉的 8 张）。此断言在回退发卡门控时必红。
+    const paused = simulateEconomyTier('肝档', pressure, { pause: { from: 10, days: 2 } });
+    expect(paused.bountyCards).toBeLessThan(std['肝档'].expected.bountyCards);
+  });
+
+  it('板凳折算：零池为零、随池单调、cap 封顶，cap 处在"小乘区"量级（≤3%）', () => {
+    // 为什么对：benchPct=cap×(1−e^(−pool/scale)) 的数学性质；cap 0.03 是任务单⑤实测
+    // 上限——0.035 起板凳把普通档抬快→压力表校贵→salvage×0.8 扰动下肝/重被顶出带
+    //（抗漂移护栏红），故 cap 被改大 gate 必须先红。
+    expect(benchEffPct(0)).toBe(0);
+    expect(benchEffPct(1000)).toBeGreaterThan(0);
+    expect(benchEffPct(6000)).toBeGreaterThan(benchEffPct(1000));
+    expect(benchEffPct(1e9)).toBeLessThanOrEqual(PARAMS.bench.cap + 1e-12);
+    expect(PARAMS.bench.cap).toBeLessThanOrEqual(0.03);
+  });
+
+  it('板凳方向诚实：关掉板凳（cap=0）→ 同压力表下毕业不早于开板凳', () => {
+    // 为什么对：板凳只加有效战力不加收入，关掉后同一压力表下只能更慢或持平
+    //（实测 普通 D48 vs D46）——若关掉反而变快=板凳在别处漏了负效果，尺子不诚实。
+    const P0 = structuredClone(PARAMS);
+    P0.bench.cap = 0;
+    const off = simulateEconomyTier('普通', pressure, {}, P0);
+    expect(off.graduateDay!).toBeGreaterThanOrEqual(std['普通'].expected.graduateDay!);
+  });
+
+  it('黑市党带收回严格口径 D22-25（板凳治饱和假象后步3 的 26 上沿收回）', () => {
+    // 为什么对：步3 把上沿松到 26 的唯一理由是"五主力 SS 顶满后大件碎片无处去"的模型
+    // 饱和假象；板凳深度入模后满阶溢出碎片继续产边际价值、假象病根已治，Ron 认可的
+    // 原始口径 D22-25 恢复（实测黑市党 D24 带内、主力终态 4/5 艘 T4）。
+    expect(BM_TARGET.max).toBe(25);
+    expect(BM_TARGET.min).toBe(22);
   });
 });
 
