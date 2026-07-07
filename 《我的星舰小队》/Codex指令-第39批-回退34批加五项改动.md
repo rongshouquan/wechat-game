@@ -17,14 +17,14 @@
 ```text
 Vertical 9:16 mobile game key-art poster for the WeChat mini-game "星舰小队". A big bold rounded candy-style Chinese logo title that reads exactly "星舰小队" sits across the top of the poster — this title is required. In the exact warm candy picture-book art style of a cozy space management game — soft cel shading, glossy candy highlights, thick rounded clean outlines, big bright color blocks, sweet and cheerful, NOT hard metallic sci-fi.
 
-A cheerful hero squad of five little candy-toy starships flies together in an upward wedge, chasing a scattering gang of goofy space-pirate boats toward the upper right, with colorful little laser and shell shots flying between them. Bright, clear, luminous sky-blue and cream space with sparkling stars; only a few small soft pastel candy-cloud wisps near the edges — keep the whole scene bright and airy, never dark.
+A cheerful hero squad of five little candy-toy starships flies together in an upward wedge, chasing a scattering gang of goofy space-pirate boats toward the upper right, with the squad's bright cyan-blue laser bolts and warm-gold shells flying against the pirates' red-magenta shots between them. Bright, clear, luminous sky-blue and cream space with sparkling stars; only a few small soft pastel candy-cloud wisps near the edges — keep the whole scene bright and airy, never dark.
 
 The five ships are clearly ONE FAMILY: each is a chubby rounded glossy candy spaceship with one small round bubble canopy (tinted glass, with a faint blurry silhouette of an unrecognizable generic pilot figure and a control console dimly visible inside — a soft dark blurry shape, no clear face, not a specific person), small symmetric wings or engine pods, a small star badge, and glowing cyan-blue tail flames. They look like five siblings — but each keeps its OWN bright candy color and its own job:
 - one small slim nimble speedster in candy deep berry-blue (grape-blue, darker and more purple), a slim little cannon tucked under its belly;
-- one short wide chunky tank in sky-blue covered in smooth glossy candy armor (not a shield plate);
+- one short wide chunky tank in mint-teal / soft aqua, covered in smooth glossy candy armor (not a shield plate);
 - one orange-gold gunship with a big twin cannon mounted on its nose at the front (not on its back), firing a chunky glowing orange shell;
 - one round gentle healer in pearl pink-and-white with a pair of little glowing arc-rings at its wingtips, sending blue bubble-shields to its friends;
-- one short wide lavender-purple utility craft with little round spray nozzles and a small antenna, trailing a soft purple mist.
+- one short wide soft greyish-lavender utility craft with little round spray nozzles and a small antenna, trailing a soft purple mist.
 
 In the lower-left foreground, one protagonist pilot stands on a small floating starport platform, watching the squad soar overhead — a Q-cute chibi kid (about 2 to 2.5 heads tall) in a neat little flight jacket, calm and quietly confident like a grown-up captain; standing on the platform, NOT inside any ship. Far bottom-right, a tiny cozy floating starport island with warm glowing lights.
 
