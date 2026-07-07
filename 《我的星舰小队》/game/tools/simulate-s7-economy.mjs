@@ -222,18 +222,18 @@ export const PARAMS = {
 
   // 离线产出（/小时·×星域系数×(1+居住舱%+居民%)）——星矿为主（S10.10 侧重口径）；
   // 合金/记录刻意小额：离线是"回来有得领"的底垫，不是战力主粮（护 #1 广告翻倍 ≤ 加速上限）
-  offline: { starOre: 100, hullAlloy: 21, pilotToken: 14 }, // B1 步2：合金/记录 ×0.7=军饷底垫（星矿不动·A1 归步3）
+  offline: { starOre: 100, hullAlloy: 30, pilotToken: 20 },
   // 星矿的星域乘区用开方衰减（星矿=建筑币·十级封顶的有限 sink，全速乘区必然溢出成死水）
   oreCoefPow: 0.5,
   // 巡逻收益（/小时·×星域系数×(1+派驻加成)）——战斗养成资源小额（≈离线同币种 45% 档）
-  patrol: { hullAlloy: 10, pilotToken: 6.3, starCargo: 4 }, // B1 步2：随离线同降 ×0.7（底垫身份）
+  patrol: { hullAlloy: 14, pilotToken: 9, starCargo: 4 },
   patrolDockPctPerShip: 4,
   patrolDockMax: 10,
 
   // 悬赏板（基础/张·×星域系数×品质期望；护航=合金+星贝、演习=驾驶记录）
   bounty: {
-    escortAlloy: 550, escortCargo: 20, // B1 步2：护航=合金第一大口（200→550 ≈×2.75）
-    drillToken: 370, // B1 步2：演习=驾驶记录第一大口（135→370 ≈×2.74）
+    escortAlloy: 200, escortCargo: 20,
+    drillToken: 135,
     goldRate: 0.08,
     goldPhysical: { beaconCommon: 1 / 3, shipBlueprint: 1 / 3, supplyTicket: 1 / 3 },
     ambushWinBonus: { shipBlueprint: 0.5, supplyTicket: 0.5 },
@@ -246,7 +246,7 @@ export const PARAMS = {
   puzzle: { starCargo: 30, shipBlueprint: 2.5, minutes: 2.0 },
 
   // 今日补给箱（#2 广告点位）
-  supplyChest: { hullAlloy: 35, pilotToken: 25, starCargo: 10, beaconCommon: 0.25, universal: 1.0 }, // #2=白送日礼（回滚步2误加肥：它不吃广告，加肥=全民发钱缩广告差）
+  supplyChest: { hullAlloy: 35, pilotToken: 25, starCargo: 10, beaconCommon: 0.25, universal: 1.0 },
 
   // 商人小站
   merchant: {
@@ -294,7 +294,7 @@ export const PARAMS = {
       elite: { mainShipShard: 2.0, mainPilotShard: 2.0, offShard: 4.0, supplyTicket: 1.4, coreFrag: 1.0, starOreBase: 16, beaconRare: 0.35, superiorPlugin: 0.15 },
       boss: { mainShipShard: 2.6, mainPilotShard: 2.6, offShard: 5.2, supplyTicket: 2.6, coreFrag: 3.0, starOreBase: 26, beaconEpic: 0.15, starGem: 1.6, superiorPlugin: 0.13, legendaryPlugin: 0.04 },
     },
-    adExtraPickMult: 1.0, // #4 再选一 0.9→1.0（B2 收口·步2）
+    adExtraPickMult: 0.9,
   },
 
   // 教程期定向投放（GDD-M"首Boss前刚好养出 1 艘 S 阶"·人人相同·计入初值表）
@@ -337,7 +337,7 @@ export const PARAMS = {
   cargoChest: {
     coreFrag: 4, starGem: 2,
     beacons: { beaconCommon: 1.0, beaconRare: 1.4, beaconEpic: 0.6 }, // A2 提前并入步1：普通权重转稀有（货舱=高稀有浓缩包身份·补 A3 收口后的稀有流量·不走自繁殖链）
-    adPickMult: 1.5, // #7 维持×1.5（×2.0实测不提速反喂核·已回滚）
+    adPickMult: 1.5,
   },
 
   // 深空回廊（参与度分层主渠道：肝爬得深爬得勤 → 层奖+里程碑显著多）
@@ -374,7 +374,7 @@ export const PARAMS = {
   },
 
   // 广告点位量值（S13 十点位·全点位每日 1 次）
-  ads: { ticketPerAd: 10, salvageInstantDur: 'h8' }, // #6=10(B2)·#5 维持h8(实测h24只喂星核不提速·已回滚)
+  ads: { ticketPerAd: 10, salvageInstantDur: 'h8' }, // #6 赞助券 7→10：B2 加肥（削 #1 省出的份额往肥点挪）
 
   // 黑市（GDD S13.6 · 广告"类充值"轨 · 任务单③入模）
   blackMarket: {
@@ -939,7 +939,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       if (opts.pause && day === opts.pause.from + opts.pause.days) hours += opts.pause.days * 24;
       hours = Math.min(hours, storageH);
       const rateMult = 1 + (T.habitatRatePct(st.buildings.habitat) + st.residents * 1) / 100;
-      const adDouble = watcher && useAd() ? 1.5 : 1; // #1 回港报告 ×2→×1.5（B2·削峰第一刀·Ron 已拍）（B2 削峰第一刀·Ron 已拍·治单点独大+步1后广告差回上限内）
+      const adDouble = watcher && useAd() ? 1.5 : 1; // #1 回港报告 ×2→×1.5（B2 削峰第一刀·Ron 已拍·治单点独大+步1后广告差回上限内）
       if (!dis.offline) {
         const oreCoef = Math.pow(offCoef, P.oreCoefPow ?? 1);
         credit('offline', 'starOre', P.offline.starOre * oreCoef * rateMult * hours * adDouble);
