@@ -138,7 +138,7 @@ export function pickShips(family: LineupFamily, problemTag: string): string[] {
     case 'swarm': return ['shp05', 'shp10', 'shp09', 'shp12', 'shp13'];   // AoE：群蜂+烈阳+霹雳
     case 'shield': return ['shp05', 'shp11', 'shp20', 'shp02', 'shp13'];  // 破盾：贯日+锁链+影刃
     case 'backline': return ['shp05', 'shp02', 'shp09', 'shp04', 'shp13']; // 点后排/单体：影刃+蜂针
-    case 'burst': return ['shp05', 'shp06', 'shp13', 'shp02', 'shp09'];   // 双坦+盾奶扛爆发
+    case 'burst': return ['shp05', 'shp06', 'shp01', 'shp09', 'shp13'];   // 双坦双C一奶：扛爆发窗口不牺牲输出下限（三段实测：旧双坦双奶配方扛得住但磨不死→120s 超时反输·§20.7）
     case 'berserk': return ['shp05', 'shp02', 'shp01', 'shp09', 'shp13']; // 限时爆发：突击双核
     case 'summon': return ['shp05', 'shp10', 'shp12', 'shp02', 'shp13'];  // 清召唤：AoE+点源
     default: return ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];
@@ -490,3 +490,7 @@ export async function main(argv: string[]): Promise<number> {
   }
   return 0;
 }
+
+// 运行件 re-export（quick 实测脚本复用面·⑥三段悬赏敌配实测起）——纯导出零逻辑。
+export { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
+export { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService';
