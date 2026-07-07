@@ -55,6 +55,9 @@ function makeBundle(): Bundle {
   Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
     ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none', attackRangeCells: 7,
     maxHp: 1000000, armor: 500, attack: 1000,
+    // ⑥第一段重定基：影刃行默认间隔 0.77s 与缩CD后的 0.60s 在 tick 0.2s 网格上同落 0.8s 步进
+    // （攻击只在 tick 边界结算）→ 缩CD对照失去分辨力；夹具钉 interval=1.0 恢复可分辨前提。
+    attackIntervalSec: 1.0,
   });
   Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000000, attack: 1, armor: 1 });
   Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm'], spawnPlanRefs: ['spawn_n001_w1'] });

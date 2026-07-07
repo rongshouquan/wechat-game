@@ -63,10 +63,18 @@ describe('回廊受控引擎入口 - 反例三件套', () => {
 
   it('② 闪电战限时覆盖真在 40s 判负；覆盖决定判负时刻（120 → 120s）', async () => {
     const engine = new S7AutoBattleEngine(await runtimeOf());
-    // 打不死的头目(5200血/35甲) vs 弱攻但超肉的玩家(+100倍血·撑过窗口打不死头目) → 双方都活到点 → 必到点判负。
+    // 打不死的头目 vs 弱攻但超肉的玩家(+100倍血·撑过窗口打不死头目) → 双方都活到点 → 必到点判负。
     // 限时覆盖决定判负秒数（这才是本反例要验的：40 覆盖真在 40s 判、120 覆盖在 120s 判）。
+    // ⑥第一段重定基：guardian(锋矢) 现带伤害大招+更快手速、~60s 能杀穿头目破坏"双活到点"前提——
+    // 夹具追加 攻−99% 修正钉死"打不死"（对敌行后续任何缩放也稳健）。
     const inline = [{ unitStatRef: 'bu_enemy_shield_warden', slotRef: 'r0c0' }];
-    const players = [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0', effectBlocks: [{ kind: 'modifier' as const, stat: 'maxHp' as const, op: 'pct' as const, value: 100 }] }];
+    const players = [{
+      unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0',
+      effectBlocks: [
+        { kind: 'modifier' as const, stat: 'maxHp' as const, op: 'pct' as const, value: 100 },
+        { kind: 'modifier' as const, stat: 'attack' as const, op: 'pct' as const, value: -0.99 },
+      ],
+    }];
     const blitz = engine.run({ encounterRef: 'enc_n001', battleSeed: 'ct', playerUnits: players, inlineEnemyUnits: inline, timeLimitSecOverride: 40 });
     expect(blitz.reason).toBe('timeout');
     expect(blitz.durationSec).toBe(40); // 真在 40s 判负

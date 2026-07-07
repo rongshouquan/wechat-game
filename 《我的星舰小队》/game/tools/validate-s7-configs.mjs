@@ -28,7 +28,8 @@ function seq(prefix, from, to) {
 
 const TIER_A = {
   battle_template_config: { idField: 'templateId', count: 10, ids: seq('t', 1, 10) },
-  ship_config: { idField: 'shipId', count: 12, ids: seq('shp', 1, 12) },
+  // ⑥第一段 20 舰落地（2026-07-07·细表§12）：默认盘 12→20（与 ConfigValidatorS7.S7_EXPECTED_COUNT 双份同步）。
+  ship_config: { idField: 'shipId', count: 20, ids: seq('shp', 1, 20) },
   pilot_config: { idField: 'pilotId', count: 10, ids: seq('pil', 1, 10) },
   core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
   plugin_config: { idField: 'pluginId', count: 18, ids: seq('plg', 1, 18) },

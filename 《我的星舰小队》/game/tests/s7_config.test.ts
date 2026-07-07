@@ -46,7 +46,7 @@ describe('s7 tier a config', () => {
   it('enforces exact default-plate counts', () => {
     const b = loadS7Bundle();
     expect(b.battle_template_config).toHaveLength(10);
-    expect(b.ship_config).toHaveLength(12);
+    expect(b.ship_config).toHaveLength(20); // ⑥第一段重定基：默认盘 12→20（真源首发 20 舰·映射细表§12）
     expect(b.pilot_config).toHaveLength(10);
     expect(b.core_config).toHaveLength(7);
     expect(b.plugin_config).toHaveLength(18);
@@ -55,7 +55,7 @@ describe('s7 tier a config', () => {
   it('indexes rows by lowercase id', () => {
     const loader = new S7ConfigLoader();
     loader.loadFromData(loadS7Bundle());
-    expect(loader.getById<{ name: string }>('ship_config', 'shp01')?.name).toBe('晨星护卫舰');
+    expect(loader.getById<{ name: string }>('ship_config', 'shp01')?.name).toBe('极焰号'); // ⑥第一段重定基：shp01 灰盒名→真源名（细表§12 映射）
     expect(loader.getById<{ rowId: string }>('power_reference_param', 'd28')?.rowId).toBe('d28');
   });
 
@@ -187,7 +187,7 @@ describe('s7 tier b relation / schema configs', () => {
   it('covers every ship with a fit row and a non-empty alternative', () => {
     const b = loadS7Bundle();
     const fit = b.ship_pilot_fit_config as Array<{ shipRef: string; alternativePilotRefs: string[]; notUniqueFlag: boolean }>;
-    expect(fit).toHaveLength(12);
+    expect(fit).toHaveLength(20); // ⑥第一段重定基：适配关系随 20 舰扩容（shp13-20 借位现有 pil 池占位）
     for (const r of fit) {
       expect(r.alternativePilotRefs.length).toBeGreaterThanOrEqual(1);
       expect(r.notUniqueFlag).toBe(true);

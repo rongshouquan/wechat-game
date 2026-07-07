@@ -123,8 +123,10 @@ describe('S7AutoBattleEngine - 站位影响寻敌 (#4)', () => {
   it('前排 vs 后排同一星舰首次出手时机不同', async () => {
     // 近战 vanguard(range1)：p0c2(行0)可即时打到 w1 行0 敌人；p1c2(行1)够不到行0，须等 w2 行1(5s 后)。
     // 块2：去掉 vanguard 大招（否则开局即放 clear_barrage 会先清掉小怪、令普攻无目标），以隔离“按站位的普攻时机”。
+    // ⑥第一段重定基：全舰默认射程改 99（C16 无限射程口径）——本测试测的是"射程过滤×站位"引擎机制，
+    // 夹具显式恢复 range1 前提（机制未变，变的是行默认值）。
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { ultimateEffectRef: 'none', ultimateCdSec: 0 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { ultimateEffectRef: 'none', ultimateCdSec: 0, attackRangeCells: 1 });
     const engine = await engineOf(b);
     const front = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }] });
     const back = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' }] });
@@ -139,9 +141,10 @@ describe('S7AutoBattleEngine - 站位影响寻敌 (#4)', () => {
 
 describe('S7AutoBattleEngine - 技能触发 (#5,#6)', () => {
   it('够不到敌人(无普攻)的单位仍按 CD 触发释放技能 (#5)', async () => {
-    // guardian 放后排(p0c0)够不到 r0c6 远敌→不普攻；其大招按 CD 触发(开局即放)→自身护盾技能。
+    // guardian 放后排(p0c0)够不到 r0c6 远敌→不普攻；其大招按 CD 触发(开局即放)。
+    // ⑥第一段重定基：默认射程 99（C16）→ 夹具显式 range1 恢复"够不到"前提（大招现=eff_s7_fenbiao·断言只看有放）。
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { passiveEnergyPerSec: 100 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { passiveEnergyPerSec: 100, attackRangeCells: 1 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, attack: 1, attackRangeCells: 1 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c6'] });
@@ -197,7 +200,9 @@ describe('S7AutoBattleEngine - 护盾先扣盾再扣血 (#8)', () => {
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 1000, armor: 25, attack: 1, passiveEnergyPerSec: 500 });
     Object.assign(row(b, 'battle_effect_param', 'eff_state_shield'), { durationSec: 60 });
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7 });
+    // ⑥第一段重定基：gunner(影刃) 现自带狙杀×4 开局即放会一发打穿 200 盾、"扣盾不掉血"命中不再出现——
+    // 夹具去掉大招以隔离普攻扣盾路径（引擎盾结算机制未变）。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'none', ultimateCdSec: 0 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1'] });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_shield', count: 1, slotRefs: ['r0c0'] });
     const engine = await engineOf(b);
@@ -234,8 +239,9 @@ describe('S7AutoBattleEngine - 治疗与超时 (#9)', () => {
 describe('S7AutoBattleEngine - 大招目标模板 (#10,#11,#12)', () => {
   it('clear_barrage 单次大招命中多个敌人 (#10)', async () => {
     // vanguard 大招=clear_barrage(maxTargets8)，passive 拉满 t=0 即放，铺一行 7 个小怪。
+    // ⑥第一段重定基：vanguard(极焰) 默认大招已换 eff_s7_jihuopao（单体）——本测试测 clear_barrage 模板，夹具显式指回。
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { passiveEnergyPerSec: 500, ultimateEffectRef: 'eff_ult_clear_barrage', ultimateCdSec: 10 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
     const engine = await engineOf(b);
@@ -247,8 +253,9 @@ describe('S7AutoBattleEngine - 大招目标模板 (#10,#11,#12)', () => {
 
   it('line_pierce 按列命中 (#11)', async () => {
     // 敌人排成一列(r0c0/r1c0/r2c0)，gunner 大招=line_pierce(column_line) 命中同列多人。
+    // ⑥第一段重定基：gunner(影刃) 默认大招已换 eff_s7_jusha（单体）——本测试测 line_pierce 模板，夹具显式指回。
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { passiveEnergyPerSec: 500, ultimateEffectRef: 'eff_ult_line_pierce' });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 3, slotRefs: ['r0c0', 'r1c0', 'r2c0'] });
@@ -335,8 +342,11 @@ describe('S7AutoBattleEngine - mark/vulnerable/shield_break 行为 (#13)', () =>
 
 describe('S7AutoBattleEngine - 星核触发 (#14)', () => {
   it('coreEffectRef 在首次大招后触发一次 core_trigger', async () => {
-    // gunner 带 coreEffectRef=eff_core_blackhole；n001 跑通时应恰有一次 core_trigger。
-    const engine = await engineOf(loadBundle());
+    // ⑥第一段重定基：真源影刃无自带核，gunner 行 coreEffectRef 已改 none（星核=装配层积木下发）——
+    // 本测试测"行级 core 钩子"引擎机制，夹具显式挂回 eff_core_blackhole。
+    const b = cloneBundle(loadBundle());
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { coreEffectRef: 'eff_core_blackhole' });
+    const engine = await engineOf(b);
     const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'core', playerUnits: TRIO });
     const cores = ofType(r.log, 'core_trigger').filter((e) => e.actorId === 'player_p1c2');
     expect(cores.length).toBe(1);
@@ -641,7 +651,8 @@ describe('S7AutoBattleEngine - stun 抑制行动 (RT-04-fix#3)', () => {
 describe('S7AutoBattleEngine - berserk 行为 (RT-04-fix#3)', () => {
   it('berserk 生效后攻击力 x1.25（普攻伤害 80→100）', async () => {
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_berserk', passiveEnergyPerSec: 7 });
+    // ⑥第一段重定基：影刃行 CD 变 7s < berserk 时长 8s → 狂暴常驻无"80 伤空窗"——夹具恢复 CD10 保留 8-10s 空窗前提。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_berserk', ultimateCdSec: 10, passiveEnergyPerSec: 7 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 100000, armor: 25, attack: 1 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { spawnPlanRefs: ['spawn_n001_w1'] });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { count: 1, slotRefs: ['r0c0'] });

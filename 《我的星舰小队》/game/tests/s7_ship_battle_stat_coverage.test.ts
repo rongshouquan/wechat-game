@@ -24,6 +24,7 @@ interface BattleUnitRow {
   unitRef: string;
   coreEffectRef: string;
   ultimateEffectRef: string;
+  attackRangeCells: number; // ⑥第一段：C16 全舰射程断言用
 }
 
 function loadBundle(): Bundle {
@@ -41,8 +42,12 @@ function row(b: Bundle, table: S7ConfigTableName, rowId: string): Row {
 }
 const runtimeOf = (b: Bundle): Promise<S7ConfigRuntime> => S7ConfigRuntime.load(createInMemoryS7TableReader(b));
 
-const ALL_SHIPS = ['shp01', 'shp02', 'shp03', 'shp04', 'shp05', 'shp06', 'shp07', 'shp08', 'shp09', 'shp10', 'shp11', 'shp12'];
-/** RT-07E-3-3 冻结的新九行 shipId -> battle stat rowId 映射（用于覆盖断言，不在此设计数值）。 */
+// ⑥第一段重定基（细表§12）：默认盘 12→20（真源首发 20 舰）；shp01-12 沿用冻结 rowId 原位改造、shp13-20 新行。
+const ALL_SHIPS = [
+  'shp01', 'shp02', 'shp03', 'shp04', 'shp05', 'shp06', 'shp07', 'shp08', 'shp09', 'shp10',
+  'shp11', 'shp12', 'shp13', 'shp14', 'shp15', 'shp16', 'shp17', 'shp18', 'shp19', 'shp20',
+];
+/** shipId -> battle stat rowId 冻结映射（旧 12 行 rowId 不变=引用面稳定；新 8 行 bu_ship_shpXX）。 */
 const NEW_NINE: Record<string, string> = {
   shp04: 'bu_ship_fireworks_cruiser',
   shp05: 'bu_ship_static_disruptor',
@@ -53,16 +58,24 @@ const NEW_NINE: Record<string, string> = {
   shp10: 'bu_ship_flashrail_reaper',
   shp11: 'bu_ship_blackshield_escort',
   shp12: 'bu_ship_oldport_flex',
+  shp13: 'bu_ship_shp13',
+  shp14: 'bu_ship_shp14',
+  shp15: 'bu_ship_shp15',
+  shp16: 'bu_ship_shp16',
+  shp17: 'bu_ship_shp17',
+  shp18: 'bu_ship_shp18',
+  shp19: 'bu_ship_shp19',
+  shp20: 'bu_ship_shp20',
 };
 
-describe('S7ShipBattleStatCoverage - 12 艘全覆盖（RT-07E-3-3-1 后）', () => {
-  it('totalShips=12，shipIds 为 shp01..shp12（稳定升序）', async () => {
+describe('S7ShipBattleStatCoverage - 20 艘全覆盖（⑥第一段后）', () => {
+  it('totalShips=20，shipIds 为 shp01..shp20（稳定升序）', async () => {
     const report = analyzeS7ShipBattleStatCoverage(await runtimeOf(loadBundle()));
-    expect(report.totalShips).toBe(12);
+    expect(report.totalShips).toBe(20);
     expect(report.shipIds).toEqual(ALL_SHIPS);
   });
 
-  it('coveredShipIds 为 shp01..shp12，missingShipIds 与 ambiguousShipIds 均为空', async () => {
+  it('coveredShipIds 为 shp01..shp20，missingShipIds 与 ambiguousShipIds 均为空', async () => {
     const report = analyzeS7ShipBattleStatCoverage(await runtimeOf(loadBundle()));
     expect(report.coveredShipIds).toEqual(ALL_SHIPS);
     expect(report.missingShipIds).toEqual([]);
@@ -91,18 +104,20 @@ describe('S7ShipBattleStatCoverage - 12 艘全覆盖（RT-07E-3-3-1 后）', () 
   });
 });
 
-describe('S7ShipBattleStatCoverage - 新九行 base stat 约束', () => {
-  it('新九行 coreEffectRef==="none"，ultimateEffectRef 以 eff_ult_ 开头、非 summon_drone、不引用 eff_state_*', async () => {
+describe('S7ShipBattleStatCoverage - 舰行 base stat 约束（⑥第一段重定基）', () => {
+  it('全 20 舰行 coreEffectRef==="none"，大招引用 ∈ {none, eff_s7_*}（M 依赖舰=none·细表§12 注记），不引用 eff_state_*', async () => {
     const rt = await runtimeOf(loadBundle());
     const units = rt.getAll<BattleUnitRow>('battle_unit_stat_param');
-    for (const shipId of Object.keys(NEW_NINE)) {
+    for (const shipId of ALL_SHIPS) {
       const rows = units.filter((u) => u.targetType === 'ship' && u.unitRef === shipId);
       expect(rows).toHaveLength(1);
       const u = rows[0];
-      expect(u.coreEffectRef).toBe('none');
-      expect(u.ultimateEffectRef.startsWith('eff_ult_')).toBe(true);
-      expect(u.ultimateEffectRef).not.toBe('eff_ult_summon_drone');
+      expect(u.coreEffectRef).toBe('none'); // 星核=装配层积木下发，不占行级挂点
+      // 旧口径 eff_ult_ 前缀已随 40 技能落数换代为 eff_s7_ 命名域；无大招（待机制批）写 none。
+      const legalUlt = u.ultimateEffectRef === 'none' || u.ultimateEffectRef.startsWith('eff_s7_');
+      expect(legalUlt).toBe(true);
       expect(u.ultimateEffectRef.startsWith('eff_state_')).toBe(false);
+      expect(u.attackRangeCells).toBe(99); // C16 全舰射程=事实无限
     }
   });
 });

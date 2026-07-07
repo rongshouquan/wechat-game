@@ -1,14 +1,282 @@
 [
-  {"schemaVersion":"s7-0.1.0","shipId":"shp01","name":"晨星护卫舰","shipType":"free","coverProblemTags":["burst","swarm"],"positionNote":"前排 / 中列","roleNote":"前排承压、保护后排、稳定阵线","freePathNote":"新手主线赠送","forbiddenBindingNote":"不作为唯一承伤答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp02","name":"破晓钻锋舰","shipType":"stream","coverProblemTags":["shield","berserk"],"positionNote":"前排 / 同列","roleNote":"破盾、打开破口窗口、处理重点护盾","freePathNote":"主线阶段解锁","forbiddenBindingNote":"不作为唯一破盾答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp03","name":"流光狙击舰","shipType":"stream","coverProblemTags":["backline","summon"],"positionNote":"后排 / 同列","roleNote":"后排点杀、越线打击、处理召唤源","freePathNote":"主线阶段解锁","forbiddenBindingNote":"不作为唯一后排答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp04","name":"烟花巡洋舰","shipType":"free","coverProblemTags":["swarm","summon"],"positionNote":"中排 / 横排","roleNote":"范围清场、批次处理、压制群怪","freePathNote":"3 天行动免费目标","forbiddenBindingNote":"不作为唯一清怪答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp05","name":"静电干扰舰","shipType":"stream","coverProblemTags":["burst","berserk"],"positionNote":"中排 / 危险列对位","roleNote":"打断、延缓蓄力、削弱爆发源","freePathNote":"主线阶段解锁","forbiddenBindingNote":"不作为唯一打断答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp06","name":"绿洲维修舰","shipType":"free","coverProblemTags":["burst","berserk"],"positionNote":"后排 / 相邻保护","roleNote":"维修支援、容错、保护关键位","freePathNote":"免费任务线解锁","forbiddenBindingNote":"不作为唯一续航答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp07","name":"星环充能舰","shipType":"stream","coverProblemTags":["shield","berserk"],"positionNote":"后排 / 中列","roleNote":"大招周转、窗口配合、队伍节奏调度","freePathNote":"7 天扩张免费候选","forbiddenBindingNote":"不作为唯一能量答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp08","name":"清道无人舰","shipType":"stream","coverProblemTags":["summon","swarm"],"positionNote":"中排 / 召唤源对位","roleNote":"清召唤、压制召唤源、处理小单位","freePathNote":"主线阶段解锁","forbiddenBindingNote":"不作为唯一反召唤答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp09","name":"远讯压制舰","shipType":"stream","coverProblemTags":["backline","burst"],"positionNote":"后排 / 对角威胁","roleNote":"限制后排支援、削弱远程威胁","freePathNote":"免费星辉货舱 1 选候选","forbiddenBindingNote":"不作为唯一压制答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp10","name":"闪轨收割舰","shipType":"stream","coverProblemTags":["backline","swarm"],"positionNote":"中排 / 后排","roleNote":"机动补刀、低危目标收割、快速换线","freePathNote":"主线后段免费目标","forbiddenBindingNote":"不作为唯一收割答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp11","name":"玄盾护航舰","shipType":"stream","coverProblemTags":["burst","berserk"],"positionNote":"前排 / 相邻保护","roleNote":"开场防护、爆发缓冲、护航核心位","freePathNote":"7 天扩张免费候选","forbiddenBindingNote":"不作为唯一抗爆答案"},
-  {"schemaVersion":"s7-0.1.0","shipId":"shp12","name":"旧港万能舰","shipType":"free","coverProblemTags":["shield","summon"],"positionNote":"任意非极端位","roleNote":"弱克制补位、轻破盾、轻清场、轻控场","freePathNote":"免费自选 / 星辉货舱候选","forbiddenBindingNote":"不作为万能通关钥匙"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp01",
+    "name": "极焰号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "positionNote": "前排 / 中列",
+    "roleNote": "极焰号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "新手主线赠送",
+    "forbiddenBindingNote": "不作为唯一承伤答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp02",
+    "name": "影刃号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "backline",
+      "burst"
+    ],
+    "positionNote": "前排 / 同列",
+    "roleNote": "影刃号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "主线阶段解锁",
+    "forbiddenBindingNote": "不作为唯一破盾答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp03",
+    "name": "锋矢号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "swarm",
+      "burst"
+    ],
+    "positionNote": "后排 / 同列",
+    "roleNote": "锋矢号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "主线阶段解锁",
+    "forbiddenBindingNote": "不作为唯一后排答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp04",
+    "name": "蜂针号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "burst",
+      "shield"
+    ],
+    "positionNote": "中排 / 横排",
+    "roleNote": "蜂针号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "3 天行动免费目标",
+    "forbiddenBindingNote": "不作为唯一清怪答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp05",
+    "name": "磐石号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "positionNote": "中排 / 危险列对位",
+    "roleNote": "磐石号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "主线阶段解锁",
+    "forbiddenBindingNote": "不作为唯一打断答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp06",
+    "name": "铁壁号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "backline",
+      "burst"
+    ],
+    "positionNote": "后排 / 相邻保护",
+    "roleNote": "铁壁号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "免费任务线解锁",
+    "forbiddenBindingNote": "不作为唯一续航答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp07",
+    "name": "堡垒号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "positionNote": "后排 / 中列",
+    "roleNote": "堡垒号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "7 天扩张免费候选",
+    "forbiddenBindingNote": "不作为唯一能量答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp08",
+    "name": "山岳号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "berserk",
+      "burst"
+    ],
+    "positionNote": "中排 / 召唤源对位",
+    "roleNote": "山岳号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "主线阶段解锁",
+    "forbiddenBindingNote": "不作为唯一反召唤答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp09",
+    "name": "烈阳号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "swarm",
+      "burst"
+    ],
+    "positionNote": "后排 / 对角威胁",
+    "roleNote": "烈阳号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "免费星辉货舱 1 选候选",
+    "forbiddenBindingNote": "不作为唯一压制答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp10",
+    "name": "群蜂号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "swarm",
+      "summon"
+    ],
+    "positionNote": "中排 / 后排",
+    "roleNote": "群蜂号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "主线后段免费目标",
+    "forbiddenBindingNote": "不作为唯一收割答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp11",
+    "name": "贯日号",
+    "shipType": "stream",
+    "coverProblemTags": [
+      "shield",
+      "swarm"
+    ],
+    "positionNote": "前排 / 相邻保护",
+    "roleNote": "贯日号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "7 天扩张免费候选",
+    "forbiddenBindingNote": "不作为唯一抗爆答案"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp12",
+    "name": "霹雳号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "swarm",
+      "shield"
+    ],
+    "positionNote": "任意非极端位",
+    "roleNote": "霹雳号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "免费自选 / 星辉货舱候选",
+    "forbiddenBindingNote": "不作为万能通关钥匙"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp13",
+    "name": "晨曦号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "晨曦号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp14",
+    "name": "号角号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "berserk",
+      "burst"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "号角号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp15",
+    "name": "甘霖号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "甘霖号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp16",
+    "name": "春风号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "berserk",
+      "shield"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "春风号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp17",
+    "name": "迷雾号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "berserk",
+      "backline"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "迷雾号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp18",
+    "name": "蜂巢号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "swarm",
+      "summon"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "蜂巢号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp19",
+    "name": "哨卫号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "backline",
+      "burst"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "哨卫号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipId": "shp20",
+    "name": "锁链号",
+    "shipType": "free",
+    "coverProblemTags": [
+      "shield",
+      "summon"
+    ],
+    "positionNote": "定位型见 battle_unit_stat_param.positionType（5定位型）",
+    "roleNote": "锁链号（真源20舰映射·细表§12·⑥第一段）",
+    "freePathNote": "抽卡/碎片路径与既有12舰一致（三选一专属碎片池随行数自然扩容·外溢已核档）",
+    "forbiddenBindingNote": "无"
+  }
 ]

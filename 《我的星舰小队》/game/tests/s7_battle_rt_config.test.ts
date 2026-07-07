@@ -45,8 +45,10 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     // 新增4个通用敌人schema(backline/support/charge/summon_source) + 4个新Boss单位(n060/102/120/138)。
     // n030 首Boss（Ron 2026-07-03）：+bu_boss_n030（本体2x2）；enc_n030 就地由普通改Boss（encounter 数不变）；
     //   spawn_n030_w1 拆成 spawn_n030_boss+spawn_n030_adds（净+1）；+phase_n030 三阶段（Boss 6→7 → 21 阶段）。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(30); // +bu_boss_n030（n030首Boss本体）；块2 +bu_commission_transport
-    expect(readTable('battle_effect_param')).toHaveLength(20); // 块3 +eff_atomic_cannon；第2.5块块2 +eff_commission_transport_summon（护航开场召唤）
+    // ⑥第一段 20 舰落地（细表§12）：舰行 12→20（+8）+ 召唤物 3 行（无人机/诱饵盒/星鲸）→ 30+11=41；
+    // 效果行 +22（普攻变体 6 + 技能 14 + 星核备用 2）→ 20+22=42。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(41); // +bu_boss_n030（n030首Boss本体）；块2 +bu_commission_transport；⑥+8舰+3召唤物
+    expect(readTable('battle_effect_param')).toHaveLength(42); // 块3 +eff_atomic_cannon；第2.5块块2 +eff_commission_transport_summon；⑥+22（eff_s7_*）
     expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
     expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）
     expect(readTable('battle_boss_phase_param')).toHaveLength(21); // 7个Boss x 3阶段（+n030 首Boss 三阶段）

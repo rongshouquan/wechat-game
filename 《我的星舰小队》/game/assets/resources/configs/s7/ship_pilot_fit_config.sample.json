@@ -1,14 +1,223 @@
 [
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp01","primaryPilotRef":"pil01","alternativePilotRefs":["pil06","pil05"],"fitReasonNote":"前排承压、维修容错、爆发源干扰都可成立","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp02","primaryPilotRef":"pil02","alternativePilotRefs":["pil07","pil05"],"fitReasonNote":"破盾、窗口调度、干扰破口都可解护盾","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp03","primaryPilotRef":"pil03","alternativePilotRefs":["pil10","pil09"],"fitReasonNote":"后排点杀、补刀、压制均可处理后排","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp04","primaryPilotRef":"pil04","alternativePilotRefs":["pil08","pil10"],"fitReasonNote":"范围清场、清召唤、补刀都能处理群怪","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp05","primaryPilotRef":"pil05","alternativePilotRefs":["pil09","pil07"],"fitReasonNote":"打断、压制、窗口调度都能处理爆发","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp06","primaryPilotRef":"pil06","alternativePilotRefs":["pil01","pil05"],"fitReasonNote":"维修、承压、干扰都能提高容错","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp07","primaryPilotRef":"pil07","alternativePilotRefs":["pil02","pil05"],"fitReasonNote":"充能、破盾窗口、干扰窗口都可配合","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp08","primaryPilotRef":"pil08","alternativePilotRefs":["pil04","pil03"],"fitReasonNote":"反召唤、范围清理、召唤源点杀都可成立","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp09","primaryPilotRef":"pil09","alternativePilotRefs":["pil05","pil03"],"fitReasonNote":"后排限制、干扰、点杀都可处理后排支援","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp10","primaryPilotRef":"pil10","alternativePilotRefs":["pil03","pil04"],"fitReasonNote":"收割、后排点杀、清残都可减少压力","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp11","primaryPilotRef":"pil01","alternativePilotRefs":["pil06","pil05"],"fitReasonNote":"开场防护、承压、维修、干扰都能抗爆发","notUniqueFlag":true},
-  {"schemaVersion":"s7-0.1.0","shipRef":"shp12","primaryPilotRef":"pil07","alternativePilotRefs":["pil02","pil05","pil04"],"fitReasonNote":"窗口调度、轻破盾、轻干扰、轻清场","notUniqueFlag":true}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp01",
+    "primaryPilotRef": "pil01",
+    "alternativePilotRefs": [
+      "pil06",
+      "pil05"
+    ],
+    "fitReasonNote": "前排承压、维修容错、爆发源干扰都可成立",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp02",
+    "primaryPilotRef": "pil02",
+    "alternativePilotRefs": [
+      "pil07",
+      "pil05"
+    ],
+    "fitReasonNote": "破盾、窗口调度、干扰破口都可解护盾",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp03",
+    "primaryPilotRef": "pil03",
+    "alternativePilotRefs": [
+      "pil10",
+      "pil09"
+    ],
+    "fitReasonNote": "后排点杀、补刀、压制均可处理后排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp04",
+    "primaryPilotRef": "pil04",
+    "alternativePilotRefs": [
+      "pil08",
+      "pil10"
+    ],
+    "fitReasonNote": "范围清场、清召唤、补刀都能处理群怪",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp05",
+    "primaryPilotRef": "pil05",
+    "alternativePilotRefs": [
+      "pil09",
+      "pil07"
+    ],
+    "fitReasonNote": "打断、压制、窗口调度都能处理爆发",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp06",
+    "primaryPilotRef": "pil06",
+    "alternativePilotRefs": [
+      "pil01",
+      "pil05"
+    ],
+    "fitReasonNote": "维修、承压、干扰都能提高容错",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp07",
+    "primaryPilotRef": "pil07",
+    "alternativePilotRefs": [
+      "pil02",
+      "pil05"
+    ],
+    "fitReasonNote": "充能、破盾窗口、干扰窗口都可配合",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp08",
+    "primaryPilotRef": "pil08",
+    "alternativePilotRefs": [
+      "pil04",
+      "pil03"
+    ],
+    "fitReasonNote": "反召唤、范围清理、召唤源点杀都可成立",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp09",
+    "primaryPilotRef": "pil09",
+    "alternativePilotRefs": [
+      "pil05",
+      "pil03"
+    ],
+    "fitReasonNote": "后排限制、干扰、点杀都可处理后排支援",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp10",
+    "primaryPilotRef": "pil10",
+    "alternativePilotRefs": [
+      "pil03",
+      "pil04"
+    ],
+    "fitReasonNote": "收割、后排点杀、清残都可减少压力",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp11",
+    "primaryPilotRef": "pil01",
+    "alternativePilotRefs": [
+      "pil06",
+      "pil05"
+    ],
+    "fitReasonNote": "开场防护、承压、维修、干扰都能抗爆发",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp12",
+    "primaryPilotRef": "pil07",
+    "alternativePilotRefs": [
+      "pil02",
+      "pil05",
+      "pil04"
+    ],
+    "fitReasonNote": "窗口调度、轻破盾、轻干扰、轻清场",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp13",
+    "primaryPilotRef": "pil06",
+    "alternativePilotRefs": [
+      "pil01",
+      "pil05"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp14",
+    "primaryPilotRef": "pil07",
+    "alternativePilotRefs": [
+      "pil02",
+      "pil06"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp15",
+    "primaryPilotRef": "pil06",
+    "alternativePilotRefs": [
+      "pil01",
+      "pil08"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp16",
+    "primaryPilotRef": "pil08",
+    "alternativePilotRefs": [
+      "pil06",
+      "pil05"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp17",
+    "primaryPilotRef": "pil05",
+    "alternativePilotRefs": [
+      "pil09",
+      "pil03"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp18",
+    "primaryPilotRef": "pil08",
+    "alternativePilotRefs": [
+      "pil04",
+      "pil10"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp19",
+    "primaryPilotRef": "pil05",
+    "alternativePilotRefs": [
+      "pil01",
+      "pil09"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "shipRef": "shp20",
+    "primaryPilotRef": "pil09",
+    "alternativePilotRefs": [
+      "pil05",
+      "pil07"
+    ],
+    "fitReasonNote": "占位适配：真源20驾驶员扩容前借位现有pil池·随⑥天赋接线批按细表§13重排",
+    "notUniqueFlag": true
+  }
 ]

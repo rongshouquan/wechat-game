@@ -3,32 +3,90 @@
     "schemaVersion": "s7-0.1.0",
     "rowId": "puzzle_backline_001",
     "threatType": "backline",
-    "threatHint": "敌狙击炮台缩在后排（c5）专点你后排（低列 c0）——两艘硬壳护卫放 c0 扛狙、脆皮远程放前列（c2）速清，全程贴着 120 秒时限的紧仗。",
+    "threatHint": "后排三座狙击塔远程点名 + 一头冲锋兽顶在最前：没有真护卫扛线、前排输出会被冲锋兽连着塔火力秒穿——两艘护卫（磐石/铁壁）顶最前列 c2 扛兽、输出藏 c0 抢拆三塔。",
     "enemyFormation": [
-      { "unitStatRef": "bu_enemy_backline", "slotRef": "r0c5" },
-      { "unitStatRef": "bu_enemy_backline", "slotRef": "r2c5" },
-      { "unitStatRef": "bu_enemy_backline", "slotRef": "r4c5" },
-      { "unitStatRef": "bu_enemy_swarm", "slotRef": "r1c0" },
-      { "unitStatRef": "bu_enemy_swarm", "slotRef": "r3c0" }
+      {
+        "unitStatRef": "bu_enemy_backline",
+        "slotRef": "r0c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_backline",
+        "slotRef": "r2c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_backline",
+        "slotRef": "r4c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_charge",
+        "slotRef": "r2c0"
+      }
     ],
-    "enemyHpPct": 31.0,
-    "enemyAtkPct": 1.0,
+    "enemyHpPct": 11,
+    "enemyAtkPct": 1.5,
     "candidatePacks": [
-      { "packId": "pk1", "shipId": "shp01", "pilotId": "pil01" },
-      { "packId": "pk2", "shipId": "shp11", "pilotId": "pil01" },
-      { "packId": "pk3", "shipId": "shp03", "pilotId": "pil03" },
-      { "packId": "pk4", "shipId": "shp09", "pilotId": "pil09" },
-      { "packId": "pk5", "shipId": "shp10", "pilotId": "pil10" },
-      { "packId": "pk6", "shipId": "shp04", "pilotId": "pil04" },
-      { "packId": "pk7", "shipId": "shp06", "pilotId": "pil06" },
-      { "packId": "pk8", "shipId": "shp02", "pilotId": "pil02" }
+      {
+        "packId": "pk1",
+        "shipId": "shp05",
+        "pilotId": "pil01"
+      },
+      {
+        "packId": "pk2",
+        "shipId": "shp06",
+        "pilotId": "pil02"
+      },
+      {
+        "packId": "pk3",
+        "shipId": "shp02",
+        "pilotId": "pil03"
+      },
+      {
+        "packId": "pk4",
+        "shipId": "shp09",
+        "pilotId": "pil04"
+      },
+      {
+        "packId": "pk5",
+        "shipId": "shp11",
+        "pilotId": "pil05"
+      },
+      {
+        "packId": "pk6",
+        "shipId": "shp16",
+        "pilotId": "pil06"
+      },
+      {
+        "packId": "pk7",
+        "shipId": "shp14",
+        "pilotId": "pil07"
+      },
+      {
+        "packId": "pk8",
+        "shipId": "shp01",
+        "pilotId": "pil08"
+      }
     ],
     "authorSolution": [
-      { "packId": "pk2", "slotRef": "p0c0" },
-      { "packId": "pk3", "slotRef": "p1c0" },
-      { "packId": "pk4", "slotRef": "p0c2" },
-      { "packId": "pk5", "slotRef": "p1c2" },
-      { "packId": "pk6", "slotRef": "p2c2" }
+      {
+        "packId": "pk1",
+        "slotRef": "p0c2"
+      },
+      {
+        "packId": "pk2",
+        "slotRef": "p1c2"
+      },
+      {
+        "packId": "pk3",
+        "slotRef": "p0c0"
+      },
+      {
+        "packId": "pk4",
+        "slotRef": "p1c0"
+      },
+      {
+        "packId": "pk5",
+        "slotRef": "p2c0"
+      }
     ],
     "note": "威胁=后排点名。解=两艘硬壳护卫(黑盾+护盾泡)放 c0 扛狙、三艘远程输出(后排打击+速射+群伤)放 c2 速清；脆皮站 c0 会被狙死、掉输出就清不完超时。"
   },
@@ -38,29 +96,88 @@
     "threatType": "shield",
     "threatHint": "敌全体反复自带护盾——低速磨盾磨不动，要爆发一口气凿穿。",
     "enemyFormation": [
-      { "unitStatRef": "bu_enemy_shield", "slotRef": "r1c1" },
-      { "unitStatRef": "bu_enemy_shield", "slotRef": "r2c1" },
-      { "unitStatRef": "bu_enemy_shield", "slotRef": "r3c1" },
-      { "unitStatRef": "bu_enemy_shield", "slotRef": "r2c3" }
+      {
+        "unitStatRef": "bu_enemy_shield",
+        "slotRef": "r1c1"
+      },
+      {
+        "unitStatRef": "bu_enemy_shield",
+        "slotRef": "r2c1"
+      },
+      {
+        "unitStatRef": "bu_enemy_shield",
+        "slotRef": "r3c1"
+      },
+      {
+        "unitStatRef": "bu_enemy_shield",
+        "slotRef": "r2c3"
+      }
     ],
-    "enemyHpPct": 30.0,
-    "enemyAtkPct": 2.5,
+    "enemyHpPct": 26,
+    "enemyAtkPct": 0.8,
     "candidatePacks": [
-      { "packId": "pk1", "shipId": "shp10", "pilotId": "pil10" },
-      { "packId": "pk2", "shipId": "shp02", "pilotId": "pil02" },
-      { "packId": "pk3", "shipId": "shp05", "pilotId": "pil05" },
-      { "packId": "pk4", "shipId": "shp12", "pilotId": "pil07" },
-      { "packId": "pk5", "shipId": "shp11", "pilotId": "pil01" },
-      { "packId": "pk6", "shipId": "shp06", "pilotId": "pil06" },
-      { "packId": "pk7", "shipId": "shp07", "pilotId": "pil07" },
-      { "packId": "pk8", "shipId": "shp03", "pilotId": "pil03" }
+      {
+        "packId": "pk1",
+        "shipId": "shp11",
+        "pilotId": "pil01"
+      },
+      {
+        "packId": "pk2",
+        "shipId": "shp20",
+        "pilotId": "pil02"
+      },
+      {
+        "packId": "pk3",
+        "shipId": "shp02",
+        "pilotId": "pil03"
+      },
+      {
+        "packId": "pk4",
+        "shipId": "shp01",
+        "pilotId": "pil04"
+      },
+      {
+        "packId": "pk5",
+        "shipId": "shp09",
+        "pilotId": "pil05"
+      },
+      {
+        "packId": "pk6",
+        "shipId": "shp15",
+        "pilotId": "pil06"
+      },
+      {
+        "packId": "pk7",
+        "shipId": "shp14",
+        "pilotId": "pil07"
+      },
+      {
+        "packId": "pk8",
+        "shipId": "shp19",
+        "pilotId": "pil08"
+      }
     ],
     "authorSolution": [
-      { "packId": "pk1", "slotRef": "p0c2" },
-      { "packId": "pk2", "slotRef": "p1c2" },
-      { "packId": "pk3", "slotRef": "p2c2" },
-      { "packId": "pk4", "slotRef": "p0c1" },
-      { "packId": "pk5", "slotRef": "p1c0" }
+      {
+        "packId": "pk1",
+        "slotRef": "p0c2"
+      },
+      {
+        "packId": "pk2",
+        "slotRef": "p1c2"
+      },
+      {
+        "packId": "pk3",
+        "slotRef": "p2c2"
+      },
+      {
+        "packId": "pk4",
+        "slotRef": "p0c1"
+      },
+      {
+        "packId": "pk5",
+        "slotRef": "p1c1"
+      }
     ],
     "note": "威胁=护盾。解=高爆发/高攻速一口气凿穿盾+血，避免带纯辅助拖时间。"
   },
@@ -70,30 +187,92 @@
     "threatType": "summon",
     "threatHint": "敌召唤源不断产小弟——单点磨会被淹，带群伤清场+速杀召唤源。",
     "enemyFormation": [
-      { "unitStatRef": "bu_enemy_summon_source", "slotRef": "r1c5" },
-      { "unitStatRef": "bu_enemy_summon_source", "slotRef": "r2c6" },
-      { "unitStatRef": "bu_enemy_summon_source", "slotRef": "r3c5" },
-      { "unitStatRef": "bu_enemy_swarm", "slotRef": "r1c1" },
-      { "unitStatRef": "bu_enemy_swarm", "slotRef": "r3c1" }
+      {
+        "unitStatRef": "bu_enemy_summon_source",
+        "slotRef": "r1c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_summon_source",
+        "slotRef": "r2c6"
+      },
+      {
+        "unitStatRef": "bu_enemy_summon_source",
+        "slotRef": "r3c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_swarm",
+        "slotRef": "r1c1"
+      },
+      {
+        "unitStatRef": "bu_enemy_swarm",
+        "slotRef": "r3c1"
+      }
     ],
-    "enemyHpPct": 38.0,
-    "enemyAtkPct": 1.1,
+    "enemyHpPct": 40,
+    "enemyAtkPct": 2.2,
     "candidatePacks": [
-      { "packId": "pk1", "shipId": "shp04", "pilotId": "pil04" },
-      { "packId": "pk2", "shipId": "shp08", "pilotId": "pil08" },
-      { "packId": "pk3", "shipId": "shp09", "pilotId": "pil09" },
-      { "packId": "pk4", "shipId": "shp01", "pilotId": "pil01" },
-      { "packId": "pk5", "shipId": "shp03", "pilotId": "pil03" },
-      { "packId": "pk6", "shipId": "shp06", "pilotId": "pil06" },
-      { "packId": "pk7", "shipId": "shp02", "pilotId": "pil02" },
-      { "packId": "pk8", "shipId": "shp07", "pilotId": "pil07" }
+      {
+        "packId": "pk1",
+        "shipId": "shp02",
+        "pilotId": "pil01"
+      },
+      {
+        "packId": "pk2",
+        "shipId": "shp09",
+        "pilotId": "pil02"
+      },
+      {
+        "packId": "pk3",
+        "shipId": "shp12",
+        "pilotId": "pil03"
+      },
+      {
+        "packId": "pk4",
+        "shipId": "shp01",
+        "pilotId": "pil04"
+      },
+      {
+        "packId": "pk5",
+        "shipId": "shp13",
+        "pilotId": "pil05"
+      },
+      {
+        "packId": "pk6",
+        "shipId": "shp14",
+        "pilotId": "pil06"
+      },
+      {
+        "packId": "pk7",
+        "shipId": "shp07",
+        "pilotId": "pil07"
+      },
+      {
+        "packId": "pk8",
+        "shipId": "shp16",
+        "pilotId": "pil08"
+      }
     ],
     "authorSolution": [
-      { "packId": "pk1", "slotRef": "p0c2" },
-      { "packId": "pk2", "slotRef": "p1c2" },
-      { "packId": "pk3", "slotRef": "p2c2" },
-      { "packId": "pk4", "slotRef": "p0c0" },
-      { "packId": "pk5", "slotRef": "p1c0" }
+      {
+        "packId": "pk1",
+        "slotRef": "p0c2"
+      },
+      {
+        "packId": "pk2",
+        "slotRef": "p1c2"
+      },
+      {
+        "packId": "pk3",
+        "slotRef": "p2c2"
+      },
+      {
+        "packId": "pk4",
+        "slotRef": "p0c1"
+      },
+      {
+        "packId": "pk5",
+        "slotRef": "p1c0"
+      }
     ],
     "note": "威胁=召唤。解=群伤炮(烟花/清扫)清小弟+远程狙(长波后排打击)速杀后排召唤源，前排硬壳顶住。"
   },
@@ -103,30 +282,92 @@
     "threatType": "heal",
     "threatHint": "敌后排奶妈狂奶最残友军——磨不死，要么爆发盖过回复、要么先点掉奶源。",
     "enemyFormation": [
-      { "unitStatRef": "bu_enemy_support", "slotRef": "r1c5" },
-      { "unitStatRef": "bu_enemy_support", "slotRef": "r3c5" },
-      { "unitStatRef": "bu_enemy_shield", "slotRef": "r2c1" },
-      { "unitStatRef": "bu_enemy_swarm_tough", "slotRef": "r1c1" },
-      { "unitStatRef": "bu_enemy_swarm_tough", "slotRef": "r3c1" }
+      {
+        "unitStatRef": "bu_enemy_support",
+        "slotRef": "r1c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_support",
+        "slotRef": "r3c5"
+      },
+      {
+        "unitStatRef": "bu_enemy_shield",
+        "slotRef": "r2c1"
+      },
+      {
+        "unitStatRef": "bu_enemy_swarm_tough",
+        "slotRef": "r1c1"
+      },
+      {
+        "unitStatRef": "bu_enemy_swarm_tough",
+        "slotRef": "r3c1"
+      }
     ],
-    "enemyHpPct": 27.0,
-    "enemyAtkPct": 0.8,
+    "enemyHpPct": 34,
+    "enemyAtkPct": 2.2,
     "candidatePacks": [
-      { "packId": "pk1", "shipId": "shp09", "pilotId": "pil09" },
-      { "packId": "pk2", "shipId": "shp10", "pilotId": "pil10" },
-      { "packId": "pk3", "shipId": "shp02", "pilotId": "pil02" },
-      { "packId": "pk4", "shipId": "shp11", "pilotId": "pil01" },
-      { "packId": "pk5", "shipId": "shp01", "pilotId": "pil01" },
-      { "packId": "pk6", "shipId": "shp06", "pilotId": "pil06" },
-      { "packId": "pk7", "shipId": "shp07", "pilotId": "pil07" },
-      { "packId": "pk8", "shipId": "shp05", "pilotId": "pil05" }
+      {
+        "packId": "pk1",
+        "shipId": "shp11",
+        "pilotId": "pil01"
+      },
+      {
+        "packId": "pk2",
+        "shipId": "shp02",
+        "pilotId": "pil02"
+      },
+      {
+        "packId": "pk3",
+        "shipId": "shp09",
+        "pilotId": "pil03"
+      },
+      {
+        "packId": "pk4",
+        "shipId": "shp12",
+        "pilotId": "pil04"
+      },
+      {
+        "packId": "pk5",
+        "shipId": "shp01",
+        "pilotId": "pil05"
+      },
+      {
+        "packId": "pk6",
+        "shipId": "shp16",
+        "pilotId": "pil06"
+      },
+      {
+        "packId": "pk7",
+        "shipId": "shp14",
+        "pilotId": "pil07"
+      },
+      {
+        "packId": "pk8",
+        "shipId": "shp05",
+        "pilotId": "pil08"
+      }
     ],
     "authorSolution": [
-      { "packId": "pk1", "slotRef": "p0c2" },
-      { "packId": "pk2", "slotRef": "p1c2" },
-      { "packId": "pk3", "slotRef": "p2c2" },
-      { "packId": "pk4", "slotRef": "p0c0" },
-      { "packId": "pk5", "slotRef": "p1c0" }
+      {
+        "packId": "pk1",
+        "slotRef": "p0c2"
+      },
+      {
+        "packId": "pk2",
+        "slotRef": "p1c2"
+      },
+      {
+        "packId": "pk3",
+        "slotRef": "p2c2"
+      },
+      {
+        "packId": "pk4",
+        "slotRef": "p0c1"
+      },
+      {
+        "packId": "pk5",
+        "slotRef": "p1c1"
+      }
     ],
     "note": "威胁=治疗。解=远程狙(长波后排打击)速杀后排奶妈+爆发(闪电镰)盖过回复，前排硬壳顶。"
   },
@@ -136,29 +377,88 @@
     "threatType": "burst",
     "threatHint": "敌重炮突袭者高攻点最近目标——脆皮别站前排，硬壳顶前面吃炮。",
     "enemyFormation": [
-      { "unitStatRef": "bu_enemy_burst_raider", "slotRef": "r1c3" },
-      { "unitStatRef": "bu_enemy_burst_raider", "slotRef": "r3c3" },
-      { "unitStatRef": "bu_enemy_charge", "slotRef": "r2c2" },
-      { "unitStatRef": "bu_enemy_swarm", "slotRef": "r2c0" }
+      {
+        "unitStatRef": "bu_enemy_burst_raider",
+        "slotRef": "r1c3"
+      },
+      {
+        "unitStatRef": "bu_enemy_burst_raider",
+        "slotRef": "r3c3"
+      },
+      {
+        "unitStatRef": "bu_enemy_charge",
+        "slotRef": "r2c2"
+      },
+      {
+        "unitStatRef": "bu_enemy_swarm",
+        "slotRef": "r2c0"
+      }
     ],
-    "enemyHpPct": 13.0,
-    "enemyAtkPct": 0.5,
+    "enemyHpPct": 13,
+    "enemyAtkPct": 2,
     "candidatePacks": [
-      { "packId": "pk1", "shipId": "shp11", "pilotId": "pil01" },
-      { "packId": "pk2", "shipId": "shp01", "pilotId": "pil01" },
-      { "packId": "pk3", "shipId": "shp03", "pilotId": "pil03" },
-      { "packId": "pk4", "shipId": "shp09", "pilotId": "pil09" },
-      { "packId": "pk5", "shipId": "shp10", "pilotId": "pil10" },
-      { "packId": "pk6", "shipId": "shp02", "pilotId": "pil02" },
-      { "packId": "pk7", "shipId": "shp06", "pilotId": "pil06" },
-      { "packId": "pk8", "shipId": "shp05", "pilotId": "pil05" }
+      {
+        "packId": "pk1",
+        "shipId": "shp05",
+        "pilotId": "pil01"
+      },
+      {
+        "packId": "pk2",
+        "shipId": "shp13",
+        "pilotId": "pil02"
+      },
+      {
+        "packId": "pk3",
+        "shipId": "shp02",
+        "pilotId": "pil03"
+      },
+      {
+        "packId": "pk4",
+        "shipId": "shp09",
+        "pilotId": "pil04"
+      },
+      {
+        "packId": "pk5",
+        "shipId": "shp01",
+        "pilotId": "pil05"
+      },
+      {
+        "packId": "pk6",
+        "shipId": "shp14",
+        "pilotId": "pil06"
+      },
+      {
+        "packId": "pk7",
+        "shipId": "shp17",
+        "pilotId": "pil07"
+      },
+      {
+        "packId": "pk8",
+        "shipId": "shp03",
+        "pilotId": "pil08"
+      }
     ],
     "authorSolution": [
-      { "packId": "pk1", "slotRef": "p0c2" },
-      { "packId": "pk2", "slotRef": "p1c2" },
-      { "packId": "pk4", "slotRef": "p0c0" },
-      { "packId": "pk5", "slotRef": "p1c0" },
-      { "packId": "pk3", "slotRef": "p2c2" }
+      {
+        "packId": "pk1",
+        "slotRef": "p1c2"
+      },
+      {
+        "packId": "pk2",
+        "slotRef": "p1c0"
+      },
+      {
+        "packId": "pk3",
+        "slotRef": "p0c1"
+      },
+      {
+        "packId": "pk4",
+        "slotRef": "p2c1"
+      },
+      {
+        "packId": "pk5",
+        "slotRef": "p0c2"
+      }
     ],
     "note": "威胁=爆发。解=硬壳护卫顶前排(c2 近敌)吃重炮、脆皮远程放后排(c0)输出。"
   }
