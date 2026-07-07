@@ -531,13 +531,13 @@
     "rowId": "eff_s7_supernova",
     "effectKind": "core",
     "effectType": "clear_barrage",
-    "effectPower": 4,
+    "effectPower": 5,
     "targetingTag": "all_enemies",
     "durationSec": 0,
     "maxTargets": 16,
     "stateTag": "none",
     "summonUnitRef": "none",
-    "note": "超新星·恒速攒20s全屏爆×4.0（initialCd/cd=20 由触发块给·细表§15）"
+    "note": "超新星·恒速攒14s全屏爆×5.0周而复始（⑥实证校准：20s/×4.0 在常规25s战斗仅赶上尾声=毕业核不达档·上调钉高一档）"
   },
   {
     "schemaVersion": "s7-0.1.0",
