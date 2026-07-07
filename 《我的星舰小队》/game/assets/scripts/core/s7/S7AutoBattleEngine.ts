@@ -69,19 +69,39 @@ const HEAL_TYPES = new Set<string>(['repair_burst']);
 const SUMMON_TYPES = new Set<string>(['summon', 'summon_drone']);
 const STATE_TYPES = new Set<string>([
   'short_circuit', 'short_circuit_pulse', 'stun', 'shield_break', 'mark', 'vulnerable', 'berserk',
+  'silence', 'control_immune', // ⑥8a：沉默(挡技能不挡普攻) / 免控(硬控免疫·守护铃/山岳不动)
 ]);
-/** 控制状态：期间不能普攻、不能放大招、不能主动触发。 */
+/** 控制状态：期间不能普攻、不能放大招、不能主动触发。（沉默不在此列：只挡技能、普攻照打） */
 const CONTROL_TAGS: S7BattleStateTag[] = ['short_circuit', 'stun'];
-/** 状态到期的固定遍历顺序，保证日志稳定。 */
+/** ⑥8a 硬控全集（真源硬控=短路/沉默 + 遗留 stun）：控制抗性缩时与 control_immune 免疫按此集合判。 */
+const HARD_CONTROL_TAGS: S7BattleStateTag[] = ['short_circuit', 'stun', 'silence'];
+/** 状态到期的固定遍历顺序，保证日志稳定。（⑥8a 新 tag 追加尾部：旧配置不出现新 tag=顺序不变） */
 const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
+  'silence', 'control_immune',
 ];
 const FRIENDLY_TAGS = new Set<string>(['self_team', 'lowest_hp_ally']);
+
+// ===== ⑥8a 通用常量（全局常量表 v0 消费点·数值细表战斗篇 §2）=====
+/** 残血阈值（真源 §0：残血=血量<30%；dmgVsLowHp/healVsLowHp/lowhp_then_nearest 同锚）。 */
+const LOWHP_THRESHOLD = 0.30;
+/** 高血阈值（烬贪婪：对 >50% 血增伤）。 */
+const HIGHHP_THRESHOLD = 0.50;
+/** "高防"判定线（破障弹：带护盾或防 ≥ 此值算 fortified）。 */
+const FORTIFIED_ARMOR_THRESHOLD = 40;
+/** key_unit_first 目标族的"关键单位"roleTag 集（蛰/空：治疗/召唤源优先）。 */
+const KEY_ROLE_TAGS = new Set<string>(['healer', 'summoner', 'support', 'summon_source']);
+/** debuffed_first 目标族的"带减益"判定集。 */
+const DEBUFF_TAGS: S7BattleStateTag[] = ['shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'silence'];
 
 /** 无装配单位（敌人/召唤物/基线舰）的默认定向词条：全 0（冻结共享，战斗中只读不改）。 */
 const ZERO_AFFIXES: Readonly<Record<S7AffixKey, number>> = Object.freeze({
   critRate: 0, critDmg: 0, shieldBreak: 0, skillHaste: 0,
   healPower: 0, controlResist: 0, dmgVsSwarm: 0, dmgVsBoss: 0,
+  // ⑥8a 新词条缺省全 0（=引擎行为逐字节不变）
+  dmgVsLowHp: 0, dmgVsHighHp: 0, dmgVsFortified: 0, armorPen: 0, lifesteal: 0, dodgeRate: 0,
+  dmgTakenPct: 0, healTakenPct: 0, shieldPower: 0, healVsLowHp: 0, skillDmgPct: 0, effectAmp: 0,
+  durationPct: 0, summonCapBonus: 0,
 });
 
 interface RtStateInst {
@@ -128,10 +148,21 @@ interface RtUnit {
   /** 块2b 事件型触发的本 tick 事件标志（stepTriggers 评估后清）。 */
   hitSinceTrigger: boolean;
   killedSinceTrigger: boolean;
+  /** ⑥8a 事件标志（同 2b 模式·评估后清）：本舰护盾被打破 / 本舰普攻命中。 */
+  shieldBrokenSinceTrigger: boolean;
+  attackLandedSinceTrigger: boolean;
   shield: number;
   states: Map<S7BattleStateTag, RtStateInst>;
   /** 定向词条（插件等装配产出；块4b 引擎按需消费）。无装配单位为全 0（ZERO_AFFIXES）。 */
   affixes: Readonly<Record<S7AffixKey, number>>;
+  /** ⑥8a：单位属性行 roleTag（key_unit_first 目标族消费）。 */
+  roleTag: string;
+  /** ⑥8a lock_until_dead 目标族：当前锁定目标（死后换锁）。 */
+  lockedTargetId: string | null;
+  /** ⑥8a 召唤生命周期包：召唤源 unitId / 到期时刻（null=不限时）/ 是否随源消亡。 */
+  summonedBy: string | null;
+  summonExpireAt: number | null;
+  despawnWithSource: boolean;
 }
 
 interface SummonBudget {
@@ -365,7 +396,7 @@ class BattleRun {
     }
   }
 
-  /** 2：结算状态到期并记录 state_expire。 */
+  /** 2：结算状态到期并记录 state_expire；⑥8a 附带处理限时召唤物到期（无限时召唤物时零行为）。 */
   private stepExpireStates(): void {
     for (const unit of this.stableUnits()) {
       if (!unit.alive) continue;
@@ -378,20 +409,28 @@ class BattleRun {
           this.pushLog('state_expire', { actorId: unit.unitId, side: unit.side, stateTag: tag });
         }
       }
+      // ⑥8a 召唤生命周期：summonExpireSec 到期消亡（unit_down 由步"清理死亡"统一记录）
+      if (unit.summonExpireAt !== null && unit.summonExpireAt <= this.time + 1e-9) {
+        unit.alive = false;
+        unit.hp = 0;
+      }
     }
   }
 
-  /** 3：评估并释放三类触发（CD / 开局即放 / 血量阈值）。on_kill/on_hit 留块2b；passive 走装配 modifier、不在此 fire。 */
+  /** 3：评估并释放三类触发（CD / 开局即放 / 血量阈值）。on_kill/on_hit 留块2b；passive 走装配 modifier、不在此 fire。
+   *  ⑥8a：沉默（silence）同硬控一样挡技能触发（但不挡普攻·见 canAct）；事件标志清理并入。 */
   private stepTriggers(): void {
     for (const unit of this.stableUnits()) {
       if (!unit.alive) continue;
-      if (this.hasControl(unit)) continue; // 短路 / 晕眩：无法触发技能
+      if (this.hasControl(unit) || unit.states.has('silence')) continue; // 短路/晕眩/沉默：无法触发技能
       for (const t of unit.triggers) {
         if (this.triggerReady(unit, t)) this.fireTrigger(unit, t);
       }
-      // 块2b：本 tick 的击杀/受击事件已评估完，清标志（下个 tick 重新采集）。
+      // 块2b：本 tick 的击杀/受击事件已评估完，清标志（下个 tick 重新采集）。⑥8a 两个新事件标志同法。
       unit.hitSinceTrigger = false;
       unit.killedSinceTrigger = false;
+      unit.shieldBrokenSinceTrigger = false;
+      unit.attackLandedSinceTrigger = false;
     }
   }
 
@@ -404,9 +443,13 @@ class BattleRun {
       case 'hp_below':
         return !t.fired && unit.maxHp > 0 && unit.hp / unit.maxHp < (t.block.threshold ?? 0);
       case 'on_kill':
-        return unit.killedSinceTrigger; // 可重复：每个有击杀的 tick 触发一次
+        return !t.fired && unit.killedSinceTrigger; // 可重复（fired 仅在 once=true 时闩）：每个有击杀的 tick 触发一次
       case 'on_hit':
-        return unit.hitSinceTrigger; // 可重复：每个有受击的 tick 触发一次
+        return !t.fired && unit.hitSinceTrigger; // 可重复（同上）
+      case 'shield_broken':
+        return !t.fired && unit.shieldBrokenSinceTrigger; // ⑥8a：本舰护盾被打破（超级护罩=once）
+      case 'attack_landed':
+        return !t.fired && unit.attackLandedSinceTrigger; // ⑥8a：本舰普攻命中（回充插件）
       case 'ally_down':
         return !t.fired && this.deadCount[unit.side] >= (t.block.threshold ?? Infinity); // 一次性：己方阵亡到数
       default:
@@ -447,8 +490,22 @@ class BattleRun {
     }
   }
 
-  /** 8：清理死亡单位并记录 unit_down，释放占格。 */
+  /** 8：清理死亡单位并记录 unit_down，释放占格。⑥8a：先做"随源消亡"级联（无该类召唤物时零行为）。 */
   private stepCleanupDead(): void {
+    // ⑥8a 召唤生命周期：despawnWithSource=true 的存活召唤物，其召唤源已死则一并消亡（含链式·定点循环）。
+    let cascaded = true;
+    while (cascaded) {
+      cascaded = false;
+      for (const s of this.units) {
+        if (!s.alive || !s.despawnWithSource || s.summonedBy === null) continue;
+        const src = this.units.find((u) => u.unitId === s.summonedBy);
+        if (src && !src.alive) {
+          s.alive = false;
+          s.hp = 0;
+          cascaded = true;
+        }
+      }
+    }
     for (const unit of this.stableUnits()) {
       if (unit.alive || unit.downLogged) continue;
       unit.downLogged = true;
@@ -479,9 +536,13 @@ class BattleRun {
     if (t.block.on === 'cd') {
       const baseCd = t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity;
       t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + unit.affixes.skillHaste));
+    } else {
+      // 事件型（on_kill/on_hit/shield_broken/attack_landed）默认可重复：靠 stepTriggers 清事件标志重新武装；
+      // once=true 时闩死（⑥8a·超级护罩"每场1次"）。其余（battle_start/hp_below/ally_down）保持一次性。
+      const repeatable = t.block.on === 'on_kill' || t.block.on === 'on_hit'
+        || t.block.on === 'shield_broken' || t.block.on === 'attack_landed';
+      if (!repeatable || t.block.once) t.fired = true;
     }
-    else if (t.block.on !== 'on_kill' && t.block.on !== 'on_hit') t.fired = true; // 一次性：battle_start/hp_below/ally_down
-    // on_kill/on_hit 可重复触发：靠 stepTriggers 清事件标志重新武装，不 latch fired。
     if (!effect) return;
     this.castLogged(unit, effect, 'ultimate_cast');
     if (!unit.coreTriggered && unit.coreEffectRef !== 'none') {
@@ -499,10 +560,20 @@ class BattleRun {
    * 召出的单位由随后的 spawn_wave 体现。
    */
   private castLogged(caster: RtUnit, effect: S7BattleEffectParam, logType: S7AutoBattleLogType): void {
+    // ⑥8a cd_refund：缩短施法者自身全部 cd 型触发的下次可放时刻（effectPower=秒数·无目标·不掷随机）。
+    if (effect.effectType === 'cd_refund') {
+      for (const t of caster.triggers) {
+        if (t.block.on === 'cd' && Number.isFinite(t.nextFireAt)) {
+          t.nextFireAt = Math.max(this.time, t.nextFireAt - effect.effectPower);
+        }
+      }
+      this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType, targetIds: [caster.unitId] });
+      return;
+    }
     if (SUMMON_TYPES.has(effect.effectType)) {
       this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType });
       const budget: SummonBudget = { remaining: effect.maxTargets };
-      this.summonUnits(caster.side, effect.summonUnitRef, effect.maxTargets, budget, 'effect_summon');
+      this.summonUnits(caster.side, effect.summonUnitRef, effect.maxTargets, budget, 'effect_summon', caster, effect);
       return;
     }
     const targets = this.selectTargets(caster, effect.targetingTag, effect.maxTargets, undefined);
@@ -547,8 +618,9 @@ class BattleRun {
       this.resolveEffect(boss, eff, false, budget);
     }
     // phase.summonUnitRefs：按出现顺序分组后召唤，与召唤型 effectRefs 共用同一 phase 预算。
+    // ⑥8a：记录召唤源=Boss（无 effect=无限时/无随源消亡/无同源上限——阶段召唤行为不变）。
     for (const group of groupOrdered(phase.summonUnitRefs)) {
-      this.summonUnits('enemy', group.ref, group.count, budget, 'phase_summon');
+      this.summonUnits('enemy', group.ref, group.count, budget, 'phase_summon', boss);
     }
   }
 
@@ -556,9 +628,18 @@ class BattleRun {
 
   /** 结算一个效果：召唤型走召唤分支，其余按 targetingTag 选目标后施加。 */
   private resolveEffect(caster: RtUnit, effect: S7BattleEffectParam, isNormal: boolean, budget: SummonBudget | null): void {
+    if (effect.effectType === 'cd_refund') {
+      // ⑥8a：cd_refund 无目标、作用自身（phase 路径同语义）。
+      for (const t of caster.triggers) {
+        if (t.block.on === 'cd' && Number.isFinite(t.nextFireAt)) {
+          t.nextFireAt = Math.max(this.time, t.nextFireAt - effect.effectPower);
+        }
+      }
+      return;
+    }
     if (SUMMON_TYPES.has(effect.effectType)) {
       const b = budget ?? { remaining: effect.maxTargets };
-      this.summonUnits(caster.side, effect.summonUnitRef, effect.maxTargets, b, 'effect_summon');
+      this.summonUnits(caster.side, effect.summonUnitRef, effect.maxTargets, b, 'effect_summon', caster, effect);
       return;
     }
     const tag = isNormal ? caster.targetingTag : effect.targetingTag;
@@ -567,12 +648,19 @@ class BattleRun {
     this.applyEffectToTargets(caster, effect, targets);
   }
 
+  /** ⑥8a：stateTag 施加概率门——字段缺省或 ≥1 时必定施加且不掷随机（零回归）；仅 (0,1) 才消费 RNG。 */
+  private rollStateChance(effect: S7BattleEffectParam): boolean {
+    const c = effect.stateChance;
+    if (c === undefined || c >= 1) return true;
+    return this.rng.next() < c;
+  }
+
   private applyEffectToTargets(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
     const type = effect.effectType;
     if (DAMAGE_TYPES.has(type)) {
       for (const t of targets) this.dealDamage(caster, t, effect);
       if (effect.stateTag !== 'none') {
-        for (const t of targets) if (t.alive) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect.rowId);
+        for (const t of targets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
       }
       return;
     }
@@ -585,16 +673,49 @@ class BattleRun {
       return;
     }
     if (STATE_TYPES.has(type)) {
-      for (const t of targets) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect.rowId);
+      for (const t of targets) if (this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
     }
   }
 
   private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
     if (!target.alive) return;
-    let raw = this.effAttack(caster) * effect.effectPower * 100 / (100 + target.armor);
+    // ⑥8a 闪避（受方词条·警戒雷达）：仅 dodgeRate>0 才掷随机（零回归模式同暴击）；闪避=完全落空，
+    // 不掉血不破盾、不触发 on_hit / attack_landed，只记 amount=0 + dodged 标记的伤害日志。
+    if (target.affixes.dodgeRate > 0 && this.rng.next() < target.affixes.dodgeRate) {
+      this.pushLog('damage', {
+        actorId: caster.unitId,
+        side: caster.side,
+        targetIds: [target.unitId],
+        effectRef: effect.rowId,
+        effectType: effect.effectType,
+        amount: 0,
+        dodged: true,
+        hpAfter: target.hp,
+        shieldAfter: target.shield,
+      });
+      return;
+    }
+    // ⑥8a 破甲（施方词条·藏）：无视目标一部分防御；armorPen=0 时防御原值（零回归）。
+    const effArmor = target.armor * (1 - Math.min(1, Math.max(0, caster.affixes.armorPen)));
+    let raw = this.effAttack(caster) * effect.effectPower * 100 / (100 + effArmor);
     if (target.states.has('vulnerable')) raw *= VULNERABLE_MULT;
     // 块4b-1：定向加伤词条（施法者插件提供）。对 Boss 用 dmgVsBoss，对其余（小怪/非 Boss 目标）用 dmgVsSwarm。
     raw *= 1 + (target.isBoss ? caster.affixes.dmgVsBoss : caster.affixes.dmgVsSwarm);
+    // ⑥8a 条件伤害词条族（缺省 0=不变）：对残血(影斩首)/对高血(烬贪婪)/对带盾或高防(破障弹)。
+    if (caster.affixes.dmgVsLowHp > 0 && target.maxHp > 0 && target.hp / target.maxHp < LOWHP_THRESHOLD) {
+      raw *= 1 + caster.affixes.dmgVsLowHp;
+    }
+    if (caster.affixes.dmgVsHighHp > 0 && target.maxHp > 0 && target.hp / target.maxHp > HIGHHP_THRESHOLD) {
+      raw *= 1 + caster.affixes.dmgVsHighHp;
+    }
+    if (caster.affixes.dmgVsFortified > 0 && (target.shield > 0 || target.armor >= FORTIFIED_ARMOR_THRESHOLD)) {
+      raw *= 1 + caster.affixes.dmgVsFortified;
+    }
+    // ⑥8a 技能侧乘区（仅 ultimate/core 伤害吃·普攻不吃）：技能伤害%（增幅线圈）× 效果量%（增效插件）。
+    const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
+    if (isSkill) raw *= (1 + caster.affixes.skillDmgPct) * (1 + caster.affixes.effectAmp);
+    // ⑥8a 受方受伤修正（护盾发生器为负值=减伤；钳到 −90% 防归零）。
+    raw *= Math.max(0.1, 1 + target.affixes.dmgTakenPct);
     // 块4b-2：暴击词条。仅 critRate>0 才掷随机数（&& 短路）——保证无暴击单位不消费 RNG、不扰动既有并列裁决序列（零回归）。
     //   命中暴击 → 伤害 ×(1+暴击伤害)。暴击倍率/概率为占位语义，精确值第二块。
     const crit = caster.affixes.critRate > 0 && this.rng.next() < caster.affixes.critRate;
@@ -613,6 +734,7 @@ class BattleRun {
         const overflowShieldPts = shieldLoss - target.shield;
         target.shield = 0;
         target.states.delete('shield');
+        target.shieldBrokenSinceTrigger = true; // ⑥8a：护盾被伤害打破（自然到期不算）
         hpDmg = Math.max(0, Math.round(overflowShieldPts / shieldMult));
       }
     }
@@ -632,6 +754,23 @@ class BattleRun {
       hpAfter: target.hp,
       shieldAfter: target.shield,
     });
+    // ⑥8a 吸血（施方词条·嗜血弹）：按实际扣血量回吸；lifesteal=0 或未掉血时零行为零日志。
+    if (caster.affixes.lifesteal > 0 && hpDmg > 0 && caster.alive && caster.hp < caster.maxHp) {
+      const healed = Math.min(caster.maxHp - caster.hp, Math.max(1, Math.round(hpDmg * caster.affixes.lifesteal)));
+      caster.hp += healed;
+      this.pushLog('heal', {
+        actorId: caster.unitId,
+        side: caster.side,
+        targetIds: [caster.unitId],
+        effectRef: effect.rowId,
+        effectType: effect.effectType,
+        amount: healed,
+        hpAfter: caster.hp,
+        shieldAfter: caster.shield,
+      });
+    }
+    // ⑥8a：普攻命中事件（回充插件消费；闪避已在顶部 return、不计命中）。
+    if (effect.effectKind === 'normal_attack') caster.attackLandedSinceTrigger = true;
     // 块2b：采集事件型触发的事件（在 stepTriggers 评估、清标志）。
     if (!target.alive) {
       caster.killedSinceTrigger = true;
@@ -643,13 +782,18 @@ class BattleRun {
 
   private addShield(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
     if (!target.alive) return;
-    const amount = Math.max(
+    // ⑥8a 护盾强度词条（已知小旋钮①·晨曦S质变/苏回光护盾侧/磐石专属）+ 技能效果量词条（增效插件）：
+    // 全部缺省 0 → 与旧公式逐字节一致。
+    const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
+    const powerMult = (1 + caster.affixes.shieldPower) * (isSkill ? 1 + caster.affixes.effectAmp : 1);
+    const amount = Math.round(Math.max(
       Math.round(target.maxHp * SHIELD_HP_FRACTION),
       Math.round(caster.attack * effect.effectPower),
-    );
+    ) * powerMult);
     // 同名状态不叠层：护盾量取较大值，刷新持续时间。
     target.shield = Math.max(target.shield, amount);
-    const duration = effect.durationSec > 0 ? effect.durationSec : 1;
+    // ⑥8a 持久力场词条：技能型持续效果时长 ×(1+durationPct)（普攻护盾不吃·真源"技能的持续型效果"口径）。
+    const duration = (effect.durationSec > 0 ? effect.durationSec : 1) * (isSkill ? 1 + caster.affixes.durationPct : 1);
     target.states.set('shield', { tag: 'shield', expireAt: this.time + duration });
     this.pushLog('state_apply', {
       actorId: caster.unitId,
@@ -666,7 +810,14 @@ class BattleRun {
   private heal(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
     if (!target.alive) return;
     // 块4b-1：治疗强度词条（施法者插件提供）放大治疗量。
-    const amount = Math.round(caster.attack * effect.effectPower * (1 + caster.affixes.healPower));
+    // ⑥8a 追加（缺省 0=不变）：对残血友军治疗加成（苏回光）× 受治疗加成（治疗强化·受方）× 技能效果量（增效）。
+    let rawHeal = caster.attack * effect.effectPower * (1 + caster.affixes.healPower);
+    if (caster.affixes.healVsLowHp > 0 && target.maxHp > 0 && target.hp / target.maxHp < LOWHP_THRESHOLD) {
+      rawHeal *= 1 + caster.affixes.healVsLowHp;
+    }
+    if (effect.effectKind === 'ultimate' || effect.effectKind === 'core') rawHeal *= 1 + caster.affixes.effectAmp;
+    rawHeal *= 1 + target.affixes.healTakenPct;
+    const amount = Math.round(rawHeal);
     const before = target.hp;
     target.hp = Math.min(target.maxHp, target.hp + amount);
     const healed = target.hp - before;
@@ -682,39 +833,66 @@ class BattleRun {
     });
   }
 
-  private applyState(caster: RtUnit, target: RtUnit, tag: S7BattleStateTag, durationSec: number, effectRef: string): void {
+  private applyState(caster: RtUnit, target: RtUnit, tag: S7BattleStateTag, durationSec: number, effect: S7BattleEffectParam): void {
     if (tag === 'none' || !target.alive) return;
+    // ⑥8a 免控状态（守护铃/山岳不动）：持有 control_immune 期间硬控（短路/晕眩/沉默）施加直接落空。
+    if (HARD_CONTROL_TAGS.includes(tag) && target.states.has('control_immune')) return;
     let duration = durationSec > 0 ? durationSec : 1;
-    // 块4b-2：控制抗性词条（受控方插件提供）只作用于硬控（CONTROL_TAGS）→ 缩短控制时长；抗性钳到 [0,1]。
-    if (CONTROL_TAGS.includes(tag)) {
+    // 块4b-2：控制抗性词条（受控方插件提供）只作用于硬控 → 缩短控制时长；抗性钳到 [0,1]。
+    // ⑥8a：硬控集合从 CONTROL_TAGS（短路/晕眩）扩为 HARD_CONTROL_TAGS（+沉默·真源硬控口径）——
+    // 旧配置不存在沉默状态，controlResist 对短路/晕眩的行为不变。
+    if (HARD_CONTROL_TAGS.includes(tag)) {
       const resist = Math.min(1, Math.max(0, target.affixes.controlResist));
       duration *= 1 - resist;
     }
+    // ⑥8a 持久力场词条：技能型状态时长 ×(1+durationPct)（缺省 0=不变）。真源明写"护盾/控制/buff"
+    // 均延长——含硬控（控制被延长的对抗面=controlResist/免控/Boss 抗性，平衡走数值不改机制语义）。
+    const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
+    if (isSkill) duration *= 1 + caster.affixes.durationPct;
     // 同名状态不叠层，只刷新持续时间。
     target.states.set(tag, { tag, expireAt: this.time + duration });
     this.pushLog('state_apply', {
       actorId: caster.unitId,
       side: caster.side,
       targetIds: [target.unitId],
-      effectRef,
+      effectRef: effect.rowId,
       stateTag: tag,
     });
   }
 
   // ===== 召唤 =====
 
-  /** 召唤 count 个 summonUnitRef 到 side 阵营空格，受 budget 与空格双重约束；找不到空格就少召，不报错不重试。 */
-  private summonUnits(side: S7AutoBattleSide, summonUnitRef: string, count: number, budget: SummonBudget, note: string): void {
+  /** 召唤 count 个 summonUnitRef 到 side 阵营空格，受 budget 与空格双重约束；找不到空格就少召，不报错不重试。
+   *  ⑥8a 召唤生命周期包（source/effect 可选·全部字段缺省=旧行为）：记录召唤源、限时、随源消亡、同源场上上限。 */
+  private summonUnits(
+    side: S7AutoBattleSide, summonUnitRef: string, count: number, budget: SummonBudget, note: string,
+    source?: RtUnit, effect?: S7BattleEffectParam,
+  ): void {
     if (summonUnitRef === 'none') return;
     const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', summonUnitRef);
     if (!stat) return;
+    // 同源场上上限（effect.summonSourceCap + 召唤者 summonCapBonus 词条）：仅配置了 cap 才启用。
+    const sourceCap = effect?.summonSourceCap;
+    const capTotal = sourceCap !== undefined && source
+      ? sourceCap + Math.floor(source.affixes.summonCapBonus)
+      : Infinity;
+    let aliveFromSource = 0;
+    if (capTotal !== Infinity && source) {
+      for (const u of this.units) if (u.alive && u.summonedBy === source.unitId) aliveFromSource += 1;
+    }
+    const summonMeta = {
+      sourceId: source ? source.unitId : null,
+      expireSec: effect?.summonExpireSec,
+      despawnWithSource: effect?.despawnWithSource === true,
+    };
     const created: RtUnit[] = [];
     for (let i = 0; i < count; i += 1) {
       if (budget.remaining <= 0) break;
+      if (aliveFromSource + created.length >= capTotal) break; // ⑥8a：同源上限到顶少召（同"满场少召"语义）
       const cell = this.findEmptyCell(side, stat.sizeRows, stat.sizeCols);
       if (!cell) break; // 满场少召，不无限重试
       const slot = side === 'player' ? `p${cell.row}c${cell.col}` : `r${cell.row}c${cell.col}`;
-      created.push(this.spawnUnit(stat, side, cell.row, cell.col, slot));
+      created.push(this.spawnUnit(stat, side, cell.row, cell.col, slot, null, summonMeta));
       budget.remaining -= 1;
     }
     if (created.length > 0) {
@@ -745,11 +923,69 @@ class BattleRun {
         return sortBy(candidates, (u) => [u.states.has('mark') ? 0 : 1, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
       case 'all_enemies':
         return sortBy(candidates, (u) => [this.dist(caster, u), u.unitId]).slice(0, maxTargets);
+      // ===== ⑥8a 驾驶员能力目标族（纯排序新枚举·旧配置不引用=行为不变）=====
+      case 'lowest_hp_enemy': // 炎：集火血量最少
+        return sortBy(candidates, (u) => [u.hp, u.unitId]).slice(0, maxTargets);
+      case 'highest_hp_enemy': // 烬：打最肥
+        return sortBy(candidates, (u) => [-u.hp, u.unitId]).slice(0, maxTargets);
+      case 'highest_attack_enemy': // 翎：掐最高攻
+        return sortBy(candidates, (u) => [-u.attack, u.unitId]).slice(0, maxTargets);
+      case 'highest_armor_enemy': // 藏：啃最高防
+        return sortBy(candidates, (u) => [-u.armor, u.unitId]).slice(0, maxTargets);
+      case 'key_unit_first': // 蛰/空：治疗/召唤源优先（按属性行 roleTag 判）
+        return sortBy(candidates, (u) => [KEY_ROLE_TAGS.has(u.roleTag) ? 0 : 1, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
+      case 'lowhp_then_nearest': // 燎：残血(<30%)优先补刀，无残血打最前
+        return sortBy(candidates, (u) => [u.maxHp > 0 && u.hp / u.maxHp < LOWHP_THRESHOLD ? 0 : 1, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
+      case 'debuffed_first': // 蔽：已被控/带减益的优先
+        return sortBy(candidates, (u) => [DEBUFF_TAGS.some((d) => u.states.has(d)) ? 0 : 1, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
+      case 'first_column_first': // 骁：严格头排（敌侧 col 越小越靠前）
+        return sortBy(candidates, (u) => [u.col, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
+      case 'lock_until_dead': { // 源：锁定一个打到死再换（锁存于本单位·死后换最近）
+        let locked = candidates.find((u) => u.unitId === caster.lockedTargetId);
+        if (!locked) {
+          locked = this.pickNearest(caster, candidates, 1)[0];
+          caster.lockedTargetId = locked ? locked.unitId : null;
+        }
+        if (!locked) return [];
+        const rest = sortBy(candidates.filter((u) => u !== locked), (u) => [this.dist(caster, u), u.unitId]);
+        return [locked, ...rest].slice(0, maxTargets);
+      }
+      case 'cross_area': // ⑥8a 空间AoE：主目标+十字4格（小范围）
+        return this.orderArea(caster, candidates, maxTargets, 'cross');
+      case 'block_area': // ⑥8a 空间AoE：主目标+3×3（一片）
+        return this.orderArea(caster, candidates, maxTargets, 'block');
       case 'single_target':
       case 'nearest_random_tie':
       default:
         return this.pickNearest(caster, candidates, maxTargets);
     }
+  }
+
+  /** ⑥8a 空间AoE：主目标=最近规则选 1，随后收其锚点格周围（十字4格/3×3）footprint 相交的单位。
+   *  多格单位以锚点格为区域中心（v0 口径·记数值细表）；区域内按曼哈顿距主目标近→远、unitId 稳定排序。 */
+  private orderArea(caster: RtUnit, candidates: RtUnit[], maxTargets: number, kind: 'cross' | 'block'): RtUnit[] {
+    const primary = this.pickNearest(caster, candidates, 1)[0];
+    if (!primary) return [];
+    const pr = primary.row;
+    const pc = primary.col;
+    const cells: Array<[number, number]> = kind === 'cross'
+      ? [[pr, pc], [pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]]
+      : [
+        [pr - 1, pc - 1], [pr - 1, pc], [pr - 1, pc + 1],
+        [pr, pc - 1], [pr, pc], [pr, pc + 1],
+        [pr + 1, pc - 1], [pr + 1, pc], [pr + 1, pc + 1],
+      ];
+    const inArea = (u: RtUnit): boolean => {
+      for (const [r, c] of cells) {
+        if (r >= u.row && r < u.row + u.sizeRows && c >= u.col && c < u.col + u.sizeCols) return true;
+      }
+      return false;
+    };
+    const others = sortBy(
+      candidates.filter((u) => u !== primary && inArea(u)),
+      (u) => [Math.abs(u.row - pr) + Math.abs(u.col - pc), u.unitId],
+    );
+    return [primary, ...others].slice(0, maxTargets);
   }
 
   /** 最近目标；同距离时标记优先，仍并列则用 seeded RNG 取一个。逐个选满 maxTargets。 */
@@ -831,7 +1067,11 @@ class BattleRun {
 
   // ===== 单位 / 占格 =====
 
-  private spawnUnit(stat: S7BattleUnitStatParam, side: S7AutoBattleSide, row: number, col: number, slotRef: string, derived: S7DerivedUnit | null = null): RtUnit {
+  private spawnUnit(
+    stat: S7BattleUnitStatParam, side: S7AutoBattleSide, row: number, col: number, slotRef: string,
+    derived: S7DerivedUnit | null = null,
+    summonMeta?: { sourceId: string | null; expireSec?: number; despawnWithSource: boolean },
+  ): RtUnit {
     const cv = derived ?? stat; // 战斗数值：有装配结果用装配后的，否则用基线 stat（无装配时零行为变化）。
     const unitId = side === 'player' ? `player_${slotRef}` : `enemy_${pad4(this.enemySeq++)}`;
     const triggers: RtTrigger[] = [];
@@ -839,9 +1079,22 @@ class BattleRun {
     if (cv.ultimateEffectRef !== 'none' && stat.ultimateCdSec > 0) {
       triggers.push({ block: { kind: 'trigger', on: 'cd', cdSec: stat.ultimateCdSec, effectRef: cv.ultimateEffectRef }, nextFireAt: 0, fired: false });
     }
-    // 装配层提供的额外触发（驾驶员/插件/星核内容，块3/4/5；当前通常为空）。
+    // 装配层提供的额外触发（驾驶员/插件/星核内容，块3/4/5）。⑥8a：cd 型吃 initialCdSec（缺省 0=开局即放不变）。
     if (derived) {
-      for (const tb of derived.triggers) triggers.push({ block: tb, nextFireAt: 0, fired: false });
+      for (const tb of derived.triggers) {
+        triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false });
+      }
+    }
+    // ⑥8a：敌/Boss 属性行的基线词条可选字段（controlResist/baseCritRate/baseCritDmg）——
+    // 无装配时注入；字段全缺省则沿用冻结共享 ZERO_AFFIXES（零新对象·零行为变化）。
+    let affixes: Readonly<Record<S7AffixKey, number>> = derived ? derived.affixes : ZERO_AFFIXES;
+    if (!derived && ((stat.controlResist ?? 0) !== 0 || (stat.baseCritRate ?? 0) !== 0 || (stat.baseCritDmg ?? 0) !== 0)) {
+      affixes = Object.freeze({
+        ...ZERO_AFFIXES,
+        controlResist: stat.controlResist ?? 0,
+        critRate: stat.baseCritRate ?? 0,
+        critDmg: stat.baseCritDmg ?? 0,
+      });
     }
     const unit: RtUnit = {
       unitId,
@@ -872,9 +1125,18 @@ class BattleRun {
       triggers,
       hitSinceTrigger: false,
       killedSinceTrigger: false,
+      shieldBrokenSinceTrigger: false,
+      attackLandedSinceTrigger: false,
       shield: 0,
       states: new Map(),
-      affixes: derived ? derived.affixes : ZERO_AFFIXES,
+      affixes,
+      roleTag: stat.roleTag,
+      lockedTargetId: null,
+      summonedBy: summonMeta ? summonMeta.sourceId : null,
+      summonExpireAt: summonMeta && summonMeta.expireSec !== undefined && summonMeta.expireSec > 0
+        ? this.time + summonMeta.expireSec
+        : null,
+      despawnWithSource: summonMeta ? summonMeta.despawnWithSource : false,
     };
     this.occupy(unit);
     this.units.push(unit);

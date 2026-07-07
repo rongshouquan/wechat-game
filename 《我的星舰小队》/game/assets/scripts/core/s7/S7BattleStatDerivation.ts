@@ -57,6 +57,10 @@ const STAT_KEYS: S7StatKey[] = [
 
 const AFFIX_KEYS: S7AffixKey[] = [
   'critRate', 'critDmg', 'shieldBreak', 'skillHaste', 'healPower', 'controlResist', 'dmgVsSwarm', 'dmgVsBoss',
+  // ⑥8a 受控并行加法（缺省 0=行为不变），语义见 S7BattleEffectBlock 注释
+  'dmgVsLowHp', 'dmgVsHighHp', 'dmgVsFortified', 'armorPen', 'lifesteal', 'dodgeRate',
+  'dmgTakenPct', 'healTakenPct', 'shieldPower', 'healVsLowHp', 'skillDmgPct', 'effectAmp',
+  'durationPct', 'summonCapBonus',
 ];
 
 function round6(x: number): number {

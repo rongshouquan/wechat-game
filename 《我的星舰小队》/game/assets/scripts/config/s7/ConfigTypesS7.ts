@@ -632,9 +632,17 @@ export interface S7GrowthBandParam {
 // 敌方战场固定 3 行 x 7 列（r0c0..r2c6）；玩家固定 3x3（首版 playerSlotPolicy=five_ship_3x3_default）。
 
 export type S7BattleUnitTargetType = 'ship' | 'enemy' | 'boss';
-/** 单位寻敌倾向；首版至少支持 nearest_random_tie。 */
+/** 单位寻敌倾向；首版至少支持 nearest_random_tie。
+ *  任务单⑥8a 受控并行加法（2026-07-07）：新增驾驶员能力目标族 + 空间AoE 族——
+ *  纯 selectTargets 分发新枚举值，既有配置不引用则引擎行为逐字节不变。 */
 export type S7BattleUnitTargetingTag =
-  | 'nearest_random_tie' | 'backline_first' | 'lowest_hp_ally' | 'column_line' | 'marked_first';
+  | 'nearest_random_tie' | 'backline_first' | 'lowest_hp_ally' | 'column_line' | 'marked_first'
+  // ⑥8a 敌方目标族（驾驶员能力）：最低血(炎)/最高血(烬)/最高攻(翎)/最高防(藏)/关键单位(蛰·空)/
+  // 残血优先回退(燎)/锁定到死(源)/严格首列(骁)/带减益优先(蔽)
+  | 'lowest_hp_enemy' | 'highest_hp_enemy' | 'highest_attack_enemy' | 'highest_armor_enemy'
+  | 'key_unit_first' | 'lowhp_then_nearest' | 'lock_until_dead' | 'first_column_first' | 'debuffed_first'
+  // ⑥8a 空间AoE族：主目标+十字4格(小范围) / 主目标+3×3(一片)
+  | 'cross_area' | 'block_area';
 
 /** 战斗单位最小属性与占格（星舰 / 敌人 / Boss）。不含 pressure 自动换算。 */
 export interface S7BattleUnitStatParam {
@@ -650,6 +658,11 @@ export interface S7BattleUnitStatParam {
    * 非 ship 行（enemy/boss/prop）不填或忽略。
    */
   positionType?: string;
+  /** ⑥8a 可选字段（缺省=0=行为不变）：敌/Boss 行的基线定向词条注入——Boss 控制抗性（0~1 缩短硬控时长）、
+   *  基线暴击（真源 §0 全体单位基础暴击 5%/150%）。玩家舰的词条走装配层，不用这三个字段。 */
+  controlResist?: number;
+  baseCritRate?: number;
+  baseCritDmg?: number;
   maxHp: number;
   attack: number;
   armor: number;
@@ -672,12 +685,17 @@ export interface S7BattleUnitStatParam {
 }
 
 export type S7BattleEffectKind = 'normal_attack' | 'ultimate' | 'core' | 'state';
+// ⑥8a 新增 effectType（受控并行加法·既有配置不引用则行为不变）：
+//   silence=沉默状态（挡技能不挡普攻）· control_immune=免控状态（硬控免疫·守护铃/山岳不动）
+//   cd_refund=缩短施法者自身 CD 型触发（燎连斩/空净场·effectPower=秒数）
 export type S7BattleEffectType =
   | 'basic_damage' | 'clear_barrage' | 'line_pierce' | 'backline_strike' | 'burst_nuke'
   | 'shield_bubble' | 'repair_burst' | 'short_circuit_pulse' | 'summon_drone'
-  | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk';
+  | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
+  | 'silence' | 'control_immune' | 'cd_refund';
 export type S7BattleStateTag =
-  | 'none' | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk';
+  | 'none' | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
+  | 'silence' | 'control_immune';
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -696,6 +714,14 @@ export interface S7BattleEffectParam {
   stateTag: S7BattleStateTag;
   /** 无召唤写 none，否则指向 battle_unit_stat_param.rowId。 */
   summonUnitRef: string;
+  /** ⑥8a 可选：stateTag 的施加概率 (0,1]；缺省=必定施加（不掷随机·零回归）。霹雳连锁闪电"每跳概率短路"用。 */
+  stateChance?: number;
+  /** ⑥8a 可选（召唤生命周期包·真源 §0 召唤物规则）：召唤物存在秒数，到期消亡；缺省=不限时（旧行为）。 */
+  summonExpireSec?: number;
+  /** ⑥8a 可选：true=召唤源死亡时本效果召出的单位一并消亡；缺省 false（旧行为）。 */
+  despawnWithSource?: boolean;
+  /** ⑥8a 可选：同一召唤源场上存活召唤物上限（+召唤者 summonCapBonus 词条）；缺省=不限（旧行为）。 */
+  summonSourceCap?: number;
   note: string;
 }
 

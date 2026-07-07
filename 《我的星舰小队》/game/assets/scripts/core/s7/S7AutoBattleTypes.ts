@@ -95,6 +95,8 @@ export interface S7AutoBattleLogEntry {
   amount?: number;
   /** 块4b-2：本次伤害是否暴击（暴击词条命中时 true；非伤害事件省略）。 */
   crit?: boolean;
+  /** ⑥8a：本次攻击被闪避（dodgeRate 词条命中时 true·amount=0；非闪避事件省略=旧日志形状不变）。 */
+  dodged?: boolean;
   hpAfter?: number;
   shieldAfter?: number;
   energyAfter?: number;

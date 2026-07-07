@@ -79,14 +79,24 @@ const TIER_BATTLE_TABLES: S7ConfigTableName[] = [
 ];
 // prop=场景道具单位（如委托护航运输船·第2.5块）：不属于任何实体真源表，unitRef 恒为 'none'。
 const S7_BATTLE_UNIT_TARGET_TYPES = ['ship', 'enemy', 'boss', 'prop'];
-const S7_BATTLE_UNIT_TARGETING_TAGS = ['nearest_random_tie', 'backline_first', 'lowest_hp_ally', 'column_line', 'marked_first'];
+// ⑥8a 受控并行加法（2026-07-07）：目标族/空间AoE/沉默/免控/cd_refund 新枚举登记（与 .mjs 校验器双份同步改）。
+const S7_BATTLE_UNIT_TARGETING_TAGS = [
+  'nearest_random_tie', 'backline_first', 'lowest_hp_ally', 'column_line', 'marked_first',
+  'lowest_hp_enemy', 'highest_hp_enemy', 'highest_attack_enemy', 'highest_armor_enemy',
+  'key_unit_first', 'lowhp_then_nearest', 'lock_until_dead', 'first_column_first', 'debuffed_first',
+  'cross_area', 'block_area',
+];
 const S7_BATTLE_EFFECT_KINDS = ['normal_attack', 'ultimate', 'core', 'state'];
 const S7_BATTLE_EFFECT_TYPES = [
   'basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke',
   'shield_bubble', 'repair_burst', 'short_circuit_pulse', 'summon_drone',
   'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
+  'silence', 'control_immune', 'cd_refund',
 ];
-const S7_BATTLE_STATE_TAGS = ['none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk'];
+const S7_BATTLE_STATE_TAGS = [
+  'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
+  'silence', 'control_immune',
+];
 const S7_BOSS_PHASE_TAGS = ['start', 'mid', 'final'];
 const S7_BOSS_PHASE_TRIGGER_TYPES = ['battle_start', 'hp_pct_below', 'time_elapsed_sec'];
 // 敌方战场锚点格 r0c0..r{rows-1}c{cols-1}（当前 5 行 x 7 列；尺寸真源见 core/s7/S7BattleGrid.ts）。
@@ -1283,6 +1293,19 @@ function validateBattle(
     }
     const ucd = num(row.ultimateCdSec);
     if (ucd === null || ucd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'ultimateCdSec 必须 >= 0（无大招写 0；块2 大招触发冷却）' });
+    // ⑥8a 可选字段（缺席=不校·存在则查范围）：敌/Boss 行基线词条注入。
+    if (row.controlResist !== undefined) {
+      const cr = num(row.controlResist);
+      if (cr === null || cr < 0 || cr > 1) errors.push({ table: 'battle_unit_stat_param', id, message: 'controlResist（可选）必须在 [0,1]' });
+    }
+    if (row.baseCritRate !== undefined) {
+      const bcr = num(row.baseCritRate);
+      if (bcr === null || bcr < 0 || bcr > 1) errors.push({ table: 'battle_unit_stat_param', id, message: 'baseCritRate（可选）必须在 [0,1]' });
+    }
+    if (row.baseCritDmg !== undefined) {
+      const bcd = num(row.baseCritDmg);
+      if (bcd === null || bcd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'baseCritDmg（可选）必须 >= 0' });
+    }
   }
 
   // ---- battle_effect_param ----
@@ -1304,6 +1327,26 @@ function validateBattle(
     if (summon !== 'none') {
       if (typeof summon !== 'string' || !unitIds.has(summon)) errors.push({ table: 'battle_effect_param', id, message: `summonUnitRef "${String(summon)}" 必须为 none 或有效 battle_unit_stat_param.rowId` });
       if (dur === null || dur <= 0) errors.push({ table: 'battle_effect_param', id, message: '召唤效果 durationSec 必须为正数' });
+    }
+    // ⑥8a 可选字段（缺席=不校·存在则查范围）：状态施加概率 / 召唤生命周期包。
+    if (row.stateChance !== undefined) {
+      const scv = num(row.stateChance);
+      if (scv === null || scv <= 0 || scv > 1) errors.push({ table: 'battle_effect_param', id, message: 'stateChance（可选）必须在 (0,1]' });
+      else if (stTag === 'none') errors.push({ table: 'battle_effect_param', id, message: 'stateChance（可选）要求 stateTag ≠ none' });
+    }
+    if (row.summonExpireSec !== undefined) {
+      const ses = num(row.summonExpireSec);
+      if (ses === null || ses <= 0) errors.push({ table: 'battle_effect_param', id, message: 'summonExpireSec（可选）必须为正数' });
+      else if (summon === 'none') errors.push({ table: 'battle_effect_param', id, message: 'summonExpireSec（可选）要求 summonUnitRef ≠ none' });
+    }
+    if (row.despawnWithSource !== undefined) {
+      if (typeof row.despawnWithSource !== 'boolean') errors.push({ table: 'battle_effect_param', id, message: 'despawnWithSource（可选）必须为布尔' });
+      else if (summon === 'none') errors.push({ table: 'battle_effect_param', id, message: 'despawnWithSource（可选）要求 summonUnitRef ≠ none' });
+    }
+    if (row.summonSourceCap !== undefined) {
+      const ssc = num(row.summonSourceCap);
+      if (ssc === null || !Number.isInteger(ssc) || ssc < 1) errors.push({ table: 'battle_effect_param', id, message: 'summonSourceCap（可选）必须为 >= 1 的整数' });
+      else if (summon === 'none') errors.push({ table: 'battle_effect_param', id, message: 'summonSourceCap（可选）要求 summonUnitRef ≠ none' });
     }
   }
 
