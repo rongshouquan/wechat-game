@@ -1215,7 +1215,9 @@ function validateGrowth(
     }
   }
 
-  checkGrowthBandCoverage(errors, byTarget.ship, 1, 40, 'ship');
+  // ⑥第一段（细表§12.1）：取消建筑卡等级后舰上限=100，ship 战斗成长段铺满 1-100（41-100 占位持平作废）；
+  // pilot 成长不走 band 属性（驾驶加成通道），band 表仍留 1-40 占位、随天赋接线批对齐。
+  checkGrowthBandCoverage(errors, byTarget.ship, 1, 100, 'ship');
   checkGrowthBandCoverage(errors, byTarget.pilot, 1, 40, 'pilot');
 }
 

@@ -416,7 +416,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield_leader",
-    "maxHp": 7200,
+    "maxHp": 7000,
     "attack": 105,
     "armor": 30,
     "attackIntervalSec": 1.3,

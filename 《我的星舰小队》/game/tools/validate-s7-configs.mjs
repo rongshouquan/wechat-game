@@ -322,7 +322,9 @@ for (const row of tables.anti_arbitrage_check) {
     if (s[s.length - 1].to !== maxLv) fail('growth_band_param', label, `${label} 成长段终点必须为 ${maxLv}`);
     for (let i = 1; i < s.length; i += 1) if (s[i].from !== s[i - 1].to + 1) fail('growth_band_param', label, `${label} 成长段不连续`);
   };
-  cover(byTarget.ship, 1, 40, 'ship');
+  // ⑥第一段（细表§12.1）：取消建筑卡等级后舰上限=100，ship 战斗成长段铺满 1-100（41-100 占位持平作废）；
+  // pilot 成长不走 band 属性（驾驶加成通道），band 表仍留 1-40 占位、随天赋接线批对齐。
+  cover(byTarget.ship, 1, 100, 'ship');
   cover(byTarget.pilot, 1, 40, 'pilot');
 }
 

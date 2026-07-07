@@ -22,8 +22,8 @@
         "slotRef": "r2c0"
       }
     ],
-    "enemyHpPct": 11,
-    "enemyAtkPct": 1.5,
+    "enemyHpPct": 5,
+    "enemyAtkPct": 0.75,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -113,8 +113,8 @@
         "slotRef": "r2c3"
       }
     ],
-    "enemyHpPct": 26,
-    "enemyAtkPct": 0.8,
+    "enemyHpPct": 16,
+    "enemyAtkPct": 0.5,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -208,8 +208,8 @@
         "slotRef": "r3c1"
       }
     ],
-    "enemyHpPct": 40,
-    "enemyAtkPct": 2.2,
+    "enemyHpPct": 25,
+    "enemyAtkPct": 1.4,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -303,8 +303,8 @@
         "slotRef": "r3c1"
       }
     ],
-    "enemyHpPct": 34,
-    "enemyAtkPct": 2.2,
+    "enemyHpPct": 21,
+    "enemyAtkPct": 1.4,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -394,8 +394,8 @@
         "slotRef": "r2c0"
       }
     ],
-    "enemyHpPct": 13,
-    "enemyAtkPct": 2,
+    "enemyHpPct": 8,
+    "enemyAtkPct": 1,
     "candidatePacks": [
       {
         "packId": "pk1",

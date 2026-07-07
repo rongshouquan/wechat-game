@@ -57,7 +57,7 @@ function bandLevel(b: S7GrowthBandParam, level: number): number {
 describe('s7 growth_band_param - landing & validation', () => {
   it('loads through the S7 config runtime layer', async () => {
     const rt = await S7ConfigRuntime.load(fsReader);
-    expect(rt.getAll('growth_band_param').length).toBe(8); // 4 ship + 4 pilot（插件不分等级§5.3、星核砍强化§5.4 → 均无成长段）
+    expect(rt.getAll('growth_band_param').length).toBe(9); // ⑥第一段：5 ship（+41-100 段·细表§12.1）+ 4 pilot（插件不分等级§5.3、星核砍强化§5.4 → 均无成长段）
     expect(rt.getById('growth_band_param', 'ship_growth_lv_1_10')).toBeDefined();
   });
 
@@ -65,13 +65,15 @@ describe('s7 growth_band_param - landing & validation', () => {
     expect(validateS7ConfigBundle(loadBundle())).toEqual([]);
   });
 
-  it('覆盖 ship/pilot Lv1-40；插件/星核均无成长段（§5.3/§5.4）', () => {
+  it('覆盖 ship Lv1-100 / pilot Lv1-40；插件/星核均无成长段（§5.3/§5.4）', () => {
+    // ⑥第一段重定基（细表§12.1）：取消建筑卡等级后舰上限=100，ship 战斗成长段铺满 1-100（旧 41-100 占位持平作废）；
+    // pilot 成长走驾驶加成通道不走 band 属性，band 表留 1-40 占位随天赋接线批对齐。
     const all = rows();
     const cover = (tt: string) =>
       all.filter((r) => r.targetType === tt && r.curveType === 'band_linear').sort((a, b2) => a.fromIndex - b2.fromIndex);
     const ship = cover('ship');
     expect(ship[0].fromIndex).toBe(1);
-    expect(ship[ship.length - 1].toIndex).toBe(40);
+    expect(ship[ship.length - 1].toIndex).toBe(100);
     const pilot = cover('pilot');
     expect(pilot[0].fromIndex).toBe(1);
     expect(pilot[pilot.length - 1].toIndex).toBe(40);
@@ -80,11 +82,15 @@ describe('s7 growth_band_param - landing & validation', () => {
   });
 });
 
-describe('s7 growth_band_param - frozen §3.2-3.5 endpoints & derivation parity', () => {
-  it('ship endpoints match §3.2 (Lv1=120 / Lv10=300 / Lv40=2200)', () => {
+describe('s7 growth_band_param - ⑥§12.1 修订曲线端点（旧 03-04 §3.2 冻结值作废·数值真源铁律=Codex 旧配置自由改）', () => {
+  it('ship endpoints match 细表§12.1 v2（Lv1=120 / Lv10=196 / Lv40=286 / Lv100=420=×3.5/轴·前陡后缓）', () => {
+    // 曲线设计 v2：L1-10 +7%/级（教学期"升级破墙"窗口来源——+6% 实测 lv1↔lv4 窗口不存在·记档）
+    // → L11-20 +3.5% → L21-40 +2% → L41-100 收敛至 420；
+    // L100 强度积 12.25× vs 战力刻度 9×（温和超线性 1.36=碾压档三来源之一·细表§9）。
     expect(bandLevel(band('ship', 'ship_lv_1_10'), 1)).toBe(120);
-    expect(bandLevel(band('ship', 'ship_lv_1_10'), 10)).toBe(300);
-    expect(bandLevel(band('ship', 'ship_lv_31_40'), 40)).toBe(2200);
+    expect(bandLevel(band('ship', 'ship_lv_1_10'), 10)).toBe(196);
+    expect(bandLevel(band('ship', 'ship_lv_31_40'), 40)).toBe(286);
+    expect(bandLevel(band('ship', 'ship_lv_41_100'), 100)).toBe(420);
   });
 
   it('pilot endpoints match §3.3 (Lv1=40 / Lv40=1100)', () => {
