@@ -70,17 +70,31 @@ const SUMMON_TYPES = new Set<string>(['summon', 'summon_drone']);
 const STATE_TYPES = new Set<string>([
   'short_circuit', 'short_circuit_pulse', 'stun', 'shield_break', 'mark', 'vulnerable', 'berserk',
   'silence', 'control_immune', // ⑥8a：沉默(挡技能不挡普攻) / 免控(硬控免疫·守护铃/山岳不动)
+  'apply_state', // ⑦机制批①：通用状态施加（stateTag 选态）
+]);
+/** ⑦机制批① M1 限时修正状态 tag 全集（幅度=效果行 stateAmount·方向在 tag 名里）。
+ *  旧配置不出现这些 tag=引擎行为逐字节不变；参数消费点见 stateModSum/effAttack/effInterval/dealDamage/fireTrigger。 */
+const MOD_STATE_TAGS = new Set<S7BattleStateTag>([
+  'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
+  'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
 ]);
 /** 控制状态：期间不能普攻、不能放大招、不能主动触发。（沉默不在此列：只挡技能、普攻照打） */
 const CONTROL_TAGS: S7BattleStateTag[] = ['short_circuit', 'stun'];
 /** ⑥8a 硬控全集（真源硬控=短路/沉默 + 遗留 stun）：控制抗性缩时与 control_immune 免疫按此集合判。 */
 const HARD_CONTROL_TAGS: S7BattleStateTag[] = ['short_circuit', 'stun', 'silence'];
-/** 状态到期的固定遍历顺序，保证日志稳定。（⑥8a 新 tag 追加尾部：旧配置不出现新 tag=顺序不变） */
+/** 状态到期的固定遍历顺序，保证日志稳定。（⑥8a/⑦机制批① 新 tag 追加尾部：旧配置不出现新 tag=顺序不变） */
 const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
   'silence', 'control_immune',
+  'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
+  'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
 ];
-const FRIENDLY_TAGS = new Set<string>(['self_team', 'lowest_hp_ally']);
+const FRIENDLY_TAGS = new Set<string>([
+  'self_team', 'lowest_hp_ally',
+  // ⑦机制批① 友方目标族 + 自身区域族（施加者阵营侧选目标）
+  'highest_attack_ally', 'no_buff_ally_first', 'most_debuffed_ally', 'controlled_ally_first',
+  'self_cross_area', 'self_block_area',
+]);
 
 // ===== ⑥8a 通用常量（全局常量表 v0 消费点·数值细表战斗篇 §2）=====
 /** 残血阈值（真源 §0：残血=血量<30%；dmgVsLowHp/healVsLowHp/lowhp_then_nearest 同锚）。 */
@@ -91,8 +105,17 @@ const HIGHHP_THRESHOLD = 0.50;
 const FORTIFIED_ARMOR_THRESHOLD = 40;
 /** key_unit_first 目标族的"关键单位"roleTag 集（蛰/空：治疗/召唤源优先）。 */
 const KEY_ROLE_TAGS = new Set<string>(['healer', 'summoner', 'support', 'summon_source']);
-/** debuffed_first 目标族的"带减益"判定集。 */
-const DEBUFF_TAGS: S7BattleStateTag[] = ['shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'silence'];
+/** debuffed_first / most_debuffed_ally 目标族的"带减益"判定集。（⑦机制批① 新减益 tag 追加尾部：
+ *  旧配置不出现新 tag=判定结果不变） */
+const DEBUFF_TAGS: S7BattleStateTag[] = [
+  'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'silence',
+  'atk_down', 'atk_speed_down', 'armor_down', 'dmg_taken_up',
+];
+/** ⑦机制批① no_buff_ally_first 目标族的"带增益"判定集（沛：优先照顾还没增益/护盾的友军）。 */
+const BUFF_TAGS: S7BattleStateTag[] = [
+  'shield', 'control_immune', 'berserk',
+  'atk_up', 'atk_speed_up', 'dmg_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
+];
 
 /** 无装配单位（敌人/召唤物/基线舰）的默认定向词条：全 0（冻结共享，战斗中只读不改）。 */
 const ZERO_AFFIXES: Readonly<Record<S7AffixKey, number>> = Object.freeze({
@@ -107,6 +130,17 @@ const ZERO_AFFIXES: Readonly<Record<S7AffixKey, number>> = Object.freeze({
 interface RtStateInst {
   tag: S7BattleStateTag;
   expireAt: number;
+  // ===== ⑦机制批① 框架状态专用可选字段（旧 tag 不设=行为不变）=====
+  /** M1：每层修正幅度（正数·方向在 tag 名）；总幅度 = amountPerStack × stacks。 */
+  amountPerStack?: number;
+  /** M3：当前层数（框架态默认 1）。 */
+  stacks?: number;
+  /** M3：层数上限（≥2 才可叠；缺省 1=同名只刷新）。 */
+  maxStacks?: number;
+  /** M3：时限到期动作——clear=整态消失（缺省）/ decay_1=降 1 层并按 durationSec 重计时。 */
+  expireAction?: 'clear' | 'decay_1';
+  /** M3 decay_1 重计时用：本态单次施加的持续秒数。 */
+  durationSec?: number;
 }
 
 /** 运行时触发项：块1 的触发积木 + 运行时计时/闩锁状态（块2）。 */
@@ -151,6 +185,8 @@ interface RtUnit {
   /** ⑥8a 事件标志（同 2b 模式·评估后清）：本舰护盾被打破 / 本舰普攻命中。 */
   shieldBrokenSinceTrigger: boolean;
   attackLandedSinceTrigger: boolean;
+  /** ⑦机制批①：本 tick 击杀名单的 roleTag（on_kill 触发的击杀对象过滤·蛰「斩链」；评估后清）。 */
+  killedRolesSinceTrigger: string[];
   shield: number;
   states: Map<S7BattleStateTag, RtStateInst>;
   /** 定向词条（插件等装配产出；块4b 引擎按需消费）。无装配单位为全 0（ZERO_AFFIXES）。 */
@@ -431,6 +467,7 @@ class BattleRun {
       unit.killedSinceTrigger = false;
       unit.shieldBrokenSinceTrigger = false;
       unit.attackLandedSinceTrigger = false;
+      if (unit.killedRolesSinceTrigger.length > 0) unit.killedRolesSinceTrigger = [];
     }
   }
 
@@ -442,8 +479,13 @@ class BattleRun {
         return !t.fired;
       case 'hp_below':
         return !t.fired && unit.maxHp > 0 && unit.hp / unit.maxHp < (t.block.threshold ?? 0);
-      case 'on_kill':
-        return !t.fired && unit.killedSinceTrigger; // 可重复（fired 仅在 once=true 时闩）：每个有击杀的 tick 触发一次
+      case 'on_kill': {
+        if (t.fired || !unit.killedSinceTrigger) return false; // 可重复（fired 仅在 once=true 时闩）：每个有击杀的 tick 触发一次
+        // ⑦机制批①：击杀对象 roleTag 过滤（缺省不过滤=旧行为）。本 tick 击杀名单里有命中集合的才触发。
+        const filter = t.block.onKillRoleTags;
+        if (!filter || filter.length === 0) return true;
+        return unit.killedRolesSinceTrigger.some((r) => filter.includes(r));
+      }
       case 'on_hit':
         return !t.fired && unit.hitSinceTrigger; // 可重复（同上）
       case 'shield_broken':
@@ -535,7 +577,9 @@ class BattleRun {
     // 块4b-2：技能急速词条（本单位插件提供）缩短触发型技能 CD：effCd = cdSec/(1+skillHaste)。skillHaste=0 时不变（零回归）。
     if (t.block.on === 'cd') {
       const baseCd = t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity;
-      t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + unit.affixes.skillHaste));
+      // ⑦机制批①：技能急速 buff 状态（时光糖「缩短技能CD」）并入急速分母；无状态时和 0=表达式值逐字节不变。
+      const haste = unit.affixes.skillHaste + this.stateModSum(unit, 'skill_haste_up');
+      t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + haste));
     } else {
       // 事件型（on_kill/on_hit/shield_broken/attack_landed）默认可重复：靠 stepTriggers 清事件标志重新武装；
       // once=true 时闩死（⑥8a·超级护罩"每场1次"）。其余（battle_start/hp_below/ally_down）保持一次性。
@@ -662,19 +706,33 @@ class BattleRun {
       if (effect.stateTag !== 'none') {
         for (const t of targets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
       }
-      return;
-    }
-    if (SHIELD_TYPES.has(type)) {
+    } else if (SHIELD_TYPES.has(type)) {
       for (const t of targets) this.addShield(caster, t, effect);
-      return;
-    }
-    if (HEAL_TYPES.has(type)) {
+      this.applyFrameworkRider(caster, effect, targets);
+    } else if (HEAL_TYPES.has(type)) {
       for (const t of targets) this.heal(caster, t, effect);
-      return;
-    }
-    if (STATE_TYPES.has(type)) {
+      this.applyFrameworkRider(caster, effect, targets);
+    } else if (STATE_TYPES.has(type)) {
       for (const t of targets) if (this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
     }
+    // ⑦机制批① 一发多态（山岳「不动」免控+减伤 / 时光糖 加攻速+技能急速 / 侵蚀 破防+虚弱）：
+    // 追加状态行按数组序对同一目标集施加；被引用行自身的 alsoApplyStateRefs 不再展开（禁链式）。
+    // 字段缺省（全部旧配置）不进此分支=零行为变化。
+    const extraRefs = effect.alsoApplyStateRefs;
+    if (extraRefs && extraRefs.length > 0) {
+      for (const ref of extraRefs) {
+        const row = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', ref);
+        if (!row || row.stateTag === 'none') continue;
+        for (const t of targets) if (t.alive && this.rollStateChance(row)) this.applyState(caster, t, row.stateTag, row.durationSec, row);
+      }
+    }
+  }
+
+  /** ⑦机制批①：护盾/治疗行的框架状态搭载（甘霖「再生」/晨曦Lv100 普盾附减伤）。
+   *  只对框架新 tag 生效——旧 tag（如护盾行自描述的 stateTag='shield'）维持描述性不消费=零回归。 */
+  private applyFrameworkRider(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
+    if (!MOD_STATE_TAGS.has(effect.stateTag)) return;
+    for (const t of targets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
   }
 
   private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
@@ -695,8 +753,27 @@ class BattleRun {
       });
       return;
     }
+    // ⑦机制批① 免伤（dmg_taken_down 总幅度 ≥1）：整发落空——不掉血不破盾、不触发 on_hit/attack_landed，
+    // 只记 amount=0 + immune 标记（同 dodge 的"新内容才出现"口径；置于 dodge 之后保证既有 RNG 消费序不变）。
+    const dmgReduction = Math.min(1, Math.max(0, this.stateModSum(target, 'dmg_taken_down')));
+    if (dmgReduction >= 1) {
+      this.pushLog('damage', {
+        actorId: caster.unitId,
+        side: caster.side,
+        targetIds: [target.unitId],
+        effectRef: effect.rowId,
+        effectType: effect.effectType,
+        amount: 0,
+        immune: true,
+        hpAfter: target.hp,
+        shieldAfter: target.shield,
+      });
+      return;
+    }
     // ⑥8a 破甲（施方词条·藏）：无视目标一部分防御；armorPen=0 时防御原值（零回归）。
-    const effArmor = target.armor * (1 - Math.min(1, Math.max(0, caster.affixes.armorPen)));
+    // ⑦机制批① 破防（armor_down 状态·受方）：再乘 (1−幅度)；无状态时乘 1=逐字节不变。
+    const armorCut = Math.min(1, Math.max(0, this.stateModSum(target, 'armor_down')));
+    const effArmor = target.armor * (1 - Math.min(1, Math.max(0, caster.affixes.armorPen))) * (1 - armorCut);
     let raw = this.effAttack(caster) * effect.effectPower * 100 / (100 + effArmor);
     if (target.states.has('vulnerable')) raw *= VULNERABLE_MULT;
     // 块4b-1：定向加伤词条（施法者插件提供）。对 Boss 用 dmgVsBoss，对其余（小怪/非 Boss 目标）用 dmgVsSwarm。
@@ -711,15 +788,24 @@ class BattleRun {
     if (caster.affixes.dmgVsFortified > 0 && (target.shield > 0 || target.armor >= FORTIFIED_ARMOR_THRESHOLD)) {
       raw *= 1 + caster.affixes.dmgVsFortified;
     }
+    // ⑦机制批① 增伤状态（dmg_up·施方输出乘区，与加攻分立）：无状态时和 0 → 不乘（逐字节不变）。
+    const dmgUp = this.stateModSum(caster, 'dmg_up');
+    if (dmgUp !== 0) raw *= 1 + dmgUp;
     // ⑥8a 技能侧乘区（仅 ultimate/core 伤害吃·普攻不吃）：技能伤害%（增幅线圈）× 效果量%（增效插件）。
     const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
     if (isSkill) raw *= (1 + caster.affixes.skillDmgPct) * (1 + caster.affixes.effectAmp);
     // ⑥8a 受方受伤修正（护盾发生器为负值=减伤；钳到 −90% 防归零）。
     raw *= Math.max(0.1, 1 + target.affixes.dmgTakenPct);
+    // ⑦机制批① 受方状态乘区：易伤参数版（dmg_taken_up·可叠）× 减伤%（dmg_taken_down·<1 的部分；≥1 已走上方免伤路径）。
+    const takenUp = this.stateModSum(target, 'dmg_taken_up');
+    if (takenUp !== 0) raw *= 1 + takenUp;
+    if (dmgReduction > 0) raw *= 1 - dmgReduction;
     // 块4b-2：暴击词条。仅 critRate>0 才掷随机数（&& 短路）——保证无暴击单位不消费 RNG、不扰动既有并列裁决序列（零回归）。
     //   命中暴击 → 伤害 ×(1+暴击伤害)。暴击倍率/概率为占位语义，精确值第二块。
-    const crit = caster.affixes.critRate > 0 && this.rng.next() < caster.affixes.critRate;
-    if (crit) raw *= 1 + caster.affixes.critDmg;
+    // ⑦机制批①：暴击率/暴伤 buff 状态并入判定与倍率（无状态时和 0=判定阈值与倍率逐字节不变）。
+    const critRate = caster.affixes.critRate + this.stateModSum(caster, 'crit_rate_up');
+    const crit = critRate > 0 && this.rng.next() < critRate;
+    if (crit) raw *= 1 + caster.affixes.critDmg + this.stateModSum(caster, 'crit_dmg_up');
     const dmg = Math.max(1, Math.round(raw));
 
     let hpDmg = dmg;
@@ -774,6 +860,7 @@ class BattleRun {
     // 块2b：采集事件型触发的事件（在 stepTriggers 评估、清标志）。
     if (!target.alive) {
       caster.killedSinceTrigger = true;
+      caster.killedRolesSinceTrigger.push(target.roleTag); // ⑦机制批①：击杀对象过滤用（内部采集·无行为分支）
       this.deadCount[target.side] += 1;
     } else {
       target.hitSinceTrigger = true;
@@ -849,6 +936,32 @@ class BattleRun {
     // 均延长——含硬控（控制被延长的对抗面=controlResist/免控/Boss 抗性，平衡走数值不改机制语义）。
     const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
     if (isSkill) duration *= 1 + caster.affixes.durationPct;
+    // ⑦机制批① M1/M3 框架状态分支（旧 tag 一律走下方原路径=逐字节不变）。
+    // 纸面规则（本批钉死·记数值细表机制批①日志章）：同 tag 重复施加=可叠(+1层至上限)+时长刷新，
+    // 不可叠(上限1)=只刷新；每层幅度/上限/到期动作以最新一次施加为准。
+    if (MOD_STATE_TAGS.has(tag)) {
+      const maxStacks = Math.max(1, Math.floor(effect.stateMaxStacks ?? 1));
+      const prev = target.states.get(tag);
+      const stacks = prev ? Math.min(maxStacks, (prev.stacks ?? 1) + 1) : 1;
+      target.states.set(tag, {
+        tag,
+        expireAt: this.time + duration,
+        amountPerStack: effect.stateAmount ?? 0,
+        stacks,
+        maxStacks,
+        expireAction: effect.stateExpireAction ?? 'clear',
+        durationSec: duration,
+      });
+      this.pushLog('state_apply', {
+        actorId: caster.unitId,
+        side: caster.side,
+        targetIds: [target.unitId],
+        effectRef: effect.rowId,
+        stateTag: tag,
+        ...(stacks > 1 ? { stacks } : {}), // 仅叠层时带字段：单层施加日志保持既有形状
+      });
+      return;
+    }
     // 同名状态不叠层，只刷新持续时间。
     target.states.set(tag, { tag, expireAt: this.time + duration });
     this.pushLog('state_apply', {
@@ -954,6 +1067,22 @@ class BattleRun {
         return this.orderArea(caster, candidates, maxTargets, 'cross');
       case 'block_area': // ⑥8a 空间AoE：主目标+3×3（一片）
         return this.orderArea(caster, candidates, maxTargets, 'block');
+      // ===== ⑦机制批① 友方目标族（8a 如实交回件·随机制批补齐）=====
+      case 'highest_attack_ally': // 澈：增益喂输出最高的友军
+        return sortBy(candidates, (u) => [-u.attack, u.unitId]).slice(0, maxTargets);
+      case 'no_buff_ally_first': // 沛：还没增益/护盾的友军优先
+        return sortBy(candidates, (u) => [BUFF_TAGS.some((b) => u.states.has(b)) ? 1 : 0, u.unitId]).slice(0, maxTargets);
+      case 'most_debuffed_ally': // 霖：身上减益最多的友军优先
+        return sortBy(candidates, (u) => [-DEBUFF_TAGS.filter((d) => u.states.has(d)).length, u.unitId]).slice(0, maxTargets);
+      case 'controlled_ally_first': // 沧（8a 简化口径）：被控/带减益友军优先，其次血少者
+        return sortBy(candidates, (u) => [
+          this.hasControl(u) || DEBUFF_TAGS.some((d) => u.states.has(d)) ? 0 : 1, u.hp, u.unitId,
+        ]).slice(0, maxTargets);
+      // ===== ⑦机制批① 自身区域族（磐石「张盾」自己+相邻4格 / 船长「鼓动」周围）=====
+      case 'self_cross_area':
+        return this.orderSelfArea(caster, candidates, maxTargets, 'cross');
+      case 'self_block_area':
+        return this.orderSelfArea(caster, candidates, maxTargets, 'block');
       case 'single_target':
       case 'nearest_random_tie':
       default:
@@ -986,6 +1115,32 @@ class BattleRun {
       (u) => [Math.abs(u.row - pr) + Math.abs(u.col - pc), u.unitId],
     );
     return [primary, ...others].slice(0, maxTargets);
+  }
+
+  /** ⑦机制批① 自身区域：以施加者锚点格为中心（十字4格/3×3），收 footprint 相交的己方单位；
+   *  施加者永远第一位，其余按曼哈顿距中心近→远、unitId 稳定排序（与 orderArea 同口径）。 */
+  private orderSelfArea(caster: RtUnit, candidates: RtUnit[], maxTargets: number, kind: 'cross' | 'block'): RtUnit[] {
+    const pr = caster.row;
+    const pc = caster.col;
+    const cells: Array<[number, number]> = kind === 'cross'
+      ? [[pr, pc], [pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]]
+      : [
+        [pr - 1, pc - 1], [pr - 1, pc], [pr - 1, pc + 1],
+        [pr, pc - 1], [pr, pc], [pr, pc + 1],
+        [pr + 1, pc - 1], [pr + 1, pc], [pr + 1, pc + 1],
+      ];
+    const inArea = (u: RtUnit): boolean => {
+      for (const [r, c] of cells) {
+        if (r >= u.row && r < u.row + u.sizeRows && c >= u.col && c < u.col + u.sizeCols) return true;
+      }
+      return false;
+    };
+    const others = sortBy(
+      candidates.filter((u) => u !== caster && inArea(u)),
+      (u) => [Math.abs(u.row - pr) + Math.abs(u.col - pc), u.unitId],
+    );
+    const ordered = candidates.includes(caster) ? [caster, ...others] : others;
+    return ordered.slice(0, maxTargets);
   }
 
   /** 最近目标；同距离时标记优先，仍并列则用 seeded RNG 取一个。逐个选满 maxTargets。 */
@@ -1127,6 +1282,7 @@ class BattleRun {
       killedSinceTrigger: false,
       shieldBrokenSinceTrigger: false,
       attackLandedSinceTrigger: false,
+      killedRolesSinceTrigger: [],
       shield: 0,
       states: new Map(),
       affixes,
@@ -1198,12 +1354,27 @@ class BattleRun {
     return false;
   }
 
-  private effAttack(unit: RtUnit): number {
-    return unit.states.has('berserk') ? unit.attack * BERSERK_ATTACK_MULT : unit.attack;
+  /** ⑦机制批①：读取一个 M1 框架状态的当前总幅度（每层幅度×层数）；无该状态或旧 tag 未带参数=0。 */
+  private stateModSum(unit: RtUnit, tag: S7BattleStateTag): number {
+    const st = unit.states.get(tag);
+    if (!st || st.amountPerStack === undefined) return 0;
+    return st.amountPerStack * (st.stacks ?? 1);
   }
 
+  /** 生效攻击：berserk 特例保持原码原样（×1.25），M1 加攻/虚弱在其外乘法合成；
+   *  和为 0 时直接走原路径返回（浮点逐字节不变）。加攻/虚弱只进伤害口径，治疗/护盾量走基础攻（与 berserk 现状同口径）。 */
+  private effAttack(unit: RtUnit): number {
+    const base = unit.states.has('berserk') ? unit.attack * BERSERK_ATTACK_MULT : unit.attack;
+    const pct = this.stateModSum(unit, 'atk_up') - this.stateModSum(unit, 'atk_down');
+    return pct === 0 ? base : base * Math.max(0, 1 + pct);
+  }
+
+  /** 生效普攻间隔：berserk 特例保持原码原样（×0.8），M1 加攻速/减速在其外按 间隔/(1+攻速和) 合成；
+   *  分母钳到 ≥0.1（极限减速也最多把间隔拉长 10 倍）；和为 0 时走原路径（浮点逐字节不变）。 */
   private effInterval(unit: RtUnit): number {
-    return unit.states.has('berserk') ? unit.attackIntervalSec * BERSERK_INTERVAL_MULT : unit.attackIntervalSec;
+    const base = unit.states.has('berserk') ? unit.attackIntervalSec * BERSERK_INTERVAL_MULT : unit.attackIntervalSec;
+    const spd = this.stateModSum(unit, 'atk_speed_up') - this.stateModSum(unit, 'atk_speed_down');
+    return spd === 0 ? base : base / Math.max(0.1, 1 + spd);
   }
 
 

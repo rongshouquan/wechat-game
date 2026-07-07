@@ -97,6 +97,10 @@ export interface S7AutoBattleLogEntry {
   crit?: boolean;
   /** ⑥8a：本次攻击被闪避（dodgeRate 词条命中时 true·amount=0；非闪避事件省略=旧日志形状不变）。 */
   dodged?: boolean;
+  /** ⑦机制批①：本次攻击被免伤整发挡下（dmg_taken_down 总幅度≥1 时 true·amount=0；非免伤事件省略）。 */
+  immune?: boolean;
+  /** ⑦机制批①：state_apply 的当前叠层数（仅 >1 时携带；单层施加日志保持既有形状）。 */
+  stacks?: number;
   hpAfter?: number;
   shieldAfter?: number;
   energyAfter?: number;

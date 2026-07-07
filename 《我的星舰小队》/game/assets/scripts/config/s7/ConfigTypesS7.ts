@@ -642,7 +642,11 @@ export type S7BattleUnitTargetingTag =
   | 'lowest_hp_enemy' | 'highest_hp_enemy' | 'highest_attack_enemy' | 'highest_armor_enemy'
   | 'key_unit_first' | 'lowhp_then_nearest' | 'lock_until_dead' | 'first_column_first' | 'debuffed_first'
   // ⑥8a 空间AoE族：主目标+十字4格(小范围) / 主目标+3×3(一片)
-  | 'cross_area' | 'block_area';
+  | 'cross_area' | 'block_area'
+  // ⑦机制批① 友方目标族（8a 如实交回件·随机制批补）：输出最高(澈)/无增益优先(沛)/减益最多(霖)/被控或带减益优先(沧简化口径)
+  | 'highest_attack_ally' | 'no_buff_ally_first' | 'most_debuffed_ally' | 'controlled_ally_first'
+  // ⑦机制批① 自身区域族（施加者为中心·己方侧）：自己+十字4格(磐石张盾/船长鼓动) / 自己+3×3(岩专属扩圈)
+  | 'self_cross_area' | 'self_block_area';
 
 /** 战斗单位最小属性与占格（星舰 / 敌人 / Boss）。不含 pressure 自动换算。 */
 export interface S7BattleUnitStatParam {
@@ -688,14 +692,24 @@ export type S7BattleEffectKind = 'normal_attack' | 'ultimate' | 'core' | 'state'
 // ⑥8a 新增 effectType（受控并行加法·既有配置不引用则行为不变）：
 //   silence=沉默状态（挡技能不挡普攻）· control_immune=免控状态（硬控免疫·守护铃/山岳不动）
 //   cd_refund=缩短施法者自身 CD 型触发（燎连斩/空净场·effectPower=秒数）
+// ⑦机制批① 新增：apply_state=通用状态施加（限时修正/周期状态一律走它+stateTag 选态；旧逐态 effectType 保留不动）
 export type S7BattleEffectType =
   | 'basic_damage' | 'clear_barrage' | 'line_pierce' | 'backline_strike' | 'burst_nuke'
   | 'shield_bubble' | 'repair_burst' | 'short_circuit_pulse' | 'summon_drone'
   | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
-  | 'silence' | 'control_immune' | 'cd_refund';
+  | 'silence' | 'control_immune' | 'cd_refund'
+  | 'apply_state';
+// ⑦机制批① M1 限时属性修正状态（幅度=效果行 stateAmount·时长=durationSec·全配置驱动；
+// 方向编码在 tag 里，stateAmount 一律填正数）：
+//   atk_up/atk_down=加攻/虚弱 · atk_speed_up/atk_speed_down=加攻速/减速 · armor_down=破防
+//   dmg_up=增伤(输出乘区) · dmg_taken_up=易伤参数版(淬针叠层用·与旧 vulnerable 并存)
+//   dmg_taken_down=减伤%（stateAmount≥1 即免伤=零伤路径）
+//   crit_rate_up/crit_dmg_up=暴击率/暴伤 buff（号角A/翎Lv100）· skill_haste_up=技能急速 buff（时光糖）
 export type S7BattleStateTag =
   | 'none' | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
-  | 'silence' | 'control_immune';
+  | 'silence' | 'control_immune'
+  | 'atk_up' | 'atk_down' | 'atk_speed_up' | 'atk_speed_down' | 'armor_down'
+  | 'dmg_up' | 'dmg_taken_up' | 'dmg_taken_down' | 'crit_rate_up' | 'crit_dmg_up' | 'skill_haste_up';
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -722,6 +736,22 @@ export interface S7BattleEffectParam {
   despawnWithSource?: boolean;
   /** ⑥8a 可选：同一召唤源场上存活召唤物上限（+召唤者 summonCapBonus 词条）；缺省=不限（旧行为）。 */
   summonSourceCap?: number;
+  /** ⑦机制批① 可选（M1 限时修正状态专用）：每层修正幅度（正数·方向在 tag）；仅新修正 tag 消费，旧 tag 忽略。 */
+  stateAmount?: number;
+  /** ⑦机制批① 可选（M3）：同名状态可叠层数上限（≥2 才叠；缺省=1 不叠只刷新）。 */
+  stateMaxStacks?: number;
+  /** ⑦机制批① 可选（M3）：时限到期动作——clear=整态消失（缺省）/ decay_1=降 1 层并重计时（炎 Lv100 口径）。 */
+  stateExpireAction?: 'clear' | 'decay_1';
+  /** ⑦机制批① 可选（M2 周期状态 burn/regen）：结算间隔秒（缺省 1s）。 */
+  stateTickIntervalSec?: number;
+  /** ⑦机制批① 可选（M2）：每次结算量的三个加法通道（施加瞬间快照·至少配一个）：
+   *  atkPct=施加者基础攻×系数 / maxHpPct=目标最大血×系数 / flat=固定值。 */
+  stateTickAtkPct?: number;
+  stateTickMaxHpPct?: number;
+  stateTickFlat?: number;
+  /** ⑦机制批① 可选：同批对相同目标追加施加的状态效果行（一发多态·山岳「不动」/时光糖/侵蚀）。
+   *  仅允许指向状态施加行（stateTag≠none），被引用行自身的 alsoApplyStateRefs 不再展开（禁链式）。 */
+  alsoApplyStateRefs?: string[];
   note: string;
 }
 

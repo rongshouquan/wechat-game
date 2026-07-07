@@ -87,6 +87,9 @@ export interface S7TriggerBlock {
   threshold?: number;
   /** true=可重复的事件型触发（on_kill/on_hit/shield_broken/attack_landed）改为每场一次。 */
   once?: boolean;
+  /** ⑦机制批① 可选（on='on_kill' 专用）：击杀对象 roleTag 过滤——本 tick 击杀名单与集合有交集才触发
+   *  （蛰「斩链」杀治疗/召唤源、空「净场」杀召唤物；缺省=任意击杀都触发·旧行为不变）。 */
+  onKillRoleTags?: string[];
   /** 触发后释放的动作，指向 battle_effect_param.rowId。 */
   effectRef: string;
   source?: string;

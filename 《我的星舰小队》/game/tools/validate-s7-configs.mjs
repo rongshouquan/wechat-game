@@ -28,7 +28,8 @@ function seq(prefix, from, to) {
 
 const TIER_A = {
   battle_template_config: { idField: 'templateId', count: 10, ids: seq('t', 1, 10) },
-  ship_config: { idField: 'shipId', count: 12, ids: seq('shp', 1, 12) },
+  // ⑥第一段 20 舰落地（2026-07-07·细表§12）：默认盘 12→20（与 ConfigValidatorS7.S7_EXPECTED_COUNT 双份同步）。
+  ship_config: { idField: 'shipId', count: 20, ids: seq('shp', 1, 20) },
   pilot_config: { idField: 'pilotId', count: 10, ids: seq('pil', 1, 10) },
   core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
   plugin_config: { idField: 'pluginId', count: 18, ids: seq('plg', 1, 18) },
@@ -893,6 +894,10 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'lowest_hp_enemy', 'highest_hp_enemy', 'highest_attack_enemy', 'highest_armor_enemy',
     'key_unit_first', 'lowhp_then_nearest', 'lock_until_dead', 'first_column_first', 'debuffed_first',
     'cross_area', 'block_area',
+    // ⑦机制批①：友方目标族（澈/沛/霖/沧）+ 自身区域族（张盾/鼓动）；
+    // self_team=引擎既有友方 tag 白名单漏项补录（8a 语义 a：支援舰行级必须可配友方 tag）
+    'highest_attack_ally', 'no_buff_ally_first', 'most_debuffed_ally', 'controlled_ally_first',
+    'self_cross_area', 'self_block_area', 'self_team',
   ];
   const BATTLE_EFFECT_KINDS = ['normal_attack', 'ultimate', 'core', 'state'];
   const BATTLE_EFFECT_TYPES = [
@@ -900,10 +905,24 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'shield_bubble', 'repair_burst', 'short_circuit_pulse', 'summon_drone',
     'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
     'silence', 'control_immune', 'cd_refund',
+    'apply_state', // ⑦机制批①：通用状态施加
+  ];
+  // ⑦机制批① M1 限时修正状态 tag（stateAmount 必填的框架 tag 集·镜像 ConfigValidatorS7.ts）。
+  const MOD_STATE_TAGS = [
+    'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
+    'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
   ];
   const BATTLE_STATE_TAGS = [
     'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
     'silence', 'control_immune',
+    ...MOD_STATE_TAGS,
+  ];
+  // ⑦机制批①：可作为 alsoApplyStateRefs 宿主的 effectType（伤害/护盾/治疗/状态族）。
+  const ALSO_APPLY_HOST_TYPES = [
+    'basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke',
+    'shield', 'shield_bubble', 'repair_burst',
+    'short_circuit', 'short_circuit_pulse', 'stun', 'shield_break', 'mark', 'vulnerable', 'berserk',
+    'silence', 'control_immune', 'apply_state',
   ];
   const BOSS_PHASE_TAGS = ['start', 'mid', 'final'];
   const BOSS_PHASE_TRIGGER_TYPES = ['battle_start', 'hp_pct_below', 'time_elapsed_sec'];
@@ -932,6 +951,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
   const unitMap = new Map(unitRows.map((r) => [r.rowId, r]));
   const unitIdSet = new Set(unitMap.keys());
   const effectIdSet = new Set(effectRows.map((r) => r.rowId));
+  const effectMap = new Map(effectRows.map((r) => [r.rowId, r]));
   const spawnMap = new Map(spawnRows.map((r) => [r.rowId, r]));
   const spawnIdSet = new Set(spawnMap.keys());
   const phaseMap = new Map(phaseRows.map((r) => [r.rowId, r]));
@@ -1003,6 +1023,39 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     if (row.despawnWithSource !== undefined) {
       if (typeof row.despawnWithSource !== 'boolean') fail('battle_effect_param', id, 'despawnWithSource（可选）必须为布尔');
       else if (row.summonUnitRef === 'none') fail('battle_effect_param', id, 'despawnWithSource（可选）要求 summonUnitRef ≠ none');
+    }
+    // ⑦机制批① 字段组（缺席=不校·镜像 ConfigValidatorS7.ts 同名规则）。
+    const isModTag = MOD_STATE_TAGS.includes(row.stateTag);
+    if (row.effectType === 'apply_state' && row.stateTag === 'none') fail('battle_effect_param', id, 'apply_state 效果要求 stateTag ≠ none');
+    if (isModTag) {
+      const amt = num(row.stateAmount);
+      if (amt === null || !(amt > 0) || !Number.isFinite(amt)) fail('battle_effect_param', id, `修正状态 ${row.stateTag} 要求 stateAmount 为正数（方向在 tag 名里）`);
+    } else if (row.stateAmount !== undefined) {
+      fail('battle_effect_param', id, 'stateAmount（可选）仅允许配给 M1 修正状态 tag');
+    }
+    if (row.stateMaxStacks !== undefined) {
+      const sms = num(row.stateMaxStacks);
+      if (sms === null || !Number.isInteger(sms) || sms < 1) fail('battle_effect_param', id, 'stateMaxStacks（可选）必须为 >= 1 的整数');
+      else if (!isModTag) fail('battle_effect_param', id, 'stateMaxStacks（可选）仅允许配给框架状态 tag');
+    }
+    if (row.stateExpireAction !== undefined) {
+      if (row.stateExpireAction !== 'clear' && row.stateExpireAction !== 'decay_1') fail('battle_effect_param', id, 'stateExpireAction（可选）必须为 clear | decay_1');
+      else if (!isModTag) fail('battle_effect_param', id, 'stateExpireAction（可选）仅允许配给框架状态 tag');
+    }
+    if (row.alsoApplyStateRefs !== undefined) {
+      const refs = row.alsoApplyStateRefs;
+      if (!Array.isArray(refs) || refs.length === 0 || refs.some((r) => typeof r !== 'string')) {
+        fail('battle_effect_param', id, 'alsoApplyStateRefs（可选）必须为非空字符串数组');
+      } else {
+        if (!ALSO_APPLY_HOST_TYPES.includes(row.effectType)) fail('battle_effect_param', id, 'alsoApplyStateRefs（可选）仅允许配在伤害/护盾/治疗/状态类效果行上');
+        for (const ref of refs) {
+          const sub = effectMap.get(ref);
+          if (!sub) { fail('battle_effect_param', id, `alsoApplyStateRefs 引用的 "${ref}" 不存在于 battle_effect_param`); continue; }
+          if (ref === id) fail('battle_effect_param', id, 'alsoApplyStateRefs 不允许引用自身');
+          if (sub.stateTag === 'none') fail('battle_effect_param', id, `alsoApplyStateRefs 引用的 "${ref}" 必须 stateTag ≠ none`);
+          if (sub.alsoApplyStateRefs !== undefined) fail('battle_effect_param', id, `alsoApplyStateRefs 引用的 "${ref}" 自身不得再带 alsoApplyStateRefs（禁链式）`);
+        }
+      }
     }
     if (row.summonSourceCap !== undefined) {
       const ssc = num(row.summonSourceCap);
