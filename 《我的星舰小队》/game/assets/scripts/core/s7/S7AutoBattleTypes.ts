@@ -101,6 +101,8 @@ export interface S7AutoBattleLogEntry {
   immune?: boolean;
   /** ⑦机制批①：state_apply 的当前叠层数（仅 >1 时携带；单层施加日志保持既有形状）。 */
   stacks?: number;
+  /** ⑦机制批①：周期结算产生的伤害/治疗（burn/regen tick 时 true；非周期事件省略）。 */
+  periodic?: boolean;
   hpAfter?: number;
   shieldAfter?: number;
   energyAfter?: number;

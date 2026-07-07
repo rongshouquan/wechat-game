@@ -88,6 +88,8 @@ const S7_BATTLE_UNIT_TARGETING_TAGS = [
   // ⑦机制批①：友方目标族（澈/沛/霖/沧）+ 自身区域族（张盾/鼓动）
   'highest_attack_ally', 'no_buff_ally_first', 'most_debuffed_ally', 'controlled_ally_first',
   'self_cross_area', 'self_block_area',
+  // ⑥第一段：春风群奶普攻=行级友方全体（引擎 selectTargets 既有分支）
+  'self_team',
 ];
 const S7_BATTLE_EFFECT_KINDS = ['normal_attack', 'ultimate', 'core', 'state'];
 const S7_BATTLE_EFFECT_TYPES = [
@@ -102,11 +104,22 @@ const S7_MOD_STATE_TAGS = [
   'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
   'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
 ];
+// ⑦机制批① M2 周期结算状态 tag（stateTick* 三通道至少配一个 >0）。
+const S7_PERIODIC_STATE_TAGS = ['burn', 'regen'];
 const S7_BATTLE_STATE_TAGS = [
   'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
   'silence', 'control_immune',
   ...S7_MOD_STATE_TAGS,
+  ...S7_PERIODIC_STATE_TAGS,
 ];
+// ⑦机制批①：触发积木 on 取值（extraTriggerBlocks 单位行通道校验用·与 S7TriggerBlock 对齐）。
+const S7_TRIGGER_ON_VALUES = [
+  'battle_start', 'cd', 'on_kill', 'hp_below', 'on_hit', 'ally_down', 'passive',
+  'shield_broken', 'attack_landed', 'skill_cast',
+];
+// ⑦机制批① M3 叠层规则枚举（unit 行 stackRules 校验用·与 S7StackRuleParam 对齐）。
+const S7_STACK_RULE_ON_VALUES = ['attack_landed', 'was_hit', 'was_hit_by_skill', 'kill', 'per_second', 'hp_lost_decile'];
+const S7_STACK_RULE_STAT_VALUES = ['atkPct', 'atkSpeedPct', 'dmgUpPct', 'dmgTakenDownPct', 'dmgVsLockedPct'];
 /** ⑦机制批①：可作为 alsoApplyStateRefs 宿主的 effectType（伤害/护盾/治疗/状态族；召唤与 cd_refund 不结算追加状态）。 */
 const S7_ALSO_APPLY_HOST_TYPES = [
   'basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke',
@@ -1325,6 +1338,49 @@ function validateBattle(
       const bcd = num(row.baseCritDmg);
       if (bcd === null || bcd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'baseCritDmg（可选）必须 >= 0' });
     }
+    // ⑦机制批① 单位行可选通道（缺席=不校）：敌方事件触发 extraTriggerBlocks / 叠层规则 stackRules。
+    if (row.extraTriggerBlocks !== undefined) {
+      if (!Array.isArray(row.extraTriggerBlocks) || row.extraTriggerBlocks.length === 0) {
+        errors.push({ table: 'battle_unit_stat_param', id, message: 'extraTriggerBlocks（可选）必须为非空数组' });
+      } else {
+        for (const tb of row.extraTriggerBlocks as Array<Record<string, unknown>>) {
+          if (!tb || typeof tb !== 'object' || tb.kind !== 'trigger') { errors.push({ table: 'battle_unit_stat_param', id, message: 'extraTriggerBlocks 每项必须为 kind="trigger" 的触发积木' }); continue; }
+          if (typeof tb.on !== 'string' || !S7_TRIGGER_ON_VALUES.includes(tb.on)) errors.push({ table: 'battle_unit_stat_param', id, message: `extraTriggerBlocks.on "${String(tb.on)}" 非法` });
+          if (typeof tb.effectRef !== 'string' || !effectIds.has(tb.effectRef)) errors.push({ table: 'battle_unit_stat_param', id, message: `extraTriggerBlocks.effectRef "${String(tb.effectRef)}" 必须为有效 battle_effect_param.rowId` });
+          if (tb.on === 'cd') {
+            const cd = num(tb.cdSec);
+            if (cd === null || !(cd > 0)) errors.push({ table: 'battle_unit_stat_param', id, message: 'extraTriggerBlocks cd 型必须给正数 cdSec' });
+          }
+          if (tb.onKillRoleTags !== undefined && (!Array.isArray(tb.onKillRoleTags) || tb.onKillRoleTags.length === 0 || tb.onKillRoleTags.some((x: unknown) => typeof x !== 'string'))) {
+            errors.push({ table: 'battle_unit_stat_param', id, message: 'extraTriggerBlocks.onKillRoleTags（可选）必须为非空字符串数组' });
+          }
+        }
+      }
+    }
+    if (row.stackRules !== undefined) {
+      if (!Array.isArray(row.stackRules) || row.stackRules.length === 0) {
+        errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules（可选）必须为非空数组' });
+      } else {
+        for (const sr of row.stackRules as Array<Record<string, unknown>>) {
+          if (!sr || typeof sr !== 'object') { errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules 每项必须为对象' }); continue; }
+          if (typeof sr.ruleId !== 'string' || sr.ruleId.length === 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules.ruleId 必须为非空字符串' });
+          if (typeof sr.on !== 'string' || !S7_STACK_RULE_ON_VALUES.includes(sr.on)) errors.push({ table: 'battle_unit_stat_param', id, message: `stackRules.on "${String(sr.on)}" 非法` });
+          if (typeof sr.stat !== 'string' || !S7_STACK_RULE_STAT_VALUES.includes(sr.stat)) errors.push({ table: 'battle_unit_stat_param', id, message: `stackRules.stat "${String(sr.stat)}" 非法` });
+          const ps = num(sr.perStack);
+          if (ps === null || !(ps > 0) || !Number.isFinite(ps)) errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules.perStack 必须为正数' });
+          if (sr.maxStacks !== undefined) {
+            const ms = num(sr.maxStacks);
+            if (ms === null || !Number.isInteger(ms) || ms < 1) errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules.maxStacks（可选）必须为 >= 1 的整数' });
+          }
+          if (sr.breakOn !== undefined && sr.breakOn !== 'attack_gap' && sr.breakOn !== 'target_switch') errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules.breakOn（可选）必须为 attack_gap | target_switch' });
+          if (sr.breakOn === 'attack_gap') {
+            const gap = num(sr.breakGapSec);
+            if (gap === null || !(gap > 0)) errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules breakOn=attack_gap 必须给正数 breakGapSec' });
+          }
+          if (sr.breakAction !== undefined && sr.breakAction !== 'clear' && sr.breakAction !== 'decay_1') errors.push({ table: 'battle_unit_stat_param', id, message: 'stackRules.breakAction（可选）必须为 clear | decay_1' });
+        }
+      }
+    }
   }
 
   // ---- battle_effect_param ----
@@ -1368,8 +1424,10 @@ function validateBattle(
       else if (summon === 'none') errors.push({ table: 'battle_effect_param', id, message: 'summonSourceCap（可选）要求 summonUnitRef ≠ none' });
     }
     // ⑦机制批① 字段组（缺席=不校·全部旧配置不带这些字段）：
-    // apply_state 必须选态；框架修正 tag 必须给幅度；幅度/叠层/到期动作字段只许配给框架 tag。
+    // apply_state 必须选态；框架修正 tag 必须给幅度；周期 tag 必须给结算通道；字段只许配给对应 tag 族。
     const isModTag = typeof stTag === 'string' && S7_MOD_STATE_TAGS.includes(stTag);
+    const isPeriodicTag = typeof stTag === 'string' && S7_PERIODIC_STATE_TAGS.includes(stTag);
+    const isFrameworkTag = isModTag || isPeriodicTag;
     if (row.effectType === 'apply_state' && stTag === 'none') {
       errors.push({ table: 'battle_effect_param', id, message: 'apply_state 效果要求 stateTag ≠ none' });
     }
@@ -1379,14 +1437,33 @@ function validateBattle(
     } else if (row.stateAmount !== undefined) {
       errors.push({ table: 'battle_effect_param', id, message: 'stateAmount（可选）仅允许配给 M1 修正状态 tag' });
     }
+    const tickChannels = ['stateTickAtkPct', 'stateTickMaxHpPct', 'stateTickFlat'] as const;
+    if (isPeriodicTag) {
+      let anyPositive = false;
+      for (const f of tickChannels) {
+        if (row[f] === undefined) continue;
+        const v = num(row[f]);
+        if (v === null || v < 0 || !Number.isFinite(v)) errors.push({ table: 'battle_effect_param', id, message: `${f}（可选）必须为 >= 0 的有限数` });
+        else if (v > 0) anyPositive = true;
+      }
+      if (!anyPositive) errors.push({ table: 'battle_effect_param', id, message: `周期状态 ${String(stTag)} 要求 stateTickAtkPct/stateTickMaxHpPct/stateTickFlat 至少一项 > 0` });
+      if (row.stateTickIntervalSec !== undefined) {
+        const iv = num(row.stateTickIntervalSec);
+        if (iv === null || !(iv > 0)) errors.push({ table: 'battle_effect_param', id, message: 'stateTickIntervalSec（可选）必须为正数' });
+      }
+    } else {
+      for (const f of [...tickChannels, 'stateTickIntervalSec'] as const) {
+        if (row[f] !== undefined) errors.push({ table: 'battle_effect_param', id, message: `${f}（可选）仅允许配给周期状态 tag（burn/regen）` });
+      }
+    }
     if (row.stateMaxStacks !== undefined) {
       const sms = num(row.stateMaxStacks);
       if (sms === null || !Number.isInteger(sms) || sms < 1) errors.push({ table: 'battle_effect_param', id, message: 'stateMaxStacks（可选）必须为 >= 1 的整数' });
-      else if (!isModTag) errors.push({ table: 'battle_effect_param', id, message: 'stateMaxStacks（可选）仅允许配给框架状态 tag' });
+      else if (!isFrameworkTag) errors.push({ table: 'battle_effect_param', id, message: 'stateMaxStacks（可选）仅允许配给框架状态 tag' });
     }
     if (row.stateExpireAction !== undefined) {
       if (row.stateExpireAction !== 'clear' && row.stateExpireAction !== 'decay_1') errors.push({ table: 'battle_effect_param', id, message: 'stateExpireAction（可选）必须为 clear | decay_1' });
-      else if (!isModTag) errors.push({ table: 'battle_effect_param', id, message: 'stateExpireAction（可选）仅允许配给框架状态 tag' });
+      else if (!isFrameworkTag) errors.push({ table: 'battle_effect_param', id, message: 'stateExpireAction（可选）仅允许配给框架状态 tag' });
     }
     if (row.alsoApplyStateRefs !== undefined) {
       const refs = row.alsoApplyStateRefs;

@@ -12,6 +12,7 @@ import {
   S7AffixKey,
   S7StatKey,
   S7TriggerBlock,
+  S7StackRuleParam,
 } from './S7BattleEffectBlock';
 
 /** 装配层输入：一艘船的基础战斗属性（取自 battle_unit_stat_param 的舰行）。 */
@@ -49,6 +50,8 @@ export interface S7DerivedUnit {
   coreEffectRef: string;
   /** 触发类积木（块2 消费）。 */
   triggers: S7TriggerBlock[];
+  /** ⑦机制批① 叠层规则积木（引擎消费；无积木=空数组=行为不变）。 */
+  stackRules: S7StackRuleParam[];
 }
 
 const STAT_KEYS: S7StatKey[] = [
@@ -89,6 +92,7 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
   let ultimateEffectRef = base.ultimateEffectRef;
   let coreEffectRef = base.coreEffectRef;
   const triggers: S7TriggerBlock[] = [];
+  const stackRules: S7StackRuleParam[] = [];
 
   for (const b of blocks) {
     switch (b.kind) {
@@ -115,6 +119,9 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
       case 'trigger':
         triggers.push(b);
         break;
+      case 'stack':
+        stackRules.push(b.rule);
+        break;
       default: {
         const _exhaustive: never = b;
         throw new Error(`未知积木类型: ${JSON.stringify(_exhaustive)}`);
@@ -139,5 +146,6 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
     ultimateEffectRef,
     coreEffectRef,
     triggers,
+    stackRules,
   };
 }

@@ -3,6 +3,9 @@
 // 仅 Tier A 五张叶子表：battle_template / ship / pilot / core / plugin。
 // 取值约定：实体 ID 全小写；中文名与描述存设计原文；受 validator 约束的封闭分类用罗马化 token。
 
+// ⑦机制批①：单位行可选字段复用装配层积木的结构定义（纯类型导入·编译期擦除·无运行时依赖）。
+import type { S7TriggerBlock, S7StackRuleParam } from '../../core/s7/S7BattleEffectBlock';
+
 /** 6 类战斗问题罗马化标签（1:1 对应设计冻结的 6 类问题）。 */
 export type S7ProblemTag = 'swarm' | 'shield' | 'backline' | 'burst' | 'berserk' | 'summon';
 
@@ -667,6 +670,12 @@ export interface S7BattleUnitStatParam {
   controlResist?: number;
   baseCritRate?: number;
   baseCritDmg?: number;
+  /** ⑦机制批① 可选（缺省缺席=行为不变）：单位行额外触发（敌方事件触发通道——污染体"受击喷毒"级
+   *  on_hit 机制的配置载体；玩家舰触发走装配层不用它）。结构同装配层触发积木。 */
+  extraTriggerBlocks?: S7TriggerBlock[];
+  /** ⑦机制批① 可选（缺省缺席=行为不变）：单位行叠层规则（污染体"越受击越狂暴"/Boss"随时间狂暴"
+   *  的配置载体；玩家舰叠层走装配层 stack 积木）。 */
+  stackRules?: S7StackRuleParam[];
   maxHp: number;
   attack: number;
   armor: number;
@@ -705,11 +714,14 @@ export type S7BattleEffectType =
 //   dmg_up=增伤(输出乘区) · dmg_taken_up=易伤参数版(淬针叠层用·与旧 vulnerable 并存)
 //   dmg_taken_down=减伤%（stateAmount≥1 即免伤=零伤路径）
 //   crit_rate_up/crit_dmg_up=暴击率/暴伤 buff（号角A/翎Lv100）· skill_haste_up=技能急速 buff（时光糖）
+// ⑦机制批① M2 周期结算状态：burn=燃烧（周期掉血·无视防御·吃护盾/易伤/减伤）/ regen=持续回血。
+// 每次结算量=施加瞬间快照（stateTickAtkPct×施加者基础攻 + stateTickMaxHpPct×目标最大血 + stateTickFlat）×层数。
 export type S7BattleStateTag =
   | 'none' | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
   | 'silence' | 'control_immune'
   | 'atk_up' | 'atk_down' | 'atk_speed_up' | 'atk_speed_down' | 'armor_down'
-  | 'dmg_up' | 'dmg_taken_up' | 'dmg_taken_down' | 'crit_rate_up' | 'crit_dmg_up' | 'skill_haste_up';
+  | 'dmg_up' | 'dmg_taken_up' | 'dmg_taken_down' | 'crit_rate_up' | 'crit_dmg_up' | 'skill_haste_up'
+  | 'burn' | 'regen';
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {

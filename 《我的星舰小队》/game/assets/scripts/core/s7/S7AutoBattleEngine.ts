@@ -47,7 +47,7 @@ import {
 } from './S7BattleGrid';
 // 效果装配层：玩家单位四层积木 → 最终战斗属性（块1）。
 import { deriveUnit, S7DeriveBaseStat, S7DerivedUnit } from './S7BattleStatDerivation';
-import { S7TriggerBlock, S7AffixKey } from './S7BattleEffectBlock';
+import { S7TriggerBlock, S7AffixKey, S7StackRuleParam } from './S7BattleEffectBlock';
 
 // ===== 首版行为常量（RT-04 首版口径，非最终平衡；报告中已列明）=====
 const TICK_SEC = 0.2;
@@ -78,6 +78,8 @@ const MOD_STATE_TAGS = new Set<S7BattleStateTag>([
   'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
   'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
 ]);
+/** ⑦机制批① M2 周期结算状态 tag（结算量=施加瞬间快照×层数·挂进"状态到期"步语义内）。 */
+const PERIODIC_STATE_TAGS = new Set<S7BattleStateTag>(['burn', 'regen']);
 /** 控制状态：期间不能普攻、不能放大招、不能主动触发。（沉默不在此列：只挡技能、普攻照打） */
 const CONTROL_TAGS: S7BattleStateTag[] = ['short_circuit', 'stun'];
 /** ⑥8a 硬控全集（真源硬控=短路/沉默 + 遗留 stun）：控制抗性缩时与 control_immune 免疫按此集合判。 */
@@ -88,6 +90,7 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'silence', 'control_immune',
   'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
   'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
+  'regen', 'burn', // ⑦机制批① M2：同刻先回血后掉血（纸面规则·体验平滑向）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -141,6 +144,31 @@ interface RtStateInst {
   expireAction?: 'clear' | 'decay_1';
   /** M3 decay_1 重计时用：本态单次施加的持续秒数。 */
   durationSec?: number;
+  // ===== M2 周期结算（burn/regen）专用 =====
+  /** 每层每次结算量（施加瞬间快照：atkPct×施加者基础攻 + maxHpPct×目标最大血 + flat）。 */
+  tickAmount?: number;
+  /** 结算间隔秒（缺省 1）。重复施加=层数/时长规则照旧，结算节拍从最新施加重新起拍。 */
+  tickIntervalSec?: number;
+  /** 下一次结算时刻。 */
+  nextTickAt?: number;
+  /** 施加者（击杀归账/日志 actor；施加者死亡后仍按快照跳数）。 */
+  sourceUnitId?: string;
+  sourceSide?: S7AutoBattleSide;
+  /** 施加来源效果行（结算日志 effectRef）。 */
+  srcEffectRef?: string;
+}
+
+/** ⑦机制批① M3：叠层规则运行态。 */
+interface RtStackRule {
+  rule: S7StackRuleParam;
+  /** 当前层数（hp_lost_decile 为派生·不用本字段）。 */
+  stacks: number;
+  /** per_second 型下一次累积时刻。 */
+  nextAccrueAt: number;
+  /** 最近一次累积事件时刻（attack_gap 断档判定；断档后重臂）。 */
+  lastEventAt: number;
+  /** target_switch 断档：跟踪的锁定目标。 */
+  trackedTargetId: string | null;
 }
 
 /** 运行时触发项：块1 的触发积木 + 运行时计时/闩锁状态（块2）。 */
@@ -187,6 +215,10 @@ interface RtUnit {
   attackLandedSinceTrigger: boolean;
   /** ⑦机制批①：本 tick 击杀名单的 roleTag（on_kill 触发的击杀对象过滤·蛰「斩链」；评估后清）。 */
   killedRolesSinceTrigger: string[];
+  /** ⑦机制批①：本单位放出 ultimate 类效果（skill_cast 触发·战鼓；评估后清）。 */
+  skillCastSinceTrigger: boolean;
+  /** ⑦机制批① M3：叠层规则运行态（装配 stack 积木 + 单位行 stackRules；空数组=行为不变）。 */
+  stackRules: RtStackRule[];
   shield: number;
   states: Map<S7BattleStateTag, RtStateInst>;
   /** 定向词条（插件等装配产出；块4b 引擎按需消费）。无装配单位为全 0（ZERO_AFFIXES）。 */
@@ -432,23 +464,126 @@ class BattleRun {
     }
   }
 
-  /** 2：结算状态到期并记录 state_expire；⑥8a 附带处理限时召唤物到期（无限时召唤物时零行为）。 */
+  /** 2：结算状态到期并记录 state_expire；⑥8a 附带处理限时召唤物到期（无限时召唤物时零行为）。
+   *  ⑦机制批①（挂进本步语义内·不新增步骤）：M2 周期结算（先结到点的 tick 再判到期）、
+   *  M3 到期动作 decay_1（降 1 层重计时）、叠层规则的 per_second 累积与 attack_gap 断档。 */
   private stepExpireStates(): void {
     for (const unit of this.stableUnits()) {
       if (!unit.alive) continue;
       for (const tag of STATE_TAG_ORDER) {
         const st = unit.states.get(tag);
         if (!st) continue;
+        // ⑦M2：周期结算——结清所有 到点 且 不晚于到期时刻 的 tick（同刻"先结算后到期"）。
+        if (st.nextTickAt !== undefined) {
+          const interval = st.tickIntervalSec !== undefined && st.tickIntervalSec > 0 ? st.tickIntervalSec : 1;
+          while (unit.alive && st.nextTickAt <= this.time + 1e-9 && st.nextTickAt <= st.expireAt + 1e-9) {
+            this.settlePeriodicTick(unit, st);
+            st.nextTickAt += interval;
+          }
+          if (!unit.alive) break; // 燃烧跳死：本单位全部状态处理停止（清理死亡步统一收尾）
+        }
         if (st.expireAt <= this.time + 1e-9) {
+          // ⑦M3 到期动作：decay_1=降 1 层并按单次施加时长重计时（层数>1 时）；否则整态消失。
+          if (st.expireAction === 'decay_1' && (st.stacks ?? 1) > 1 && st.durationSec !== undefined) {
+            st.stacks = (st.stacks ?? 1) - 1;
+            st.expireAt = this.time + st.durationSec;
+            continue;
+          }
           unit.states.delete(tag);
           if (tag === 'shield' && unit.shield > 0) unit.shield = 0; // 护盾随状态消退
           this.pushLog('state_expire', { actorId: unit.unitId, side: unit.side, stateTag: tag });
+        }
+      }
+      if (!unit.alive) continue;
+      // ⑦M3：叠层规则时间面（per_second 累积 / attack_gap 断档·无规则单位零循环零行为）
+      for (const r of unit.stackRules) {
+        if (r.rule.on === 'per_second') {
+          while (r.nextAccrueAt <= this.time + 1e-9) {
+            if (r.rule.breakOn === 'target_switch') this.syncTrackedTarget(unit, r);
+            if (r.rule.stat !== 'dmgVsLockedPct' || unit.lockedTargetId !== null) {
+              r.stacks = Math.min(r.rule.maxStacks ?? Infinity, r.stacks + 1);
+              r.lastEventAt = this.time;
+            }
+            r.nextAccrueAt += 1;
+          }
+        }
+        if (
+          r.rule.breakOn === 'attack_gap' && r.stacks > 0
+          && r.rule.breakGapSec !== undefined && r.rule.breakGapSec > 0
+          && this.time - r.lastEventAt > r.rule.breakGapSec + 1e-9
+        ) {
+          r.stacks = r.rule.breakAction === 'decay_1' ? r.stacks - 1 : 0;
+          r.lastEventAt = this.time; // 重臂：再满一个 gap 才断下一次
         }
       }
       // ⑥8a 召唤生命周期：summonExpireSec 到期消亡（unit_down 由步"清理死亡"统一记录）
       if (unit.summonExpireAt !== null && unit.summonExpireAt <= this.time + 1e-9) {
         unit.alive = false;
         unit.hp = 0;
+      }
+    }
+  }
+
+  /** ⑦机制批① M2：结算一次周期 tick。燃烧=无视防御的伤害（先啃护盾 1:1，吃旧易伤×1.25/易伤参数版/减伤%，
+   *  免伤=0；不触发 on_hit/attack_landed，不吃暴击/闪避）；回血=直接回血（快照量·满血跳过不记日志）。
+   *  击杀归账给施加者（施加者已死则只记阵亡数）。 */
+  private settlePeriodicTick(unit: RtUnit, st: RtStateInst): void {
+    const base = (st.tickAmount ?? 0) * (st.stacks ?? 1);
+    if (base <= 0) return;
+    const actorId = st.sourceUnitId ?? unit.unitId;
+    const side = st.sourceSide ?? unit.side;
+    if (st.tag === 'regen') {
+      const amount = Math.min(unit.maxHp - unit.hp, Math.max(1, Math.round(base)));
+      if (amount <= 0) return; // 满血不跳不记
+      unit.hp += amount;
+      this.pushLog('heal', {
+        actorId, side, targetIds: [unit.unitId], effectRef: st.srcEffectRef, effectType: 'regen',
+        periodic: true, amount, hpAfter: unit.hp, shieldAfter: unit.shield,
+      });
+      return;
+    }
+    // burn
+    let raw = base;
+    if (unit.states.has('vulnerable')) raw *= VULNERABLE_MULT;
+    const takenUp = this.stateModSum(unit, 'dmg_taken_up');
+    if (takenUp !== 0) raw *= 1 + takenUp;
+    const reduction = Math.min(1, Math.max(0, this.stateModSum(unit, 'dmg_taken_down') + this.ruleStatSum(unit, 'dmgTakenDownPct')));
+    if (reduction >= 1) {
+      this.pushLog('damage', {
+        actorId, side, targetIds: [unit.unitId], effectRef: st.srcEffectRef, effectType: 'burn',
+        periodic: true, amount: 0, immune: true, hpAfter: unit.hp, shieldAfter: unit.shield,
+      });
+      return;
+    }
+    if (reduction > 0) raw *= 1 - reduction;
+    const dmg = Math.max(1, Math.round(raw));
+    let hpDmg = dmg;
+    if (unit.shield > 0) {
+      const absorbed = Math.min(unit.shield, dmg); // 周期伤对护盾 1:1（不吃削盾系数·纸面规则）
+      unit.shield -= absorbed;
+      hpDmg = dmg - absorbed;
+      if (unit.shield <= 0) {
+        unit.shield = 0;
+        unit.states.delete('shield');
+        unit.shieldBrokenSinceTrigger = true;
+      }
+    }
+    if (hpDmg > 0) unit.hp -= hpDmg;
+    if (unit.hp <= 0) {
+      unit.hp = 0;
+      unit.alive = false;
+    }
+    this.pushLog('damage', {
+      actorId, side, targetIds: [unit.unitId], effectRef: st.srcEffectRef, effectType: 'burn',
+      periodic: true, amount: hpDmg, hpAfter: unit.hp, shieldAfter: unit.shield,
+    });
+    if (!unit.alive) {
+      this.deadCount[unit.side] += 1;
+      const source = st.sourceUnitId ? this.units.find((u) => u.unitId === st.sourceUnitId) : undefined;
+      if (source && source.alive) {
+        source.killedSinceTrigger = true;
+        source.killedRolesSinceTrigger.push(unit.roleTag);
+        this.accrueStackEvent(source, 'kill');
       }
     }
   }
@@ -467,6 +602,7 @@ class BattleRun {
       unit.killedSinceTrigger = false;
       unit.shieldBrokenSinceTrigger = false;
       unit.attackLandedSinceTrigger = false;
+      unit.skillCastSinceTrigger = false;
       if (unit.killedRolesSinceTrigger.length > 0) unit.killedRolesSinceTrigger = [];
     }
   }
@@ -492,6 +628,8 @@ class BattleRun {
         return !t.fired && unit.shieldBrokenSinceTrigger; // ⑥8a：本舰护盾被打破（超级护罩=once）
       case 'attack_landed':
         return !t.fired && unit.attackLandedSinceTrigger; // ⑥8a：本舰普攻命中（回充插件）
+      case 'skill_cast':
+        return !t.fired && unit.skillCastSinceTrigger; // ⑦机制批①：本舰放出 ultimate 类效果（战鼓）
       case 'ally_down':
         return !t.fired && this.deadCount[unit.side] >= (t.block.threshold ?? Infinity); // 一次性：己方阵亡到数
       default:
@@ -581,13 +719,16 @@ class BattleRun {
       const haste = unit.affixes.skillHaste + this.stateModSum(unit, 'skill_haste_up');
       t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + haste));
     } else {
-      // 事件型（on_kill/on_hit/shield_broken/attack_landed）默认可重复：靠 stepTriggers 清事件标志重新武装；
+      // 事件型（on_kill/on_hit/shield_broken/attack_landed/skill_cast）默认可重复：靠 stepTriggers 清事件标志重新武装；
       // once=true 时闩死（⑥8a·超级护罩"每场1次"）。其余（battle_start/hp_below/ally_down）保持一次性。
       const repeatable = t.block.on === 'on_kill' || t.block.on === 'on_hit'
-        || t.block.on === 'shield_broken' || t.block.on === 'attack_landed';
+        || t.block.on === 'shield_broken' || t.block.on === 'attack_landed' || t.block.on === 'skill_cast';
       if (!repeatable || t.block.once) t.fired = true;
     }
     if (!effect) return;
+    // ⑦机制批①：放出 ultimate 类效果=一次"放技能"（skill_cast 事件·战鼓；core/state 类不算·真源口径）。
+    // 同 tick 内排在其后的 skill_cast 触发会立即看到本标志（触发顺序=积木顺序·确定性）。
+    if (effect.effectKind === 'ultimate') unit.skillCastSinceTrigger = true;
     this.castLogged(unit, effect, 'ultimate_cast');
     if (!unit.coreTriggered && unit.coreEffectRef !== 'none') {
       const core = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', unit.coreEffectRef);
@@ -728,10 +869,10 @@ class BattleRun {
     }
   }
 
-  /** ⑦机制批①：护盾/治疗行的框架状态搭载（甘霖「再生」/晨曦Lv100 普盾附减伤）。
-   *  只对框架新 tag 生效——旧 tag（如护盾行自描述的 stateTag='shield'）维持描述性不消费=零回归。 */
+  /** ⑦机制批①：护盾/治疗行的框架状态搭载（甘霖「再生」=治疗附 HoT/晨曦Lv100 普盾附减伤）。
+   *  只对框架新 tag（修正/周期）生效——旧 tag（如护盾行自描述的 stateTag='shield'）维持描述性不消费=零回归。 */
   private applyFrameworkRider(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
-    if (!MOD_STATE_TAGS.has(effect.stateTag)) return;
+    if (!MOD_STATE_TAGS.has(effect.stateTag) && !PERIODIC_STATE_TAGS.has(effect.stateTag)) return;
     for (const t of targets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
   }
 
@@ -753,9 +894,11 @@ class BattleRun {
       });
       return;
     }
-    // ⑦机制批① 免伤（dmg_taken_down 总幅度 ≥1）：整发落空——不掉血不破盾、不触发 on_hit/attack_landed，
-    // 只记 amount=0 + immune 标记（同 dodge 的"新内容才出现"口径；置于 dodge 之后保证既有 RNG 消费序不变）。
-    const dmgReduction = Math.min(1, Math.max(0, this.stateModSum(target, 'dmg_taken_down')));
+    // ⑦机制批① 免伤（dmg_taken_down 状态 + 叠层规则减伤轴 总幅度 ≥1）：整发落空——不掉血不破盾、
+    // 不触发 on_hit/attack_landed，只记 amount=0 + immune 标记（同 dodge 的"新内容才出现"口径；
+    // 置于 dodge 之后保证既有 RNG 消费序不变）。
+    const dmgReduction = Math.min(1, Math.max(0,
+      this.stateModSum(target, 'dmg_taken_down') + this.ruleStatSum(target, 'dmgTakenDownPct')));
     if (dmgReduction >= 1) {
       this.pushLog('damage', {
         actorId: caster.unitId,
@@ -788,8 +931,9 @@ class BattleRun {
     if (caster.affixes.dmgVsFortified > 0 && (target.shield > 0 || target.armor >= FORTIFIED_ARMOR_THRESHOLD)) {
       raw *= 1 + caster.affixes.dmgVsFortified;
     }
-    // ⑦机制批① 增伤状态（dmg_up·施方输出乘区，与加攻分立）：无状态时和 0 → 不乘（逐字节不变）。
-    const dmgUp = this.stateModSum(caster, 'dmg_up');
+    // ⑦机制批① 增伤（dmg_up 状态 + M3 叠层增伤轴 + 源「专注」对锁定目标专项轴）：和 0 → 不乘（逐字节不变）。
+    const dmgUp = this.stateModSum(caster, 'dmg_up') + this.ruleStatSum(caster, 'dmgUpPct')
+      + (caster.lockedTargetId === target.unitId ? this.ruleStatSum(caster, 'dmgVsLockedPct') : 0);
     if (dmgUp !== 0) raw *= 1 + dmgUp;
     // ⑥8a 技能侧乘区（仅 ultimate/core 伤害吃·普攻不吃）：技能伤害%（增幅线圈）× 效果量%（增效插件）。
     const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
@@ -856,14 +1000,22 @@ class BattleRun {
       });
     }
     // ⑥8a：普攻命中事件（回充插件消费；闪避已在顶部 return、不计命中）。
-    if (effect.effectKind === 'normal_attack') caster.attackLandedSinceTrigger = true;
+    // ⑦M3：叠层规则事件累积——炎「过热」普攻命中（immune 已提前 return 不计）。
+    if (effect.effectKind === 'normal_attack') {
+      caster.attackLandedSinceTrigger = true;
+      this.accrueStackEvent(caster, 'attack_landed');
+    }
     // 块2b：采集事件型触发的事件（在 stepTriggers 评估、清标志）。
     if (!target.alive) {
       caster.killedSinceTrigger = true;
       caster.killedRolesSinceTrigger.push(target.roleTag); // ⑦机制批①：击杀对象过滤用（内部采集·无行为分支）
       this.deadCount[target.side] += 1;
+      this.accrueStackEvent(caster, 'kill'); // ⑦M3：贪吃星/燎3★
     } else {
       target.hitSinceTrigger = true;
+      // ⑦M3：受击事件累积——污染体狂暴（被任意伤害命中）/ 铁壁「坚甲」（被技能伤害命中=真源"重击"口径）。
+      this.accrueStackEvent(target, 'was_hit');
+      if (isSkill) this.accrueStackEvent(target, 'was_hit_by_skill');
     }
   }
 
@@ -936,14 +1088,14 @@ class BattleRun {
     // 均延长——含硬控（控制被延长的对抗面=controlResist/免控/Boss 抗性，平衡走数值不改机制语义）。
     const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
     if (isSkill) duration *= 1 + caster.affixes.durationPct;
-    // ⑦机制批① M1/M3 框架状态分支（旧 tag 一律走下方原路径=逐字节不变）。
+    // ⑦机制批① M1/M2/M3 框架状态分支（旧 tag 一律走下方原路径=逐字节不变）。
     // 纸面规则（本批钉死·记数值细表机制批①日志章）：同 tag 重复施加=可叠(+1层至上限)+时长刷新，
-    // 不可叠(上限1)=只刷新；每层幅度/上限/到期动作以最新一次施加为准。
-    if (MOD_STATE_TAGS.has(tag)) {
+    // 不可叠(上限1)=只刷新；每层幅度/上限/到期动作以最新一次施加为准；周期态结算节拍从最新施加重新起拍。
+    if (MOD_STATE_TAGS.has(tag) || PERIODIC_STATE_TAGS.has(tag)) {
       const maxStacks = Math.max(1, Math.floor(effect.stateMaxStacks ?? 1));
       const prev = target.states.get(tag);
       const stacks = prev ? Math.min(maxStacks, (prev.stacks ?? 1) + 1) : 1;
-      target.states.set(tag, {
+      const inst: RtStateInst = {
         tag,
         expireAt: this.time + duration,
         amountPerStack: effect.stateAmount ?? 0,
@@ -951,7 +1103,21 @@ class BattleRun {
         maxStacks,
         expireAction: effect.stateExpireAction ?? 'clear',
         durationSec: duration,
-      });
+      };
+      if (PERIODIC_STATE_TAGS.has(tag)) {
+        // M2：结算量=施加瞬间快照（施加者基础攻/目标最大血/固定值三通道相加）——之后攻击变化不追溯。
+        inst.tickAmount = (effect.stateTickAtkPct ?? 0) * caster.attack
+          + (effect.stateTickMaxHpPct ?? 0) * target.maxHp
+          + (effect.stateTickFlat ?? 0);
+        const interval = effect.stateTickIntervalSec !== undefined && effect.stateTickIntervalSec > 0
+          ? effect.stateTickIntervalSec : 1;
+        inst.tickIntervalSec = interval;
+        inst.nextTickAt = this.time + interval;
+        inst.sourceUnitId = caster.unitId;
+        inst.sourceSide = caster.side;
+        inst.srcEffectRef = effect.rowId;
+      }
+      target.states.set(tag, inst);
       this.pushLog('state_apply', {
         actorId: caster.unitId,
         side: caster.side,
@@ -1240,6 +1406,23 @@ class BattleRun {
         triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false });
       }
     }
+    // ⑦机制批①：单位行额外触发（敌方事件触发通道·污染体"受击喷毒"；缺省缺席=零行为）。
+    if (stat.extraTriggerBlocks && stat.extraTriggerBlocks.length > 0) {
+      for (const tb of stat.extraTriggerBlocks) {
+        triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false });
+      }
+    }
+    // ⑦机制批① M3：叠层规则（装配 stack 积木 + 单位行 stackRules；全部旧配置两处皆空=空数组零行为）。
+    const stackRules: RtStackRule[] = [];
+    for (const rule of [...(derived?.stackRules ?? []), ...(stat.stackRules ?? [])]) {
+      stackRules.push({
+        rule,
+        stacks: 0,
+        nextAccrueAt: rule.on === 'per_second' ? this.time + 1 : Infinity,
+        lastEventAt: this.time,
+        trackedTargetId: null,
+      });
+    }
     // ⑥8a：敌/Boss 属性行的基线词条可选字段（controlResist/baseCritRate/baseCritDmg）——
     // 无装配时注入；字段全缺省则沿用冻结共享 ZERO_AFFIXES（零新对象·零行为变化）。
     let affixes: Readonly<Record<S7AffixKey, number>> = derived ? derived.affixes : ZERO_AFFIXES;
@@ -1283,6 +1466,8 @@ class BattleRun {
       shieldBrokenSinceTrigger: false,
       attackLandedSinceTrigger: false,
       killedRolesSinceTrigger: [],
+      skillCastSinceTrigger: false,
+      stackRules,
       shield: 0,
       states: new Map(),
       affixes,
@@ -1361,19 +1546,57 @@ class BattleRun {
     return st.amountPerStack * (st.stacks ?? 1);
   }
 
-  /** 生效攻击：berserk 特例保持原码原样（×1.25），M1 加攻/虚弱在其外乘法合成；
+  /** ⑦M3：一条叠层规则的即时层数（hp_lost_decile=按已损血量每 10% 一层派生·动态涨落；其余=事件累积值）。 */
+  private ruleStacksOf(unit: RtUnit, r: RtStackRule): number {
+    if (r.rule.on === 'hp_lost_decile') {
+      if (unit.maxHp <= 0) return 0;
+      const derived = Math.floor((1 - unit.hp / unit.maxHp) * 10 + 1e-9);
+      return Math.max(0, Math.min(r.rule.maxStacks ?? Infinity, derived));
+    }
+    return r.stacks;
+  }
+
+  /** ⑦M3：单位在某数值轴上的叠层规则总幅度（Σ 层数×每层幅度）；无规则单位=空循环和 0（行为不变）。 */
+  private ruleStatSum(unit: RtUnit, stat: S7StackRuleParam['stat']): number {
+    let sum = 0;
+    for (const r of unit.stackRules) {
+      if (r.rule.stat !== stat) continue;
+      if (r.rule.breakOn === 'target_switch') this.syncTrackedTarget(unit, r);
+      sum += this.ruleStacksOf(unit, r) * r.rule.perStack;
+    }
+    return sum;
+  }
+
+  /** ⑦M3：target_switch 断档——锁定目标变更时按断档动作处理层数（源「专注」=清空）。 */
+  private syncTrackedTarget(unit: RtUnit, r: RtStackRule): void {
+    if (r.trackedTargetId === unit.lockedTargetId) return;
+    r.stacks = r.rule.breakAction === 'decay_1' ? Math.max(0, r.stacks - 1) : 0;
+    r.trackedTargetId = unit.lockedTargetId;
+  }
+
+  /** ⑦M3：事件累积（伤害结算/触发处直接调·即时生效于下一次结算读取；无规则单位零循环）。 */
+  private accrueStackEvent(unit: RtUnit, event: 'attack_landed' | 'was_hit' | 'was_hit_by_skill' | 'kill'): void {
+    for (const r of unit.stackRules) {
+      if (r.rule.on !== event) continue;
+      if (r.rule.breakOn === 'target_switch') this.syncTrackedTarget(unit, r);
+      r.stacks = Math.min(r.rule.maxStacks ?? Infinity, r.stacks + 1);
+      r.lastEventAt = this.time;
+    }
+  }
+
+  /** 生效攻击：berserk 特例保持原码原样（×1.25），M1 加攻/虚弱 + M3 叠层攻击轴在其外乘法合成；
    *  和为 0 时直接走原路径返回（浮点逐字节不变）。加攻/虚弱只进伤害口径，治疗/护盾量走基础攻（与 berserk 现状同口径）。 */
   private effAttack(unit: RtUnit): number {
     const base = unit.states.has('berserk') ? unit.attack * BERSERK_ATTACK_MULT : unit.attack;
-    const pct = this.stateModSum(unit, 'atk_up') - this.stateModSum(unit, 'atk_down');
+    const pct = this.stateModSum(unit, 'atk_up') - this.stateModSum(unit, 'atk_down') + this.ruleStatSum(unit, 'atkPct');
     return pct === 0 ? base : base * Math.max(0, 1 + pct);
   }
 
-  /** 生效普攻间隔：berserk 特例保持原码原样（×0.8），M1 加攻速/减速在其外按 间隔/(1+攻速和) 合成；
+  /** 生效普攻间隔：berserk 特例保持原码原样（×0.8），M1 加攻速/减速 + M3 叠层攻速轴在其外按 间隔/(1+攻速和) 合成；
    *  分母钳到 ≥0.1（极限减速也最多把间隔拉长 10 倍）；和为 0 时走原路径（浮点逐字节不变）。 */
   private effInterval(unit: RtUnit): number {
     const base = unit.states.has('berserk') ? unit.attackIntervalSec * BERSERK_INTERVAL_MULT : unit.attackIntervalSec;
-    const spd = this.stateModSum(unit, 'atk_speed_up') - this.stateModSum(unit, 'atk_speed_down');
+    const spd = this.stateModSum(unit, 'atk_speed_up') - this.stateModSum(unit, 'atk_speed_down') + this.ruleStatSum(unit, 'atkSpeedPct');
     return spd === 0 ? base : base / Math.max(0.1, 1 + spd);
   }
 

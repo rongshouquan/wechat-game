@@ -28,8 +28,7 @@ function seq(prefix, from, to) {
 
 const TIER_A = {
   battle_template_config: { idField: 'templateId', count: 10, ids: seq('t', 1, 10) },
-  // ⑥第一段 20 舰落地（2026-07-07·细表§12）：默认盘 12→20（与 ConfigValidatorS7.S7_EXPECTED_COUNT 双份同步）。
-  ship_config: { idField: 'shipId', count: 20, ids: seq('shp', 1, 20) },
+  ship_config: { idField: 'shipId', count: 12, ids: seq('shp', 1, 12) },
   pilot_config: { idField: 'pilotId', count: 10, ids: seq('pil', 1, 10) },
   core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
   plugin_config: { idField: 'pluginId', count: 18, ids: seq('plg', 1, 18) },
@@ -912,11 +911,21 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
     'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
   ];
+  // ⑦机制批① M2 周期结算状态 tag（stateTick* 三通道至少配一个 >0）。
+  const PERIODIC_STATE_TAGS = ['burn', 'regen'];
   const BATTLE_STATE_TAGS = [
     'none', 'shield', 'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'summon', 'berserk',
     'silence', 'control_immune',
     ...MOD_STATE_TAGS,
+    ...PERIODIC_STATE_TAGS,
   ];
+  // ⑦机制批①：extraTriggerBlocks / stackRules 枚举（镜像 ConfigValidatorS7.ts）。
+  const TRIGGER_ON_VALUES = [
+    'battle_start', 'cd', 'on_kill', 'hp_below', 'on_hit', 'ally_down', 'passive',
+    'shield_broken', 'attack_landed', 'skill_cast',
+  ];
+  const STACK_RULE_ON_VALUES = ['attack_landed', 'was_hit', 'was_hit_by_skill', 'kill', 'per_second', 'hp_lost_decile'];
+  const STACK_RULE_STAT_VALUES = ['atkPct', 'atkSpeedPct', 'dmgUpPct', 'dmgTakenDownPct', 'dmgVsLockedPct'];
   // ⑦机制批①：可作为 alsoApplyStateRefs 宿主的 effectType（伤害/护盾/治疗/状态族）。
   const ALSO_APPLY_HOST_TYPES = [
     'basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke',
@@ -993,6 +1002,49 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const bcd = num(row.baseCritDmg);
       if (bcd === null || bcd < 0) fail('battle_unit_stat_param', id, 'baseCritDmg（可选）必须 >= 0');
     }
+    // ⑦机制批① 单位行可选通道（缺席=不校·镜像 ConfigValidatorS7.ts）：extraTriggerBlocks / stackRules。
+    if (row.extraTriggerBlocks !== undefined) {
+      if (!Array.isArray(row.extraTriggerBlocks) || row.extraTriggerBlocks.length === 0) {
+        fail('battle_unit_stat_param', id, 'extraTriggerBlocks（可选）必须为非空数组');
+      } else {
+        for (const tb of row.extraTriggerBlocks) {
+          if (!tb || typeof tb !== 'object' || tb.kind !== 'trigger') { fail('battle_unit_stat_param', id, 'extraTriggerBlocks 每项必须为 kind="trigger" 的触发积木'); continue; }
+          if (!TRIGGER_ON_VALUES.includes(tb.on)) fail('battle_unit_stat_param', id, `extraTriggerBlocks.on "${tb.on}" 非法`);
+          if (typeof tb.effectRef !== 'string' || !effectIdSet.has(tb.effectRef)) fail('battle_unit_stat_param', id, `extraTriggerBlocks.effectRef "${tb.effectRef}" 必须为有效 battle_effect_param.rowId`);
+          if (tb.on === 'cd') {
+            const cd = num(tb.cdSec);
+            if (cd === null || !(cd > 0)) fail('battle_unit_stat_param', id, 'extraTriggerBlocks cd 型必须给正数 cdSec');
+          }
+          if (tb.onKillRoleTags !== undefined && (!Array.isArray(tb.onKillRoleTags) || tb.onKillRoleTags.length === 0 || tb.onKillRoleTags.some((x) => typeof x !== 'string'))) {
+            fail('battle_unit_stat_param', id, 'extraTriggerBlocks.onKillRoleTags（可选）必须为非空字符串数组');
+          }
+        }
+      }
+    }
+    if (row.stackRules !== undefined) {
+      if (!Array.isArray(row.stackRules) || row.stackRules.length === 0) {
+        fail('battle_unit_stat_param', id, 'stackRules（可选）必须为非空数组');
+      } else {
+        for (const sr of row.stackRules) {
+          if (!sr || typeof sr !== 'object') { fail('battle_unit_stat_param', id, 'stackRules 每项必须为对象'); continue; }
+          if (typeof sr.ruleId !== 'string' || sr.ruleId.length === 0) fail('battle_unit_stat_param', id, 'stackRules.ruleId 必须为非空字符串');
+          if (!STACK_RULE_ON_VALUES.includes(sr.on)) fail('battle_unit_stat_param', id, `stackRules.on "${sr.on}" 非法`);
+          if (!STACK_RULE_STAT_VALUES.includes(sr.stat)) fail('battle_unit_stat_param', id, `stackRules.stat "${sr.stat}" 非法`);
+          const ps = num(sr.perStack);
+          if (ps === null || !(ps > 0) || !Number.isFinite(ps)) fail('battle_unit_stat_param', id, 'stackRules.perStack 必须为正数');
+          if (sr.maxStacks !== undefined) {
+            const ms = num(sr.maxStacks);
+            if (ms === null || !Number.isInteger(ms) || ms < 1) fail('battle_unit_stat_param', id, 'stackRules.maxStacks（可选）必须为 >= 1 的整数');
+          }
+          if (sr.breakOn !== undefined && sr.breakOn !== 'attack_gap' && sr.breakOn !== 'target_switch') fail('battle_unit_stat_param', id, 'stackRules.breakOn（可选）必须为 attack_gap | target_switch');
+          if (sr.breakOn === 'attack_gap') {
+            const gap = num(sr.breakGapSec);
+            if (gap === null || !(gap > 0)) fail('battle_unit_stat_param', id, 'stackRules breakOn=attack_gap 必须给正数 breakGapSec');
+          }
+          if (sr.breakAction !== undefined && sr.breakAction !== 'clear' && sr.breakAction !== 'decay_1') fail('battle_unit_stat_param', id, 'stackRules.breakAction（可选）必须为 clear | decay_1');
+        }
+      }
+    }
   }
 
   for (const row of effectRows) {
@@ -1026,6 +1078,8 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     }
     // ⑦机制批① 字段组（缺席=不校·镜像 ConfigValidatorS7.ts 同名规则）。
     const isModTag = MOD_STATE_TAGS.includes(row.stateTag);
+    const isPeriodicTag = PERIODIC_STATE_TAGS.includes(row.stateTag);
+    const isFrameworkTag = isModTag || isPeriodicTag;
     if (row.effectType === 'apply_state' && row.stateTag === 'none') fail('battle_effect_param', id, 'apply_state 效果要求 stateTag ≠ none');
     if (isModTag) {
       const amt = num(row.stateAmount);
@@ -1033,14 +1087,33 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     } else if (row.stateAmount !== undefined) {
       fail('battle_effect_param', id, 'stateAmount（可选）仅允许配给 M1 修正状态 tag');
     }
+    const tickChannels = ['stateTickAtkPct', 'stateTickMaxHpPct', 'stateTickFlat'];
+    if (isPeriodicTag) {
+      let anyPositive = false;
+      for (const f of tickChannels) {
+        if (row[f] === undefined) continue;
+        const v = num(row[f]);
+        if (v === null || v < 0 || !Number.isFinite(v)) fail('battle_effect_param', id, `${f}（可选）必须为 >= 0 的有限数`);
+        else if (v > 0) anyPositive = true;
+      }
+      if (!anyPositive) fail('battle_effect_param', id, `周期状态 ${row.stateTag} 要求 stateTickAtkPct/stateTickMaxHpPct/stateTickFlat 至少一项 > 0`);
+      if (row.stateTickIntervalSec !== undefined) {
+        const iv = num(row.stateTickIntervalSec);
+        if (iv === null || !(iv > 0)) fail('battle_effect_param', id, 'stateTickIntervalSec（可选）必须为正数');
+      }
+    } else {
+      for (const f of [...tickChannels, 'stateTickIntervalSec']) {
+        if (row[f] !== undefined) fail('battle_effect_param', id, `${f}（可选）仅允许配给周期状态 tag（burn/regen）`);
+      }
+    }
     if (row.stateMaxStacks !== undefined) {
       const sms = num(row.stateMaxStacks);
       if (sms === null || !Number.isInteger(sms) || sms < 1) fail('battle_effect_param', id, 'stateMaxStacks（可选）必须为 >= 1 的整数');
-      else if (!isModTag) fail('battle_effect_param', id, 'stateMaxStacks（可选）仅允许配给框架状态 tag');
+      else if (!isFrameworkTag) fail('battle_effect_param', id, 'stateMaxStacks（可选）仅允许配给框架状态 tag');
     }
     if (row.stateExpireAction !== undefined) {
       if (row.stateExpireAction !== 'clear' && row.stateExpireAction !== 'decay_1') fail('battle_effect_param', id, 'stateExpireAction（可选）必须为 clear | decay_1');
-      else if (!isModTag) fail('battle_effect_param', id, 'stateExpireAction（可选）仅允许配给框架状态 tag');
+      else if (!isFrameworkTag) fail('battle_effect_param', id, 'stateExpireAction（可选）仅允许配给框架状态 tag');
     }
     if (row.alsoApplyStateRefs !== undefined) {
       const refs = row.alsoApplyStateRefs;
