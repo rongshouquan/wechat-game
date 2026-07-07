@@ -47,8 +47,11 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   spawn_n030_w1 拆成 spawn_n030_boss+spawn_n030_adds（净+1）；+phase_n030 三阶段（Boss 6→7 → 21 阶段）。
     // ⑥第一段 20 舰落地（细表§12）：舰行 12→20（+8）+ 召唤物 3 行（无人机/诱饵盒/星鲸）→ 30+11=41；
     // 效果行 +22（普攻变体 6 + 技能 14 + 星核备用 2）→ 20+22=42。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(41); // +bu_boss_n030（n030首Boss本体）；块2 +bu_commission_transport；⑥+8舰+3召唤物
-    expect(readTable('battle_effect_param')).toHaveLength(42); // 块3 +eff_atomic_cannon；第2.5块块2 +eff_commission_transport_summon；⑥+22（eff_s7_*）
+    // ⑥三段落数（细表§20）：n009+ 每关落节点敌行 bu_n<XXX>_<role>（137 关 ×角色数 + Boss adds/母舰产出行）
+    //   =+196；41 基础行保留（教学 n001-n008/谜题/机制测试引用面）→ 41+196=237。
+    //   落数脚本幂等（clean-and-normalize → apply-enemy-landing），行数=脚本输出实测。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(237); // 41 基础 + ⑥三段 196 节点敌行
+    expect(readTable('battle_effect_param')).toHaveLength(57); // 42 + ⑥三段 15 母舰召唤节点效果行（eff_n*_summon·生命周期包）
     expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
     expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）
     expect(readTable('battle_boss_phase_param')).toHaveLength(21); // 7个Boss x 3阶段（+n030 首Boss 三阶段）

@@ -182,7 +182,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n009_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n009_w1",
@@ -204,7 +204,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n010_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n010_w1"
@@ -225,7 +225,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n011_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n011_w1",
@@ -247,7 +247,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n012_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n012_w1"
@@ -268,7 +268,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n013_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n013_w1",
@@ -290,7 +290,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n014_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n014_w1"
@@ -311,7 +311,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n015_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n015_w1",
@@ -333,7 +333,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n016_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n016_w1"
@@ -354,7 +354,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n017_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n017_w1",
@@ -376,7 +376,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n020_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n020_w1"
@@ -397,7 +397,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n021_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n021_w1",
@@ -419,7 +419,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n022_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n022_w1"
@@ -440,7 +440,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n023_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n023_w1",
@@ -462,7 +462,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n024_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n024_w1"
@@ -483,7 +483,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n025_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n025_w1",
@@ -505,7 +505,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n026_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n026_w1"
@@ -526,7 +526,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n027_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n027_w1",
@@ -548,7 +548,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n028_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n028_w1"
@@ -569,7 +569,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n029_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n029_w1",
@@ -592,7 +592,7 @@
     "pressureRef": "bp_n030",
     "enemyUnitStatRefs": [
       "bu_boss_n030",
-      "bu_enemy_swarm"
+      "bu_n030_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n030_boss",
@@ -618,7 +618,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n031_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n031_w1",
@@ -640,7 +640,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n032_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n032_w1"
@@ -661,7 +661,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n033_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n033_w1",
@@ -683,7 +683,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n034_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n034_w1"
@@ -704,7 +704,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n035_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n035_w1",
@@ -726,7 +726,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n036_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n036_w1"
@@ -747,7 +747,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n037_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n037_w1",
@@ -769,7 +769,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n038_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n038_w1"
@@ -790,7 +790,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n039_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n039_w1",
@@ -812,7 +812,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n040_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n040_w1"
@@ -833,7 +833,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n041_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n041_w1",
@@ -855,7 +855,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n042_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n042_w1"
@@ -876,7 +876,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n043_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n043_w1",
@@ -898,7 +898,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n044_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n044_w1"
@@ -919,7 +919,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n045_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n045_w1",
@@ -941,7 +941,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n046_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n046_w1"
@@ -962,7 +962,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n047_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n047_w1",
@@ -984,7 +984,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n048_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n048_w1"
@@ -1005,7 +1005,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n049_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n049_w1",
@@ -1027,7 +1027,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n050_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n050_w1"
@@ -1048,7 +1048,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n051_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n051_w1",
@@ -1070,7 +1070,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n052_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n052_w1"
@@ -1091,7 +1091,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n053_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n053_w1",
@@ -1113,7 +1113,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n054_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n054_w1"
@@ -1134,7 +1134,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n055_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n055_w1",
@@ -1156,7 +1156,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n056_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n056_w1"
@@ -1177,7 +1177,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n057_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n057_w1",
@@ -1199,7 +1199,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n058_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n058_w1"
@@ -1220,8 +1220,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "ep_sf01",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm_tough",
-      "bu_enemy_swarm"
+      "bu_n059_swarm_tough",
+      "bu_n059_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n059_w1",
@@ -1244,7 +1244,7 @@
     "pressureRef": "bp_n060",
     "enemyUnitStatRefs": [
       "bu_boss_n060",
-      "bu_enemy_swarm"
+      "bu_n060_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n060_boss",
@@ -1270,7 +1270,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n061_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n061_w1"
@@ -1291,7 +1291,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n062_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n062_w1"
@@ -1312,7 +1312,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n063_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n063_w1"
@@ -1333,7 +1333,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n064_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n064_w1"
@@ -1354,7 +1354,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n065_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n065_w1"
@@ -1375,7 +1375,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n066_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n066_w1"
@@ -1396,7 +1396,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n067_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n067_w1"
@@ -1417,7 +1417,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n068_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n068_w1"
@@ -1438,7 +1438,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n069_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n069_w1"
@@ -1459,7 +1459,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n070_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n070_w1"
@@ -1480,7 +1480,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n071_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n071_w1"
@@ -1501,7 +1501,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n072_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n072_w1"
@@ -1522,7 +1522,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n073_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n073_w1"
@@ -1543,7 +1543,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n074_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n074_w1"
@@ -1564,7 +1564,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n075_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n075_w1"
@@ -1585,7 +1585,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n076_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n076_w1"
@@ -1606,7 +1606,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n077_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n077_w1"
@@ -1627,7 +1627,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n078_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n078_w1"
@@ -1648,7 +1648,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n079_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n079_w1"
@@ -1669,7 +1669,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n080_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n080_w1"
@@ -1690,7 +1690,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n081_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n081_w1"
@@ -1711,7 +1711,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n082_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n082_w1"
@@ -1732,8 +1732,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "ep_sf02",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield_warden",
-      "bu_enemy_shield"
+      "bu_n083_shield_warden",
+      "bu_n083_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n083_w1",
@@ -1756,7 +1756,7 @@
     "pressureRef": "bp_n084",
     "enemyUnitStatRefs": [
       "bu_boss_n084",
-      "bu_enemy_shield"
+      "bu_n084_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n084_boss",
@@ -1782,8 +1782,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n085_backline",
+      "bu_n085_support"
     ],
     "spawnPlanRefs": [
       "spawn_n085_w1",
@@ -1805,7 +1805,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n086_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n086_w1"
@@ -1826,8 +1826,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n087_backline",
+      "bu_n087_support"
     ],
     "spawnPlanRefs": [
       "spawn_n087_w1",
@@ -1849,7 +1849,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n088_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n088_w1"
@@ -1870,8 +1870,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n089_backline",
+      "bu_n089_support"
     ],
     "spawnPlanRefs": [
       "spawn_n089_w1",
@@ -1893,7 +1893,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n090_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n090_w1"
@@ -1914,8 +1914,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n091_backline",
+      "bu_n091_support"
     ],
     "spawnPlanRefs": [
       "spawn_n091_w1",
@@ -1937,7 +1937,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n092_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n092_w1"
@@ -1958,8 +1958,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n093_backline",
+      "bu_n093_support"
     ],
     "spawnPlanRefs": [
       "spawn_n093_w1",
@@ -1981,7 +1981,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n094_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n094_w1"
@@ -2002,8 +2002,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n095_backline",
+      "bu_n095_support"
     ],
     "spawnPlanRefs": [
       "spawn_n095_w1",
@@ -2025,7 +2025,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n096_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n096_w1"
@@ -2046,8 +2046,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n097_backline",
+      "bu_n097_support"
     ],
     "spawnPlanRefs": [
       "spawn_n097_w1",
@@ -2069,7 +2069,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n098_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n098_w1"
@@ -2090,8 +2090,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n099_backline",
+      "bu_n099_support"
     ],
     "spawnPlanRefs": [
       "spawn_n099_w1",
@@ -2113,7 +2113,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n100_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n100_w1"
@@ -2134,8 +2134,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "ep_sf03",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline",
-      "bu_enemy_support"
+      "bu_n101_backline",
+      "bu_n101_support"
     ],
     "spawnPlanRefs": [
       "spawn_n101_w1",
@@ -2158,7 +2158,7 @@
     "pressureRef": "bp_n102",
     "enemyUnitStatRefs": [
       "bu_boss_n102",
-      "bu_enemy_backline"
+      "bu_n102_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n102_boss",
@@ -2184,8 +2184,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n103_summon_source",
+      "bu_n103_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n103_w1",
@@ -2207,7 +2207,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n104_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n104_w1"
@@ -2228,8 +2228,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n105_summon_source",
+      "bu_n105_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n105_w1",
@@ -2251,8 +2251,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n106_summon_source",
+      "bu_n106_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n106_w1",
@@ -2274,8 +2274,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n107_summon_source",
+      "bu_n107_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n107_w1",
@@ -2297,7 +2297,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n108_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n108_w1"
@@ -2318,8 +2318,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n109_summon_source",
+      "bu_n109_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n109_w1",
@@ -2341,8 +2341,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n110_summon_source",
+      "bu_n110_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n110_w1",
@@ -2364,8 +2364,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n111_summon_source",
+      "bu_n111_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n111_w1",
@@ -2387,7 +2387,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n112_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n112_w1"
@@ -2408,8 +2408,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n113_summon_source",
+      "bu_n113_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n113_w1",
@@ -2431,8 +2431,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n114_summon_source",
+      "bu_n114_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n114_w1",
@@ -2454,8 +2454,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n115_summon_source",
+      "bu_n115_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n115_w1",
@@ -2477,7 +2477,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n116_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n116_w1"
@@ -2498,8 +2498,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n117_summon_source",
+      "bu_n117_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n117_w1",
@@ -2521,8 +2521,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n118_summon_source",
+      "bu_n118_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n118_w1",
@@ -2544,8 +2544,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "ep_sf04",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n119_summon_source",
+      "bu_n119_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n119_w1",
@@ -2568,7 +2568,7 @@
     "pressureRef": "bp_n120",
     "enemyUnitStatRefs": [
       "bu_boss_n120",
-      "bu_enemy_summon_source",
+      "bu_n120_summon_source",
       "bu_enemy_boss_add"
     ],
     "spawnPlanRefs": [
@@ -2595,8 +2595,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n121_burst_raider",
+      "bu_n121_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n121_w1",
@@ -2618,7 +2618,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider"
+      "bu_n122_burst_raider"
     ],
     "spawnPlanRefs": [
       "spawn_n122_w1"
@@ -2639,8 +2639,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n123_burst_raider",
+      "bu_n123_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n123_w1",
@@ -2662,8 +2662,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_summon_source",
-      "bu_enemy_boss_add"
+      "bu_n124_summon_source",
+      "bu_n124_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n124_w1",
@@ -2685,8 +2685,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n125_burst_raider",
+      "bu_n125_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n125_w1",
@@ -2708,7 +2708,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider"
+      "bu_n126_burst_raider"
     ],
     "spawnPlanRefs": [
       "spawn_n126_w1"
@@ -2729,8 +2729,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n127_burst_raider",
+      "bu_n127_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n127_w1",
@@ -2752,7 +2752,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n128_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n128_w1"
@@ -2773,8 +2773,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n129_burst_raider",
+      "bu_n129_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n129_w1",
@@ -2796,7 +2796,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider"
+      "bu_n130_burst_raider"
     ],
     "spawnPlanRefs": [
       "spawn_n130_w1"
@@ -2817,8 +2817,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n131_burst_raider",
+      "bu_n131_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n131_w1",
@@ -2840,7 +2840,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n132_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n132_w1"
@@ -2861,8 +2861,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n133_burst_raider",
+      "bu_n133_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n133_w1",
@@ -2884,7 +2884,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider"
+      "bu_n134_burst_raider"
     ],
     "spawnPlanRefs": [
       "spawn_n134_w1"
@@ -2905,8 +2905,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n135_burst_raider",
+      "bu_n135_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n135_w1",
@@ -2928,7 +2928,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n136_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n136_w1"
@@ -2949,8 +2949,8 @@
     "secondaryPressureTag": "none",
     "pressureRef": "ep_sf05",
     "enemyUnitStatRefs": [
-      "bu_enemy_burst_raider",
-      "bu_enemy_charge"
+      "bu_n137_burst_raider",
+      "bu_n137_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n137_w1",
@@ -2973,7 +2973,7 @@
     "pressureRef": "bp_n138",
     "enemyUnitStatRefs": [
       "bu_boss_n138",
-      "bu_enemy_charge"
+      "bu_n138_charge"
     ],
     "spawnPlanRefs": [
       "spawn_n138_boss",
@@ -2999,7 +2999,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n139_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n139_w1"
@@ -3020,7 +3020,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_swarm"
+      "bu_n140_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n140_w1"
@@ -3041,7 +3041,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n141_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n141_w1"
@@ -3062,7 +3062,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n142_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n142_w1"
@@ -3083,7 +3083,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n143_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n143_w1"
@@ -3104,7 +3104,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_shield"
+      "bu_n144_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n144_w1"
@@ -3125,7 +3125,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n145_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n145_w1"
@@ -3146,7 +3146,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n146_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n146_w1"
@@ -3167,7 +3167,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n147_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n147_w1"
@@ -3188,7 +3188,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_backline"
+      "bu_n148_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n148_w1"
@@ -3209,7 +3209,7 @@
     "secondaryPressureTag": "none",
     "pressureRef": "ep_sf06",
     "enemyUnitStatRefs": [
-      "bu_enemy_boss_add"
+      "bu_n149_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n149_w1"
@@ -3231,7 +3231,7 @@
     "pressureRef": "bp_n150",
     "enemyUnitStatRefs": [
       "bu_boss_n150",
-      "bu_enemy_boss_add"
+      "bu_n150_boss_add"
     ],
     "spawnPlanRefs": [
       "spawn_n150_boss",

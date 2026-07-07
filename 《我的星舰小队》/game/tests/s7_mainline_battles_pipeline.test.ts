@@ -57,8 +57,9 @@ describe('⑥二段② 压力→敌配映射（规则=细表 §19）', () => {
     expect(raider.attack / raider.attackIntervalSec).toBeGreaterThan(tough.attack / tough.attackIntervalSec); // 攻权 2.2 vs 0.5
     expect(raider.armor).toBe(ROLE_SHAPE.bu_enemy_burst_raider.armor);
     // 等效厚度：n061=纯盾敌关——单位血=份额/2（盾循环=第二条血）
+    // ⑥三段落数后 enc_n061 引用节点行 bu_n061_shield（形状按 roleKeyOf 归一回 bu_enemy_shield 查表·数值语义不变）
     const s61 = mapPressureToEnemies(b, 'n061', 3104);
-    const shield = s61.units.bu_enemy_shield;
+    const shield = s61.units.bu_n061_shield;
     const rawShare = s61.pool / 3; // 三只均分
     expect(shield.maxHp).toBeLessThan(rawShare * 0.6); // ÷2.0 后显著小于原份额
   });
@@ -68,7 +69,37 @@ describe('⑥二段② 压力→敌配映射（规则=细表 §19）', () => {
     const lo = mapPressureToEnemies(b, 'n061', 2000);
     const hi = mapPressureToEnemies(b, 'n061', 8000);
     expect(hi.pool).toBeGreaterThan(lo.pool);
-    expect(hi.units.bu_enemy_shield.maxHp).toBeGreaterThan(lo.units.bu_enemy_shield.maxHp);
+    expect(hi.units.bu_n061_shield.maxHp).toBeGreaterThan(lo.units.bu_n061_shield.maxHp); // ⑥落数后键=节点行名
+
+  });
+});
+
+describe('⑥三段 落数一致性（JSON 真值==映射公式·抽样守卫）', () => {
+  // 守卫目标：磁盘节点敌行 = mapPressureToEnemies 公式值（防手改漂移/半截重落）。
+  // 抽样=普通关 n061（等效厚度）/ 墙关 n102（WALL_BOOST+M4 记档关）/ 毕业 Boss n150（BOSS_SHARE）。
+  // 压力值取自 ⑧ 经济尺 v0.6 压力表（loadPressure 同源）——若 ⑧ 重校压力，此测试红=提醒重落敌配。
+  it('n061 / n102 / n150 磁盘行值与公式一字不差', async () => {
+    const { readFileSync } = await import('node:fs');
+    const path = await import('node:path');
+    const b = loadBundle();
+    const { loadPressure } = await import('../tools/s7-battles-entry');
+    const pressure = loadPressure();
+    const dir = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7');
+    const units = JSON.parse(readFileSync(path.join(dir, 'battle_unit_stat_param.sample.json'), 'utf-8')) as
+      { rowId: string; maxHp: number; attack: number; armor: number; attackIntervalSec: number }[];
+    const byId = new Map(units.map((r) => [r.rowId, r]));
+    for (const node of [61, 102, 150]) {
+      const nodeId = `n${String(node).padStart(3, '0')}`;
+      const scale = mapPressureToEnemies(b, nodeId, pressure[node]);
+      for (const [rowId, attrs] of Object.entries(scale.units)) {
+        const row = byId.get(rowId);
+        expect(row, `${nodeId} 应有落数行 ${rowId}`).toBeTruthy();
+        expect(row!.maxHp, `${rowId}.maxHp`).toBe(attrs.maxHp);
+        expect(row!.attack, `${rowId}.attack`).toBe(attrs.attack);
+        expect(row!.armor, `${rowId}.armor`).toBe(attrs.armor);
+        expect(row!.attackIntervalSec, `${rowId}.attackIntervalSec`).toBe(attrs.attackIntervalSec);
+      }
+    }
   });
 });
 
@@ -91,8 +122,10 @@ describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
   it('克制语义抽验：n104 点名题 中位挣扎 vs 克制向速通', async () => {
     const med = await scanMainlineAsync({ family: 'median', samples: 3, fromNode: 104, toNode: 104 });
     const ctr = await scanMainlineAsync({ family: 'counter', samples: 3, fromNode: 104, toNode: 104 });
+    // ⑥三段落数重定基：落数量纲下中位阵容能磨过 n104（66s=2.6× 普通关均值=真"挣扎"），
+    // 胜率差失去区分度；"换搭配破题"的管线级证据改用时长差（实测 66.3s vs 26.4s=2.5×·余量断 ×0.6）。
     expect(ctr[0].winRate).toBe(1);
-    expect(ctr[0].winRate).toBeGreaterThan(med[0].winRate); // 换搭配破题（核心体验的管线级证据）
+    expect(ctr[0].avgDurationSec).toBeLessThan(med[0].avgDurationSec * 0.6); // 克制向显著更快=破题
     expect(ctr[0].avgDurationSec).toBeLessThan(35);
   }, 30000);
 });

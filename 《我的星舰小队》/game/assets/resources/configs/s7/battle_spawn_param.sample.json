@@ -209,7 +209,7 @@
     "rowId": "spawn_n009_w1",
     "encounterRef": "enc_n009",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n009_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -229,7 +229,7 @@
     "rowId": "spawn_n009_w2",
     "encounterRef": "enc_n009",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n009_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -247,7 +247,7 @@
     "rowId": "spawn_n010_w1",
     "encounterRef": "enc_n010",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n010_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -267,7 +267,7 @@
     "rowId": "spawn_n011_w1",
     "encounterRef": "enc_n011",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n011_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -287,7 +287,7 @@
     "rowId": "spawn_n011_w2",
     "encounterRef": "enc_n011",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n011_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -305,7 +305,7 @@
     "rowId": "spawn_n012_w1",
     "encounterRef": "enc_n012",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n012_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -325,7 +325,7 @@
     "rowId": "spawn_n013_w1",
     "encounterRef": "enc_n013",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n013_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -345,7 +345,7 @@
     "rowId": "spawn_n013_w2",
     "encounterRef": "enc_n013",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n013_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -363,7 +363,7 @@
     "rowId": "spawn_n014_w1",
     "encounterRef": "enc_n014",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n014_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -383,7 +383,7 @@
     "rowId": "spawn_n015_w1",
     "encounterRef": "enc_n015",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n015_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -403,7 +403,7 @@
     "rowId": "spawn_n015_w2",
     "encounterRef": "enc_n015",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n015_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -421,7 +421,7 @@
     "rowId": "spawn_n016_w1",
     "encounterRef": "enc_n016",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n016_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -441,7 +441,7 @@
     "rowId": "spawn_n017_w1",
     "encounterRef": "enc_n017",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n017_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -461,7 +461,7 @@
     "rowId": "spawn_n017_w2",
     "encounterRef": "enc_n017",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n017_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -479,7 +479,7 @@
     "rowId": "spawn_n020_w1",
     "encounterRef": "enc_n020",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n020_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -499,7 +499,7 @@
     "rowId": "spawn_n021_w1",
     "encounterRef": "enc_n021",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n021_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -519,7 +519,7 @@
     "rowId": "spawn_n021_w2",
     "encounterRef": "enc_n021",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n021_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -537,7 +537,7 @@
     "rowId": "spawn_n022_w1",
     "encounterRef": "enc_n022",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n022_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -557,7 +557,7 @@
     "rowId": "spawn_n023_w1",
     "encounterRef": "enc_n023",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n023_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -577,7 +577,7 @@
     "rowId": "spawn_n023_w2",
     "encounterRef": "enc_n023",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n023_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -595,7 +595,7 @@
     "rowId": "spawn_n024_w1",
     "encounterRef": "enc_n024",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n024_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -615,7 +615,7 @@
     "rowId": "spawn_n025_w1",
     "encounterRef": "enc_n025",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n025_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -635,7 +635,7 @@
     "rowId": "spawn_n025_w2",
     "encounterRef": "enc_n025",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n025_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -653,7 +653,7 @@
     "rowId": "spawn_n026_w1",
     "encounterRef": "enc_n026",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n026_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -673,7 +673,7 @@
     "rowId": "spawn_n027_w1",
     "encounterRef": "enc_n027",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n027_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -693,7 +693,7 @@
     "rowId": "spawn_n027_w2",
     "encounterRef": "enc_n027",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n027_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -711,7 +711,7 @@
     "rowId": "spawn_n028_w1",
     "encounterRef": "enc_n028",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n028_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -731,7 +731,7 @@
     "rowId": "spawn_n029_w1",
     "encounterRef": "enc_n029",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n029_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -751,7 +751,7 @@
     "rowId": "spawn_n029_w2",
     "encounterRef": "enc_n029",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n029_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -783,7 +783,7 @@
     "rowId": "spawn_n030_adds",
     "encounterRef": "enc_n030",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n030_swarm",
     "count": 4,
     "slotRefs": [
       "r2c1",
@@ -800,7 +800,7 @@
     "rowId": "spawn_n031_w1",
     "encounterRef": "enc_n031",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n031_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -820,7 +820,7 @@
     "rowId": "spawn_n031_w2",
     "encounterRef": "enc_n031",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n031_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -838,7 +838,7 @@
     "rowId": "spawn_n032_w1",
     "encounterRef": "enc_n032",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n032_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -858,7 +858,7 @@
     "rowId": "spawn_n033_w1",
     "encounterRef": "enc_n033",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n033_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -878,7 +878,7 @@
     "rowId": "spawn_n033_w2",
     "encounterRef": "enc_n033",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n033_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -896,7 +896,7 @@
     "rowId": "spawn_n034_w1",
     "encounterRef": "enc_n034",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n034_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -916,7 +916,7 @@
     "rowId": "spawn_n035_w1",
     "encounterRef": "enc_n035",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n035_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -936,7 +936,7 @@
     "rowId": "spawn_n035_w2",
     "encounterRef": "enc_n035",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n035_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -954,7 +954,7 @@
     "rowId": "spawn_n036_w1",
     "encounterRef": "enc_n036",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n036_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -974,7 +974,7 @@
     "rowId": "spawn_n037_w1",
     "encounterRef": "enc_n037",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n037_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -994,7 +994,7 @@
     "rowId": "spawn_n037_w2",
     "encounterRef": "enc_n037",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n037_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1012,7 +1012,7 @@
     "rowId": "spawn_n038_w1",
     "encounterRef": "enc_n038",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n038_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1032,7 +1032,7 @@
     "rowId": "spawn_n039_w1",
     "encounterRef": "enc_n039",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n039_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1052,7 +1052,7 @@
     "rowId": "spawn_n039_w2",
     "encounterRef": "enc_n039",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n039_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1070,7 +1070,7 @@
     "rowId": "spawn_n040_w1",
     "encounterRef": "enc_n040",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n040_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1090,7 +1090,7 @@
     "rowId": "spawn_n041_w1",
     "encounterRef": "enc_n041",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n041_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1110,7 +1110,7 @@
     "rowId": "spawn_n041_w2",
     "encounterRef": "enc_n041",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n041_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1128,7 +1128,7 @@
     "rowId": "spawn_n042_w1",
     "encounterRef": "enc_n042",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n042_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1148,7 +1148,7 @@
     "rowId": "spawn_n043_w1",
     "encounterRef": "enc_n043",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n043_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1168,7 +1168,7 @@
     "rowId": "spawn_n043_w2",
     "encounterRef": "enc_n043",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n043_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1186,7 +1186,7 @@
     "rowId": "spawn_n044_w1",
     "encounterRef": "enc_n044",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n044_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1206,7 +1206,7 @@
     "rowId": "spawn_n045_w1",
     "encounterRef": "enc_n045",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n045_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1226,7 +1226,7 @@
     "rowId": "spawn_n045_w2",
     "encounterRef": "enc_n045",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n045_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1244,7 +1244,7 @@
     "rowId": "spawn_n046_w1",
     "encounterRef": "enc_n046",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n046_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1264,7 +1264,7 @@
     "rowId": "spawn_n047_w1",
     "encounterRef": "enc_n047",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n047_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1284,7 +1284,7 @@
     "rowId": "spawn_n047_w2",
     "encounterRef": "enc_n047",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n047_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1302,7 +1302,7 @@
     "rowId": "spawn_n048_w1",
     "encounterRef": "enc_n048",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n048_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1322,7 +1322,7 @@
     "rowId": "spawn_n049_w1",
     "encounterRef": "enc_n049",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n049_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1342,7 +1342,7 @@
     "rowId": "spawn_n049_w2",
     "encounterRef": "enc_n049",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n049_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1360,7 +1360,7 @@
     "rowId": "spawn_n050_w1",
     "encounterRef": "enc_n050",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n050_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1380,7 +1380,7 @@
     "rowId": "spawn_n051_w1",
     "encounterRef": "enc_n051",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n051_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1400,7 +1400,7 @@
     "rowId": "spawn_n051_w2",
     "encounterRef": "enc_n051",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n051_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1418,7 +1418,7 @@
     "rowId": "spawn_n052_w1",
     "encounterRef": "enc_n052",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n052_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1438,7 +1438,7 @@
     "rowId": "spawn_n053_w1",
     "encounterRef": "enc_n053",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n053_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1458,7 +1458,7 @@
     "rowId": "spawn_n053_w2",
     "encounterRef": "enc_n053",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n053_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1476,7 +1476,7 @@
     "rowId": "spawn_n054_w1",
     "encounterRef": "enc_n054",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n054_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1496,7 +1496,7 @@
     "rowId": "spawn_n055_w1",
     "encounterRef": "enc_n055",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n055_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1516,7 +1516,7 @@
     "rowId": "spawn_n055_w2",
     "encounterRef": "enc_n055",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n055_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1534,7 +1534,7 @@
     "rowId": "spawn_n056_w1",
     "encounterRef": "enc_n056",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n056_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1554,7 +1554,7 @@
     "rowId": "spawn_n057_w1",
     "encounterRef": "enc_n057",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n057_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1574,7 +1574,7 @@
     "rowId": "spawn_n057_w2",
     "encounterRef": "enc_n057",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n057_swarm",
     "count": 5,
     "slotRefs": [
       "r1c1",
@@ -1592,7 +1592,7 @@
     "rowId": "spawn_n058_w1",
     "encounterRef": "enc_n058",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n058_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1612,7 +1612,7 @@
     "rowId": "spawn_n059_w1",
     "encounterRef": "enc_n059",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm_tough",
+    "unitStatRef": "bu_n059_swarm_tough",
     "count": 8,
     "slotRefs": [
       "r0c0",
@@ -1633,7 +1633,7 @@
     "rowId": "spawn_n059_w2",
     "encounterRef": "enc_n059",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n059_swarm",
     "count": 4,
     "slotRefs": [
       "r1c2",
@@ -1650,7 +1650,7 @@
     "rowId": "spawn_n060_adds",
     "encounterRef": "enc_n060",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n060_swarm",
     "count": 6,
     "slotRefs": [
       "r2c0",
@@ -1683,7 +1683,7 @@
     "rowId": "spawn_n061_w1",
     "encounterRef": "enc_n061",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n061_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -1699,7 +1699,7 @@
     "rowId": "spawn_n062_w1",
     "encounterRef": "enc_n062",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n062_shield",
     "count": 3,
     "slotRefs": [
       "r1c1",
@@ -1715,7 +1715,7 @@
     "rowId": "spawn_n063_w1",
     "encounterRef": "enc_n063",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n063_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -1731,7 +1731,7 @@
     "rowId": "spawn_n064_w1",
     "encounterRef": "enc_n064",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n064_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1751,7 +1751,7 @@
     "rowId": "spawn_n065_w1",
     "encounterRef": "enc_n065",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n065_shield",
     "count": 3,
     "slotRefs": [
       "r1c1",
@@ -1767,7 +1767,7 @@
     "rowId": "spawn_n066_w1",
     "encounterRef": "enc_n066",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n066_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -1783,7 +1783,7 @@
     "rowId": "spawn_n067_w1",
     "encounterRef": "enc_n067",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n067_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -1799,7 +1799,7 @@
     "rowId": "spawn_n068_w1",
     "encounterRef": "enc_n068",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n068_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1819,7 +1819,7 @@
     "rowId": "spawn_n069_w1",
     "encounterRef": "enc_n069",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n069_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -1835,7 +1835,7 @@
     "rowId": "spawn_n070_w1",
     "encounterRef": "enc_n070",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n070_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -1851,7 +1851,7 @@
     "rowId": "spawn_n071_w1",
     "encounterRef": "enc_n071",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n071_shield",
     "count": 3,
     "slotRefs": [
       "r1c1",
@@ -1867,7 +1867,7 @@
     "rowId": "spawn_n072_w1",
     "encounterRef": "enc_n072",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n072_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1887,7 +1887,7 @@
     "rowId": "spawn_n073_w1",
     "encounterRef": "enc_n073",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n073_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -1903,7 +1903,7 @@
     "rowId": "spawn_n074_w1",
     "encounterRef": "enc_n074",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n074_shield",
     "count": 3,
     "slotRefs": [
       "r1c1",
@@ -1919,7 +1919,7 @@
     "rowId": "spawn_n075_w1",
     "encounterRef": "enc_n075",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n075_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -1935,7 +1935,7 @@
     "rowId": "spawn_n076_w1",
     "encounterRef": "enc_n076",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n076_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -1955,7 +1955,7 @@
     "rowId": "spawn_n077_w1",
     "encounterRef": "enc_n077",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n077_shield",
     "count": 3,
     "slotRefs": [
       "r1c1",
@@ -1971,7 +1971,7 @@
     "rowId": "spawn_n078_w1",
     "encounterRef": "enc_n078",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n078_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -1987,7 +1987,7 @@
     "rowId": "spawn_n079_w1",
     "encounterRef": "enc_n079",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n079_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -2003,7 +2003,7 @@
     "rowId": "spawn_n080_w1",
     "encounterRef": "enc_n080",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n080_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -2023,7 +2023,7 @@
     "rowId": "spawn_n081_w1",
     "encounterRef": "enc_n081",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n081_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -2039,7 +2039,7 @@
     "rowId": "spawn_n082_w1",
     "encounterRef": "enc_n082",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n082_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -2055,7 +2055,7 @@
     "rowId": "spawn_n083_w1",
     "encounterRef": "enc_n083",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield_warden",
+    "unitStatRef": "bu_n083_shield_warden",
     "count": 1,
     "slotRefs": [
       "r0c1"
@@ -2069,7 +2069,7 @@
     "rowId": "spawn_n083_w2",
     "encounterRef": "enc_n083",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n083_shield",
     "count": 2,
     "slotRefs": [
       "r2c0",
@@ -2084,7 +2084,7 @@
     "rowId": "spawn_n084_adds",
     "encounterRef": "enc_n084",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n084_shield",
     "count": 2,
     "slotRefs": [
       "r2c1",
@@ -2113,7 +2113,7 @@
     "rowId": "spawn_n085_w1",
     "encounterRef": "enc_n085",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n085_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2129,7 +2129,7 @@
     "rowId": "spawn_n085_w2",
     "encounterRef": "enc_n085",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n085_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2144,7 +2144,7 @@
     "rowId": "spawn_n086_w1",
     "encounterRef": "enc_n086",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n086_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2160,7 +2160,7 @@
     "rowId": "spawn_n087_w1",
     "encounterRef": "enc_n087",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n087_backline",
     "count": 3,
     "slotRefs": [
       "r4c1",
@@ -2176,7 +2176,7 @@
     "rowId": "spawn_n087_w2",
     "encounterRef": "enc_n087",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n087_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2191,7 +2191,7 @@
     "rowId": "spawn_n088_w1",
     "encounterRef": "enc_n088",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n088_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -2211,7 +2211,7 @@
     "rowId": "spawn_n089_w1",
     "encounterRef": "enc_n089",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n089_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2227,7 +2227,7 @@
     "rowId": "spawn_n089_w2",
     "encounterRef": "enc_n089",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n089_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2242,7 +2242,7 @@
     "rowId": "spawn_n090_w1",
     "encounterRef": "enc_n090",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n090_backline",
     "count": 3,
     "slotRefs": [
       "r4c1",
@@ -2258,7 +2258,7 @@
     "rowId": "spawn_n091_w1",
     "encounterRef": "enc_n091",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n091_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2274,7 +2274,7 @@
     "rowId": "spawn_n091_w2",
     "encounterRef": "enc_n091",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n091_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2289,7 +2289,7 @@
     "rowId": "spawn_n092_w1",
     "encounterRef": "enc_n092",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n092_shield",
     "count": 3,
     "slotRefs": [
       "r1c1",
@@ -2305,7 +2305,7 @@
     "rowId": "spawn_n093_w1",
     "encounterRef": "enc_n093",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n093_backline",
     "count": 3,
     "slotRefs": [
       "r4c1",
@@ -2321,7 +2321,7 @@
     "rowId": "spawn_n093_w2",
     "encounterRef": "enc_n093",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n093_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2336,7 +2336,7 @@
     "rowId": "spawn_n094_w1",
     "encounterRef": "enc_n094",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n094_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2352,7 +2352,7 @@
     "rowId": "spawn_n095_w1",
     "encounterRef": "enc_n095",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n095_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2368,7 +2368,7 @@
     "rowId": "spawn_n095_w2",
     "encounterRef": "enc_n095",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n095_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2383,7 +2383,7 @@
     "rowId": "spawn_n096_w1",
     "encounterRef": "enc_n096",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n096_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -2403,7 +2403,7 @@
     "rowId": "spawn_n097_w1",
     "encounterRef": "enc_n097",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n097_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2419,7 +2419,7 @@
     "rowId": "spawn_n097_w2",
     "encounterRef": "enc_n097",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n097_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2434,7 +2434,7 @@
     "rowId": "spawn_n098_w1",
     "encounterRef": "enc_n098",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n098_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2450,7 +2450,7 @@
     "rowId": "spawn_n099_w1",
     "encounterRef": "enc_n099",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n099_backline",
     "count": 3,
     "slotRefs": [
       "r4c1",
@@ -2466,7 +2466,7 @@
     "rowId": "spawn_n099_w2",
     "encounterRef": "enc_n099",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n099_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2481,7 +2481,7 @@
     "rowId": "spawn_n100_w1",
     "encounterRef": "enc_n100",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n100_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -2497,7 +2497,7 @@
     "rowId": "spawn_n101_w1",
     "encounterRef": "enc_n101",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n101_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2513,7 +2513,7 @@
     "rowId": "spawn_n101_w2",
     "encounterRef": "enc_n101",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_support",
+    "unitStatRef": "bu_n101_support",
     "count": 2,
     "slotRefs": [
       "r4c2",
@@ -2528,16 +2528,14 @@
     "rowId": "spawn_n102_adds",
     "encounterRef": "enc_n102",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
-    "count": 3,
+    "unitStatRef": "bu_n102_backline",
+    "count": 1,
     "slotRefs": [
-      "r4c1",
-      "r4c3",
-      "r4c5"
+      "r4c1"
     ],
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 8,
-    "note": "enc_n102 第1波：bu_enemy_backline x3"
+    "note": "enc_n102 第1波：bu_enemy_backline x3·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2558,7 +2556,7 @@
     "rowId": "spawn_n103_w1",
     "encounterRef": "enc_n103",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n103_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2573,7 +2571,7 @@
     "rowId": "spawn_n103_w2",
     "encounterRef": "enc_n103",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n103_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2590,7 +2588,7 @@
     "rowId": "spawn_n104_w1",
     "encounterRef": "enc_n104",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n104_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2606,7 +2604,7 @@
     "rowId": "spawn_n105_w1",
     "encounterRef": "enc_n105",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n105_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2621,7 +2619,7 @@
     "rowId": "spawn_n105_w2",
     "encounterRef": "enc_n105",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n105_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2638,7 +2636,7 @@
     "rowId": "spawn_n106_w1",
     "encounterRef": "enc_n106",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n106_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2653,7 +2651,7 @@
     "rowId": "spawn_n106_w2",
     "encounterRef": "enc_n106",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n106_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2670,7 +2668,7 @@
     "rowId": "spawn_n107_w1",
     "encounterRef": "enc_n107",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n107_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2685,7 +2683,7 @@
     "rowId": "spawn_n107_w2",
     "encounterRef": "enc_n107",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n107_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2702,7 +2700,7 @@
     "rowId": "spawn_n108_w1",
     "encounterRef": "enc_n108",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n108_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -2722,7 +2720,7 @@
     "rowId": "spawn_n109_w1",
     "encounterRef": "enc_n109",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n109_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2737,7 +2735,7 @@
     "rowId": "spawn_n109_w2",
     "encounterRef": "enc_n109",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n109_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2754,7 +2752,7 @@
     "rowId": "spawn_n110_w1",
     "encounterRef": "enc_n110",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n110_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2769,7 +2767,7 @@
     "rowId": "spawn_n110_w2",
     "encounterRef": "enc_n110",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n110_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2786,7 +2784,7 @@
     "rowId": "spawn_n111_w1",
     "encounterRef": "enc_n111",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n111_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2801,7 +2799,7 @@
     "rowId": "spawn_n111_w2",
     "encounterRef": "enc_n111",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n111_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2818,7 +2816,7 @@
     "rowId": "spawn_n112_w1",
     "encounterRef": "enc_n112",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n112_shield",
     "count": 3,
     "slotRefs": [
       "r0c0",
@@ -2834,7 +2832,7 @@
     "rowId": "spawn_n113_w1",
     "encounterRef": "enc_n113",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n113_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2849,7 +2847,7 @@
     "rowId": "spawn_n113_w2",
     "encounterRef": "enc_n113",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n113_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2866,7 +2864,7 @@
     "rowId": "spawn_n114_w1",
     "encounterRef": "enc_n114",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n114_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2881,7 +2879,7 @@
     "rowId": "spawn_n114_w2",
     "encounterRef": "enc_n114",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n114_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2898,7 +2896,7 @@
     "rowId": "spawn_n115_w1",
     "encounterRef": "enc_n115",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n115_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2913,7 +2911,7 @@
     "rowId": "spawn_n115_w2",
     "encounterRef": "enc_n115",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n115_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2930,7 +2928,7 @@
     "rowId": "spawn_n116_w1",
     "encounterRef": "enc_n116",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n116_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -2946,7 +2944,7 @@
     "rowId": "spawn_n117_w1",
     "encounterRef": "enc_n117",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n117_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2961,7 +2959,7 @@
     "rowId": "spawn_n117_w2",
     "encounterRef": "enc_n117",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n117_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -2978,7 +2976,7 @@
     "rowId": "spawn_n118_w1",
     "encounterRef": "enc_n118",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n118_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -2993,7 +2991,7 @@
     "rowId": "spawn_n118_w2",
     "encounterRef": "enc_n118",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n118_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3010,7 +3008,7 @@
     "rowId": "spawn_n119_w1",
     "encounterRef": "enc_n119",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n119_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3025,7 +3023,7 @@
     "rowId": "spawn_n119_w2",
     "encounterRef": "enc_n119",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n119_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3042,7 +3040,7 @@
     "rowId": "spawn_n120_adds",
     "encounterRef": "enc_n120",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n120_summon_source",
     "count": 2,
     "slotRefs": [
       "r3c1",
@@ -3071,7 +3069,7 @@
     "rowId": "spawn_n121_w1",
     "encounterRef": "enc_n121",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n121_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3086,7 +3084,7 @@
     "rowId": "spawn_n121_w2",
     "encounterRef": "enc_n121",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n121_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3101,7 +3099,7 @@
     "rowId": "spawn_n122_w1",
     "encounterRef": "enc_n122",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n122_burst_raider",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -3117,7 +3115,7 @@
     "rowId": "spawn_n123_w1",
     "encounterRef": "enc_n123",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n123_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3132,7 +3130,7 @@
     "rowId": "spawn_n123_w2",
     "encounterRef": "enc_n123",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n123_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3147,7 +3145,7 @@
     "rowId": "spawn_n124_w1",
     "encounterRef": "enc_n124",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_summon_source",
+    "unitStatRef": "bu_n124_summon_source",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3162,7 +3160,7 @@
     "rowId": "spawn_n124_w2",
     "encounterRef": "enc_n124",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n124_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3179,7 +3177,7 @@
     "rowId": "spawn_n125_w1",
     "encounterRef": "enc_n125",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n125_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3194,7 +3192,7 @@
     "rowId": "spawn_n125_w2",
     "encounterRef": "enc_n125",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n125_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3209,7 +3207,7 @@
     "rowId": "spawn_n126_w1",
     "encounterRef": "enc_n126",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n126_burst_raider",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -3225,7 +3223,7 @@
     "rowId": "spawn_n127_w1",
     "encounterRef": "enc_n127",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n127_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3240,7 +3238,7 @@
     "rowId": "spawn_n127_w2",
     "encounterRef": "enc_n127",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n127_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3255,7 +3253,7 @@
     "rowId": "spawn_n128_w1",
     "encounterRef": "enc_n128",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n128_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -3275,7 +3273,7 @@
     "rowId": "spawn_n129_w1",
     "encounterRef": "enc_n129",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n129_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3290,7 +3288,7 @@
     "rowId": "spawn_n129_w2",
     "encounterRef": "enc_n129",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n129_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3305,7 +3303,7 @@
     "rowId": "spawn_n130_w1",
     "encounterRef": "enc_n130",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n130_burst_raider",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -3321,7 +3319,7 @@
     "rowId": "spawn_n131_w1",
     "encounterRef": "enc_n131",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n131_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3336,7 +3334,7 @@
     "rowId": "spawn_n131_w2",
     "encounterRef": "enc_n131",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n131_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3351,7 +3349,7 @@
     "rowId": "spawn_n132_w1",
     "encounterRef": "enc_n132",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n132_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -3367,7 +3365,7 @@
     "rowId": "spawn_n133_w1",
     "encounterRef": "enc_n133",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n133_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3382,7 +3380,7 @@
     "rowId": "spawn_n133_w2",
     "encounterRef": "enc_n133",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n133_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3397,7 +3395,7 @@
     "rowId": "spawn_n134_w1",
     "encounterRef": "enc_n134",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n134_burst_raider",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -3413,7 +3411,7 @@
     "rowId": "spawn_n135_w1",
     "encounterRef": "enc_n135",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n135_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3428,7 +3426,7 @@
     "rowId": "spawn_n135_w2",
     "encounterRef": "enc_n135",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n135_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3443,7 +3441,7 @@
     "rowId": "spawn_n136_w1",
     "encounterRef": "enc_n136",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n136_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -3459,7 +3457,7 @@
     "rowId": "spawn_n137_w1",
     "encounterRef": "enc_n137",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_burst_raider",
+    "unitStatRef": "bu_n137_burst_raider",
     "count": 2,
     "slotRefs": [
       "r0c1",
@@ -3474,7 +3472,7 @@
     "rowId": "spawn_n137_w2",
     "encounterRef": "enc_n137",
     "waveIndex": 2,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n137_charge",
     "count": 2,
     "slotRefs": [
       "r1c2",
@@ -3489,7 +3487,7 @@
     "rowId": "spawn_n138_adds",
     "encounterRef": "enc_n138",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_charge",
+    "unitStatRef": "bu_n138_charge",
     "count": 2,
     "slotRefs": [
       "r3c1",
@@ -3518,7 +3516,7 @@
     "rowId": "spawn_n139_w1",
     "encounterRef": "enc_n139",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n139_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3535,7 +3533,7 @@
     "rowId": "spawn_n140_w1",
     "encounterRef": "enc_n140",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_swarm",
+    "unitStatRef": "bu_n140_swarm",
     "count": 7,
     "slotRefs": [
       "r0c0",
@@ -3555,7 +3553,7 @@
     "rowId": "spawn_n141_w1",
     "encounterRef": "enc_n141",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n141_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3572,7 +3570,7 @@
     "rowId": "spawn_n142_w1",
     "encounterRef": "enc_n142",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n142_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3589,7 +3587,7 @@
     "rowId": "spawn_n143_w1",
     "encounterRef": "enc_n143",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n143_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3606,7 +3604,7 @@
     "rowId": "spawn_n144_w1",
     "encounterRef": "enc_n144",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_shield",
+    "unitStatRef": "bu_n144_shield",
     "count": 3,
     "slotRefs": [
       "r0c1",
@@ -3622,7 +3620,7 @@
     "rowId": "spawn_n145_w1",
     "encounterRef": "enc_n145",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n145_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3639,7 +3637,7 @@
     "rowId": "spawn_n146_w1",
     "encounterRef": "enc_n146",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n146_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3656,7 +3654,7 @@
     "rowId": "spawn_n147_w1",
     "encounterRef": "enc_n147",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n147_boss_add",
     "count": 4,
     "slotRefs": [
       "r0c1",
@@ -3673,7 +3671,7 @@
     "rowId": "spawn_n148_w1",
     "encounterRef": "enc_n148",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_backline",
+    "unitStatRef": "bu_n148_backline",
     "count": 3,
     "slotRefs": [
       "r3c1",
@@ -3689,7 +3687,7 @@
     "rowId": "spawn_n149_w1",
     "encounterRef": "enc_n149",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n149_boss_add",
     "count": 6,
     "slotRefs": [
       "r0c1",
@@ -3708,7 +3706,7 @@
     "rowId": "spawn_n150_adds",
     "encounterRef": "enc_n150",
     "waveIndex": 1,
-    "unitStatRef": "bu_enemy_boss_add",
+    "unitStatRef": "bu_n150_boss_add",
     "count": 2,
     "slotRefs": [
       "r0c0",

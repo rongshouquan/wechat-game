@@ -8,6 +8,7 @@
 // 星域放大曲线口径（§19 成文）：不设独立曲线——压力值 P 本身已含星域递进（经济尺双锚生成法），
 //   映射只吃 P、星域系数不二次乘（否则双重计价）。
 import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
 import {
@@ -36,6 +37,19 @@ export function loadBundle(): Bundle {
 }
 function clone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v)) as T;
+}
+
+/** 逐关到达时点养成态（⑧ --milestones 文本输出解析·普通档）：nodeId → { day, power }。
+ *  机读字段待⑧补 JSON（已回总控加需求）；解析只读输出、不碰经济尺文件。 */
+export function loadMilestones(): Map<string, { day: number; power: number }> {
+  const out = execSync('node tools/simulate-s7-economy.mjs --milestones', { cwd: GAME_ROOT, encoding: 'utf-8', maxBuffer: 32 * 1024 * 1024 });
+  const map = new Map<string, { day: number; power: number }>();
+  for (const line of out.split(/\r?\n/)) {
+    const m = line.match(/^(n\d{3})\tD(\d+)\t(\d+)\t/);
+    if (m) map.set(m[1], { day: Number(m[2]), power: Number(m[3]) });
+  }
+  if (map.size < 100) throw new Error(`milestones 解析异常：仅 ${map.size} 行`);
+  return map;
 }
 
 /** 压力值表（下标 1..150）。默认=初值表 JSON 快照；⑧收官后第三段换新版（本入口吃入参可覆盖·与来源解耦）。 */
@@ -71,28 +85,43 @@ export interface GrowthPlan {
   level: number;
   plugins: S7PluginQuality[];
   withCore: boolean;
-  /** 单舰战力（含核）。 */
+  /** 驾驶员星级（1-5）与等级（战力公式 v0 完整版：星系数×(1+0.01×驾级)）。 */
+  pilotStar: number;
+  pilotLevel: number;
+  /** 单舰战力（含核·含驾驶员系数）。 */
   shipPower: number;
 }
+/** 星级系数（初值表 §3）。 */
+const STAR_MULT = [1.0, 1.0, 1.08, 1.18, 1.3, 1.45]; // 下标=星级
 
-/** 单舰战力（战力公式 v0·驾驶员系数粗放=1★Lv1≈1.0）。 */
-function shipPowerOf(tier: Tier, level: number, plugins: S7PluginQuality[], withCore: boolean): number {
+/** 单舰战力（战力公式 v0 完整版·初值表 §3：(基值×等级项+插件)×驾驶员系数+核）。 */
+function shipPowerOf(tier: Tier, level: number, plugins: S7PluginQuality[], withCore: boolean, pilotStar: number, pilotLevel: number): number {
   const base = TIER_BASE[tier] * (1 + 0.08 * (level - 1));
   const plug = plugins.reduce((a, q) => a + PLUGIN_POWER[q], 0);
-  return base + plug + (withCore ? CORE_POWER : 0);
+  const pilotMult = STAR_MULT[pilotStar] * (1 + 0.01 * pilotLevel);
+  return (base + plug) * pilotMult + (withCore ? CORE_POWER : 0);
 }
 
-/** 养成刻度反解（全队同构粗放版）：找 阶级×等级 使 5 舰总战力最接近目标 P。 */
+/** 养成刻度反解（全队同构粗放版）：阶级×等级×驾驶员星/级 使 5 舰总战力最接近目标 P。
+ *  驾驶员进度与舰同步走（星级≈阶级档·驾级=舰级同频）——真实玩家双线并进的粗放近似。 */
 export function solveGrowthPlan(targetTeamPower: number): GrowthPlan {
   const perShip = targetTeamPower / 5;
+  const TIER_STAR: Record<Tier, number> = { C: 1, B: 2, A: 3, S: 4, SS: 5 }; // 星级随阶（粗放同步）
   let best: GrowthPlan | null = null;
   for (const tier of TIERS) {
     const plugins = TIER_PLUGINS[tier];
     const withCore = tier === 'S' || tier === 'SS';
+    const pilotStar = TIER_STAR[tier];
     for (let lv = 1; lv <= TIER_LV_CAP[tier]; lv += 1) {
-      const p = shipPowerOf(tier, lv, plugins, withCore);
-      if (!best || Math.abs(p - perShip) < Math.abs(best.shipPower - perShip)) {
-        best = { tier, level: lv, plugins, withCore, shipPower: p };
+      // 驾级=舰级同频为主轴 + ±20 级独立微调（反解量化间隙实证：n120 到达/破墙两态 14976 vs 16510
+      // 曾落同一档=同队打同墙——墙窗口验证失真；驾级微调轴把档间隙填到 <1%）。
+      const plvLo = Math.max(1, lv - 20);
+      const plvHi = Math.min(TIER_LV_CAP[tier], lv + 20);
+      for (let pilotLevel = plvLo; pilotLevel <= plvHi; pilotLevel += 2) {
+        const p = shipPowerOf(tier, lv, plugins, withCore, pilotStar, pilotLevel);
+        if (!best || Math.abs(p - perShip) < Math.abs(best.shipPower - perShip)) {
+          best = { tier, level: lv, plugins, withCore, pilotStar, pilotLevel, shipPower: p };
+        }
       }
     }
   }
@@ -131,6 +160,11 @@ export function genLineup(family: LineupFamily, targetTeamPower: number, problem
     { kind: 'affix', affix: 'critRate', value: 0.05, source: 'crit_base' },
     { kind: 'affix', affix: 'critDmg', value: 0.5, source: 'crit_base' },
   ];
+  // 驾驶员战斗折算（C20 通道·粗放=attack%）：星系数×(1+1%/级)−1 → 攻击加成
+  const pilotCombat = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel) - 1;
+  if (pilotCombat > 0) {
+    extra.push({ kind: 'modifier', stat: 'attack', op: 'pct', value: pilotCombat, source: 'pilot_scale' });
+  }
   if (attrMult > 0) {
     extra.push(
       { kind: 'modifier', stat: 'maxHp', op: 'pct', value: attrMult, source: 'tier_up' },
@@ -178,6 +212,20 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
   bu_enemy_shield: { hpW: 0.9, atkW: 0.8, armor: 25, interval: 1.3, effHpMult: 2.0 },
   bu_enemy_boss_add: { hpW: 0.7, atkW: 0.8, armor: 8, interval: 1.2 },
 };
+/** 墙关陡度（⑥三段·经济尺墙矩阵>0 的真墙）：到达态（power<P 数个点）打不过、破墙态（≥P）能过——
+ *  没有陡度时战斗侧在贴线处必胜（手感靶设计），墙会比经济模型软=毕业节奏漂移（milestone 验收实证）。
+ *  n084/n138=余势墙零等待不加陡；n102 双威胁另有 adds 火力修（护后排克制工具=M4 未接线·复调记档）。 */
+const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
+  // 生存阈值立墙（迭代2）：池墙对 ±5-8% 战力窗口太钝（TTK 只差 5%）；敌火推到"到达态被磨穿、
+  // 破墙态盾奶站得住"的临界带——生存平衡点对战力差远陡于 TTK。
+  n060: { pool: 1.05, dps: 1.35 },
+  n102: { pool: 1.30, dps: 0.55 } /* M4依赖关：胜负由后排EHP二值主导·战力刻度失效(×1.12反不如贴线·实证§17)·M4护后排工具落地后复调 */, // 双威胁关：纯血墙化（护后排工具=M4 未接线·复调记档·破墙窗≈矩阵3天=×1.12）
+  n120: { pool: 0.98, dps: 1.25 }, // 迭代4：破墙 80% 但 114s 拖·池回落
+  n150: { pool: 0.96, dps: 1.15 }, // 迭代4：破墙 ×1.15 仅 40%/119s——火与池双回落（毕业墙=马拉松险胜非铁壁）
+  n084: { pool: 0.82, dps: 0.95 }, // 余势墙（矩阵0天）：减压保'破大墙后的爽段'语义
+  n138: { pool: 0.75, dps: 0.90 }, // 余势墙：φ双轴后中后期Boss自然厚·此关必须速通感（矩阵0天·贴线119s/80%超时实证过深）
+};
+
 /** Boss 行分成（血池/火力占比·余量归 adds）。 */
 const BOSS_SHARE = { hp: 0.65, dps: 0.3 }; // 首扫诊断：0.5 全压单点=前排瞬融·Boss=重锤节奏不是速射炮
 
@@ -196,11 +244,18 @@ export interface NodeScale {
  *  k 合同（k_hp/k_dps）在 C·Lv0 锚点（P=500）校准；全程敌量 = k×500×stage × φ(P)，
  *  φ(P)=strengthIndex(plan(P))/strengthIndex(plan(500))——压力值=养成态指针，敌厚度贴真实强度曲线，
  *  手感靶 25s 全程成立且墙语义保留（敌按 P 的强度、玩家按自身 W 的强度）。规则成文=细表 §19。 */
-export function strengthIndex(teamPower: number): number {
+/** 强度双轴（对称性完备形式·§19）：
+ *  - DPS 轴（敌池跟它走·TTK 恒定）= 阶乘×升级×驾驶员攻乘区；
+ *  - EHP 轴（敌火跟它走·生存恒定）= 阶乘×升级（驾驶员不加血）。
+ *  单轴版曾两头翻车：不含 pilot→中后期池薄（毕业墙软）；全含→敌火超队伍生存（全线被杀穿）。 */
+export function strengthIndex(teamPower: number, axis: 'dps' | 'ehp' = 'dps'): number {
   const plan = solveGrowthPlan(teamPower);
   const tierIdx = TIERS.indexOf(plan.tier);
   const growth = growthRatioOf(plan.level);
-  return Math.pow(TIER_ATTR_MULT, tierIdx) * growth;
+  const base = Math.pow(TIER_ATTR_MULT, tierIdx) * growth;
+  if (axis === 'ehp') return base;
+  const pilotDps = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel);
+  return base * pilotDps;
 }
 let GROWTH_CACHE: Array<{ from: number; to: number; pmin: number; pmax: number }> | null = null;
 function growthRatioOf(level: number): number {
@@ -228,11 +283,15 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   const mult = STAGE_MULT[stage];
   // 刻度→强度换算 φ（§19）：P≤锚点走线性原始合同（教学段 P<起手战力=碾压语义·不被锚点抬难）；
   // P>锚点按"应有养成态"的战斗强度补偿（吸收战力刻度与强度的换算漂移）。
-  const phi = pressure <= PHI_BASE
+  const phiPool = pressure <= PHI_BASE
     ? pressure / PHI_BASE
-    : strengthIndex(pressure) / strengthIndex(PHI_BASE);
-  const pool = K_HP * PHI_BASE * phi * mult.pool;
-  const dps = K_DPS * PHI_BASE * phi * mult.dps;
+    : strengthIndex(pressure, 'dps') / strengthIndex(PHI_BASE, 'dps');
+  const phiDps = pressure <= PHI_BASE
+    ? pressure / PHI_BASE
+    : strengthIndex(pressure, 'ehp') / strengthIndex(PHI_BASE, 'ehp');
+  const wall = WALL_BOOST[nodeId] ?? { pool: 1, dps: 1 };
+  const pool = K_HP * PHI_BASE * phiPool * mult.pool * wall.pool;
+  const dps = K_DPS * PHI_BASE * phiDps * mult.dps * wall.dps;
 
   // 该关单位数量表（按 spawn 计划）：rowId → count。
   const counts = new Map<string, number>();
@@ -242,6 +301,14 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
     counts.set(sp.unitStatRef, (counts.get(sp.unitStatRef) ?? 0) + sp.count);
   }
   const units: NodeScale['units'] = {};
+  // 节点行归一（落数后 encounter 引用 bu_nXXX_<role>·查形状表前还原为全局职业键；add/sadd=boss_add 形状）
+  const roleKeyOf = (rowId: string): string => {
+    if (rowId.startsWith('bu_boss_')) return rowId;
+    const m = rowId.match(/^bu_n\d+_(.+)$/);
+    if (!m) return rowId;
+    const suffix = m[1] === 'add' || m[1] === 'sadd' ? 'boss_add' : m[1];
+    return `bu_enemy_${suffix}`;
+  };
   const bossRows = [...counts.keys()].filter((r) => r.startsWith('bu_boss_'));
   const normalRows = [...counts.keys()].filter((r) => !r.startsWith('bu_boss_'));
 
@@ -259,12 +326,12 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   let hpWSum = 0;
   let atkWSum = 0;
   for (const r of normalRows) {
-    const shape = ROLE_SHAPE[r] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 };
+    const shape = ROLE_SHAPE[roleKeyOf(r)] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 };
     hpWSum += shape.hpW * (counts.get(r) ?? 0);
     atkWSum += shape.atkW * (counts.get(r) ?? 0);
   }
   for (const r of normalRows) {
-    const shape = ROLE_SHAPE[r] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 };
+    const shape = ROLE_SHAPE[roleKeyOf(r)] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 };
     const hpPer = (hpWSum > 0 ? (Math.max(0, poolLeft) * shape.hpW) / hpWSum : 0) / (shape.effHpMult ?? 1);
     const dpsPer = atkWSum > 0 ? (Math.max(0, dpsLeft) * shape.atkW) / atkWSum : 0;
     units[r] = {
@@ -296,6 +363,10 @@ export interface ScanOptions {
   toNode?: number;
   /** 阵容战力 = 压力值 × 此系数（默认 1=贴线；碾压/欠配实验用）。 */
   powerRatio?: number;
+  /** true=不做内存缩放、直接跑落地 JSON（⑥三段落数后的验收模式）。 */
+  noScale?: boolean;
+  /** true=阵容战力用"该关到达时点养成态"（⑧ --milestones）而非压力值——任务单三段#1 正主验收。 */
+  milestonePower?: boolean;
 }
 
 /** 全扫（runtime.load 为 async；每关构建一次 runtime·148 次 load+validate 实测秒级——性能账见细表 §19）。 */
@@ -312,6 +383,7 @@ export async function scanMainlineAsync(opts: ScanOptions = {}): Promise<NodeRep
     });
   const encs = base.battle_encounter_param as unknown as S7BattleEncounterParam[];
   const service = new S7BattleRunService();
+  const milestones = opts.milestonePower ? loadMilestones() : null;
   const out: NodeReport[] = [];
 
   for (const nodeId of nodes) {
@@ -319,14 +391,18 @@ export async function scanMainlineAsync(opts: ScanOptions = {}): Promise<NodeRep
     if (!enc) continue;
     const num = Number(nodeId.slice(1));
     const p = pressure[num];
+    const arrivalPower = milestones?.get(nodeId)?.power;
     const b = clone(base);
-    const scale = mapPressureToEnemies(b, nodeId, p);
-    const unitRows = b.battle_unit_stat_param as Row[];
-    for (const [rowId, attrs] of Object.entries(scale.units)) {
-      const r = unitRows.find((x) => x.rowId === rowId);
-      if (r) Object.assign(r, attrs);
+    if (!opts.noScale) {
+      const scale = mapPressureToEnemies(b, nodeId, p);
+      const unitRows = b.battle_unit_stat_param as Row[];
+      for (const [rowId, attrs] of Object.entries(scale.units)) {
+        const r = unitRows.find((x) => x.rowId === rowId);
+        if (r) Object.assign(r, attrs);
+      }
     }
-    const { lineup, teamPower } = genLineup(family, p * (opts.powerRatio ?? 1), enc.problemTagRef);
+    const targetPower = (arrivalPower ?? p) * (opts.powerRatio ?? 1);
+    const { lineup, teamPower } = genLineup(family, targetPower, enc.problemTagRef);
     const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(b));
     let wins = 0;
     let durSum = 0;
@@ -361,6 +437,8 @@ export async function main(argv: string[]): Promise<number> {
   const fromNode = Number(arg('from', '1'));
   const toNode = Number(arg('to', '150'));
   const powerRatio = Number(arg('power-ratio', '1'));
+  const noScale = argv.includes('--no-scale');
+  const milestonePower = argv.includes('--milestone-power');
   const debugNode = arg('debug-node', '');
 
   if (debugNode) {
@@ -392,7 +470,7 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
   const t0 = Date.now();
-  const reports = await scanMainlineAsync({ family, samples, fromNode, toNode, powerRatio });
+  const reports = await scanMainlineAsync({ family, samples, fromNode, toNode, powerRatio, noScale, milestonePower });
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
 
   // 汇总

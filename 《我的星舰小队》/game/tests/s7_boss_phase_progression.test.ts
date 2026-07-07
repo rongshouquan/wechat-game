@@ -26,8 +26,17 @@ async function loadRuntime(bossHpOverride: number): Promise<{ runtime: S7ConfigR
   for (const t of Object.keys(S7_TABLE_FILES) as S7ConfigTableName[]) {
     bundle[t] = JSON.parse(readFileSync(path.join(S7_DIR, `${t}.sample.json`), 'utf-8')) as unknown[];
   }
-  for (const r of bundle['battle_unit_stat_param'] as { rowId: string; maxHp: number }[]) {
-    if (r.rowId === 'bu_boss_n030') r.maxHp = bossHpOverride; // 抬敌血（内存·测试配置）
+  // ⑥三段落数后 n030 敌场=节奏量纲（boss 6740 血/109 重锤攻·bu_n030_swarm 907 血×4）——
+  // 本测试只验阶段切换机制，敌场钉回落数前手调量纲（boss 攻 70 + adds 用全局 bu_enemy_swarm 120 血），
+  // 血量仍由 bossHpOverride 控制（抬血打满/极高血卡 start 两个用例语义不变）。
+  for (const r of bundle['battle_unit_stat_param'] as { rowId: string; maxHp: number; attack: number }[]) {
+    if (r.rowId === 'bu_boss_n030') { r.maxHp = bossHpOverride; r.attack = 70; } // 抬敌血（内存·测试配置）
+  }
+  for (const r of bundle['battle_spawn_param'] as { rowId: string; unitStatRef: string }[]) {
+    if (r.rowId === 'spawn_n030_adds') r.unitStatRef = 'bu_enemy_swarm';
+  }
+  for (const r of bundle['battle_encounter_param'] as { rowId: string; enemyUnitStatRefs: string[] }[]) {
+    if (r.rowId === 'enc_n030') r.enemyUnitStatRefs = ['bu_boss_n030', 'bu_enemy_swarm']; // 校验器要求 spawn ref ∈ enc refs
   }
   const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(bundle as never));
   return { runtime, model: S7MainlineModel.fromRuntime(runtime) };

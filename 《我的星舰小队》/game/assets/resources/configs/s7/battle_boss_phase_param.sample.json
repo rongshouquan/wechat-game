@@ -10,7 +10,7 @@
       "eff_ult_clear_barrage"
     ],
     "summonUnitRefs": [
-      "bu_enemy_swarm"
+      "bu_n030_swarm"
     ],
     "summonCountCap": 3,
     "note": "n030 首Boss开场：召唤海盗船长铺场(3只·比 n060 少)+清场弹幕（占位·1艘S阶可胜）"
@@ -26,7 +26,7 @@
       "eff_ult_clear_barrage"
     ],
     "summonUnitRefs": [
-      "bu_enemy_swarm"
+      "bu_n030_swarm"
     ],
     "summonCountCap": 4,
     "note": "n030 血量50%：补召海盗船长(4只·累计不超10)+清场弹幕（占位）"
@@ -70,7 +70,7 @@
       "eff_ult_clear_barrage"
     ],
     "summonUnitRefs": [
-      "bu_enemy_swarm"
+      "bu_n060_swarm"
     ],
     "summonCountCap": 8,
     "note": "血量50%：召唤星盗艇加量(8只，累计不超10)+清场弹幕爆发"
@@ -86,7 +86,7 @@
       "eff_ult_clear_barrage"
     ],
     "summonUnitRefs": [
-      "bu_enemy_swarm"
+      "bu_n060_swarm"
     ],
     "summonCountCap": 6,
     "note": "开场先召唤星盗艇铺场(6只)，配合清场弹幕"
@@ -117,7 +117,7 @@
       "eff_state_vulnerable"
     ],
     "summonUnitRefs": [
-      "bu_enemy_shield"
+      "bu_n084_shield"
     ],
     "summonCountCap": 3,
     "note": "中段破盾窗口 + 少量护盾附属"
@@ -189,7 +189,7 @@
       "eff_state_summon"
     ],
     "summonUnitRefs": [
-      "bu_enemy_boss_add"
+      "bu_n120_add"
     ],
     "summonCountCap": 8,
     "note": "残血：召唤无人机加量(8只，累计不超10)兜底"
@@ -220,7 +220,7 @@
       "eff_state_summon"
     ],
     "summonUnitRefs": [
-      "bu_enemy_boss_add"
+      "bu_n120_add"
     ],
     "summonCountCap": 6,
     "note": "开场先召唤无人机铺场(6只)"
@@ -251,7 +251,7 @@
       "eff_state_vulnerable"
     ],
     "summonUnitRefs": [
-      "bu_enemy_boss_add"
+      "bu_n138_add"
     ],
     "summonCountCap": 4,
     "note": "血量50%：召唤污染体(4只)+爆发核弹+目标易伤叠加"
@@ -297,7 +297,7 @@
       "eff_ult_short_circuit_pulse"
     ],
     "summonUnitRefs": [
-      "bu_enemy_boss_add"
+      "bu_n150_add"
     ],
     "summonCountCap": 10,
     "note": "中段召唤压场（上限 10）+ 短路窗口"
