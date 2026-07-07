@@ -253,7 +253,7 @@ export const PARAMS = {
     ticketPrice: 80, ticketDailyCap: 50, // 40→55：B3 打捞券下架的等量补回主口（星贝可负担时才买=顺带加宽星贝 sink）
     cargoReserve: 150,
     richThreshold: 800,
-    basket: { beaconRare: { p: 1.2, price: 300 }, finePlugin: { p: 0.35, price: 320 }, coreFrag5: { p: 0.15, price: 500 } }, // 篮子停售普通信标改售稀有（审计矩阵建议·星贝真 sink+全档稳定稀有流·治轻度末期掉速）
+    basket: { beaconRare: { p: 1.2, price: 300 }, finePlugin: { p: 0.35, price: 320 }, coreFrag5: { p: 0.10, price: 500 } }, // 篮子停售普通信标改售稀有（审计矩阵建议·星贝真 sink+全档稳定稀有流·治轻度末期掉速）；coreFrag5 p 0.15→0.10（B4）
     minutes: 0.8,
   },
 
@@ -267,17 +267,17 @@ export const PARAMS = {
       common: {
         ore: 30, cargo: 14, universal: 1.5, fixed: {},
         rolls: { h2: 1.6, h8: 3.8, h24: 8.2 },
-        rollEV: { universal: 0.5, beaconCommon: 0.16, coreFrag: 0.015, finePlugin: 0.05, resident: 0.02, worker: 0.02, cargoChest: 0.01 }, // 券下架=B3（S10.1 无此渠道）
+        rollEV: { universal: 0.5, beaconCommon: 0.16, coreFrag: 0.004, finePlugin: 0.05, resident: 0.02, worker: 0.02, cargoChest: 0.01 }, // 券下架=B3（S10.1 无此渠道）；coreFrag 0.015→0.004（B4 两刀）
       },
       rare: {
-        ore: 70, cargo: 38, universal: 2.5, fixed: { coreFrag: 1 },
+        ore: 70, cargo: 38, universal: 2.5, fixed: { coreFrag: 0.25 }, // B4：1→0.25（打捞=核碎最大源 55%·中后期超发主凶）
         rolls: { h2: 2.6, h8: 5.0, h24: 10.4 },
-        rollEV: { universal: 0.8, beaconRare: 0.075, coreFrag: 0.03, superiorPlugin: 0.05, starGem: 0.05, resident: 0.03, worker: 0.03, cargoChest: 0.015 }, // 券下架=B3；稀有自繁殖 0.10→0.075（24h 1.04→0.78 拆永动·A3）
+        rollEV: { universal: 0.8, beaconRare: 0.075, coreFrag: 0.008, superiorPlugin: 0.05, starGem: 0.015, resident: 0.03, worker: 0.03, cargoChest: 0.015 }, // 券下架=B3；稀有自繁殖 0.10→0.075（24h 1.04→0.78 拆永动·A3）；coreFrag 0.03→0.008（B4 两刀）；starGem 0.05→0.015（B7 挪回廊）
       },
       epic: {
-        ore: 160, cargo: 95, universal: 4, fixed: { coreFrag: 2, starGem: 2 },
+        ore: 160, cargo: 95, universal: 4, fixed: { coreFrag: 0.5, starGem: 0.5 }, // B4：coreFrag 2→0.5；B7：starGem 2→0.5（大头挪回廊）
         rolls: { h2: 3.8, h8: 7.0, h24: 12.6 },
-        rollEV: { universal: 1.2, beaconEpic: 0.05, coreFrag: 0.05, superiorPlugin: 0.07, legendaryPlugin: 0.035, starGem: 0.15, resident: 0.04, worker: 0.04, cargoChest: 0.02 }, // 券下架=B3
+        rollEV: { universal: 1.2, beaconEpic: 0.05, coreFrag: 0.012, superiorPlugin: 0.07, legendaryPlugin: 0.035, starGem: 0.05, resident: 0.04, worker: 0.04, cargoChest: 0.02 }, // 券下架=B3；coreFrag 0.05→0.012（B4 两刀）；starGem 0.15→0.05（B7 挪回廊）
       },
     },
     // 打捞加速券（商人·星贝→时间转换器）：把一趟 2h 短趟的产出升到 8h 档
@@ -289,10 +289,14 @@ export const PARAMS = {
     fixedAlloyBase: 55, fixedTokenBase: 36, fixedCargoBase: 24,
     eliteMult: 1.6, bossMult: 2.6, storyBossMult: 2.0,
     minutesPerNode: 0.75,
+    // A4（步4 稀缺线·纯砍版落地）：offShard −30%（2.6/4.0/5.2→1.82/2.8/3.64）、主力不动。
+    // 实测记档（§15）：守恒重分版（main+30%）熨平肝 n102 墙、半补版（+15%）顶破轻度硬顶——
+    // 主力碎片是中段战力最敏感杠杆，禁止用它"补偿"；且三选一 off 仅占沉淀 <9%（主源=抽卡
+    // 66% 非主力归属），A4 治沉淀实测近无效，沉淀治理移交结构层（挂任务单⑤板凳深度联动）
     pickEV: {
-      normal: { mainShipShard: 1.3, mainPilotShard: 1.3, offShard: 2.6, supplyTicket: 0.85, coreFrag: 0.4, starOreBase: 11, beaconCommon: 0.4, finePlugin: 0.16 },
-      elite: { mainShipShard: 2.0, mainPilotShard: 2.0, offShard: 4.0, supplyTicket: 1.4, coreFrag: 1.0, starOreBase: 16, beaconRare: 0.35, superiorPlugin: 0.15 },
-      boss: { mainShipShard: 2.6, mainPilotShard: 2.6, offShard: 5.2, supplyTicket: 2.6, coreFrag: 3.0, starOreBase: 26, beaconEpic: 0.15, starGem: 1.6, superiorPlugin: 0.13, legendaryPlugin: 0.04 },
+      normal: { mainShipShard: 1.3, mainPilotShard: 1.3, offShard: 1.82, supplyTicket: 0.85, coreFrag: 0.4, starOreBase: 11, beaconCommon: 0.4, finePlugin: 0.16 },
+      elite: { mainShipShard: 2.0, mainPilotShard: 2.0, offShard: 2.8, supplyTicket: 1.4, coreFrag: 1.0, starOreBase: 16, beaconRare: 0.35, superiorPlugin: 0.15 },
+      boss: { mainShipShard: 2.6, mainPilotShard: 2.6, offShard: 3.64, supplyTicket: 2.6, coreFrag: 3.0, starOreBase: 26, beaconEpic: 0.15, starGem: 1.6, superiorPlugin: 0.13, legendaryPlugin: 0.04 },
     },
     adExtraPickMult: 0.9,
   },
@@ -309,7 +313,7 @@ export const PARAMS = {
   },
 
   // 星核渠道量值
-  core: { synthesisFragCost: 60, vaultBasePrice: 80, distinctPool: 13 },
+  core: { synthesisFragCost: 60, vaultBasePrice: 70, distinctPool: 13 }, // B4/B7 联动：宝库 80→70——宝石线=扰动免疫渠道（回廊+货舱），降基价给第 2-4 颗核提前量，治轻度事件粮打折的结构性韧性缺口（§15）
 
   // 事件（3天行动/7天扩张·自然游玩推进；周期过程奖平摊+周期末完成/结算两笔）
   events: {
@@ -319,7 +323,7 @@ export const PARAMS = {
     // 结算奖=扩张宝藏完整星核（completionCore·另一笔）。v0 曾把史诗信标折进过程平摊=口径错，
     // 本版拆两笔；星核碎片量值 8/周期为数值域自定（星核通胀红旗下取低·记档）。
     cycle7: { supplyTicket: 24, beaconCommon: 2, beaconRare: 3, universal: 16, starOre: 900, resident: 1, worker: 1 }, // 券 12→16：B3 补回副口
-    completion7: { beaconEpic: 1, coreFrag: 8 },
+    completion7: { beaconEpic: 1, coreFrag: 6 }, // B4：8→4→6（4 时 salvage×0.8 扰动破带——事件源=扰动免疫，给第 3-5 颗战力核留韧性腿·§15）
     completionCore: 1,
     // 3天结算奖=行动宝藏三选一（2026-07-06 自 v1.0 复原进 S10.5）：传奇插件 / 舰通用碎片 / 员通用碎片
     treasure3: { legendaryPlugin: 1, universalShards: 20 },
@@ -335,7 +339,7 @@ export const PARAMS = {
 
   // 星辉货舱（Boss 大奖/打捞稀有/3天活动完成；#7 广告=期望 ×1.5）
   cargoChest: {
-    coreFrag: 4, starGem: 2,
+    coreFrag: 1.5, starGem: 2, // B4：coreFrag 4→1.5（货舱=核碎第二源 28%）
     beacons: { beaconCommon: 1.0, beaconRare: 1.4, beaconEpic: 0.6 }, // A2 提前并入步1：普通权重转稀有（货舱=高稀有浓缩包身份·补 A3 收口后的稀有流量·不走自繁殖链）
     adPickMult: 1.5,
   },
@@ -346,6 +350,10 @@ export const PARAMS = {
     layerAlloy: { base: 22, per: 5.5 }, layerToken: { base: 15, per: 3.6 }, layerCargo: { base: 4, per: 1.0 },
     msOre: { base: 100, per: 60 }, msCargo: { base: 50, per: 25 }, msUniversal: { base: 4, per: 1.6 },
     msBeacon: 2, rareBeaconLayer: 25, epicBeaconLayer: 50,
+    // B7（步4 稀缺线）：星空宝石大头自打捞挪回廊里程碑（总量≈不变只挪渠道）——爬塔独一份
+    // 的攒头（攒宝石换想要的核）；刻意不吃 #10 广告 msMult：宝石=稀缺定向货币，分层靠爬得
+    // 深不靠看广告（护"常规轨加速不碰稀缺线"口径·同 #5/#7 喂核不提速教训）
+    msGem: { base: 16, per: 1.8 }, // 前置加厚版（11 里程碑总量≈295 不变）：轻度爬层慢，宝石线后置在 gacha×0.8 扰动下顶破毕业墙（墙10·§15）
   },
 
   // 战败安慰包（仅主线·卡关日 1 次尝试）
@@ -552,6 +560,7 @@ function newState() {
     offShardsShip: 0, offShardsPilot: 0,
     plugins: { fine: 0, superior: 0, legendary: 0 },
     coresOwned: 0, coresDistinct: 0,
+    coreDays: [], // 观测口（步4 稀缺线）：第 i 颗核的到手日（B4 验"前5颗节奏不动+中后期3-5天/颗"）
     buildings: { dock: 0, training: 0, habitat: 0, salvage: 0, merchant: 0, supply: 0, research: 0, gallery: 0 },
     residents: 0, workers: 0,
     cleared: 0, corridorLayer: 0, corridorUnlocked: false,
@@ -1182,6 +1191,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
           credit('corridor', 'pilotShardUniversal', uni / 2);
           const bkey = L >= P.corridor.epicBeaconLayer ? 'beaconEpic' : L >= P.corridor.rareBeaconLayer ? 'beaconRare' : 'beaconCommon';
           credit('corridor', bkey, P.corridor.msBeacon * msMult);
+          credit('corridor', 'starGem', P.corridor.msGem.base + P.corridor.msGem.per * i); // B7：宝石线不乘 msMult（稀缺线不挂广告）
         }
       }
     }
@@ -1205,6 +1215,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     }
 
     // —— 9. 日终记录 + 守恒检查 ——
+    while (st.coreDays.length < Math.floor(st.coresOwned + 1e-9)) st.coreDays.push(day); // 核到手日观测口
     st.dailyCleared.push(clearedToday);
     st.dailyPower.push(power);
     st.dailyStuck.push(!paused && clearedToday === 0 && stuckNow ? 1 : 0);
@@ -1258,6 +1269,7 @@ function summarize(tierName, st, opts, P, T) {
     finalPower: Math.round(st.dailyPower[upto - 1] ?? 0),
     corridorLayer: Math.round(st.corridorLayer),
     coresOwned: Math.round(st.coresOwned * 10) / 10,
+    coreDays: st.coreDays,
     mains: st.mains.map((m) => ({ shipTier: m.ship.tier, shipLv: m.ship.level, star: m.pilot.star, pilotLv: m.pilot.level })),
     offShards: { ship: Math.round(st.offShardsShip), pilot: Math.round(st.offShardsPilot) },
     // 观测口（②审计补查·2026-07-06）：插件池与人口终态——插件/人口不在 14 键钱包，此前无源池汇可见性
@@ -1676,6 +1688,22 @@ if (isMain) {
     console.log(`  ${JSON.stringify(r.resources)}`);
     console.log(`  非主力专属碎片沉淀：舰 ${r.offShards.ship} / 员 ${r.offShards.pilot}`);
     console.log(`  主力养成态：${r.mains.map((m) => `T${m.shipTier}L${m.shipLv}/${m.star}★L${m.pilotLv}`).join(' ')}`);
+  }
+  if (args.has('--cores')) {
+    console.log('\n—— 星核到手节奏（B4 观察口：到手日序列·↑=与上一颗间隔天数）——');
+    for (const t of Object.keys(TIERS)) {
+      const r = std[t].expected;
+      const seq = r.coreDays.map((d, i) => (i === 0 ? `D${d}` : `D${d}(↑${d - r.coreDays[i - 1]})`)).join(' ');
+      console.log(`[${t}] 共${r.coreDays.length}颗：${seq}`);
+    }
+    console.log('\n—— 星空宝石渠道构成（B7 观察口：累计收入按源）——');
+    for (const t of Object.keys(TIERS)) {
+      const r = std[t].expected;
+      const rows = Object.entries(r.ledger.income)
+        .map(([src, kv]) => [src, kv.starGem ?? 0]).filter(([, v]) => v > 0.5)
+        .map(([src, v]) => `${src}:${Math.round(v)}`).join(' ');
+      console.log(`[${t}] ${rows || '（无）'} ｜ 终局结余 ${r.resources.starGem}`);
+    }
   }
   if (args.has('--trace')) {
     const r = simulateEconomyTier('普通', pressure, {});
