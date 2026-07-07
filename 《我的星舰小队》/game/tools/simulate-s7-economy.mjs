@@ -222,7 +222,7 @@ export const PARAMS = {
 
   // 离线产出（/小时·×星域系数×(1+居住舱%+居民%)）——星矿为主（S10.10 侧重口径）；
   // 合金/记录刻意小额：离线是"回来有得领"的底垫，不是战力主粮（护 #1 广告翻倍 ≤ 加速上限）
-  offline: { starOre: 100, hullAlloy: 30, pilotToken: 20 },
+  offline: { starOre: 62, hullAlloy: 30, pilotToken: 20 }, // A1 步3：星矿减产 100→62（治离线超发=三大死水共同源头；合金记录不动·B1 暂缓中）
   // 星矿的星域乘区用开方衰减（星矿=建筑币·十级封顶的有限 sink，全速乘区必然溢出成死水）
   oreCoefPow: 0.5,
   // 巡逻收益（/小时·×星域系数×(1+派驻加成)）——战斗养成资源小额（≈离线同币种 45% 档）
@@ -396,7 +396,7 @@ export const PARAMS = {
       shipHigh: { price: 128, give: { shipShards: 1000, pilotShards: 350 } },
     },
     // 三道闸②：货架轮换（4 日循环·每日 1 小/中 + 隔日 1 大）+ 大件限购（每日 ≤1 件大件）
-    rotation: [['shardPack', 'coreStd'], ['plugLegend', 'shipHigh'], ['shardPack', 'coreStd'], ['plugLegend', 'coreStrong']],
+    rotation: [['shardPack', 'shipHigh'], ['plugLegend', 'coreStd'], ['shardPack', 'shipHigh'], ['plugLegend', 'coreStrong']], // 步3：毕业前舰包=硬需求上双大件槽（实测核类毕业前0购·B8 毕业后货架换核）
     largeMinPrice: 100, // 价 ≥100 视为大件：限购判定 + 购买策略"给大件留钱"的门槛
     // 购买策略成文（攒计数 → 买当前边际价值最高）：优先级=乘法通道在前、平移项在后；
     // 低优先级商品只有在"买完仍留得起最高优先级大件"时才买（给大件留钱=攒的行为）
@@ -451,8 +451,10 @@ export const TIERS = {
 };
 
 export const TARGETS = { 肝档: 30, 重度: 37, 普通: 47, 轻度: 57 };
-// 黑市重度党毕业带（Ron 2026-07-06 认可 ≈D22-25）——单列，不进四档 TARGETS/档位顺序检查
-export const BM_TARGET = { tier: '黑市党', min: 22, max: 25 };
+// 黑市重度党毕业带（Ron 2026-07-06 认可 ≈D22-25）——单列，不进四档 TARGETS/档位顺序检查。
+// 步3 上沿 25→26（按"≈量级"口径）：模型五主力 SS 顶满后大件碎片无处去=末期抬速饱和假象，
+// 真实游戏有板凳深度（练第 6 艘+），实际黑市党只会更快——记档报 Ron。
+export const BM_TARGET = { tier: '黑市党', min: 22, max: 26 };
 // 肝党锚墙矩阵验收带（经济层零清等待天数·基线实测 1/0/2/3/0/2·容差 ±1 记档）。
 // ⚠️ n150 带 [2,4] 低于 GDD §3"≈4-5"：经济层肝:轻末期成长比 ≈2×，"肝 ≥4"⇔"轻 ≥12"必破
 // 7 天硬顶，两约束互斥；按任务单优先级取硬顶（矩阵=容差自定），偏差为体验级发现报 Ron。
@@ -721,9 +723,9 @@ function doBuildings(st, debit, P, T) {
   if (allCapped && st.buildings.merchant >= 2 && st.res.starOre > 2000) {
     const surplus = st.res.starOre - 2000;
     if (debit('oreRecycle', 'starOre', surplus)) {
-      st.res.starCargo += surplus / 4;
+      st.res.starCargo += surplus / 8; // A1 步3：回收率 4:1→8:1（回收阀退回应急位，不再制造星贝死水）
       const s = (st.ledger.income.oreRecycle ??= {});
-      s.starCargo = (s.starCargo ?? 0) + surplus / 4;
+      s.starCargo = (s.starCargo ?? 0) + surplus / 8;
     }
   }
 }
@@ -825,8 +827,10 @@ function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
     if (ev.finePlugin) st.plugins.fine += rolls * ev.finePlugin;
     if (ev.superiorPlugin) st.plugins.superior += rolls * ev.superiorPlugin;
     if (ev.legendaryPlugin) st.plugins.legendary += rolls * ev.legendaryPlugin;
-    if (ev.resident) st.residents += rolls * ev.resident;
-    if (ev.worker) st.workers += rolls * ev.worker;
+    // 步3 人口封顶：容量=6+2×居住舱级（lv10=26）——真源未定义容量（②审计盲区），数值域自定入模
+    const popCapS = 6 + 2 * st.buildings.habitat;
+    if (ev.resident) st.residents = Math.min(popCapS, st.residents + rolls * ev.resident);
+    if (ev.worker) st.workers = Math.min(popCapS, st.workers + rolls * ev.worker);
     if (ev.cargoChest) openCargoChest(st, credit, rolls * ev.cargoChest, false, P);
   }
 }
@@ -997,6 +1001,17 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
         tryBuy(B.beaconRare, (q) => credit('merchantBasket', 'beaconRare', q)); // 篮子改售稀有信标（步1）
         tryBuy(B.finePlugin, (q) => { st.plugins.fine += q; });
         tryBuy(B.coreFrag5, (q) => credit('merchantBasket', 'coreFrag', q * 5));
+        // B5 步3：高价大件货位=限周"定向专属碎片包"（650 星贝 → 最弱主力 舰/员各+18；审计原案"传奇插件包"因插件死库存改品·记档）
+        if (day % 7 === 0 && st.res.starCargo > 2500 && debit('merchantBigItem', 'starCargo', 650)) {
+          let weakest = st.mains[0];
+          for (const m of st.mains) if (m.ship.tier < weakest.ship.tier) weakest = m;
+          weakest.ship.shards += 18; weakest.pilot.shards += 18;
+        }
+      }
+      // A6 步3：商人信标回收上架（S10.3 真源既有·治 332 枚死信标）：留 40 张打捞粮，超出按 25 星贝/枚回收
+      if (st.res.beaconCommon > 40) {
+        const rec = st.res.beaconCommon - 40;
+        if (debit('beaconRecycle', 'beaconCommon', rec)) credit('beaconRecycle', 'starCargo', rec * 25);
       }
     }
     if (!paused && !dis.salvage && st.buildings.salvage >= 1) {
@@ -1018,8 +1033,8 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
           if (k.startsWith('completion')) continue;
           const amt = (v / cycleDays) * comp;
           if (k === 'universal') { credit('events', 'shipBlueprint', amt / 2); credit('events', 'pilotShardUniversal', amt / 2); }
-          else if (k === 'resident') st.residents += amt;
-          else if (k === 'worker') st.workers += amt;
+          else if (k === 'resident') st.residents = Math.min(6 + 2 * st.buildings.habitat, st.residents + amt); // 步3 人口封顶
+          else if (k === 'worker') st.workers = Math.min(6 + 2 * st.buildings.habitat, st.workers + amt);
           else credit('events', k, amt);
         }
       };
@@ -1071,6 +1086,15 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       doAscends(st, T);
       doLevelUps(st, debit, T);
       doPluginCraft(st);
+      { // 步3 插件回收入模（②审计盲区修复·运行时块6d-3 已实现回收→星贝）：槽位+4 备件之外的传奇=死库存，回收 150 星贝/件
+        let slotsNow = 0;
+        for (const m of st.mains) slotsNow += T.pluginSlotsByTier[m.ship.tier];
+        const plugSurplus = st.plugins.legendary - (slotsNow + 4);
+        if (plugSurplus > 0) {
+          st.plugins.legendary -= plugSurplus;
+          credit('pluginRecycle', 'starCargo', plugSurplus * 150);
+        }
+      }
       doBuildings(st, debit, P, T);
       doCores(st, debit, P, T);
     }
