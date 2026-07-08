@@ -114,6 +114,7 @@ const S7_BATTLE_STATE_TAGS = [
   'taunt', // ⑨机制批② M4：嘲讽（被嘲讽者攻击性选目标强制打嘲讽者）
   'reflect', // ⑨机制批② M4：反弹（受方受击后向攻击者直扣）
   'guard', // ⑨机制批② M4：守护替挡（守护者持态·敌打其后排友军→伤害转守护者）
+  'share', // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者）
   ...S7_MOD_STATE_TAGS,
   ...S7_PERIODIC_STATE_TAGS,
 ];
@@ -1534,6 +1535,18 @@ function validateBattle(
       const gc = num(row.guardCooldownSec);
       if (gc === null || gc < 0 || !Number.isFinite(gc)) errors.push({ table: 'battle_effect_param', id, message: 'guardCooldownSec（可选）必须为 >= 0 的有限数' });
       else if (stTag !== 'guard') errors.push({ table: 'battle_effect_param', id, message: 'guardCooldownSec（可选）仅允许配给 stateTag=guard' });
+    }
+    // ⑨机制批② M4 share 字段组（缺席=不校）：仅 stateTag=share·sharePct∈[0,1] 且需 shareMode。
+    if ((row.sharePct !== undefined || row.shareMode !== undefined) && stTag !== 'share') {
+      errors.push({ table: 'battle_effect_param', id, message: 'sharePct/shareMode（可选）仅允许配给 stateTag=share' });
+    }
+    if (row.shareMode !== undefined && row.shareMode !== 'adjacent' && row.shareMode !== 'to_caster') {
+      errors.push({ table: 'battle_effect_param', id, message: 'shareMode（可选）必须为 adjacent | to_caster' });
+    }
+    if (row.sharePct !== undefined) {
+      const sp = num(row.sharePct);
+      if (sp === null || sp < 0 || sp > 1) errors.push({ table: 'battle_effect_param', id, message: 'sharePct（可选）必须在 [0,1]' });
+      else if (row.shareMode !== 'adjacent' && row.shareMode !== 'to_caster') errors.push({ table: 'battle_effect_param', id, message: 'sharePct（可选）要求配 shareMode（adjacent|to_caster）' });
     }
   }
 

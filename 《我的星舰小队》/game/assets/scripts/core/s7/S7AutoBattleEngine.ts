@@ -95,6 +95,7 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'taunt', // ⑨机制批② M4：嘲讽（尾部追加=遍历顺序不变）
   'reflect', // ⑨机制批② M4：反弹（尾部追加=遍历顺序不变）
   'guard', // ⑨机制批② M4：守护替挡（尾部追加=遍历顺序不变）
+  'share', // ⑨机制批② M4：分摊（尾部追加=遍历顺序不变）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -195,6 +196,10 @@ interface RtStateInst {
   guardProtect?: 'backline' | 'all';
   guardCooldownSec?: number;
   guardReadyAt?: number;
+  /** ⑨机制批② M4 分摊（share 态·受方持有）：分摊比例 / 承接模式 / 承接者 unitId（to_caster=施加者·adjacent 忽略）。 */
+  sharePct?: number;
+  shareMode?: 'adjacent' | 'to_caster';
+  shareTargetId?: string;
 }
 
 /** ⑦机制批① M3：叠层规则运行态。 */
@@ -994,6 +999,7 @@ class BattleRun {
     }
     // ⑨机制批② M4：一次性取受方反弹态（供下方格挡减免 + 尾部反弹直扣复用）；缺省无 reflect 态=两处皆跳过=逐字节不变。
     const reflectInst = target.states.get('reflect');
+    const shareInst = target.states.get('share'); // ⑨机制批② M4 分摊：受方把一部分伤害转承接者（缺省无 share=receiverDmg=dmg）
     // ⑥8a 破甲（施方词条·藏）：无视目标一部分防御；armorPen=0 时防御原值（零回归）。
     // ⑦机制批① 破防（armor_down 状态·受方）：再乘 (1−幅度)；无状态时乘 1=逐字节不变。
     const armorCut = Math.min(1, Math.max(0, this.stateModSum(target, 'armor_down')));
@@ -1035,11 +1041,23 @@ class BattleRun {
     if (crit) raw *= 1 + caster.affixes.critDmg + this.stateModSum(caster, 'crit_dmg_up');
     const dmg = Math.max(1, Math.round(raw));
 
-    let hpDmg = dmg;
+    // ⑨机制批② M4 分摊：受方 share 态把 sharePct 转给承接者（援护链邻格互摊/山岳SS/沧3★指定者）·自己只承剩余；
+    // 承接者直扣不过甲(同反弹)·死亡归攻击者(伤害源)；缺省无 share 态 → receiverDmg=dmg=逐字节不变。
+    let receiverDmg = dmg;
+    if (shareInst && shareInst.sharePct) {
+      const sharers = this.resolveShareSharers(target, shareInst);
+      const pct = Math.min(1, Math.max(0, shareInst.sharePct));
+      if (sharers.length > 0 && pct > 0) {
+        const shareTotal = Math.round(dmg * pct);
+        receiverDmg = dmg - shareTotal;
+        this.distributeShare(sharers, shareTotal, caster);
+      }
+    }
+    let hpDmg = receiverDmg;
     if (target.shield > 0) {
       // 块4b-2：破盾值词条（施法者插件提供）叠加到破盾系数 → 同一发对护盾啃得更多。
       const shieldMult = (target.states.has('shield_break') ? SHIELD_BREAK_MULT : 1.0) + caster.affixes.shieldBreak;
-      const shieldLoss = Math.round(dmg * shieldMult);
+      const shieldLoss = Math.round(receiverDmg * shieldMult);
       if (shieldLoss <= target.shield) {
         target.shield -= shieldLoss;
         hpDmg = 0;
@@ -1254,6 +1272,11 @@ class BattleRun {
       simple.guardReadyAt = target.states.get('guard')?.guardReadyAt ?? 0;
       this.anyGuard = true;
     }
+    if (tag === 'share') { // ⑨M4 分摊（援护链=adjacent 互摊 / 山岳SS·沧3★=to_caster 转施加者）
+      if (effect.sharePct !== undefined) simple.sharePct = effect.sharePct;
+      simple.shareMode = effect.shareMode ?? 'to_caster';
+      if (simple.shareMode === 'to_caster') simple.shareTargetId = caster.unitId;
+    }
     target.states.set(tag, simple);
     this.pushLog('state_apply', {
       actorId: caster.unitId,
@@ -1416,6 +1439,48 @@ class BattleRun {
   /** a 是否比 b 更靠后排（同阵营·玩家列越小越靠后 / 敌方列越大越靠后）。 */
   private isMoreBackline(a: RtUnit, b: RtUnit): boolean {
     return a.side === 'player' ? a.col < b.col : a.col > b.col;
+  }
+
+  /** ⑨机制批② M4 分摊·承接者解析：to_caster→施加者(存活/同阵营/非受方)；adjacent→相邻(3×3锚点)且同持 adjacent share 态的友军（援护链互摊网络）。 */
+  private resolveShareSharers(receiver: RtUnit, shareInst: RtStateInst): RtUnit[] {
+    if (shareInst.shareMode === 'to_caster') {
+      const t = this.units.find((u) => u.unitId === shareInst.shareTargetId
+        && u.alive && u.side === receiver.side && u !== receiver);
+      return t ? [t] : [];
+    }
+    return this.units.filter((u) => u.side === receiver.side && u.alive && u !== receiver
+      && this.isAdjacentCell(receiver, u) && u.states.get('share')?.shareMode === 'adjacent');
+  }
+
+  /** 锚点格 3×3 相邻（切比雪夫距 ≤1·不含自身）。 */
+  private isAdjacentCell(a: RtUnit, b: RtUnit): boolean {
+    return Math.abs(a.row - b.row) <= 1 && Math.abs(a.col - b.col) <= 1 && !(a.row === b.row && a.col === b.col);
+  }
+
+  /** ⑨机制批② M4 分摊·把 shareTotal 均分给承接者（余数给前者）直扣不过甲；承接者死亡归攻击者(伤害源·镜像直伤击杀记账)。 */
+  private distributeShare(sharers: RtUnit[], shareTotal: number, attacker: RtUnit): void {
+    const n = sharers.length;
+    if (n === 0 || shareTotal <= 0) return;
+    const base = Math.floor(shareTotal / n);
+    let rem = shareTotal - base * n;
+    for (const s of sharers) {
+      const amt = base + (rem > 0 ? 1 : 0);
+      if (rem > 0) rem -= 1;
+      if (amt <= 0) continue;
+      s.hp -= amt;
+      const dead = s.hp <= 0;
+      if (dead) { s.hp = 0; s.alive = false; }
+      this.pushLog('damage', {
+        actorId: attacker.unitId, side: attacker.side, targetIds: [s.unitId],
+        effectRef: 'share', amount: amt, note: 'share', hpAfter: s.hp, shieldAfter: s.shield,
+      });
+      if (dead) {
+        attacker.killedSinceTrigger = true;
+        attacker.killedRolesSinceTrigger.push(s.roleTag);
+        this.deadCount[s.side] += 1;
+        this.accrueStackEvent(attacker, 'kill');
+      }
+    }
   }
 
   /** ⑥8a 空间AoE：主目标=最近规则选 1，随后收其锚点格周围（十字4格/3×3）footprint 相交的单位。

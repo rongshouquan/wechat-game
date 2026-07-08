@@ -924,6 +924,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'taunt', // ⑨机制批② M4：嘲讽
     'reflect', // ⑨机制批② M4：反弹
     'guard', // ⑨机制批② M4：守护替挡
+    'share', // ⑨机制批② M4：分摊
     ...MOD_STATE_TAGS,
     ...PERIODIC_STATE_TAGS,
   ];
@@ -1181,6 +1182,18 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const gc = num(row.guardCooldownSec);
       if (gc === null || gc < 0 || !Number.isFinite(gc)) fail('battle_effect_param', id, 'guardCooldownSec（可选）必须为 >= 0 的有限数');
       else if (row.stateTag !== 'guard') fail('battle_effect_param', id, 'guardCooldownSec（可选）仅允许配给 stateTag=guard');
+    }
+    // ⑨机制批② M4 share 字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    if ((row.sharePct !== undefined || row.shareMode !== undefined) && row.stateTag !== 'share') {
+      fail('battle_effect_param', id, 'sharePct/shareMode（可选）仅允许配给 stateTag=share');
+    }
+    if (row.shareMode !== undefined && row.shareMode !== 'adjacent' && row.shareMode !== 'to_caster') {
+      fail('battle_effect_param', id, 'shareMode（可选）必须为 adjacent | to_caster');
+    }
+    if (row.sharePct !== undefined) {
+      const sp = num(row.sharePct);
+      if (sp === null || sp < 0 || sp > 1) fail('battle_effect_param', id, 'sharePct（可选）必须在 [0,1]');
+      else if (row.shareMode !== 'adjacent' && row.shareMode !== 'to_caster') fail('battle_effect_param', id, 'sharePct（可选）要求配 shareMode（adjacent|to_caster）');
     }
   }
 

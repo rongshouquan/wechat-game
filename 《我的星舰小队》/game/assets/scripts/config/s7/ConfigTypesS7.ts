@@ -726,7 +726,8 @@ export type S7BattleStateTag =
   | 'debuff_immune' // ⑨机制批② M5：减益免疫（增益·镜像 control_immune·挡一切新减益·霖3★/净化模块传奇）
   | 'taunt' // ⑨机制批② M4：嘲讽（受击重定向·被嘲讽单位攻击性选目标强制打嘲讽者·tauntedBy 记施加者=砺/铁壁怒吼/哨卫诱饵/SS）
   | 'reflect' // ⑨机制批② M4：反弹（受方受击后向攻击者直扣·岩反震/岳荆甲/铁壁A/磐石A/砺5★）
-  | 'guard'; // ⑨机制批② M4：守护替挡（守护者持此态·敌打其保护的后排友军时伤害转守护者·CD 门控·岩「光盾守护」）
+  | 'guard' // ⑨机制批② M4：守护替挡（守护者持此态·敌打其保护的后排友军时伤害转守护者·CD 门控·岩「光盾守护」）
+  | 'share'; // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者·援护链邻格互摊/山岳SS/沧3★）
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -788,6 +789,10 @@ export interface S7BattleEffectParam {
    *  guardCooldownSec=替挡冷却秒（岩=2s·冷却中的攻击照常落原目标·缺省 0=每次都替挡）。缺省无 guard 态=逐字节不变。 */
   guardProtect?: 'backline' | 'all';
   guardCooldownSec?: number;
+  /** ⑨机制批② M4 可选（仅 stateTag='share'·分摊）：受击时把 sharePct∈[0,1] 的伤害转给承接者、自己只承剩余；
+   *  shareMode=adjacent（转相邻持 share 态友军·援护链互摊）/ to_caster（转施加者·山岳SS/沧3★·shareTargetId 快照施加者）。 */
+  sharePct?: number;
+  shareMode?: 'adjacent' | 'to_caster';
   note: string;
 }
 
