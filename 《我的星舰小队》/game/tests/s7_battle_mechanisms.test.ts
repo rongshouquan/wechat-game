@@ -1395,3 +1395,48 @@ describe('⑨M7-C 溅射分伤（散射枪管/引爆器/极焰节点/贯日L40·
     expect(amounts.slice(1).every((a) => a === 40)).toBe(true); // 邻格 ×0.5=40
   });
 });
+
+// ===================== ⑨M8 · 致盲（命中判定层·普攻按 blindChance 落空）=====================
+function blindRow(rowId: string, blindChance: number): { rowId: string; overrides: Row } {
+  return {
+    rowId,
+    overrides: {
+      effectKind: 'state', effectType: 'apply_state', effectPower: 0,
+      targetingTag: 'nearest_random_tie', durationSec: 20, maxTargets: 1, stateTag: 'blind', summonUnitRef: 'none', blindChance,
+    },
+  };
+}
+const blindMisses = (log: S7AutoBattleLogEntry[], actorId: string) =>
+  log.filter((e) => e.type === 'unit_attack' && e.note === 'blind_miss' && e.actorId === actorId);
+
+describe('⑨M8 致盲（迷雾普攻/致盲领域/SS）', () => {
+  const mk = async (chance: number | null) => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m8_p', overrides: { attack: 1 } }], // 弱攻·不速杀敌·让敌反复出手
+      enemies: [{ rowId: 'bu_t9m8_e', slot: 'r1c0', overrides: { attack: 100, maxHp: 100000 } }],
+      effects: chance !== null ? [blindRow('eff_t9m8_bl', chance)] : [],
+    });
+    const engine = await engineOf(b);
+    return engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [unitInput('bu_t9m8_p', 'p1c2', chance !== null ? [trig('battle_start', 'eff_t9m8_bl')] : undefined)],
+    });
+  };
+
+  it('blindChance=1.0：被致盲敌普攻全落空·0 伤害 + 6 次 blind_miss(照进冷却)·关致盲=6 伤害', async () => {
+    const on = await mk(1.0);
+    const off = await mk(null);
+    expect(dmgBy(on.log, 'enemy_0000').length).toBe(0); // 全落空→敌零伤害
+    expect(blindMisses(on.log, 'enemy_0000').length).toBe(6); // 6 次 miss=冷却正常推进(每 1s 一次尝试)
+    expect(dmgBy(off.log, 'enemy_0000').length).toBe(6); // 无致盲=6 次正常伤害
+  });
+
+  it('blindChance=0.5：部分落空（miss>0 且 hit>0·miss+hit=6 次尝试）', async () => {
+    const on = await mk(0.5);
+    const misses = blindMisses(on.log, 'enemy_0000').length;
+    const hits = dmgBy(on.log, 'enemy_0000').length;
+    expect(misses).toBeGreaterThan(0); // 有落空
+    expect(hits).toBeGreaterThan(0); // 有命中
+    expect(misses + hits).toBe(6); // 共 6 次出手
+  });
+});

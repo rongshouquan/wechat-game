@@ -926,6 +926,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'guard', // ⑨机制批② M4：守护替挡
     'share', // ⑨机制批② M4：分摊
     'aura', // ⑨机制批② M6：光环
+    'blind', // ⑨机制批② M8：致盲
     ...MOD_STATE_TAGS,
     ...PERIODIC_STATE_TAGS,
   ];
@@ -1223,6 +1224,15 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const sp = num(row.splashPct);
       if (sp === null || sp < 0 || sp >= 1) fail('battle_effect_param', id, 'splashPct（可选）必须在 [0,1)');
       else if (!['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'].includes(row.effectType)) fail('battle_effect_param', id, 'splashPct（可选）仅允许配给伤害行');
+    }
+    // ⑨机制批② M8 blind 字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    if (row.blindChance !== undefined) {
+      const bc = num(row.blindChance);
+      if (bc === null || bc <= 0 || bc > 1) fail('battle_effect_param', id, 'blindChance（可选）必须在 (0,1]');
+      else if (row.stateTag !== 'blind') fail('battle_effect_param', id, 'blindChance（可选）仅允许配给 stateTag=blind');
+    }
+    if (row.stateTag === 'blind' && (num(row.blindChance) === null || num(row.blindChance) <= 0)) {
+      fail('battle_effect_param', id, 'blind 状态要求 blindChance ∈ (0,1]');
     }
   }
 

@@ -116,6 +116,7 @@ const S7_BATTLE_STATE_TAGS = [
   'guard', // ⑨机制批② M4：守护替挡（守护者持态·敌打其后排友军→伤害转守护者）
   'share', // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者）
   'aura', // ⑨机制批② M6：光环（源持态·消费点动态求和）
+  'blind', // ⑨机制批② M8：致盲（持有者普攻按 blindChance 概率落空）
   ...S7_MOD_STATE_TAGS,
   ...S7_PERIODIC_STATE_TAGS,
 ];
@@ -1576,6 +1577,15 @@ function validateBattle(
       const sp = num(row.splashPct);
       if (sp === null || sp < 0 || sp >= 1) errors.push({ table: 'battle_effect_param', id, message: 'splashPct（可选）必须在 [0,1)' });
       else if (!['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'].includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'splashPct（可选）仅允许配给伤害行' });
+    }
+    // ⑨机制批② M8 blind 字段组（缺席=不校）：仅 stateTag=blind·blindChance (0,1]。
+    if (row.blindChance !== undefined) {
+      const bc = num(row.blindChance);
+      if (bc === null || bc <= 0 || bc > 1) errors.push({ table: 'battle_effect_param', id, message: 'blindChance（可选）必须在 (0,1]' });
+      else if (stTag !== 'blind') errors.push({ table: 'battle_effect_param', id, message: 'blindChance（可选）仅允许配给 stateTag=blind' });
+    }
+    if (stTag === 'blind' && (num(row.blindChance) === null || (num(row.blindChance) as number) <= 0)) {
+      errors.push({ table: 'battle_effect_param', id, message: 'blind 状态要求 blindChance ∈ (0,1]' });
     }
   }
 

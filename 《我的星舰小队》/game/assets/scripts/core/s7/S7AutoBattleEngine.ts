@@ -97,6 +97,7 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'guard', // ⑨机制批② M4：守护替挡（尾部追加=遍历顺序不变）
   'share', // ⑨机制批② M4：分摊（尾部追加=遍历顺序不变）
   'aura', // ⑨机制批② M6：光环（尾部追加=遍历顺序不变）
+  'blind', // ⑨机制批② M8：致盲（尾部追加=遍历顺序不变）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -118,7 +119,7 @@ const KEY_ROLE_TAGS = new Set<string>(['healer', 'summoner', 'support', 'summon_
  *  旧配置不出现新 tag=判定结果不变） */
 const DEBUFF_TAGS: S7BattleStateTag[] = [
   'shield_break', 'mark', 'vulnerable', 'short_circuit', 'stun', 'silence',
-  'atk_down', 'atk_speed_down', 'armor_down', 'dmg_taken_up',
+  'atk_down', 'atk_speed_down', 'armor_down', 'dmg_taken_up', 'blind', // ⑨M8 致盲=减益（蔽/霖 目标判定纳入·尾部追加=旧配置不变）
 ];
 /** ⑦机制批① no_buff_ally_first 目标族的"带增益"判定集（沛：优先照顾还没增益/护盾的友军）。 */
 const BUFF_TAGS: S7BattleStateTag[] = [
@@ -131,14 +132,14 @@ const BUFF_TAGS: S7BattleStateTag[] = [
 /** 「减益」全集（净化候选 + debuff_immune 拦截判定）：软控（减速/虚弱/破防/易伤/削盾/燃烧）+ 硬控（短路/沉默/晕眩）；
  *  真源明列 mark 为目标标记非减益 → 排除（净化不清 mark·debuff_immune 不挡 mark）。 */
 const DEBUFF_STATE_TAGS: S7BattleStateTag[] = [
-  'atk_down', 'atk_speed_down', 'armor_down', 'vulnerable', 'dmg_taken_up', 'burn', 'shield_break',
+  'atk_down', 'atk_speed_down', 'armor_down', 'vulnerable', 'dmg_taken_up', 'burn', 'shield_break', 'blind',
   'short_circuit', 'stun', 'silence',
 ];
 /** 净化移除优先级（友军·最有害先移）：硬控（仅 dispelHardControl 时纳入·队首=最高威胁）→ 燃烧 DoT
  *  → 破防/易伤（挨更多打）→ 虚弱/减速（削输出/节奏）→ 易伤态/削盾。 */
 const DISPEL_DEBUFF_ORDER: S7BattleStateTag[] = [
   'short_circuit', 'stun', 'silence',
-  'burn', 'armor_down', 'dmg_taken_up', 'atk_down', 'atk_speed_down', 'vulnerable', 'shield_break',
+  'burn', 'blind', 'armor_down', 'dmg_taken_up', 'atk_down', 'atk_speed_down', 'vulnerable', 'shield_break',
 ];
 /** 驱散移除优先级（敌方·最具威胁先移）：狂暴/加攻（真源"反制狂暴/鼓动"）→ 增伤/加攻速/暴击/急速
  *  → 减伤/持续回血/护盾 → 免控/减益免疫。 */
@@ -207,6 +208,8 @@ interface RtStateInst {
   auraScope?: 'self' | 'team' | 'cross' | 'block';
   auraCondition?: 'always' | 'has_summon' | 'no_enemy_summon';
   auraScale?: 'per_lowhp_ally';
+  /** ⑨机制批② M8 致盲（blind 态·持有者）：普攻落空概率 (0,1]。 */
+  blindChance?: number;
 }
 
 /** ⑦机制批① M3：叠层规则运行态。 */
@@ -701,6 +704,14 @@ class BattleRun {
       if (!normal) continue; // normalEffectRef='none' 或缺失：本次普攻跳过（不报错）
       const targets = this.selectTargets(unit, unit.targetingTag, normal.maxTargets, unit.attackRangeCells);
       if (targets.length === 0) continue; // 无可攻击目标：跳过，不报错，不重置冷却
+      // ⑨机制批② M8 致盲：攻击者持 blind 态时普攻按 blindChance 概率落空（不掉血·只记 miss 日志·照进冷却）；
+      // 缺省无 blind 态=首条短路不掷随机=零回归（同暴击/闪避口径）。
+      const bl = unit.states.get('blind');
+      if (bl && bl.blindChance && this.rng.next() < bl.blindChance) {
+        this.pushLog('unit_attack', { actorId: unit.unitId, side: unit.side, targetIds: [], effectRef: normal.rowId, note: 'blind_miss' });
+        unit.nextAttackAt = this.time + this.effInterval(unit);
+        continue;
+      }
       this.pushLog('unit_attack', {
         actorId: unit.unitId,
         side: unit.side,
@@ -1308,6 +1319,7 @@ class BattleRun {
       if (effect.auraScale !== undefined) simple.auraScale = effect.auraScale;
       this.anyAura = true;
     }
+    if (tag === 'blind' && effect.blindChance !== undefined) simple.blindChance = effect.blindChance; // ⑨M8 致盲落空概率
     target.states.set(tag, simple);
     this.pushLog('state_apply', {
       actorId: caster.unitId,
