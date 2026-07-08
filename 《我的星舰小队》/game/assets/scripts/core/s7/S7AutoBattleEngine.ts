@@ -96,6 +96,7 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'reflect', // ⑨机制批② M4：反弹（尾部追加=遍历顺序不变）
   'guard', // ⑨机制批② M4：守护替挡（尾部追加=遍历顺序不变）
   'share', // ⑨机制批② M4：分摊（尾部追加=遍历顺序不变）
+  'aura', // ⑨机制批② M6：光环（尾部追加=遍历顺序不变）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -200,6 +201,12 @@ interface RtStateInst {
   sharePct?: number;
   shareMode?: 'adjacent' | 'to_caster';
   shareTargetId?: string;
+  /** ⑨机制批② M6 光环（aura 态·源持有）：作用轴 / 幅度 / 范围 / 条件门 / 数值缩放。 */
+  auraStat?: 'dmgTakenDownPct' | 'atkSpeedPct' | 'skillHastePct';
+  auraAmount?: number;
+  auraScope?: 'self' | 'team' | 'cross' | 'block';
+  auraCondition?: 'always' | 'has_summon' | 'no_enemy_summon';
+  auraScale?: 'per_lowhp_ally';
 }
 
 /** ⑦机制批① M3：叠层规则运行态。 */
@@ -315,6 +322,8 @@ class BattleRun {
   private phases: RtPhase[] = [];
   /** ⑨机制批② M4：本场是否存在守护替挡态（首次施加 guard 时置真）；false=dealDamage 守护解析整段跳过=逐字节不变。 */
   private anyGuard = false;
+  /** ⑨机制批② M6：本场是否存在光环态（首次施加 aura 时置真）；false=auraSum 整段跳过=逐字节不变。 */
+  private anyAura = false;
   private time = 0;
   private timeLimitSec = 0;
   private enemySeq = 0;
@@ -762,7 +771,7 @@ class BattleRun {
     if (t.block.on === 'cd') {
       const baseCd = t.block.cdSec && t.block.cdSec > 0 ? t.block.cdSec : Infinity;
       // ⑦机制批①：技能急速 buff 状态（时光糖「缩短技能CD」）并入急速分母；无状态时和 0=表达式值逐字节不变。
-      const haste = unit.affixes.skillHaste + this.stateModSum(unit, 'skill_haste_up');
+      const haste = unit.affixes.skillHaste + this.stateModSum(unit, 'skill_haste_up') + this.auraSum(unit, 'skillHastePct');
       t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + haste));
     } else {
       // 事件型（on_kill/on_hit/shield_broken/attack_landed/skill_cast）默认可重复：靠 stepTriggers 清事件标志重新武装；
@@ -982,7 +991,7 @@ class BattleRun {
     // 不触发 on_hit/attack_landed，只记 amount=0 + immune 标记（同 dodge 的"新内容才出现"口径；
     // 置于 dodge 之后保证既有 RNG 消费序不变）。
     const dmgReduction = Math.min(1, Math.max(0,
-      this.stateModSum(target, 'dmg_taken_down') + this.ruleStatSum(target, 'dmgTakenDownPct')));
+      this.stateModSum(target, 'dmg_taken_down') + this.ruleStatSum(target, 'dmgTakenDownPct') + this.auraSum(target, 'dmgTakenDownPct')));
     if (dmgReduction >= 1) {
       this.pushLog('damage', {
         actorId: caster.unitId,
@@ -1276,6 +1285,14 @@ class BattleRun {
       if (effect.sharePct !== undefined) simple.sharePct = effect.sharePct;
       simple.shareMode = effect.shareMode ?? 'to_caster';
       if (simple.shareMode === 'to_caster') simple.shareTargetId = caster.unitId;
+    }
+    if (tag === 'aura') { // ⑨M6 光环参数（源持态·消费点动态求和·在场即生效/退场撤销）
+      simple.auraStat = effect.auraStat;
+      if (effect.auraAmount !== undefined) simple.auraAmount = effect.auraAmount;
+      simple.auraScope = effect.auraScope;
+      simple.auraCondition = effect.auraCondition ?? 'always';
+      if (effect.auraScale !== undefined) simple.auraScale = effect.auraScale;
+      this.anyAura = true;
     }
     target.states.set(tag, simple);
     this.pushLog('state_apply', {
@@ -1811,6 +1828,52 @@ class BattleRun {
     }
   }
 
+  /** ⑨机制批② M6：unit 从所有存活光环源收到的某轴总幅度（在场即生效·退场撤销·动态重算）；无光环=0（anyAura 门=行为不变）。 */
+  private auraSum(unit: RtUnit, stat: 'dmgTakenDownPct' | 'atkSpeedPct' | 'skillHastePct'): number {
+    if (!this.anyAura) return 0;
+    let sum = 0;
+    for (const src of this.units) {
+      if (!src.alive) continue;
+      const a = src.states.get('aura');
+      if (!a || a.auraStat !== stat) continue;
+      if (!this.auraInScope(src, unit, a.auraScope)) continue;
+      if (!this.auraConditionMet(src, a)) continue;
+      let amt = a.auraAmount ?? 0;
+      if (a.auraScale === 'per_lowhp_ally') amt *= this.lowhpAllyCount(src);
+      sum += amt;
+    }
+    return sum;
+  }
+
+  /** 光环范围判定：self=仅源自身 / team=同阵营全体 / cross=源自己+十字4格 / block=源自己+3×3。 */
+  private auraInScope(src: RtUnit, unit: RtUnit, scope?: 'self' | 'team' | 'cross' | 'block'): boolean {
+    const s = scope ?? 'team';
+    if (s === 'self') return unit === src;
+    if (unit.side !== src.side) return false;
+    if (s === 'team') return true;
+    if (unit === src) return true;
+    const dr = Math.abs(unit.row - src.row);
+    const dc = Math.abs(unit.col - src.col);
+    return s === 'cross' ? (dr + dc) === 1 : (dr <= 1 && dc <= 1); // cross=十字相邻 / block=3×3
+  }
+
+  /** 光环条件门：always / has_summon（本源有存活召唤物·哨卫联防）/ no_enemy_summon（无敌方召唤物存活·空5★）。 */
+  private auraConditionMet(src: RtUnit, a: RtStateInst): boolean {
+    if (a.auraCondition === 'has_summon') return this.units.some((u) => u.alive && u.summonedBy === src.unitId);
+    if (a.auraCondition === 'no_enemy_summon') return !this.units.some((u) => u.alive && u.side !== src.side && u.summonedBy !== null);
+    return true;
+  }
+
+  /** 残血友军数（同阵营存活·血<30%·不含自身·沧坚壁 per_lowhp_ally 缩放用）。 */
+  private lowhpAllyCount(src: RtUnit): number {
+    let n = 0;
+    for (const u of this.units) {
+      if (u === src || u.side !== src.side || !u.alive) continue;
+      if (u.maxHp > 0 && u.hp / u.maxHp < LOWHP_THRESHOLD) n += 1;
+    }
+    return n;
+  }
+
   /** 生效攻击：berserk 特例保持原码原样（×1.25），M1 加攻/虚弱 + M3 叠层攻击轴在其外乘法合成；
    *  和为 0 时直接走原路径返回（浮点逐字节不变）。加攻/虚弱只进伤害口径，治疗/护盾量走基础攻（与 berserk 现状同口径）。 */
   private effAttack(unit: RtUnit): number {
@@ -1823,7 +1886,7 @@ class BattleRun {
    *  分母钳到 ≥0.1（极限减速也最多把间隔拉长 10 倍）；和为 0 时走原路径（浮点逐字节不变）。 */
   private effInterval(unit: RtUnit): number {
     const base = unit.states.has('berserk') ? unit.attackIntervalSec * BERSERK_INTERVAL_MULT : unit.attackIntervalSec;
-    const spd = this.stateModSum(unit, 'atk_speed_up') - this.stateModSum(unit, 'atk_speed_down') + this.ruleStatSum(unit, 'atkSpeedPct');
+    const spd = this.stateModSum(unit, 'atk_speed_up') - this.stateModSum(unit, 'atk_speed_down') + this.ruleStatSum(unit, 'atkSpeedPct') + this.auraSum(unit, 'atkSpeedPct');
     return spd === 0 ? base : base / Math.max(0.1, 1 + spd);
   }
 

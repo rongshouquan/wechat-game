@@ -925,6 +925,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'reflect', // ⑨机制批② M4：反弹
     'guard', // ⑨机制批② M4：守护替挡
     'share', // ⑨机制批② M4：分摊
+    'aura', // ⑨机制批② M6：光环
     ...MOD_STATE_TAGS,
     ...PERIODIC_STATE_TAGS,
   ];
@@ -1194,6 +1195,19 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const sp = num(row.sharePct);
       if (sp === null || sp < 0 || sp > 1) fail('battle_effect_param', id, 'sharePct（可选）必须在 [0,1]');
       else if (row.shareMode !== 'adjacent' && row.shareMode !== 'to_caster') fail('battle_effect_param', id, 'sharePct（可选）要求配 shareMode（adjacent|to_caster）');
+    }
+    // ⑨机制批② M6 aura 字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    const auraFields = ['auraStat', 'auraAmount', 'auraScope', 'auraCondition', 'auraScale'];
+    if (auraFields.some((f) => row[f] !== undefined) && row.stateTag !== 'aura') {
+      fail('battle_effect_param', id, 'aura* 字段（可选）仅允许配给 stateTag=aura');
+    }
+    if (row.stateTag === 'aura') {
+      if (!['dmgTakenDownPct', 'atkSpeedPct', 'skillHastePct'].includes(row.auraStat)) fail('battle_effect_param', id, 'aura 效果要求 auraStat ∈ dmgTakenDownPct|atkSpeedPct|skillHastePct');
+      const av = num(row.auraAmount);
+      if (av === null || !Number.isFinite(av)) fail('battle_effect_param', id, 'aura 效果要求 auraAmount 为有限数');
+      if (!['self', 'team', 'cross', 'block'].includes(row.auraScope)) fail('battle_effect_param', id, 'aura 效果要求 auraScope ∈ self|team|cross|block');
+      if (row.auraCondition !== undefined && !['always', 'has_summon', 'no_enemy_summon'].includes(row.auraCondition)) fail('battle_effect_param', id, 'auraCondition（可选）非法');
+      if (row.auraScale !== undefined && row.auraScale !== 'per_lowhp_ally') fail('battle_effect_param', id, 'auraScale（可选）必须为 per_lowhp_ally');
     }
   }
 

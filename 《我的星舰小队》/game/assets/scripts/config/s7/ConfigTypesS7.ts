@@ -727,7 +727,8 @@ export type S7BattleStateTag =
   | 'taunt' // ⑨机制批② M4：嘲讽（受击重定向·被嘲讽单位攻击性选目标强制打嘲讽者·tauntedBy 记施加者=砺/铁壁怒吼/哨卫诱饵/SS）
   | 'reflect' // ⑨机制批② M4：反弹（受方受击后向攻击者直扣·岩反震/岳荆甲/铁壁A/磐石A/砺5★）
   | 'guard' // ⑨机制批② M4：守护替挡（守护者持此态·敌打其保护的后排友军时伤害转守护者·CD 门控·岩「光盾守护」）
-  | 'share'; // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者·援护链邻格互摊/山岳SS/沧3★）
+  | 'share' // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者·援护链邻格互摊/山岳SS/沧3★）
+  | 'aura'; // ⑨机制批② M6：光环（源持态·消费点动态求和·在场即生效退场撤销·磐石力场/号角催进/哨卫联防/沧坚壁/空5★）
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -793,6 +794,14 @@ export interface S7BattleEffectParam {
    *  shareMode=adjacent（转相邻持 share 态友军·援护链互摊）/ to_caster（转施加者·山岳SS/沧3★·shareTargetId 快照施加者）。 */
   sharePct?: number;
   shareMode?: 'adjacent' | 'to_caster';
+  /** ⑨机制批② M6 可选（仅 stateTag='aura'·光环）：源持态·对 auraScope 内友军在 auraStat 轴动态叠加 auraAmount（在场即生效/退场撤销）。
+   *  auraScope=self / team(全队) / cross(自己+十字4格) / block(自己+3×3)；auraCondition 缺省 always（has_summon=本源有存活召唤物·哨卫联防 / no_enemy_summon=无敌方召唤物·空5★）；
+   *  auraScale=per_lowhp_ally（amount×残血友军数·沧坚壁）。 */
+  auraStat?: 'dmgTakenDownPct' | 'atkSpeedPct' | 'skillHastePct';
+  auraAmount?: number;
+  auraScope?: 'self' | 'team' | 'cross' | 'block';
+  auraCondition?: 'always' | 'has_summon' | 'no_enemy_summon';
+  auraScale?: 'per_lowhp_ally';
   note: string;
 }
 

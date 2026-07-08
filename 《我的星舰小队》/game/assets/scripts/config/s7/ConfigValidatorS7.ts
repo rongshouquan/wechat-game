@@ -115,6 +115,7 @@ const S7_BATTLE_STATE_TAGS = [
   'reflect', // ⑨机制批② M4：反弹（受方受击后向攻击者直扣）
   'guard', // ⑨机制批② M4：守护替挡（守护者持态·敌打其后排友军→伤害转守护者）
   'share', // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者）
+  'aura', // ⑨机制批② M6：光环（源持态·消费点动态求和）
   ...S7_MOD_STATE_TAGS,
   ...S7_PERIODIC_STATE_TAGS,
 ];
@@ -1547,6 +1548,19 @@ function validateBattle(
       const sp = num(row.sharePct);
       if (sp === null || sp < 0 || sp > 1) errors.push({ table: 'battle_effect_param', id, message: 'sharePct（可选）必须在 [0,1]' });
       else if (row.shareMode !== 'adjacent' && row.shareMode !== 'to_caster') errors.push({ table: 'battle_effect_param', id, message: 'sharePct（可选）要求配 shareMode（adjacent|to_caster）' });
+    }
+    // ⑨机制批② M6 aura 字段组（缺席=不校）：仅 stateTag=aura·必给 auraStat/auraAmount/auraScope。
+    const auraFields = ['auraStat', 'auraAmount', 'auraScope', 'auraCondition', 'auraScale'] as const;
+    if (auraFields.some((f) => row[f] !== undefined) && stTag !== 'aura') {
+      errors.push({ table: 'battle_effect_param', id, message: 'aura* 字段（可选）仅允许配给 stateTag=aura' });
+    }
+    if (stTag === 'aura') {
+      if (!['dmgTakenDownPct', 'atkSpeedPct', 'skillHastePct'].includes(String(row.auraStat))) errors.push({ table: 'battle_effect_param', id, message: 'aura 效果要求 auraStat ∈ dmgTakenDownPct|atkSpeedPct|skillHastePct' });
+      const av = num(row.auraAmount);
+      if (av === null || !Number.isFinite(av)) errors.push({ table: 'battle_effect_param', id, message: 'aura 效果要求 auraAmount 为有限数' });
+      if (!['self', 'team', 'cross', 'block'].includes(String(row.auraScope))) errors.push({ table: 'battle_effect_param', id, message: 'aura 效果要求 auraScope ∈ self|team|cross|block' });
+      if (row.auraCondition !== undefined && !['always', 'has_summon', 'no_enemy_summon'].includes(String(row.auraCondition))) errors.push({ table: 'battle_effect_param', id, message: 'auraCondition（可选）非法' });
+      if (row.auraScale !== undefined && row.auraScale !== 'per_lowhp_ally') errors.push({ table: 'battle_effect_param', id, message: 'auraScale（可选）必须为 per_lowhp_ally' });
     }
   }
 
