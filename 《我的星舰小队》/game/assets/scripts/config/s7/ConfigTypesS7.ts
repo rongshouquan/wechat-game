@@ -802,6 +802,12 @@ export interface S7BattleEffectParam {
   auraScope?: 'self' | 'team' | 'cross' | 'block';
   auraCondition?: 'always' | 'has_summon' | 'no_enemy_summon';
   auraScale?: 'per_lowhp_ally';
+  /** ⑨机制批② M7 可选（多重释放·极焰SS连放三次/群蜂饱和SS连放两轮）：技能额外重选+重放次数（≥1）；缺省=只放一次=逐字节不变。 */
+  repeatCount?: number;
+  /** ⑨机制批② M7 可选（概率连击·极焰快速装填/锋矢L100）：普攻额外再打一发的概率 (0,1]；缺省=不连击（不掷随机·零回归）。仅普攻行生效。 */
+  repeatChance?: number;
+  /** ⑨机制批② M7 可选（溅射分伤·散射枪管/引爆器/极焰节点/贯日L40）：多目标伤害里非主目标（首目标外）的伤害比例 [0,1)；缺省=全额（无溅射衰减）。仅伤害行生效。 */
+  splashPct?: number;
   note: string;
 }
 

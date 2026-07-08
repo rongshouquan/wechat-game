@@ -1337,3 +1337,61 @@ describe('⑨M6-C 光环条件门（哨卫联防 has_summon）', () => {
     expect(dmgBy(r.log, 'enemy_0000').every((a) => a.amount === 80)).toBe(true); // 条件不满足→光环不生效
   });
 });
+
+// ===================== ⑨M7 · 连锁概率族核心（多重释放/概率连击/溅射分伤）=====================
+const dmgRef = (log: S7AutoBattleLogEntry[], ref: string) => log.filter((e) => e.type === 'damage' && e.effectRef === ref);
+
+describe('⑨M7-A 多重释放（极焰SS连放三次/群蜂饱和SS连放两轮）', () => {
+  it('repeatCount=2：技能连放 3 次（1+2）·同目标 3 次伤害', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m7_mc' }],
+      enemies: [{ rowId: 'bu_t9m7_e', slot: 'r1c0' }],
+      effects: [{ rowId: 'eff_t9m7_mc', overrides: { effectKind: 'ultimate', effectType: 'burst_nuke', effectPower: 1.0, targetingTag: 'single_target', durationSec: 0, maxTargets: 1, stateTag: 'none', summonUnitRef: 'none', repeatCount: 2 } }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [unitInput('bu_t9m7_mc', 'p1c2', [trig('battle_start', 'eff_t9m7_mc')])],
+    });
+    expect(dmgRef(r.log, 'eff_t9m7_mc').length).toBe(3); // battle_start 一次触发 × repeatCount2 = 3 发
+  });
+});
+
+describe('⑨M7-B 概率连击（极焰快速装填/锋矢L100·普攻 repeatChance）', () => {
+  it('repeatChance=1.0：每次普攻必额外一发·6 击→12 伤害', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m7_rc', overrides: { normalEffectRef: 'eff_t9m7_rc' } }],
+      enemies: [{ rowId: 'bu_t9m7_e2', slot: 'r1c0' }],
+      effects: [{ rowId: 'eff_t9m7_rc', overrides: { effectKind: 'normal_attack', effectType: 'basic_damage', effectPower: 1.0, targetingTag: 'single_target', durationSec: 0, maxTargets: 1, stateTag: 'none', summonUnitRef: 'none', repeatChance: 1.0 } }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [unitInput('bu_t9m7_rc', 'p1c2', undefined)],
+    });
+    expect(dmgRef(r.log, 'eff_t9m7_rc').length).toBe(12); // 6 普攻 × 必连击1 = 12
+  });
+});
+
+describe('⑨M7-C 溅射分伤（散射枪管/引爆器/极焰节点/贯日L40·首目标满额·邻格 splashPct）', () => {
+  it('splashPct=0.5 + block_area：主目标 80 满额、邻格 40 半额', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m7_sp' }],
+      enemies: [
+        { rowId: 'bu_t9m7_pe', slot: 'r1c0' },
+        { rowId: 'bu_t9m7_ne1', slot: 'r0c0' },
+        { rowId: 'bu_t9m7_ne2', slot: 'r1c1' },
+      ],
+      effects: [{ rowId: 'eff_t9m7_sp', overrides: { effectKind: 'ultimate', effectType: 'burst_nuke', effectPower: 1.0, targetingTag: 'block_area', durationSec: 0, maxTargets: 9, stateTag: 'none', summonUnitRef: 'none', splashPct: 0.5 } }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [unitInput('bu_t9m7_sp', 'p1c2', [trig('battle_start', 'eff_t9m7_sp')])],
+    });
+    const amounts = dmgRef(r.log, 'eff_t9m7_sp').map((e) => e.amount ?? 0).sort((a, x) => x - a);
+    expect(amounts.length).toBeGreaterThanOrEqual(2); // 至少 主+1邻
+    expect(amounts[0]).toBe(80); // 首目标满额 80
+    expect(amounts.slice(1).every((a) => a === 40)).toBe(true); // 邻格 ×0.5=40
+  });
+});

@@ -1562,6 +1562,21 @@ function validateBattle(
       if (row.auraCondition !== undefined && !['always', 'has_summon', 'no_enemy_summon'].includes(String(row.auraCondition))) errors.push({ table: 'battle_effect_param', id, message: 'auraCondition（可选）非法' });
       if (row.auraScale !== undefined && row.auraScale !== 'per_lowhp_ally') errors.push({ table: 'battle_effect_param', id, message: 'auraScale（可选）必须为 per_lowhp_ally' });
     }
+    // ⑨机制批② M7 字段组（缺席=不校）：多重释放 / 概率连击 / 溅射分伤。
+    if (row.repeatCount !== undefined) {
+      const rc = num(row.repeatCount);
+      if (rc === null || !Number.isInteger(rc) || rc < 1) errors.push({ table: 'battle_effect_param', id, message: 'repeatCount（可选）必须为 >= 1 的整数' });
+    }
+    if (row.repeatChance !== undefined) {
+      const rch = num(row.repeatChance);
+      if (rch === null || rch <= 0 || rch > 1) errors.push({ table: 'battle_effect_param', id, message: 'repeatChance（可选）必须在 (0,1]' });
+      else if (row.effectKind !== 'normal_attack') errors.push({ table: 'battle_effect_param', id, message: 'repeatChance（可选）仅允许配给普攻行（effectKind=normal_attack）' });
+    }
+    if (row.splashPct !== undefined) {
+      const sp = num(row.splashPct);
+      if (sp === null || sp < 0 || sp >= 1) errors.push({ table: 'battle_effect_param', id, message: 'splashPct（可选）必须在 [0,1)' });
+      else if (!['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'].includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'splashPct（可选）仅允许配给伤害行' });
+    }
   }
 
   // ---- battle_encounter_param ----

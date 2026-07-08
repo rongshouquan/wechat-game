@@ -1209,6 +1209,21 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       if (row.auraCondition !== undefined && !['always', 'has_summon', 'no_enemy_summon'].includes(row.auraCondition)) fail('battle_effect_param', id, 'auraCondition（可选）非法');
       if (row.auraScale !== undefined && row.auraScale !== 'per_lowhp_ally') fail('battle_effect_param', id, 'auraScale（可选）必须为 per_lowhp_ally');
     }
+    // ⑨机制批② M7 字段组（镜像 ConfigValidatorS7.ts·缺席=不校）。
+    if (row.repeatCount !== undefined) {
+      const rc = num(row.repeatCount);
+      if (rc === null || !Number.isInteger(rc) || rc < 1) fail('battle_effect_param', id, 'repeatCount（可选）必须为 >= 1 的整数');
+    }
+    if (row.repeatChance !== undefined) {
+      const rch = num(row.repeatChance);
+      if (rch === null || rch <= 0 || rch > 1) fail('battle_effect_param', id, 'repeatChance（可选）必须在 (0,1]');
+      else if (row.effectKind !== 'normal_attack') fail('battle_effect_param', id, 'repeatChance（可选）仅允许配给普攻行（effectKind=normal_attack）');
+    }
+    if (row.splashPct !== undefined) {
+      const sp = num(row.splashPct);
+      if (sp === null || sp < 0 || sp >= 1) fail('battle_effect_param', id, 'splashPct（可选）必须在 [0,1)');
+      else if (!['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'].includes(row.effectType)) fail('battle_effect_param', id, 'splashPct（可选）仅允许配给伤害行');
+    }
   }
 
   for (const row of encounterRows) {

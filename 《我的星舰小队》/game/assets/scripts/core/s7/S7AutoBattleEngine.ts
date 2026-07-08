@@ -709,6 +709,12 @@ class BattleRun {
         effectType: normal.effectType,
       });
       this.applyEffectToTargets(unit, normal, targets);
+      // ⑨机制批② M7 概率连击（极焰快速装填/锋矢L100）：普攻 repeatChance 概率额外再打一发（重选目标·单次不链）；
+      // 缺省无 repeatChance=首条短路不掷随机=零回归（同暴击/闪避口径）。
+      if (normal.repeatChance !== undefined && normal.repeatChance > 0 && this.rng.next() < normal.repeatChance) {
+        const extra = this.selectTargets(unit, unit.targetingTag, normal.maxTargets, unit.attackRangeCells);
+        if (extra.length > 0) this.applyEffectToTargets(unit, normal, extra);
+      }
       unit.nextAttackAt = this.time + this.effInterval(unit);
     }
   }
@@ -825,6 +831,12 @@ class BattleRun {
       targetIds: targets.map((t) => t.unitId),
     });
     this.applyEffectToTargets(caster, effect, targets);
+    // ⑨机制批② M7 多重释放（极焰SS 连放三次/群蜂饱和SS 连放两轮）：额外 repeatCount 次重选+重放；缺省无=零回归。
+    const multiCast = Math.max(0, Math.floor(effect.repeatCount ?? 0));
+    for (let i = 0; i < multiCast; i += 1) {
+      const rt = this.selectTargets(caster, effect.targetingTag, effect.maxTargets, undefined);
+      this.applyEffectToTargets(caster, effect, rt);
+    }
   }
 
   // ===== Boss phase =====
@@ -898,7 +910,9 @@ class BattleRun {
   private applyEffectToTargets(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
     const type = effect.effectType;
     if (DAMAGE_TYPES.has(type)) {
-      for (const t of targets) this.dealDamage(caster, t, effect);
+      // ⑨机制批② M7 溅射分伤（散射枪管/引爆器/极焰节点/贯日L40）：首目标满额、其余按 splashPct；缺省无 splashPct=全额=逐字节不变。
+      const splash = effect.splashPct;
+      for (let i = 0; i < targets.length; i += 1) this.dealDamage(caster, targets[i], effect, splash !== undefined && i > 0 ? splash : 1);
       if (effect.stateTag !== 'none') {
         for (const t of targets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
       }
@@ -968,7 +982,7 @@ class BattleRun {
     }
   }
 
-  private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam): void {
+  private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam, damageScale = 1): void {
     if (!target.alive) return;
     target = this.resolveGuard(caster, target); // ⑨机制批② M4 守护替挡：敌打我方后排友军→伤害转就绪守护者(岩·CD 门控)；无守护态=原目标
     // ⑥8a 闪避（受方词条·警戒雷达）：仅 dodgeRate>0 才掷随机（零回归模式同暴击）；闪避=完全落空，
@@ -1013,7 +1027,7 @@ class BattleRun {
     // ⑦机制批① 破防（armor_down 状态·受方）：再乘 (1−幅度)；无状态时乘 1=逐字节不变。
     const armorCut = Math.min(1, Math.max(0, this.stateModSum(target, 'armor_down')));
     const effArmor = target.armor * (1 - Math.min(1, Math.max(0, caster.affixes.armorPen))) * (1 - armorCut);
-    let raw = this.effAttack(caster) * effect.effectPower * 100 / (100 + effArmor);
+    let raw = this.effAttack(caster) * effect.effectPower * damageScale * 100 / (100 + effArmor); // ⑨M7 溅射：damageScale 缺省 1=逐字节不变
     if (target.states.has('vulnerable')) raw *= VULNERABLE_MULT;
     // 块4b-1：定向加伤词条（施法者插件提供）。对 Boss 用 dmgVsBoss，对其余（小怪/非 Boss 目标）用 dmgVsSwarm。
     raw *= 1 + (target.isBoss ? caster.affixes.dmgVsBoss : caster.affixes.dmgVsSwarm);
