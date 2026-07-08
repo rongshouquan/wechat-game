@@ -1,2 +1,5 @@
 # 无关的内嵌独立仓库（非本项目，自带 .git，勿动）——不纳入本仓库跟踪
 untangle/
+
+# 数值工具运行时报告（--json 产物·非源文件·可随时再生）
+《我的星舰小队》/game/tools/s7-economy-report.json
