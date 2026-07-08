@@ -246,6 +246,8 @@ interface RtUnit {
   maxHp: number;
   hp: number;
   attack: number;
+  /** ⑨机制批② M9：出场攻击力快照（贪吃星运行时累积 additive 基数·不随 attack 变动）。 */
+  baseAttack: number;
   armor: number;
   attackIntervalSec: number;
   attackRangeCells: number;
@@ -824,6 +826,12 @@ class BattleRun {
           t.nextFireAt = Math.max(this.time, t.nextFireAt - effect.effectPower);
         }
       }
+      this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType, targetIds: [caster.unitId] });
+      return;
+    }
+    if (effect.effectType === 'accumulate_attack') {
+      // ⑨机制批② M9 贪吃星（运行时属性累积·on_kill 触发）：本场永久 +effectPower×基础攻（additive 不复利·无上限）。
+      caster.attack += Math.round(effect.effectPower * caster.baseAttack);
       this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType, targetIds: [caster.unitId] });
       return;
     }
@@ -1716,6 +1724,7 @@ class BattleRun {
       maxHp: cv.maxHp,
       hp: cv.maxHp,
       attack: cv.attack,
+      baseAttack: cv.attack, // ⑨M9 贪吃星累积基数
       armor: cv.armor,
       attackIntervalSec: cv.attackIntervalSec,
       attackRangeCells: cv.attackRangeCells,

@@ -1440,3 +1440,66 @@ describe('⑨M8 致盲（迷雾普攻/致盲领域/SS）', () => {
     expect(misses + hits).toBe(6); // 共 6 次出手
   });
 });
+
+// ===================== ⑨M9/敌载体 · 第三段（贪吃星累积 + 敌载体三缺口组合验证）=====================
+describe('⑨M9 贪吃星（运行时属性累积·on_kill 永久+攻·真源低成本项）', () => {
+  it('accumulate_attack 0.5：每次击杀永久 +50%基础攻·连杀伤害递增 80→120→160', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m9_glut' }],
+      enemies: [
+        { rowId: 'bu_t9m9_w1', slot: 'r1c0', overrides: { maxHp: 1, attack: 1 } },
+        { rowId: 'bu_t9m9_w2', slot: 'r1c1', overrides: { maxHp: 1, attack: 1 } },
+        { rowId: 'bu_t9m9_w3', slot: 'r1c2', overrides: { maxHp: 1, attack: 1 } },
+      ],
+      effects: [{ rowId: 'eff_t9m9_glut', overrides: { effectKind: 'ultimate', effectType: 'accumulate_attack', effectPower: 0.5, targetingTag: 'self_team', durationSec: 0, maxTargets: 1, stateTag: 'none', summonUnitRef: 'none' } }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [unitInput('bu_t9m9_glut', 'p1c2', [trig('on_kill', 'eff_t9m9_glut')])],
+    });
+    // 攻 100→(杀1)150→(杀2)200：伤 80/120/160（击杀 tick 后一拍累积生效）。
+    expect(dmgBy(r.log, 'player_p1c2').map((e) => e.amount).slice(0, 3)).toEqual([80, 120, 160]);
+  });
+});
+
+describe('⑨敌载体三缺口（组合验证·能力已由 M1-M8 完备·接线归⑥回归批·不碰敌配JSON）', () => {
+  it('削弱我方（§20.6 #10 缺口）：敌 apply_state 对我方施 atk_down −50% → 我方伤 80→40', async () => {
+    const b = mechRig({
+      players: [{ rowId: 'bu_t9m9_p', overrides: { attack: 100 } }],
+      enemies: [{ rowId: 'bu_t9m9_dbf', slot: 'r1c0', overrides: { attack: 1, ultimateEffectRef: 'eff_t9m9_wk', ultimateCdSec: 3, attackRangeCells: 99 } }],
+      effects: [{ rowId: 'eff_t9m9_wk', overrides: { effectKind: 'ultimate', effectType: 'apply_state', effectPower: 0, targetingTag: 'nearest_random_tie', durationSec: 20, maxTargets: 1, stateTag: 'atk_down', stateAmount: 0.5, summonUnitRef: 'none' } }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [unitInput('bu_t9m9_p', 'p1c2', undefined)],
+    });
+    // 敌开局(cd 初发 t=0)对我方施 atk_down −50% → 我方攻 100→50 → 伤 40（全程）。
+    expect(dmgBy(r.log, 'player_p1c2').every((e) => e.amount === 40)).toBe(true);
+  });
+
+  it('敌方 AoE 载体：敌用 block_area+splashPct 命中我方多单位（首满额·邻半额）', async () => {
+    const b = mechRig({
+      players: [
+        { rowId: 'bu_t9m9_pa', overrides: { maxHp: 100000 } },
+        { rowId: 'bu_t9m9_pb', overrides: { maxHp: 100000 } },
+      ],
+      enemies: [{ rowId: 'bu_t9m9_aoe', slot: 'r1c0', overrides: { attack: 100, ultimateEffectRef: 'eff_t9m9_ea', ultimateCdSec: 99, attackRangeCells: 99 } }],
+      effects: [{ rowId: 'eff_t9m9_ea', overrides: { effectKind: 'ultimate', effectType: 'burst_nuke', effectPower: 1.0, targetingTag: 'block_area', durationSec: 0, maxTargets: 9, stateTag: 'none', summonUnitRef: 'none', splashPct: 0.5 } }],
+    });
+    const engine = await engineOf(b);
+    const r = engine.run({
+      encounterRef: ENC, battleSeed: SEED,
+      playerUnits: [
+        unitInput('bu_t9m9_pa', 'p1c1', undefined),
+        unitInput('bu_t9m9_pb', 'p1c2', undefined),
+      ],
+    });
+    // 敌 block_area 打我方两单位·首目标满额 80、邻格 40（敌 AoE 载体=splash 能力已备·任何单位可用）。
+    const aoe = dmgRef(r.log, 'eff_t9m9_ea').map((e) => e.amount ?? 0).sort((a, x) => x - a);
+    expect(aoe.length).toBeGreaterThanOrEqual(2);
+    expect(aoe[0]).toBe(80);
+    expect(aoe.slice(1).every((a) => a === 40)).toBe(true);
+  });
+});

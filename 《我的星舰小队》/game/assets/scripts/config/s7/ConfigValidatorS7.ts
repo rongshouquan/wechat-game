@@ -99,6 +99,7 @@ const S7_BATTLE_EFFECT_TYPES = [
   'silence', 'control_immune', 'cd_refund',
   'apply_state', // ⑦机制批①：通用状态施加
   'purify', // ⑨机制批② M5：纯净化/驱散（无伤无治·dispelCount 移除减益/增益）
+  'accumulate_attack', // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 永久 +攻）
 ];
 // ⑦机制批① M1 限时修正状态 tag（stateAmount 必填的框架 tag 集）。
 const S7_MOD_STATE_TAGS = [

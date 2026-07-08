@@ -708,7 +708,8 @@ export type S7BattleEffectType =
   | 'shield' | 'shield_break' | 'mark' | 'vulnerable' | 'short_circuit' | 'stun' | 'summon' | 'berserk'
   | 'silence' | 'control_immune' | 'cd_refund'
   | 'apply_state'
-  | 'purify'; // ⑨机制批② M5：纯净化/驱散（无伤无治·按目标阵营移除减益/增益·dispelCount 条）
+  | 'purify' // ⑨机制批② M5：纯净化/驱散（无伤无治·按目标阵营移除减益/增益·dispelCount 条）
+  | 'accumulate_attack'; // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 触发·本场永久 +effectPower×基础攻·无上限）
 // ⑦机制批① M1 限时属性修正状态（幅度=效果行 stateAmount·时长=durationSec·全配置驱动；
 // 方向编码在 tag 里，stateAmount 一律填正数）：
 //   atk_up/atk_down=加攻/虚弱 · atk_speed_up/atk_speed_down=加攻速/减速 · armor_down=破防
