@@ -3685,7 +3685,7 @@ export class S7DemoController extends Component {
     // 带插件库存校验(与会话内部一致)，built.lineup 即含插件——下面附上全队加成后直接喂战斗。
     let lineup: ReturnType<typeof buildSquadLineup> | null = null;
     if (this.squad) {
-      const built = buildSquadLineup(this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined);
+      const built = buildSquadLineup(this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers); // ⑩A1：驾驶员级/星入战（回执⑤）
       if (!built.ok && this.prebattleInfoLabel) {
         const msg = built.code === 'no_pilot' ? '有星舰缺驾驶员——请给每艘上阵星舰配上驾驶员再出战'
           : built.code === 'empty' ? '请先上阵至少 1 艘星舰'
@@ -6736,7 +6736,7 @@ export class S7DemoController extends Component {
     if (!this.playerState || !this.session || !this.model || !this.runtime || !this.squad) return null;
     const nodeId = bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds);
     if (!nodeId) { this.bountyBattleError('暂无可用悬赏敌阵'); return null; }
-    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined);
+    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined, this.playerState.unitTiers); // ⑩A1：驾驶员级/星入战（回执⑤）
     if (!built.ok) { this.bountyBattleError('有星舰缺驾驶员或没上阵——把阵容配好再出战'); return null; }
     const defs = this.runtime.getAll<S7CommissionAffixDef>('commission_affix_param');
     const lineupSize = built.lineup.length;
@@ -7147,7 +7147,7 @@ export class S7DemoController extends Component {
   /** 真打一层回廊（先结算后演出·同主线口径·就地在备战舞台播放）：胜→首通推进+发小奖+sfx；负→停留原层·不罚·给养成建议。 */
   private launchCorridorBattle(layer: number): void {
     if (!this.playerState || !this.runtime || !this.squad || !this.session) return;
-    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined);
+    const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined, this.playerState.unitTiers); // ⑩A1：驾驶员级/星入战（回执⑤）
     if (!built.ok) { this.corridorBattleError('有星舰缺驾驶员或没上阵——把阵容配好再出战'); return; }
     const plan = this.corridorPlanFor(layer);
     const team = this.teamBonusBlocks();

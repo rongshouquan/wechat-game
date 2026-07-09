@@ -56,8 +56,11 @@ export interface S7BattleLineupUnitInput {
   plugins?: S7BattleLineupPluginInput[];
   /** 星舰等级（C1b 升级变强）：缺省 1 级；经 S7UnitGrowth.shipGrowthBlocks 折成成长积木放大血/攻。 */
   shipLevel?: number;
-  /** 驾驶员等级（C1b 升级变强）：缺省 1 级；当前 pilotGrowthBlocks 占位返回空（§5.2 驾驶员升级无原始属性）。 */
+  /** 驾驶员等级：⑩A1 起喂 pilotBlocks 级门（Lv1 解锁天赋·Lv20/40/60/80/100 大节点）；
+   *  缺省 0=只有能力无天赋（最保守·总控回执⑤）。pilotGrowthBlocks 仍占位空（§5.2 无原始属性）。 */
   pilotLevel?: number;
+  /** ⑩A1 驾驶员星级（1-5）：3★/5★ 质变门；缺省 1=无质变。数值线（+10%/星）走 C20 通道由调用方折算、此处只开机制门。 */
+  pilotStar?: number;
   /** 全队加成积木（J 建筑剩余效果）：研究塔/星核展厅等"全队 %"由调用方算好、附在每个上阵单位上，组装时并入该舰效果积木。 */
   extraBlocks?: S7EffectBlock[];
 }
@@ -273,7 +276,8 @@ export class S7BattleEncounterAssembler {
         ...shipGrowthBlocks(growthBands, item.shipLevel ?? 1),
         ...pilotGrowthBlocks(growthBands, item.pilotLevel ?? 1),
         ...(item.coreId ? coreBlocks(item.coreId) : []),
-        ...(item.pilotId ? pilotBlocks(item.pilotId) : []),
+        // ⑩A1：驾驶员积木按级/星取（缺省 Lv0/1★=最保守·只有能力无天赋——总控回执⑤钉死缺省语义）。
+        ...(item.pilotId ? pilotBlocks(item.pilotId, item.pilotLevel ?? 0, item.pilotStar ?? 1) : []),
         ...this.resolvePluginBlocks(item.plugins, pluginConfigs),
         ...(item.extraBlocks ?? []), // J：全队加成（研究塔/星核展厅）并入
       ];

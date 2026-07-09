@@ -70,6 +70,13 @@ function round6(x: number): number {
   return Math.round(x * 1e6) / 1e6;
 }
 
+/** 友方向目标 tag（与引擎 FRIENDLY_TAGS 同集·⑩A1 方向匹配门用——引擎侧为模块私有故此处成对维护）。 */
+const FRIENDLY_TARGETING_TAGS = new Set<string>([
+  'self_team', 'lowest_hp_ally',
+  'highest_attack_ally', 'no_buff_ally_first', 'most_debuffed_ally', 'controlled_ally_first',
+  'self_cross_area', 'self_block_area',
+]);
+
 /**
  * 合并基础属性与效果积木，产出最终战斗单位。叠加规则（首版口径，非最终平衡）：
  * - 修正类：同一 stat 先把所有 flat 相加，再乘 (1 + Σpct)；最后按属性各自下限钳制。
@@ -109,7 +116,13 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
         affixes[b.affix] += b.value;
         break;
       case 'behavior':
-        targetingTag = b.targetingTag;
+        // ⑩A1 方向匹配门（驾驶员真源 §0"自然生效"口径的机器化）：行为覆盖只在
+        // 敌/友方向与舰行基础 tag 一致时生效——友方向能力装攻击舰（如苏×突击）若无此门会把
+        // 普攻目标改成友军=伤害打自己人；方向不匹配=忽略覆盖=「没有作用对象就自然失效」。
+        // 判据=引擎消费点同款（FRIENDLY_TAGS 定目标阵营）；装配层不建亲和组开关（Ron 2026-07-09 拍）。
+        if (FRIENDLY_TARGETING_TAGS.has(b.targetingTag) === FRIENDLY_TARGETING_TAGS.has(base.targetingTag)) {
+          targetingTag = b.targetingTag;
+        }
         break;
       case 'action':
         if (b.slot === 'normal') normalEffectRef = b.effectRef;

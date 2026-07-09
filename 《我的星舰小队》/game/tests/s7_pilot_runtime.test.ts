@@ -12,8 +12,13 @@ import {
 import { S7ConfigTableName, S7_TABLE_FILES } from '../assets/scripts/config/s7/ConfigTypesS7';
 import { S7AutoBattleEngine } from '../assets/scripts/core/s7/S7AutoBattleEngine';
 import { S7AutoBattleResult } from '../assets/scripts/core/s7/S7AutoBattleTypes';
-import { pilotBlocks, S7_PILOT_BACKLINE_ID } from '../assets/scripts/core/s7/S7PilotEffects';
-import { S7BehaviorBlock, S7ModifierBlock } from '../assets/scripts/core/s7/S7BattleEffectBlock';
+import { pilotBlocks } from '../assets/scripts/core/s7/S7PilotEffects';
+import { S7BehaviorBlock, S7AffixBlock } from '../assets/scripts/core/s7/S7BattleEffectBlock';
+
+// ⑩A1 重定基：占位驾驶员"晴岚(pil03=backline)"退役——20 真配后 pil02=影（能力=打最后排·真源§1）。
+// 本文件所有 backline 语义用例换 pil02；"未列出返回空"的前提（旧表只有 pil03）已不存在，改为
+// "Lv0 只有能力无天赋"（真源§0：起手 Lv0·Lv1 解锁天赋）——比旧断言更贴设计。
+const S7_PILOT_BACKLINE_ID = 'pil02';
 import {
   S7BattleEncounterAssembler,
   S7BattleEncounterAssemblerError,
@@ -48,27 +53,33 @@ function codeOf(fn: () => unknown): string {
   return 'no_throw';
 }
 
-describe('块5 解析器 pilotBlocks：行为AI + 驾驶天赋', () => {
-  it('晴岚(pil03) → 行为积木(后排优先) + 天赋占位修正', () => {
-    const blocks = pilotBlocks(S7_PILOT_BACKLINE_ID);
-    const behavior = blocks.find((b) => b.kind === 'behavior') as S7BehaviorBlock | undefined;
+describe('块5 解析器 pilotBlocks：行为AI + 驾驶天赋（⑩A1 真配）', () => {
+  it('影(pil02) → 行为积木(后排优先)；Lv1 起天赋斩首=dmgVsLowHp 词条（Lv0 无天赋）', () => {
+    const lv0 = pilotBlocks(S7_PILOT_BACKLINE_ID); // 缺省 Lv0=只有能力（真源§0 起手口径·回执⑤缺省语义）
+    const behavior = lv0.find((b) => b.kind === 'behavior') as S7BehaviorBlock | undefined;
     expect(behavior).toBeDefined();
     expect(behavior!.targetingTag).toBe('backline_first');
-    const talent = blocks.find((b) => b.kind === 'modifier') as S7ModifierBlock | undefined;
-    expect(talent).toBeDefined(); // 驾驶天赋(占位)
-    expect(talent!.stat).toBe('attack');
+    expect(lv0.some((b) => b.kind === 'affix')).toBe(false); // Lv0 天赋未解锁
+    const lv1 = pilotBlocks(S7_PILOT_BACKLINE_ID, 1);
+    const talent = lv1.find((b) => b.kind === 'affix') as S7AffixBlock | undefined;
+    expect(talent).toBeDefined();
+    expect(talent!.affix).toBe('dmgVsLowHp'); // 斩首=对<30%残血增伤（§13 v0）
+    expect(talent!.value).toBe(0.40);
   });
 
-  it('未列出的驾驶员 → 空积木（内容留第二块）', () => {
-    expect(pilotBlocks('pil01')).toHaveLength(0);
+  it('未知驾驶员 → 空积木；真配 20 员全有行为或天赋载体（岳/巡=能力挂牌·Lv1 起有天赋件）', () => {
     expect(pilotBlocks('pil99')).toHaveLength(0);
+    for (let i = 1; i <= 20; i += 1) {
+      const id = `pil${String(i).padStart(2, '0')}`;
+      expect(pilotBlocks(id, 100, 5).length, `${id} Lv100/5★ 应有积木`).toBeGreaterThan(0);
+    }
   });
 });
 
 describe('块5 装配器：lineup.pilotId → effectBlocks + 校验', () => {
-  it('lineup 带 pilotId=pil03 → 该单位 effectBlocks 携带后排优先行为积木', async () => {
+  it('lineup 带 pilotId=pil02(影) → 该单位 effectBlocks 携带后排优先行为积木', async () => {
     const asm = await assemblerOf(loadBundle());
-    const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'pil', lineup: [{ shipId: 'shp01', slotRef: 'p0c2', pilotId: 'pil03' }] });
+    const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'pil', lineup: [{ shipId: 'shp01', slotRef: 'p0c2', pilotId: 'pil02' }] });
     const blocks = out.request.playerUnits[0].effectBlocks ?? [];
     expect(blocks.some((b) => b.kind === 'behavior' && (b as S7BehaviorBlock).targetingTag === 'backline_first')).toBe(true);
   });

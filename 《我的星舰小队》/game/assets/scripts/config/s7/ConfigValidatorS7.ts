@@ -239,7 +239,7 @@ export const S7_EXPECTED_COUNT: Record<TierATable, number> = {
   battle_template_config: 10,
   // ⑥第一段 20 舰落地（2026-07-07·细表§12）：默认盘 12→20（真源首发 20 舰·shp01-20 映射记细表）。
   ship_config: 20,
-  pilot_config: 10,
+  pilot_config: 20, // ⑩A1 扩容（第一段四点②已拍）
   core_config: 7,
   plugin_config: 18,
 };
@@ -247,7 +247,7 @@ export const S7_EXPECTED_COUNT: Record<TierATable, number> = {
 export const S7_DEFAULT_IDS: Record<TierATable, string[]> = {
   battle_template_config: seq('t', 1, 10),
   ship_config: seq('shp', 1, 20), // ⑥第一段：12→20
-  pilot_config: seq('pil', 1, 10),
+  pilot_config: seq('pil', 1, 20),
   core_config: seq('core', 1, 7),
   plugin_config: seq('plg', 1, 18),
 };

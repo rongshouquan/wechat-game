@@ -146,10 +146,32 @@ export function pickShips(family: LineupFamily, problemTag: string): string[] {
 }
 
 const SLOTS = ['p1c2', 'p0c1', 'p1c1', 'p2c1', 'p1c0']; // 首舰=坦顶前列（中位摆位成文口径）
-const PILOTS = ['pil01', 'pil02', 'pil03', 'pil04', 'pil05']; // 占位轮配（现仅 pil03 有行为积木）
+/** ⑩A1 驾驶员真配（pil01-05 占位轮配退役）：舰↔驾驶员恒等映射 shpNN↔pilNN——
+ *  舰按定位分块（01-04突击/05-08护卫/09-12炮击/13-16支援/17-20工程）与驾驶员亲和组同构，
+ *  五对带★专属配对全部落同下标（影02/岩05/源09/苏13/蔽17=四点已拍④"带★钉死"），
+ *  巡(pil19)=哨卫(shp19·有召唤物)=任务单弹药2"巡默认钉蜂巢或哨卫"。 */
+export const pilotOfShip = (shipId: string): string => `pil${shipId.slice(3)}`;
+/** C20 折算通道（§10）：坦克(护卫组)→armor%·其余→attack%（工程"召唤物继承"未建=attack% 近似·记偏差）。 */
+const GUARD_SHIPS = new Set(['shp05', 'shp06', 'shp07', 'shp08']);
 
-/** 生成组装器阵容输入：养成刻度反解 + 升阶属性积木 + 暴击基线（C3/C4）。 */
-export function genLineup(family: LineupFamily, targetTeamPower: number, problemTag: string): {
+/** ⑩A2 按题/按段选核（"核固定陨星弹"粗放点收口·§18.3 强度表语义·规则记 §19.5）：
+ *  中位=Boss 关带超新星（毕业核=攒能 Boss 主场）·常规关带小太阳（常规最强档）；
+ *  克制向=按题挑（AoE 题小太阳/爆发题超级护罩/拖延狂暴题时光糖/短仗压盾星鲸）；
+ *  乱搭=陨星弹（"拿着新手核不换"的人设一致性）。教学段无核照旧（withCore 只在 S+ 阶）。 */
+function pickCore(family: LineupFamily, problemTag: string, stage: string): string {
+  if (family === 'misfit') return 'core07';
+  if (family === 'median') return stage === 'boss' ? 'core15' : 'core08';
+  switch (problemTag) {
+    case 'swarm': case 'summon': return 'core08'; // AoE 题：小太阳
+    case 'burst': return 'core11';                // 爆发窗口：超级护罩
+    case 'berserk': return 'core10';              // 拖延/狂暴：时光糖（险仗加速）
+    case 'shield': return 'core09';               // 压盾长打：星鲸（附加 DPS 体）
+    default: return 'core08';
+  }
+}
+
+/** 生成组装器阵容输入：养成刻度反解 + 升阶属性积木 + 暴击基线（C3/C4）+ 驾驶员真配（级/星喂机制门）。 */
+export function genLineup(family: LineupFamily, targetTeamPower: number, problemTag: string, stage = 'normal'): {
   lineup: S7BattleLineupUnitInput[]; teamPower: number; plan: GrowthPlan;
 } {
   const plan = solveGrowthPlan(targetTeamPower);
@@ -160,11 +182,6 @@ export function genLineup(family: LineupFamily, targetTeamPower: number, problem
     { kind: 'affix', affix: 'critRate', value: 0.05, source: 'crit_base' },
     { kind: 'affix', affix: 'critDmg', value: 0.5, source: 'crit_base' },
   ];
-  // 驾驶员战斗折算（C20 通道·粗放=attack%）：星系数×(1+1%/级)−1 → 攻击加成
-  const pilotCombat = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel) - 1;
-  if (pilotCombat > 0) {
-    extra.push({ kind: 'modifier', stat: 'attack', op: 'pct', value: pilotCombat, source: 'pilot_scale' });
-  }
   if (attrMult > 0) {
     extra.push(
       { kind: 'modifier', stat: 'maxHp', op: 'pct', value: attrMult, source: 'tier_up' },
@@ -172,16 +189,25 @@ export function genLineup(family: LineupFamily, targetTeamPower: number, problem
       { kind: 'modifier', stat: 'armor', op: 'pct', value: attrMult, source: 'tier_up' },
     );
   }
+  // 驾驶员数值线（C20 通道·与天赋机制分立防双吃）：星系数×(1+1%/级)−1 → 按定位折 attack%/armor%。
+  const pilotCombat = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel) - 1;
   const plugins: S7BattleLineupPluginInput[] = plan.plugins.map((q, i) => ({ pluginId: SLOT_PLUGINS[i], quality: q }));
-  const lineup: S7BattleLineupUnitInput[] = ships.map((shipId, i) => ({
-    shipId,
-    slotRef: SLOTS[i],
-    pilotId: PILOTS[i],
-    ...(plan.withCore && i === 1 ? { coreId: 'core07' } : {}), // 粗放版：S+ 阶第二舰装陨星弹（唯一已接线核）
-    plugins,
-    shipLevel: plan.level,
-    extraBlocks: extra,
-  }));
+  const lineup: S7BattleLineupUnitInput[] = ships.map((shipId, i) => {
+    const shipExtra = pilotCombat > 0
+      ? [...extra, { kind: 'modifier', stat: GUARD_SHIPS.has(shipId) ? 'armor' : 'attack', op: 'pct', value: pilotCombat, source: 'pilot_scale' } as S7EffectBlock]
+      : extra;
+    return {
+      shipId,
+      slotRef: SLOTS[i],
+      pilotId: pilotOfShip(shipId),
+      pilotLevel: plan.pilotLevel,
+      pilotStar: plan.pilotStar,
+      ...(plan.withCore && i === 1 ? { coreId: pickCore(family, problemTag, stage) } : {}), // ⑩A2：按题/按段选核（第二舰=主输出位）
+      plugins,
+      shipLevel: plan.level,
+      extraBlocks: shipExtra,
+    };
+  });
   return { lineup, teamPower: plan.shipPower * 5, plan };
 }
 
@@ -220,9 +246,9 @@ const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
   // 破墙态盾奶站得住"的临界带——生存平衡点对战力差远陡于 TTK。
   // ⑩A0 重对（v0.7 压力表 γ 1.125/1.086·曲线变陡后墙工况全体漂移·⑥终值随 v0.6 作废）：
   n060: { pool: 1.05, dps: 1.20 }, // v0.6 值 1.35 在新表下过深（到达态 20% 胜）·首真墙=火力检定语义不变
-  n102: { pool: 1.15, dps: 0.60 } /* M4依赖关（§20.2 唯一二值硬墙）：⑥"点名塔减半特调"撤销后塔×3·守恒摊薄使单塔打击力÷3、旧 dps0.55 下墙消失（到达态实测 100% 胜）——dps 抬回恢复墙·上限受"×1.5 硬怼必须可行"边界钳制（1.10/0.85 实测连×1.5 也 28s/48s 团灭=过界）·到达态+6.7% 偏坦解形状可胜=形状噪声记档（§20.9）·终校=B5 带工具复调 */,
-  n120: { pool: 0.98, dps: 1.18 }, // v0.6 值 1.25 到达态 115.6s 贴超时线·回落留余量（马拉松硬仗语义不变）
-  n150: { pool: 0.86, dps: 1.05 }, // v0.6 值 0.96/1.15 新表下贴线 120s 全超时·双回落（毕业墙=马拉松险胜非铁壁；0.90 实测贴线剩敌 1.7% 血心碎超时=再回落）
+  n102: { pool: 1.15, dps: 0.70 } /* 唯一二值硬墙（§20.2）·⑩段末终值：塔×3 设计密度+全接线世界（真天赋/真核在队）下三硬边界=贴线0%·×1.12 20%·×1.5 100%（52.2s）·到达态+6.7%含工具可胜=挂 B5 五态矩阵终校（工具置换变体正主·§20.10）·两轮走刀记录 0.60→0.95→0.80→0.70 */,
+  n120: { pool: 1.45, dps: 1.18 }, // v0.6 值 1.25 到达态 115.6s 贴超时线·回落留余量（马拉松硬仗语义不变）
+  n150: { pool: 1.40, dps: 1.05 }, // v0.6 值 0.96/1.15 新表下贴线 120s 全超时·双回落（毕业墙=马拉松险胜非铁壁；0.90 实测贴线剩敌 1.7% 血心碎超时=再回落）
   n084: { pool: 0.74, dps: 0.95 }, // 余势墙：新表 P +27% 后 0.82 偏厚（70s）·回落保"破大墙后爽段"速通感
   n138: { pool: 0.75, dps: 0.90 }, // 余势墙：新表下 78-87s 尚可·先保持观察
 };
@@ -403,7 +429,7 @@ export async function scanMainlineAsync(opts: ScanOptions = {}): Promise<NodeRep
       }
     }
     const targetPower = (arrivalPower ?? p) * (opts.powerRatio ?? 1);
-    const { lineup, teamPower } = genLineup(family, targetPower, enc.problemTagRef);
+    const { lineup, teamPower } = genLineup(family, targetPower, enc.problemTagRef, enc.stageType);
     const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(b));
     let wins = 0;
     let durSum = 0;
@@ -460,7 +486,7 @@ export async function main(argv: string[]): Promise<number> {
     }
     const encs2 = b.battle_encounter_param as unknown as S7BattleEncounterParam[];
     const enc2 = encs2.find((e) => e.nodeRef === debugNode)!;
-    const { lineup, teamPower, plan } = genLineup(family, pressure[num] * powerRatio, enc2.problemTagRef);
+    const { lineup, teamPower, plan } = genLineup(family, pressure[num] * powerRatio, enc2.problemTagRef, enc2.stageType);
     console.log(`[debug] 阵容：${plan.tier}阶 Lv${plan.level} 插件${plan.plugins.join('/')} 核=${plan.withCore} 战力=${Math.round(teamPower)}`);
     const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(b));
     const r = new S7BattleRunService().run({ runtime, progress: { currentNodeId: debugNode, clearedNodeIds: [] }, runSeed: 'dbg', lineup });

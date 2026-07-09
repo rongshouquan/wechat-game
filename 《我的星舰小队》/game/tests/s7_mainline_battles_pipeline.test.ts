@@ -127,8 +127,11 @@ describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
     const ctr = await scanMainlineAsync({ family: 'counter', samples: 3, fromNode: 104, toNode: 104 });
     // ⑥三段落数重定基：落数量纲下中位阵容能磨过 n104（66s=2.6× 普通关均值=真"挣扎"），
     // 胜率差失去区分度；"换搭配破题"的管线级证据改用时长差（实测 66.3s vs 26.4s=2.5×·余量断 ×0.6）。
+    // ⑩A1 重定基 ×0.6→×0.75：驾驶员真天赋上场抬高中位队地板（源锁定/苏回光/蔽集火——66.3→32.9s），
+    // 克制差收窄到 ≈1.55×（21.2s vs 32.9s）——"带对工具显著更快"语义原样成立（>25% 提速+绝对时长<35s
+    // 双断言保留）·阈值按新地板收口；克制差全维度定量=B6 克制工具箱 11/11 实测正主。
     expect(ctr[0].winRate).toBe(1);
-    expect(ctr[0].avgDurationSec).toBeLessThan(med[0].avgDurationSec * 0.6); // 克制向显著更快=破题
+    expect(ctr[0].avgDurationSec).toBeLessThan(med[0].avgDurationSec * 0.75); // 克制向显著更快=破题
     expect(ctr[0].avgDurationSec).toBeLessThan(35);
   }, 30000);
 });

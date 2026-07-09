@@ -1,12 +1,280 @@
 [
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil01","name":"米娅","roleNote":"防线指挥","driveStyleNote":"承压、减压、保护相邻位","mainFitNote":"前排守护、护航","coverProblemTags":["burst","swarm"],"freePathNote":"新手主线赠送","forbiddenBindingNote":"不唯一绑定 SHP01"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil02","name":"洛克","roleNote":"破盾专家","driveStyleNote":"破盾、破口窗口、重点目标排序","mainFitNote":"破盾突击、轻破盾补位","coverProblemTags":["shield","berserk"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP02"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil03","name":"晴岚","roleNote":"精准射手","driveStyleNote":"后排点杀、召唤源优先","mainFitNote":"后排狙击、机动收割","coverProblemTags":["backline","summon"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP03"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil04","name":"桃火","roleNote":"清场炮手","driveStyleNote":"范围清怪、批次处理","mainFitNote":"范围清场、反召唤清理","coverProblemTags":["swarm","summon"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP04"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil05","name":"沐电","roleNote":"干扰工程师","driveStyleNote":"打断、延缓、压低爆发源威胁","mainFitNote":"控场干扰、后排压制","coverProblemTags":["burst","berserk"],"freePathNote":"免费任务线解锁","forbiddenBindingNote":"不唯一绑定 SHP05"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil06","name":"诺雅","roleNote":"维修官","driveStyleNote":"维修支援、容错、保护关键位","mainFitNote":"维修支援、前排守护","coverProblemTags":["burst","berserk"],"freePathNote":"免费任务线解锁","forbiddenBindingNote":"不唯一绑定 SHP06"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil07","name":"艾柚","roleNote":"能量调度员","driveStyleNote":"大招周转、窗口配合","mainFitNote":"充能、破盾窗口、战术补位","coverProblemTags":["shield","berserk"],"freePathNote":"7 天扩张免费候选","forbiddenBindingNote":"不唯一绑定 SHP07"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil08","name":"星澄","roleNote":"召唤巡查员","driveStyleNote":"召唤源标记、清召唤压力","mainFitNote":"反召唤、后排狙击","coverProblemTags":["summon","swarm"],"freePathNote":"主线阶段解锁","forbiddenBindingNote":"不唯一绑定 SHP08"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil09","name":"维珂","roleNote":"电子压制员","driveStyleNote":"后排支援限制、远程威胁削弱","mainFitNote":"后排压制、控场干扰","coverProblemTags":["backline","burst"],"freePathNote":"免费星辉货舱 1 选候选","forbiddenBindingNote":"不唯一绑定 SHP09"},
-  {"schemaVersion":"s7-0.1.0","pilotId":"pil10","name":"凯尔","roleNote":"机动队长","driveStyleNote":"补刀、换线、低危目标收割","mainFitNote":"机动收割、后排狙击","coverProblemTags":["backline","swarm"],"freePathNote":"主线后段免费目标","forbiddenBindingNote":"不唯一绑定 SHP10"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil01",
+    "name": "炎",
+    "roleNote": "突击·收割",
+    "driveStyleNote": "集火血量最少的敌人·天赋过热=连击叠伤",
+    "mainFitNote": "突击舰主输出（真源§1）",
+    "coverProblemTags": [
+      "swarm",
+      "berserk"
+    ],
+    "freePathNote": "新手主线赠送（教程起手·配极焰号）",
+    "forbiddenBindingNote": "不唯一绑定某舰（亲和组=自然生效口径）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil02",
+    "name": "影",
+    "roleNote": "突击·刺客",
+    "driveStyleNote": "优先打最后排·天赋斩首=残血处决增伤",
+    "mainFitNote": "★专属配对：影刃号（附录D §1）",
+    "coverProblemTags": [
+      "backline",
+      "burst"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "带★推荐配对非硬绑（自然生效口径）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil03",
+    "name": "燎",
+    "roleNote": "突击·补刀",
+    "driveStyleNote": "残血优先无则最前排·天赋连斩=击杀缩CD",
+    "mainFitNote": "突击舰（真源§1）",
+    "coverProblemTags": [
+      "swarm",
+      "berserk"
+    ],
+    "freePathNote": "新手主线赠送（关5·教程第三员）",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil04",
+    "name": "蛰",
+    "roleNote": "突击·暗杀",
+    "driveStyleNote": "优先打治疗/召唤源·天赋斩链=杀关键单位全队增伤",
+    "mainFitNote": "突击舰（真源§1）",
+    "coverProblemTags": [
+      "summon",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil05",
+    "name": "岩",
+    "roleNote": "护卫·守护",
+    "driveStyleNote": "光盾守护替后排挡伤(CD2s)·天赋反震=格挡+反弹",
+    "mainFitNote": "★专属配对：磐石号（附录D §3）",
+    "coverProblemTags": [
+      "burst",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "带★推荐配对非硬绑"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil06",
+    "name": "砺",
+    "roleNote": "护卫·嘲讽",
+    "driveStyleNote": "持续嘲讽最高攻敌·天赋愈坚=越残越硬",
+    "mainFitNote": "护卫舰（真源§3）",
+    "coverProblemTags": [
+      "burst",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰（装脆皮=合法冒险·真源§0）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil07",
+    "name": "岳",
+    "roleNote": "护卫·反击",
+    "driveStyleNote": "打正在攻击我后排的敌人·天赋荆甲=受击反弹固定伤",
+    "mainFitNote": "护卫舰（真源§3）",
+    "coverProblemTags": [
+      "swarm",
+      "burst"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil08",
+    "name": "沧",
+    "roleNote": "护卫·护佑",
+    "driveStyleNote": "优先保护被集火/被控友军·天赋坚壁=每残血友军+减伤",
+    "mainFitNote": "护卫舰（真源§3）",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil09",
+    "name": "源",
+    "roleNote": "炮击·锁定",
+    "driveStyleNote": "锁定一个打到死再换·天赋专注=对锁定逐秒增伤",
+    "mainFitNote": "★专属配对：烈阳号（附录D §2）",
+    "coverProblemTags": [
+      "shield",
+      "berserk"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "带★推荐配对非硬绑"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil10",
+    "name": "烬",
+    "roleNote": "炮击·啃硬",
+    "driveStyleNote": "优先打血量最高的敌人·天赋贪婪=对高血增伤",
+    "mainFitNote": "炮击舰（真源§2）",
+    "coverProblemTags": [
+      "shield",
+      "swarm"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil11",
+    "name": "骁",
+    "roleNote": "炮击·先锋",
+    "driveStyleNote": "集火敌方第一排·天赋先锋=开战窗口大增伤",
+    "mainFitNote": "炮击舰（真源§2）",
+    "coverProblemTags": [
+      "swarm",
+      "burst"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil12",
+    "name": "翎",
+    "roleNote": "炮击·狙击",
+    "driveStyleNote": "优先打攻击力最高的敌人·天赋夺势=击杀后攻速窗口",
+    "mainFitNote": "炮击舰（真源§2）",
+    "coverProblemTags": [
+      "burst",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil13",
+    "name": "苏",
+    "roleNote": "支援·救护",
+    "driveStyleNote": "优先治疗/护盾最残友军·天赋回光=残血治疗增效",
+    "mainFitNote": "★专属配对：晨曦号（附录D §4）",
+    "coverProblemTags": [
+      "burst",
+      "berserk"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "带★推荐配对非硬绑"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil14",
+    "name": "澈",
+    "roleNote": "支援·增幅",
+    "driveStyleNote": "增益优先喂输出最高友军·天赋增幅=被增益友军更强",
+    "mainFitNote": "支援舰（真源§4）",
+    "coverProblemTags": [
+      "berserk",
+      "shield"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil15",
+    "name": "沛",
+    "roleNote": "支援·均沾",
+    "driveStyleNote": "优先照顾没增益/盾的友军·天赋润泽=覆盖越多越强",
+    "mainFitNote": "支援舰（真源§4）",
+    "coverProblemTags": [
+      "swarm",
+      "burst"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil16",
+    "name": "霖",
+    "roleNote": "支援·净化",
+    "driveStyleNote": "优先救减益最多的友军·天赋涤荡=治疗附驱散",
+    "mainFitNote": "支援舰（真源§4）",
+    "coverProblemTags": [
+      "berserk",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil17",
+    "name": "蔽",
+    "roleNote": "工程·标记",
+    "driveStyleNote": "集火已被控/带减益的敌人·天赋笼罩=脆弱敌受全队伤+",
+    "mainFitNote": "★专属配对：迷雾号（附录D §5）",
+    "coverProblemTags": [
+      "shield",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "带★推荐配对非硬绑"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil18",
+    "name": "空",
+    "roleNote": "工程·清场",
+    "driveStyleNote": "优先打召唤源·天赋净场=杀召唤源回CD",
+    "mainFitNote": "工程舰（真源§5）",
+    "coverProblemTags": [
+      "summon"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil19",
+    "name": "巡",
+    "roleNote": "工程·指挥",
+    "driveStyleNote": "召唤物优先打后排·天赋增产=召唤上限+1更快",
+    "mainFitNote": "召唤系工程舰（蜂巢/哨卫·任务单⑩弹药2 默认钉哨卫）",
+    "coverProblemTags": [
+      "summon",
+      "backline"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "装无召唤物舰=能力天赋空转（自然失效·黄字提示 B1.4）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pilotId": "pil20",
+    "name": "藏",
+    "roleNote": "工程·破甲",
+    "driveStyleNote": "优先打防御最高的敌人·天赋破甲=无视部分防御",
+    "mainFitNote": "工程舰（真源§5）",
+    "coverProblemTags": [
+      "shield"
+    ],
+    "freePathNote": "抽卡池",
+    "forbiddenBindingNote": "不唯一绑定某舰"
+  }
 ]

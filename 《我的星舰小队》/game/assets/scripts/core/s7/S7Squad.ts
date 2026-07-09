@@ -10,7 +10,8 @@
 // 数值真源 B1 / 设计真源 v1.0。
 
 import { S7BattleLineupUnitInput, S7BattleLineupPluginInput } from './S7BattleEncounterAssembler';
-import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
+import { S7UnitLevelState, getShipLevel, getPilotLevel } from './S7UnitLevelState';
+import { S7UnitTierState, getPilotStar } from './S7UnitTierState';
 import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 
 /** 上阵位上限（v1.0 §4.1：3×3 九宫格、上阵 5 舰）。 */
@@ -339,6 +340,7 @@ export function buildSquadLineup(
   squad: S7SquadState,
   unitLevels?: S7UnitLevelState,
   inventory?: S7PluginInventoryState,
+  unitTiers?: S7UnitTierState,
 ): S7SquadLineupResult {
   const f = squad.formation;
   if (!Array.isArray(f) || f.length === 0) return { ok: false, code: 'empty', message: '编队为空，至少上阵 1 艘' };
@@ -370,6 +372,9 @@ export function buildSquadLineup(
     const unit: S7BattleLineupUnitInput = { shipId: slot.shipId, slotRef: slot.slotRef, pilotId };
     if (loadout?.coreId) unit.coreId = loadout.coreId;
     if (unitLevels) unit.shipLevel = getShipLevel(unitLevels, slot.shipId);
+    // ⑩A1：驾驶员级/星显式注入（真实战斗调用点一律显式传值——总控回执⑤；缺省=Lv0/1★ 最保守）。
+    if (unitLevels) unit.pilotLevel = getPilotLevel(unitLevels, pilotId);
+    if (unitTiers) unit.pilotStar = getPilotStar(unitTiers, pilotId);
     // 插件（B 块）：给了库存才解析——实例号 → {pluginId,quality} 喂战斗（装配层再按配置缩放成效果积木）。
     if (inventory && loadout && loadout.pluginInstanceIds.length > 0) {
       const plugins: S7BattleLineupPluginInput[] = [];

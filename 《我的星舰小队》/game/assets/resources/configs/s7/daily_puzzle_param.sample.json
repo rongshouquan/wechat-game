@@ -113,7 +113,7 @@
         "slotRef": "r2c3"
       }
     ],
-    "enemyHpPct": 16,
+    "enemyHpPct": 18,
     "enemyAtkPct": 0.5,
     "candidatePacks": [
       {
@@ -304,7 +304,7 @@
       }
     ],
     "enemyHpPct": 21,
-    "enemyAtkPct": 1.4,
+    "enemyAtkPct": 1.61,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -395,7 +395,7 @@
       }
     ],
     "enemyHpPct": 8,
-    "enemyAtkPct": 1,
+    "enemyAtkPct": 1.6,
     "candidatePacks": [
       {
         "packId": "pk1",
