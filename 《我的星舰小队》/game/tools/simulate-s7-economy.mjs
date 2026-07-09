@@ -2477,7 +2477,7 @@ if (isMain) {
     const path = process.env.S7_ECON_JSON ?? 'tools/s7-economy-report.json';
     const strip = (r) => ({ ...r, ledger: undefined, dailyPower: undefined, dailyCleared: undefined });
     const payload = {
-      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.6+建筑细案入尺批第一段(九件入模·v0.7 收敛=第二段)',
+      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.7(建筑细案入尺批·八栋九件入模)',
       targets: TARGETS, bmTarget: BM_TARGET, gammas, anchors,
       wallMatrixBands: WALL_MATRIX_BANDS, hardWallCap: HARD_WALL_CAP,
       params: { ...PARAMS }, tiers: TIERS,
