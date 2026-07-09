@@ -104,12 +104,23 @@ describe('回廊受控引擎入口 - 并行加法零回归', () => {
 });
 
 describe('回廊战斗服务 - 敌阵来源 / 阵容效果', () => {
-  it('普通/戏法层：内联敌阵=Step1 生成敌阵，全部进战斗（数量一致）', async () => {
+  it('普通/戏法层：内联敌阵=Step1 生成敌阵，全部进战斗（多重集包含·召唤增员合法）', async () => {
     const runtime = await runtimeOf();
     const plan = corridorLayerPlan(4, paletteOf(runtime), bossIdsOf(runtime));
     const r = runCorridorBattle({ runtime, plan, lineup: createS7DefaultDryRunLineup(), runSeed: 'c4' });
     expect(plan.formation).not.toBeNull();
-    expect(r.result.finalState.enemies.length).toBe(plan.formation!.units.length);
+    // ⑩A0 重定基（旧断言=终态数==编队数）：调色板=全部 1×1 敌行，⑩清 4 条零引用孤行（bu_n030/060/084/102_add）
+    // 后层4 抽签重排、抽中母舰职业行 → 战中召唤增员使终态数>编队数——召唤是引擎合法行为非泄漏。
+    // 改多重集包含：编队每个成员按其数量必须都进了战斗（原属性"全部进战斗"原样保住，且比相等更精确——
+    // 旧断言在"漏 1 编队员+来 1 召唤物"时会假绿，包含式抓得住）。
+    const fieldCount = new Map<string, number>();
+    for (const e of r.result.finalState.enemies) fieldCount.set(e.unitStatRef, (fieldCount.get(e.unitStatRef) ?? 0) + 1);
+    const planCount = new Map<string, number>();
+    for (const u of plan.formation!.units) planCount.set(u.unitStatRef, (planCount.get(u.unitStatRef) ?? 0) + 1);
+    for (const [ref, n] of planCount) {
+      expect(fieldCount.get(ref) ?? 0, `编队成员 ${ref} 应全员进战斗`).toBeGreaterThanOrEqual(n);
+    }
+    expect(r.result.finalState.enemies.length).toBeGreaterThanOrEqual(plan.formation!.units.length);
     expect(r.result.finalState.enemies.length).toBeGreaterThan(0);
   });
 

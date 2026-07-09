@@ -793,7 +793,7 @@
     ],
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 12,
-    "note": "enc_n030 第1波：bu_enemy_swarm x4（海盗船长·复用群怪·比 n060 的 6 只少）"
+    "note": "enc_n030 第1波：bu_enemy_swarm x4（星盗船长·复用群怪·比 n060 的 6 只少）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2529,13 +2529,15 @@
     "encounterRef": "enc_n102",
     "waveIndex": 1,
     "unitStatRef": "bu_n102_backline",
-    "count": 1,
+    "count": 3,
     "slotRefs": [
-      "r4c1"
+      "r4c1",
+      "r4c3",
+      "r4c5"
     ],
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 8,
-    "note": "enc_n102 第1波：bu_enemy_backline x3·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)·⑥三段波次特调:点名塔减半(M4未接线期)"
+    "note": "enc_n102 第1波：点名塔 x3（设计密度·⑩A0 恢复——⑥「M4未接线期减半特调」撤销·M4 护后排已接线）"
   },
   {
     "schemaVersion": "s7-0.1.0",

@@ -109,7 +109,7 @@ writeJson('boss_node_config', [
     previewTagRefs: [],
     forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[i],
   })),
-  // n030 剧情首Boss（sf01 群怪Boss·复用海盗系机制放大·主模板 t02，与 n060 同区同族）。
+  // n030 剧情首Boss（sf01 群怪Boss·复用星盗系机制放大·主模板 t02，与 n060 同区同族）。
   //   最早期Boss=禁用表最严格（只允许群怪，护盾/后排/召唤/爆发/狂暴都不上），对齐 sf01。
   {
     schemaVersion: SCHEMA,

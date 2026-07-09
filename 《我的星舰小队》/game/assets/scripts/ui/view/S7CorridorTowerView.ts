@@ -18,7 +18,7 @@ import { getS7UsableBand } from '../S7UiLayout';
 export interface S7CorridorLayerCard {
   layer: number;
   kind: 'normal' | 'trick' | 'echo_boss';
-  /** 标题："第N层" / "第N层 · 戏法：铁甲潮" / "第N层 · 回响Boss：海盗大副"。 */
+  /** 标题："第N层" / "第N层 · 戏法：铁甲潮" / "第N层 · 回响Boss：星盗大副"。 */
   title: string;
   /** 规则一句话（戏法/Boss；普通层空）。 */
   ruleText: string;

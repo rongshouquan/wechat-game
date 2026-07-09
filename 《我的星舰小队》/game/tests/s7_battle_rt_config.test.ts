@@ -50,7 +50,10 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     // ⑥三段落数（细表§20）：n009+ 每关落节点敌行 bu_n<XXX>_<role>（137 关 ×角色数 + Boss adds/母舰产出行）
     //   =+196；41 基础行保留（教学 n001-n008/谜题/机制测试引用面）→ 41+196=237。
     //   落数脚本幂等（clean-and-normalize → apply-enemy-landing），行数=脚本输出实测。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(237); // 41 基础 + ⑥三段 196 节点敌行
+    // ⑩A0 重落（v0.7 压力表·细表§20.9）：196→192——⑥脚本给七个 Boss 关无差别造 bu_n*_add，
+    //   仅 n120/n138/n150 的阶段召唤真引用；n030/n060/n084/n102 四孤行（encounter/spawn/phase 零引用）
+    //   由"只造被引用行"的入库版脚本自然清除（旧值≡死数据，删除不改任何战斗行为）→ 41+192=233。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(233); // 41 基础 + ⑩A0 192 节点敌行
     expect(readTable('battle_effect_param')).toHaveLength(57); // 42 + ⑥三段 15 母舰召唤节点效果行（eff_n*_summon·生命周期包）
     expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
     expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）

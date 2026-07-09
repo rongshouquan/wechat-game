@@ -41,7 +41,7 @@ const UNIT_NOTES = {
   bu_enemy_support: '后排治疗型敌人，奶友方当前最低血量单位',
   bu_enemy_charge: '蓄力冲击型敌人，短路脉冲打断/削弱',
   bu_enemy_summon_source: '召唤源敌人，周期召唤小怪，击杀即停',
-  bu_boss_n060: 'n060 海盗大王（SF01群怪Boss，复用海盗系机制放大），占2x2',
+  bu_boss_n060: 'n060 星盗大王（SF01群怪Boss，复用星盗系机制放大），占2x2',
   bu_boss_n102: 'n102 废铁泰坦（SF03打后排Boss），占3x2',
   bu_boss_n120: 'n120 母舰指挥官（SF04召唤Boss，复用无人舰系机制放大），占2x3',
   bu_boss_n138: 'n138 污染巨兽（SF05爆发Boss），占3x3',

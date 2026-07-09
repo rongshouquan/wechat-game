@@ -606,7 +606,7 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n030 剧情首Boss·群怪主题(t02)·星盗头目放大(2x2)+海盗船长(复用群怪)·三阶段·压力 bp_n030（占位·比 n060 低·1艘S阶可胜）"
+    "note": "n030 剧情首Boss·群怪主题(t02)·星盗头目放大(2x2)+星盗船长(复用群怪)·三阶段·压力 bp_n030（占位·比 n060 低·1艘S阶可胜）"
   },
   {
     "schemaVersion": "s7-0.1.0",

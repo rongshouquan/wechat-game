@@ -114,7 +114,10 @@ describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
     const boss = reports.find((r) => r.nodeId === 'n060')!;
     expect(boss.winRate).toBeGreaterThanOrEqual(0.5);
     expect(boss.avgDurationSec).toBeGreaterThanOrEqual(40);
-    expect(boss.avgDurationSec).toBeLessThanOrEqual(70);
+    // ⑩A0 重定基 70→75：v0.7 压力表（γ 1.125）下 n060 P 3113→3622、φ 超线性使贴线时长 68→71.6s；
+    // 墙口径带=≥55s 硬仗且 <120s 可破（§20.2），本断言是"硬仗非深渊"的窗口守卫——上沿放到 75 仍紧
+    // （深墙回归如 ≥80s 照抓），不是跟着数值走的放宽。
+    expect(boss.avgDurationSec).toBeLessThanOrEqual(75);
     // 阵容战力贴压力值（管线自洽）
     for (const r of reports) expect(Math.abs(r.teamPower - r.pressure) / r.pressure).toBeLessThanOrEqual(0.06);
   }, 30000);
