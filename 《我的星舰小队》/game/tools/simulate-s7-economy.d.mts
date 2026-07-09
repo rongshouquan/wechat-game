@@ -39,7 +39,16 @@ export declare const TRUTHS: {
   researchPowerPct: (lv: number) => number;
   galleryPerCorePct: (lv: number) => number;
   galleryCapPct: number;
+  // 建筑细案入尺批（细案 v1 八栋逐级表）
+  galleryFragLv: number;
+  galleryGemLv: number;
   salvageQueues: (lv: number) => number;
+  salvageSurpriseLvls: (lv: number) => number;
+  salvageExtraRollLv: number;
+  dockDiscountPctPerLv: number;
+  trainingDiscountPctPerLv: number;
+  supplyFreePulls: (lv: number) => number;
+  supplyPullPerTicket: (lv: number) => number;
   buildingMaxLevel: number;
   salvageTimeMult: { h2: number; h8: number; h24: number };
   bountyDailyCards: number;
@@ -65,7 +74,12 @@ export interface S7SalvageTierDef {
 export interface S7BlackMarketGood { price: number; give: Record<string, number> }
 export declare const PARAMS: {
   maxDays: number;
-  salvage: { minutes: number; tiers: Record<'common' | 'rare' | 'epic', S7SalvageTierDef>; accel: { price: number } };
+  salvage: {
+    minutes: number;
+    yieldScale: number;      // 建筑细案入尺批：队数 3/4/5 的单趟守恒系数
+    yieldScaleDur: string;   // 守恒刀只落此时长档（'h24' 长趟专刀·选型记档）
+    tiers: Record<'common' | 'rare' | 'epic', S7SalvageTierDef>; accel: { price: number };
+  };
   events: {
     cycle3: Record<string, number>; cycle7: Record<string, number>;
     completion7: Record<string, number>; completionCore: number;
@@ -89,8 +103,14 @@ export declare const PARAMS: {
   };
   core: {
     synthesisFragCost: number; eggStrongWeight: number;
+    doubleYolkP: number;      // 双黄蛋（细案⑧ Lv10·案A 0.03/案B 0.05/案C 0）
+    eggLv10CostMult: number;  // 开蛋九折（案C 0.9·其余 1.0）
+    distinctPity: number;     // 核保底前 5 颗不重复（细案§二1）
     vaultFlowPrice: number; vaultGradPrice: number; treasureGradP: number; gradSaveAfterCores: number;
   };
+  gallery: { fragPerSpecies: number; gemPerSpecies: number }; // 展厅双层分红（量级可调）
+  workerDiscount: { minHabitatLv: number; pctLv3: number; pctLv6: number; pctLv10: number; capPct: number };
+  supplyGacha: { aPctByLv: number[] }; // A 级概率垫层（绝对加点·可调旋钮）
   ads: { ticketPerAd: number; salvageInstantDur: string; offlineDoubleMult: number; overnightShare: number };
   blackMarket: {
     unlockNode: number; dailyViewCap: number;
@@ -156,14 +176,31 @@ export declare function drillTierFor(power: number, skill?: number, P?: typeof P
 export declare function drillCumReward(k: number, P?: typeof PARAMS): number;
 export declare function expectedDistinctCores(st: {
   cleared: number;
-  coreDraws: { egg: number; treasure: number; bmFlow: number; shopFlow: number; vaultFlow: number; vaultDupes: number };
+  coreDraws: { egg: number; eggYolk?: number; treasure: number; bmFlow: number; shopFlow: number; vaultFlow: number; vaultDupes: number };
   gradCores: { vault: number; bm: number; treasureEV: number };
 }, P?: typeof PARAMS, T?: typeof TRUTHS): number;
+
+// 建筑细案入尺批·新纯函数与直测出口
+export declare function upgradeDiscountMult(buildingLv: number, pctPerLv: number): number;
+export declare function workerBuildDiscount(habitatLv: number, workers: number, P?: typeof PARAMS): number;
+export declare function galleryDividendPerDay(galleryLv: number, distinct: number, P?: typeof PARAMS, T?: typeof TRUTHS): { coreFrag: number; starGem: number };
+export declare const SALVAGE_SURPRISE_KEYS: Set<string>;
+export declare function doCores(
+  st: unknown, debit: (src: string, key: string, amt: number) => boolean,
+  day: number, env: { coreLuck?: number }, P?: typeof PARAMS, T?: typeof TRUTHS,
+): void;
+export declare function doSalvage(
+  st: unknown, credit: (src: string, key: string, amt: number) => void,
+  debit: (src: string, key: string, amt: number) => boolean,
+  tier: { salvageRunsPerQueue: number }, env: { salvageRollMult: number },
+  adRun: boolean, P?: typeof PARAMS, T?: typeof TRUTHS,
+): void;
+export declare function doLevelUps(st: unknown, debit: (src: string, key: string, amt: number) => boolean, T?: typeof TRUTHS): void;
 
 export interface S7EconRunOpts {
   envelope?: 'expected' | 'lucky' | 'unlucky';
   ads?: 'profile' | 'none' | 'full';
-  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'drill' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket' | 'bmBox', boolean>>;
+  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'drill' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket' | 'bmBox' | 'gallery', boolean>>;
   incomeScale?: Record<string, number>;
   pause?: { from: number; days: number };
   runFullDays?: boolean;
@@ -200,6 +237,8 @@ export interface S7EconResult {
   milestones: { node: number; day: number; power: number; mains: number[][]; plugins: { fine: number; superior: number; legendary: number }; cores: number }[];
   dailyCleared: number[];
   dailyPower: number[];
+  // 节奏观察口（专属碎片逐日流·建筑细案批免费抽接线测试用）
+  dailyMainShards: ({ shipMain: number; shipOff: number; pilotMain: number; pilotOff: number } | undefined)[];
   ledger: { income: Record<string, Record<string, number>>; spend: Record<string, Record<string, number>> };
 }
 export interface S7PressureAnchor { node: number; targetDay: number; gamma: number }

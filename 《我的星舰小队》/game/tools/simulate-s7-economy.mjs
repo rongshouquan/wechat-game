@@ -56,10 +56,11 @@
 //   2. 快速打理（固定几分钟）：商人（星贝盈余买补给券至日限+轮换篮）→ 打捞派趟
 //      （信标 史诗>稀有>普通；积压少走 24h 长趟、积压多加短趟消化；#5 广告追加一趟）。
 //   3. 花钱优先级：a.通用碎片 1:1 转当前瓶颈主力 → b.专属碎片够就升阶/升星（主力1
-//      优先冲 S 接陨星弹，其余按阶低者先）→ c.补给券全抽（舰/员池对半）→ d.合金/
-//      驾驶记录从最便宜一级逐级买满 5 主力 → e.插件 3合1 升品 → f.星矿升建筑
-//      （居住舱→打捞港→研究塔→补给站→商人→展厅；船坞/训练舱现无战斗外收益不升，遵真源
-//      TODO）→ g.星核碎片够 60 即合成、星空宝石够价即宝库兑换（复购 ×1.5 递增）。
+//      优先冲 S 接陨星弹，其余按阶低者先）→ c.免费抽＋补给券全抽（舰/员池对半·Lv10 十连
+//      九折）→ d.合金/驾驶记录从最便宜一级逐级买满 5 主力（船坞/训练舱折扣线生效）→
+//      e.插件 3合1 升品 → f.星矿升建筑（八栋全入列=建筑细案入尺批·船坞/训练舱携折扣线
+//      入循环，旧"无战斗外收益不升"TODO 由此销案）→ g.星核碎片够价即开蛋（展厅 Lv10
+//      双黄蛋）、星空宝石够价即宝库兑换（流通 120/毕业 200·复购 ×1.5 递增）。
 //   4. 推主线优先：战力 ≥ 压力值就打（45 秒/关时间预算）；首通=固定软货币+三选一期望
 //      （选卡偏好：点名主力的专属碎片>补给券/星核碎片>插件/信标>星矿）；看广告档
 //      每日 1 次 #3 固定翻倍 + 1 次 #4 再选一，用在当日最后一关（最肥）。
@@ -185,12 +186,33 @@ export const TRUTHS = {
 
   buildingCost: (level, coef) => Math.round(120 * Math.pow(level, 1.3) * coef),
   buildingImportance: { dock: 1.3, training: 1.3, habitat: 1.1, research: 1.1, supply: 1.1, salvage: 1.0, merchant: 1.0, gallery: 1.0 },
-  habitatStorageHours: (lv) => (lv <= 0 ? 0 : 36 + 1.3 * (lv - 1)),
-  habitatRatePct: (lv) => Math.max(0, lv) * 2,
+  // —— 建筑升级细案 v1 入模（2026-07-09 Ron 逐栋拍定·任务单「建筑细案入尺批」）——
+  // 细案钉的是"哪级出哪个里程碑"的结构（=真源）；量级=占位 v0 入尺定稿（可调的挂 PARAMS）。
+  // 居住舱（细案③）：仓 36→48h 封顶／产率爬到 +18%（Lv5=积压里程碑级不加产率·锚 Lv9=+16/Lv10=+18）／
+  // 有效编制 6+2/级（人口无上限·超编纯人气——期望值模型里与"编制封顶"数学等价，主循环沿用 6+2×lv）
+  habitatStorageHours: (lv) => (lv <= 0 ? 0 : [36, 37, 39, 40, 42, 43, 44, 45, 47, 48][Math.min(10, lv) - 1]),
+  habitatRatePct: (lv) => (lv <= 0 ? 0 : [2, 4, 6, 8, 8, 10, 12, 14, 16, 18][Math.min(10, lv) - 1]),
   researchPowerPct: (lv) => Math.max(0, lv) * 1,
-  galleryPerCorePct: (lv) => 0.3 + (Math.max(1, lv) - 1) * (0.3 / 9),
+  // 展厅（细案⑧）：收藏加成逐级表 0.30→0.60 封顶（Lv3/6=分红里程碑级不加收藏·Lv4 权重补跳）；
+  // 双层分红量级挂 PARAMS.gallery（任务单"量级可调"）
+  galleryPerCorePct: (lv) => [0.30, 0.33, 0.33, 0.40, 0.43, 0.43, 0.48, 0.52, 0.57, 0.60][Math.max(1, Math.min(10, lv)) - 1],
   galleryCapPct: 10,
-  salvageQueues: (lv) => (lv >= 7 ? 3 : lv >= 4 ? 2 : lv >= 1 ? 1 : 0),
+  galleryFragLv: 3, galleryGemLv: 6, // 碎片分红 Lv3 / 宝石分红 Lv6（解锁级=细案结构）
+  // 打捞港（细案④）：队数 3/4/5（Lv1/4/7·原 1/2/3 作废）——总吞吐守恒靠 PARAMS.salvage.yieldScale
+  // 单趟配平（"只给排面不给增量"），前期信标瓶颈下的空车体感如实记档
+  salvageQueues: (lv) => (lv >= 7 ? 5 : lv >= 4 ? 4 : lv >= 1 ? 3 : 0),
+  // 打捞稀有发现线（细案④⑤）：Lv2/3/5/6/8/9 各 +5%（相对）＋Lv10 +5% → 累计 +35%；
+  // 只作用惊喜线（居民/工人/货舱/插件·经济线掷骰不吃）；Lv10 另给 24h 长趟额外一次惊喜掷骰
+  salvageSurpriseLvls: (lv) => [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 7][Math.max(0, Math.min(10, lv))],
+  salvageExtraRollLv: 10,
+  // 船坞/训练舱折扣线（细案①②）：升级币成本 −1.5%/级（Lv10 毕业 −15%）——船坞只折星舰
+  // 合金、训练舱只折驾驶记录；专属碎片（合成 30/升阶/升星梯）永不打折=结构上不经过此路径
+  dockDiscountPctPerLv: 1.5,
+  trainingDiscountPctPerLv: 1.5,
+  // 补给站（细案⑥）：免费抽 Lv4=每日1/Lv7=每日2（不耗券白嫖）；Lv10 十连九折（10 抽收 9 券
+  // =券换抽数 ×10/9·假设玩家攒十连抽=期望值口径）；A 级概率垫层挂 PARAMS.supplyGacha（可调旋钮）
+  supplyFreePulls: (lv) => (lv >= 7 ? 2 : lv >= 4 ? 1 : 0),
+  supplyPullPerTicket: (lv) => (lv >= 10 ? 10 / 9 : 1),
   buildingMaxLevel: 10,
 
   salvageTimeMult: { h2: 1, h8: 2.2, h24: 3.8 }, // 每小时效率递减（0.50/0.28/0.16），每信标收益随时长递增
@@ -203,7 +225,9 @@ export const TRUTHS = {
   bountyPerfectMult: 1.25, // 运输船满血 ×1.25 彩蛋（沿用·达成率=画像 bountyPerfect）
   bountyAmbushRate: 0.15,
   bountyAmbushLossPct: 0.30,
-  bountyBoardCap: [12, 16, 20],
+  // 积压 6/9/12（细案③＋§二3 连带拍板·2026-07-09 Ron 收紧·原 12/16/20 作废）：
+  // 下标=基础/居住舱 Lv5/Lv10；恶补阈值沿"积压>日卡数"（bountyCardsFor·任务单联动核查项）
+  bountyBoardCap: [6, 9, 12],
 
   corridorMilestoneEvery: 5,
   corridorEchoEvery: 25,
@@ -323,6 +347,18 @@ export const PARAMS = {
   // 星贝盈余时买打捞加速券把短趟升为 8h 档产出（花星贝买时间·S10.2/S10.3 设计）。
   salvage: {
     minutes: 1.0,
+    // 单趟守恒系数（细案④"队数 3/4/5 只给排面不给增量"·建筑细案入尺批）：队数翻倍段不同
+    //（Lv1 1→3/Lv4 2→4/Lv7 3→5），单一系数只能锚一段——按总控确认方针锚"中后期主吞吐段"，
+    // 全程收入轨迹 ≈v0.6 用 --income 复核。**守恒刀只落 24h 长趟**（yieldScaleDur）——
+    // 队数翻倍翻出来的正是长趟（每队首趟 24h·5 队=长趟 3→5），短趟单价不动。
+    // 调参记档（选型实测径）：①均匀刀 0.6→总量 72%（过深）；②均匀 0.83→129%（信标自繁殖
+    // 非线性回潮）；③均匀 0.72→总量 102% 但把打捞收入"时间形状"压后——前期信标束缚下
+    // 趟数不变每趟被砍、后期队数红利补总量，短周期档整段前中期插件/通碎/核碎瘦 20-28%、
+    // 被普通档锚定的压力表(+7-15%)挤出带（肝 D35/BM D30=A/B 逐日曲线实证）；④终版=
+    // 长趟专刀：后期 肝(3L+8S→5L×s+6S)/普(3L+3S→5L×s+1S) 在 s=0.72 数学平价，前期
+    // 保留"3 队全放长趟"的设计 QoL（细案①早给队数=有意的爽点，如实入模）。
+    yieldScale: 0.72,
+    yieldScaleDur: 'h24',
     tiers: {
       common: {
         ore: 30, cargo: 14, universal: 1.5, fixed: {},
@@ -332,7 +368,7 @@ export const PARAMS = {
       rare: {
         ore: 70, cargo: 38, universal: 2.5, fixed: { coreFrag: 0.25 }, // B4：1→0.25（打捞=核碎最大源 55%·中后期超发主凶）
         rolls: { h2: 2.6, h8: 5.0, h24: 10.4 },
-        rollEV: { universal: 0.8, beaconRare: 0.075, coreFrag: 0.008, superiorPlugin: 0.05, starGem: 0.015, resident: 0.03, worker: 0.03, cargoChest: 0.015 }, // 券下架=B3；稀有自繁殖 0.10→0.075（24h 1.04→0.78 拆永动·A3）；coreFrag 0.03→0.008（B4 两刀）；starGem 0.05→0.015（B7 挪回廊）
+        rollEV: { universal: 0.8, beaconRare: 0.05, coreFrag: 0.008, superiorPlugin: 0.05, starGem: 0.015, resident: 0.03, worker: 0.03, cargoChest: 0.015 }, // 券下架=B3；稀有自繁殖 0.10→0.075（24h 1.04→0.78 拆永动·A3）；coreFrag 0.03→0.008（B4 两刀）；starGem 0.05→0.015（B7 挪回廊）
       },
       epic: {
         ore: 160, cargo: 95, universal: 4, fixed: { coreFrag: 0.5, starGem: 0.5 }, // B4：coreFrag 2→0.5；B7：starGem 2→0.5（大头挪回廊）
@@ -380,13 +416,35 @@ export const PARAMS = {
   core: {
     synthesisFragCost: 60,
     eggStrongWeight: 0.035, // 开蛋 13 常规池：2 颗强常规各 3.5%（合成头奖低权重）、其余 11 颗均分
-    // 宝库价格重排（任务单⑧·B7 msGem 攒钱线口径保持=回廊宝石收入线不动）：统一价拉平了
-    // 老 ×1.5 递增梯度（同量宝石可买核数翻倍=第 1 轮实测核通胀主源），基价上调对冲：
-    vaultFlowPrice: 110,    // 8 流通款统一价（第3轮 95→110：中后期心跳 2.8 天/颗仍偏热）
-    vaultGradPrice: 200,    // 2 毕业核更贵（≈2.1×·"性价比略低于流通核但不悬殊"）
+    // 双黄蛋（细案⑧ Lv10 里程碑·展厅 Lv10 才生效）：开蛋一蛋双核、第二颗限流通款。
+    // 三案对照（第二段交 Ron 拍）：案A doubleYolkP=0.03 / 案B =0.05 / 案C =0＋eggLv10CostMult=0.9
+    //（开蛋九折 60→54）。第一段基线挂案A（总控回执⑨照准）。
+    doubleYolkP: 0.03,
+    eggLv10CostMult: 1.0,
+    // 核保底（细案§二1 连带拍板·Ron 拍板结构非调参旋钮）：前 5 颗星核保证各不相同——
+    // 已拥有种类 <5 时全部随机整核渠道（开蛋/宝藏/黑市小件/宝箱）只出未拥有款；
+    // 期望模型=种类期望前段改精确线性 min(n,5)（expectedDistinctCores）
+    distinctPity: 5,
+    // 宝库价格（细案§二2·Ron 给两案委托总控拍 → 120/200·2026-07-09）：流通 110→120（+9%
+    // 由入尺消化=对冲分红/双黄蛋新热源）；毕业核 200=⑧刚验证的时点锚不动；复购 ×1.5 不动
+    vaultFlowPrice: 120,    // 8 流通款统一价（110→120=细案§二2 拍板·旧 110 见⑧第3轮记档）
+    vaultGradPrice: 200,    // 2 毕业核更贵（≈1.67×·"性价比略低于流通核但不悬殊"）
     treasureGradP: 0.04,    // 扩张宝藏三选一池（11 常规）混入曲率星门低概率＝欧皇线
     gradSaveAfterCores: 5,  // 宝石线策略：5 核槽填满后转攒毕业核（=B7"攒宝石换想要的核"落名）
   },
+  // 展厅双层分红（细案⑧·Lv3 碎片/Lv6 宝石·挂 coresDistinct）：量级=任务单"可调"旋钮——
+  // 起步取细案占位（碎片 0.3/种/日·宝石 0.12/种/日=0.1-0.15 带中值）；心跳带超热优先砍这里
+  //（总控回执⑤授权在案）。解锁级挂 TRUTHS.galleryFragLv/galleryGemLv。
+  gallery: { fragPerSpecies: 0.10, gemPerSpecies: 0.10 },
+  // 工人建筑折扣（细案③·总控回执③裁定"改费率结构"）：居住舱 Lv3 解锁（旧 v0.6 线
+  // =−1%/人·无门槛·封顶20% 由此取代——那是 6b3 草案时代的预支建模，运行时实为空账）；
+  // 费率随居住舱升档 Lv3/6/10=−1/−1.5/−2%/名（编制内），总封顶 −25%（占位·可调）
+  workerDiscount: { minHabitatLv: 3, pctLv3: 1.0, pctLv6: 1.5, pctLv10: 2.0, capPct: 25 },
+  // 补给站 A 级概率垫层（细案⑥"抽出 A 级/3★ 概率 +0.5%/级·累计 +5% 封顶"）：映射=A 级
+  // 本体自然出率的绝对加点（20 抽保底不动·总控回执⑧裁定读法正确）；模型不分级本体，
+  // 垫层入账=本体率增量（记简化声明）。下标=补给站等级；每级增量与封顶均为可调旋钮
+  //（总控：垫层要"升楼有感"非钉死数字，破四档靶先砍它）——起步取细案面值。
+  supplyGacha: { aPctByLv: [0, 0.25, 0.5, 0.75, 0.75, 1.0, 1.25, 1.25, 1.5, 1.75, 2.5] },
 
   // 事件（3天行动/7天扩张·自然游玩推进；周期过程奖平摊+周期末完成/结算两笔）
   events: {
@@ -412,7 +470,7 @@ export const PARAMS = {
 
   // 星辉货舱（Boss 大奖/打捞稀有/3天活动完成；#7 广告=期望 ×1.5）
   cargoChest: {
-    coreFrag: 1.5, starGem: 2, // B4：coreFrag 4→1.5（货舱=核碎第二源 28%）
+    coreFrag: 1.15, starGem: 1.65, // B4：coreFrag 4→1.5（货舱=核碎第二源 28%）；建筑细案批：1.5→1.15、gem 2→1.65（惊喜线倍率让开箱数+45%·箱内经济量回调=箱数涨内容降·总账≈守恒）
     beacons: { beaconCommon: 1.0, beaconRare: 1.4, beaconEpic: 0.6 }, // A2 提前并入步1：普通权重转稀有（货舱=高稀有浓缩包身份·补 A3 收口后的稀有流量·不走自繁殖链）
     adPickMult: 1.5,
   },
@@ -441,7 +499,12 @@ export const PARAMS = {
     habitatNode: 8, galleryNode: 15, researchDay: 5,
     unlockCosts: { dock: 8, training: 5, supply: 8, salvage: 5, merchant: 5 },
   },
-  buildingPriority: ['habitat', 'salvage', 'research', 'supply', 'merchant', 'gallery'],
+  // 建筑细案入尺批：船坞/训练舱携折扣线入列（细案①·6→8 栋=新增星矿 sink 对冲工人折扣
+  // 收窄）。排位实测（任务单点名·四序对比记校准日志）：收入栋（居住/打捞）在前 →
+  // 补给站（免费抽=每天看得见的甜头·Lv4 起 +1 抽/日=玩家贪心可信）→ 折扣栋（船坞/
+  // 训练=军饷效率准收入）→ 研究/商人/展厅。四序四档全稳（±1 天）、黑市党对排位敏感
+  //（dock 第3位=D28 出带·dockLast=D27 贴边·本序=D26 带内有余量）——取本序。
+  buildingPriority: ['habitat', 'salvage', 'supply', 'training', 'dock', 'research', 'merchant', 'gallery'],
   oreReserve: 0,
   // 建筑成本全局系数（6b3 草案自述"v0.1 起步值·原型校准"——尺子校准解=×3，
   // 让建筑线成为星矿的真实长期 sink，压死"溢出回收灌爆星贝"的死水；记入初值表待回写）
@@ -705,6 +768,31 @@ export function benchEffPct(pool, P = PARAMS) {
   return B.cap * (1 - Math.exp(-pool / B.scale));
 }
 
+// —— 建筑细案入尺批 · 三个纯函数（细案①②③⑧·供 gate 手推期望值直测）——
+
+/** 升级币折扣乘数（细案①②）：船坞/训练舱 −1.5%/级，Lv10 毕业 −15%（1→0.985…10→0.85）。 */
+export function upgradeDiscountMult(buildingLv, pctPerLv) {
+  return 1 - ((pctPerLv ?? 0) * Math.max(0, Math.min(10, buildingLv))) / 100;
+}
+
+/** 工人建筑折扣（细案③·居住舱 Lv3 解锁+费率升档+封顶）：返回 0-0.25 的折扣比例。
+ *  取代 v0.6 旧线（−1%/人·无门槛·封顶 20%=6b3 草案时代预支建模·运行时实为空账）。 */
+export function workerBuildDiscount(habitatLv, workers, P = PARAMS) {
+  const W = P.workerDiscount;
+  if (!W || habitatLv < W.minHabitatLv) return 0;
+  const rate = habitatLv >= 10 ? W.pctLv10 : habitatLv >= 6 ? W.pctLv6 : W.pctLv3;
+  return Math.min(W.capPct / 100, (Math.max(0, workers) * rate) / 100);
+}
+
+/** 展厅双层分红（细案⑧）：每天按已收集核种数产出——Lv3 起碎片、Lv6 起宝石（/种/日）。 */
+export function galleryDividendPerDay(galleryLv, distinct, P = PARAMS, T = TRUTHS) {
+  const n = Math.max(0, distinct);
+  return {
+    coreFrag: galleryLv >= T.galleryFragLv ? P.gallery.fragPerSpecies * n : 0,
+    starGem: galleryLv >= T.galleryGemLv ? P.gallery.gemPerSpecies * n : 0,
+  };
+}
+
 /** 悬赏可打张数（任务单⑤参与度真分层·纯函数供 gate 直测）：
  *  min(积压, 意愿, 剩余分钟, 辅助战斗预算)——
  *  意愿 = 日卡4×完成率 + 恶补（仅积压>日卡时·bountyCatchup 按画像·15分钟玩家=0）；
@@ -785,6 +873,7 @@ export function drillCumReward(k, P = PARAMS) {
  *  重叠用比例折算（期望值近似·记模型简化声明）。 */
 export function expectedDistinctCores(st, P = PARAMS, T = TRUTHS) {
   const d = st.coreDraws;
+  const yolk = d.eggYolk ?? 0; // 双黄蛋第二颗（限流通款·8 池随机）
   const ws = P.core.eggStrongWeight;
   const wReg = (1 - 2 * ws) / 11;              // 开蛋：11 颗常规均分
   const tReg = (1 - P.core.treasureGradP) / 11; // 宝藏池：11 颗常规均分（毕业核概率之外）
@@ -792,11 +881,17 @@ export function expectedDistinctCores(st, P = PARAMS, T = TRUTHS) {
   const strong2 = 2 * (1 - Math.pow(1 - ws, d.egg));
   const pool3 = 3 * (1 - Math.pow(1 - wReg, d.egg) * Math.pow(1 - tReg, d.treasure));
   const flowRand = 8 * (1 - Math.pow(1 - wReg, d.egg) * Math.pow(1 - tReg, d.treasure)
-    * Math.pow(1 - 1 / 8, d.bmFlow + d.shopFlow));
+    * Math.pow(1 - 1 / 8, d.bmFlow + d.shopFlow + yolk));
   const vaultDistinct = Math.min(8, d.vaultFlow);
-  const flow8 = Math.min(8, vaultDistinct + flowRand * (8 - vaultDistinct) / 8);
   const grad = Math.min(2, (st.gradCores?.vault ?? 0) + (st.gradCores?.bm ?? 0) + (st.gradCores?.treasureEV ?? 0));
-  return meteor + strong2 + pool3 + flow8 + grad;
+  // 随机渠道种类期望（宝库定向/毕业核之外·宝库重叠按比例折算沿用）
+  const randomPart = strong2 + pool3 + flowRand * (8 - vaultDistinct) / 8;
+  // 核保底（细案§二1·前 5 颗不重复）：已拥有 <distinctPity 时随机整核渠道只出未拥有款
+  // → 前段种类期望=精确线性 min(随机抽数, 5−定核数)；超出后回补集幂（取 max=保底是
+  // 下限、两段自然衔接；随机抽数横跨异池按"任一渠道保底通用"合并计，记简化声明）
+  const nRandom = d.egg + yolk + d.treasure + (d.bmFlow ?? 0) + (d.shopFlow ?? 0);
+  const guaranteed = Math.min(nRandom, Math.max(0, (P.core.distinctPity ?? 0) - meteor));
+  return meteor + vaultDistinct + Math.max(randomPart, guaranteed) + grad;
 }
 
 // ---------------------------------------------------------------------------
@@ -822,7 +917,8 @@ function newState() {
     coresOwned: 0, coresDistinct: 0,
     coreDays: [], // 观测口（步4 稀缺线）：第 i 颗核的到手日（B4 验"前5颗节奏不动+中后期3-5天/颗"）
     // 任务单⑧星核渠道矩阵：分渠道抽数（种类期望用）+ 毕业核分账（到手时点分布=新验收口径）
-    coreDraws: { egg: 0, treasure: 0, bmFlow: 0, shopFlow: 0, vaultFlow: 0, vaultDupes: 0 },
+    // eggYolk=双黄蛋第二颗（限流通款·细案⑧）——单列渠道进流通款补集幂（建筑细案入尺批）
+    coreDraws: { egg: 0, eggYolk: 0, treasure: 0, bmFlow: 0, shopFlow: 0, vaultFlow: 0, vaultDupes: 0 },
     gradCores: { vault: 0, bm: 0, treasureEV: 0 },
     gradCoreDays: [], // 毕业核到手日（宝库/黑市=确定日；宝藏欧线走 treasureEV+欧非包络）
     accelCredits: 0,  // 打捞加速券额度（黑市小件·免耗星贝的 2h→8h 升档次数）
@@ -904,7 +1000,10 @@ function doGachaPulls(st, pool, pulls, env, P, T) {
   const pity = st.pityCounter[pool] + pulls;
   const pityBodies = Math.floor(pity / T.gachaPity);
   st.pityCounter[pool] = pity % T.gachaPity;
-  const bodies = pulls * (P.gacha.bodyP.C + P.gacha.bodyP.B + P.gacha.bodyP.A) + pityBodies;
+  // 补给站 A 级概率垫层（细案⑥·可调旋钮）：A 本体自然出率绝对加点、20 抽保底不动；
+  // 模型不分级本体 → 垫层=本体率增量（记简化声明）
+  const aBump = (P.supplyGacha?.aPctByLv?.[Math.max(0, Math.min(10, st.buildings.supply))] ?? 0) / 100;
+  const bodies = pulls * (P.gacha.bodyP.C + P.gacha.bodyP.B + P.gacha.bodyP.A + aBump) + pityBodies;
   const dupP = Math.min(0.95, roster / poolSize);
   const dupShards = bodies * dupP * P.gacha.dupFoldShards;
   creditMainShards(st, pool, dupShards, env.mainShardShare);
@@ -953,14 +1052,19 @@ function doAscends(st, T) {
   }
 }
 
-function doLevelUps(st, debit, T) {
+// 建筑细案入尺批：导出供 gate 手推直测（折扣线接线的机器可验）
+export function doLevelUps(st, debit, T) {
+  // 船坞/训练舱折扣线（细案①②·建筑细案入尺批）：只折升级币（合金/驾驶记录）——
+  // 升阶/升星/合成走专属碎片（doAscends），结构上不经过此路径=细案"专属碎片永不打折"
+  const dockMult = upgradeDiscountMult(st.buildings.dock, T.dockDiscountPctPerLv);
+  const trainMult = upgradeDiscountMult(st.buildings.training, T.trainingDiscountPctPerLv);
   const lineup = Math.min(5, Math.floor(st.rosterShips));
   for (let guard = 0; guard < 5000; guard++) {
     let best = null;
     for (let i = 0; i < lineup; i++) {
       const m = st.mains[i];
       if (!m.ship.owned || m.ship.level >= T.shipLevelCapByTier[m.ship.tier]) continue;
-      const c = T.shipLevelCost(m.ship.level);
+      const c = Math.round(T.shipLevelCost(m.ship.level) * dockMult);
       if (!best || c < best.cost) best = { m, cost: c };
     }
     if (!best || !debit('shipLevel', 'hullAlloy', best.cost)) break;
@@ -972,7 +1076,7 @@ function doLevelUps(st, debit, T) {
     for (let i = 0; i < lineupP; i++) {
       const m = st.mains[i];
       if (!m.pilot.owned || m.pilot.level >= T.pilotLevelCapByStar[m.pilot.star - 1]) continue;
-      const c = T.pilotLevelCost(m.pilot.level);
+      const c = Math.round(T.pilotLevelCost(m.pilot.level) * trainMult);
       if (!best || c < best.cost) best = { m, cost: c };
     }
     if (!best || !debit('pilotLevel', 'pilotToken', best.cost)) break;
@@ -993,7 +1097,8 @@ function doPluginCraft(st) {
 }
 
 function doBuildings(st, debit, P, T) {
-  const disc = Math.min(0.2, st.workers * 0.01);
+  // 工人折扣新规（细案③·总控回执③）：Lv3 解锁门＋费率 Lv3/6/10 升档＋封顶 25%（占位）
+  const disc = workerBuildDiscount(st.buildings.habitat, st.workers, P);
   for (let guard = 0; guard < 100; guard++) {
     let done = false;
     for (const b of P.buildingPriority) {
@@ -1018,10 +1123,18 @@ function doBuildings(st, debit, P, T) {
   }
 }
 
-function doCores(st, debit, day, env, P, T) {
-  // 合成=随机开蛋（任务单⑧·13 常规池·2 强常规低权重）：总数照常 +1，种类走期望收藏
-  while (st.res.coreFrag >= P.core.synthesisFragCost && debit('coreSynthesis', 'coreFrag', P.core.synthesisFragCost)) {
-    st.coresOwned += 1; st.coreDraws.egg += 1;
+// 建筑细案入尺批：导出供 gate 手推期望值直测（注入 st/debit——双黄蛋/开蛋九折机器可验）
+export function doCores(st, debit, day, env, P, T) {
+  // 合成=随机开蛋（任务单⑧·13 常规池·2 强常规低权重）：总数照常 +1，种类走期望收藏。
+  // 展厅 Lv10 里程碑（细案⑧·建筑细案入尺批）：双黄蛋 doubleYolkP（第二颗限流通款·
+  // eggYolk 单列渠道）或开蛋九折 eggLv10CostMult（三案对照的案C）——都只在 Lv10 生效。
+  const lv10 = st.buildings.gallery >= 10;
+  const eggCost = Math.round(P.core.synthesisFragCost * (lv10 ? (P.core.eggLv10CostMult ?? 1) : 1));
+  const yolkP = lv10 ? (P.core.doubleYolkP ?? 0) : 0;
+  while (st.res.coreFrag >= eggCost && debit('coreSynthesis', 'coreFrag', eggCost)) {
+    st.coresOwned += 1 + yolkP;
+    st.coreDraws.egg += 1;
+    if (yolkP > 0) st.coreDraws.eggYolk += yolkP;
   }
   // 宝库（8 流通统一价 + 2 毕业更贵）：①5 核槽未满=流通款定向补新（战力边际最高）；
   // ②槽满后转攒毕业核（B7"攒宝石换想要的核"落名——攒钱期不买流通款）；③2 颗毕业核
@@ -1140,11 +1253,21 @@ function openCargoChest(st, credit, count, adPick, P) {
   st.chestsOpened += count;
 }
 
-function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
+// 惊喜线四族（细案④⑤"稀有发现"作用面）：居民/工人/货舱/插件——经济线（软货币/通碎/
+// 信标/核碎/宝石）不吃稀有发现倍率；导出供 gate 钉作用面。
+export const SALVAGE_SURPRISE_KEYS = new Set(['resident', 'worker', 'cargoChest', 'finePlugin', 'superiorPlugin', 'legendaryPlugin']);
+
+// 建筑细案入尺批：导出供 gate 手推期望值直测（注入 st/credit/debit——队数/长趟守恒刀/惊喜线/额外骰接线机器可验）
+export function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
   const queues = T.salvageQueues(st.buildings.salvage);
   if (queues <= 0) return;
   // 每队 1 趟 24h 保底（信标效率优先）；剩余按档位趟数计划加 2h 短趟消化（时间效率优先）；
   // 短趟可用加速券升为 8h 档产出（星贝盈余时购买）；广告 #5 追加一趟 8h 档。
+  // 建筑细案入尺批：队数 3/4/5 的守恒刀只落 24h 长趟（yieldScaleDur·选型记档见 PARAMS 注）；
+  // 稀有发现线（+5%/级·累计 +35%）只乘惊喜线掷骰；Lv10 24h 长趟额外一次惊喜掷骰
+  //（额外骰同吃守恒系数=单位统一，惊喜倍率在缩减后基数上生效——对齐已确认方针）。
+  const ys = P.salvage.yieldScale ?? 1;
+  const surpriseMult = 1 + 0.05 * T.salvageSurpriseLvls(st.buildings.salvage);
   const runs = queues * tier.salvageRunsPerQueue + (adRun ? 1 : 0);
   for (let r = 0; r < runs; r++) {
     const isAd = adRun && r === runs - 1;
@@ -1156,13 +1279,16 @@ function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
     if (dur === 'h2' && st.accelCredits >= 1) { st.accelCredits -= 1; dur = 'h8'; } // 黑市加速券额度优先
     else if (dur === 'h2' && st.res.starCargo > P.merchant.richThreshold
       && debit('salvageAccel', 'starCargo', P.salvage.accel.price)) dur = 'h8'; // 加速券（星贝）
-    const mult = T.salvageTimeMult[dur];
+    const ysRun = !P.salvage.yieldScaleDur || dur === P.salvage.yieldScaleDur ? ys : 1;
+    const mult = T.salvageTimeMult[dur] * ysRun;
     credit('salvage', 'starOre', def.ore * mult);
     credit('salvage', 'starCargo', def.cargo * mult);
     credit('salvage', 'shipBlueprint', (def.universal * mult) / 2);
     credit('salvage', 'pilotShardUniversal', (def.universal * mult) / 2);
-    for (const [k, v] of Object.entries(def.fixed)) credit('salvage', k, v);
-    const rolls = def.rolls[dur] * env.salvageRollMult;
+    for (const [k, v] of Object.entries(def.fixed)) credit('salvage', k, v * ysRun);
+    const rolls = def.rolls[dur] * env.salvageRollMult * ysRun; // 经济线掷骰（守恒刀）
+    const sRolls = (def.rolls[dur] + (st.buildings.salvage >= T.salvageExtraRollLv && dur === 'h24' ? 1 : 0))
+      * env.salvageRollMult * ysRun * surpriseMult;             // 惊喜线掷骰（稀有发现线+Lv10 额外骰）
     const ev = def.rollEV;
     if (ev.universal) { credit('salvage', 'shipBlueprint', (rolls * ev.universal) / 2); credit('salvage', 'pilotShardUniversal', (rolls * ev.universal) / 2); }
     if (ev.supplyTicket) credit('salvage', 'supplyTicket', rolls * ev.supplyTicket);
@@ -1171,14 +1297,15 @@ function doSalvage(st, credit, debit, tier, env, adRun, P, T) {
     if (ev.beaconEpic) credit('salvage', 'beaconEpic', rolls * ev.beaconEpic);
     if (ev.coreFrag) credit('salvage', 'coreFrag', rolls * ev.coreFrag);
     if (ev.starGem) credit('salvage', 'starGem', rolls * ev.starGem);
-    if (ev.finePlugin) st.plugins.fine += rolls * ev.finePlugin;
-    if (ev.superiorPlugin) st.plugins.superior += rolls * ev.superiorPlugin;
-    if (ev.legendaryPlugin) st.plugins.legendary += rolls * ev.legendaryPlugin;
-    // 步3 人口封顶：容量=6+2×居住舱级（lv10=26）——真源未定义容量（②审计盲区），数值域自定入模
+    if (ev.finePlugin) st.plugins.fine += sRolls * ev.finePlugin;
+    if (ev.superiorPlugin) st.plugins.superior += sRolls * ev.superiorPlugin;
+    if (ev.legendaryPlugin) st.plugins.legendary += sRolls * ev.legendaryPlugin;
+    // 步3 人口封顶：容量=6+2×居住舱级（lv10=26）——细案③改口径后=有效编制（超编纯人气，
+    // 期望值模型等价）；居民/工人=惊喜线（吃稀有发现倍率·与细案⑤"联动看住"对齐）
     const popCapS = 6 + 2 * st.buildings.habitat;
-    if (ev.resident) st.residents = Math.min(popCapS, st.residents + rolls * ev.resident);
-    if (ev.worker) st.workers = Math.min(popCapS, st.workers + rolls * ev.worker);
-    if (ev.cargoChest) openCargoChest(st, credit, rolls * ev.cargoChest, false, P);
+    if (ev.resident) st.residents = Math.min(popCapS, st.residents + sRolls * ev.resident);
+    if (ev.worker) st.workers = Math.min(popCapS, st.workers + sRolls * ev.worker);
+    if (ev.cargoChest) openCargoChest(st, credit, sRolls * ev.cargoChest, false, P);
   }
 }
 
@@ -1504,6 +1631,15 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       }
     }
 
+    // —— 4.5 展厅双层分红（细案⑧·建筑细案入尺批）：按已收集核种数日结——Lv3 碎片/Lv6 宝石；
+    // 种数取昨日日终 coresDistinct（当日新核次日起息·期望值口径下一天滞后可忽略，记简化声明）；
+    // 放花钱段之前=当日分红当日可用（与回港领取同为"上线先领后花"的日流程语义）
+    if (!paused && !dis.gallery) {
+      const div = galleryDividendPerDay(st.buildings.gallery, st.coresDistinct, P, T);
+      if (div.coreFrag > 0) credit('gallery', 'coreFrag', div.coreFrag);
+      if (div.starGem > 0) credit('gallery', 'starGem', div.starGem);
+    }
+
     // —— 5. 花钱（宝箱→黑市货架→转换→升阶→抽卡→升级→插件→建筑→星核）——
     if (!paused) {
       if (!dis.bmBox) doBmBox(st, credit, env, P); // 宝箱=看广告画像通用（计数余额自然约束·bmBox 账目=黑市轨）
@@ -1516,11 +1652,17 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
       convertUniversal(st, debit);
       doAscends(st, T);
       if (!dis.gacha) {
+        // 补给站细案⑥（建筑细案入尺批）：免费抽（Lv4 每日+1/Lv7 每日+2·不耗券必领）＋
+        // Lv10 十连九折（券换抽数 ×10/9·攒十连=期望值口径）；A 概率垫层在 doGachaPulls 内
+        const freePulls = T.supplyFreePulls(st.buildings.supply);
         const tickets = Math.floor(st.res.supplyTicket);
+        let pulls = st.buildings.supply >= 1 ? freePulls : 0;
         if (tickets > 0 && debit('gacha', 'supplyTicket', tickets)) {
-          const shipPulls = tickets / 2;
-          doGachaPulls(st, 'ship', shipPulls, env, P, T);
-          doGachaPulls(st, 'pilot', tickets - shipPulls, env, P, T);
+          pulls += tickets * T.supplyPullPerTicket(st.buildings.supply);
+        }
+        if (pulls > 0) {
+          doGachaPulls(st, 'ship', pulls / 2, env, P, T);
+          doGachaPulls(st, 'pilot', pulls / 2, env, P, T);
         }
       }
       doAscends(st, T);
@@ -2110,7 +2252,7 @@ export function runAdComparison(pressure, P = PARAMS) {
 
 export function runSensitivity(pressure, P = PARAMS) {
   const base = simulateEconomyTier('普通', pressure, {}, P).graduateDay;
-  const sources = ['offline', 'patrol', 'bounty', 'drill', 'corridor', 'salvage', 'gacha', 'events', 'mail', 'merchant', 'puzzle', 'mainlineRewards', 'bmBox'];
+  const sources = ['offline', 'patrol', 'bounty', 'drill', 'corridor', 'salvage', 'gacha', 'events', 'mail', 'merchant', 'puzzle', 'mainlineRewards', 'bmBox', 'gallery'];
   const rows = [];
   for (const s of sources) {
     const r = simulateEconomyTier('普通', pressure, { disable: { [s]: true } }, P);
@@ -2167,7 +2309,7 @@ const isMain = typeof process !== 'undefined' && process.argv[1]
 if (isMain) {
   const args = new Set(process.argv.slice(2));
   const t0 = Date.now();
-  console.log("==== S7 真实资源经济模拟器（任务单⑧ 总修订案落模：委托难度+木桩+星核矩阵+黑市宝箱+商店百货+广告券新规 · 期望值模型·零RNG）====");
+  console.log("==== S7 真实资源经济模拟器（建筑细案入尺批：八栋细案九件入模——折扣线×2+工人折扣+积压6/9/12+打捞队3/4/5+稀有发现线+免费抽·十连九折+双层分红+双黄蛋+宝库120·核保底 · 期望值模型·零RNG）====");
 
   const { pressure, gammas, anchors } = calibratePressure();
   console.log(`压力值表：形状时刻表(v2 递进墙)重采样 + 双锚分段γ收口 [${anchors.map((a) => `n${a.node}→D${a.targetDay} γ=${Math.round(a.gamma * 1000) / 1000}`).join(' | ')}] + 教程段(n1-8)钳制`);
@@ -2335,7 +2477,7 @@ if (isMain) {
     const path = process.env.S7_ECON_JSON ?? 'tools/s7-economy-report.json';
     const strip = (r) => ({ ...r, ledger: undefined, dailyPower: undefined, dailyCleared: undefined });
     const payload = {
-      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.6(任务单⑧经济尺重构·总修订案落模)',
+      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.6+建筑细案入尺批第一段(九件入模·v0.7 收敛=第二段)',
       targets: TARGETS, bmTarget: BM_TARGET, gammas, anchors,
       wallMatrixBands: WALL_MATRIX_BANDS, hardWallCap: HARD_WALL_CAP,
       params: { ...PARAMS }, tiers: TIERS,
