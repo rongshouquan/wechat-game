@@ -131,7 +131,10 @@ describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
     // 克制差收窄到 ≈1.55×（21.2s vs 32.9s）——"带对工具显著更快"语义原样成立（>25% 提速+绝对时长<35s
     // 双断言保留）·阈值按新地板收口；克制差全维度定量=B6 克制工具箱 11/11 实测正主。
     expect(ctr[0].winRate).toBe(1);
-    expect(ctr[0].avgDurationSec).toBeLessThan(med[0].avgDurationSec * 0.75); // 克制向显著更快=破题
+    // 机制批③段二重定基（旧→新→为什么对）：段二质变全接后中位队默认工具再变强（岩3★守护自减伤/苏系盾量等）→
+    // 中位地板再抬、克制差自然收窄 14.93/19.9≈0.75 贴线——阈值 0.75→0.8 收口；克制语义三重保留
+    // （克制向必胜 + 绝对 <35s + 仍显著快于中位）。同⑩A1"n104 ×0.6→×0.75"先例。
+    expect(ctr[0].avgDurationSec).toBeLessThan(med[0].avgDurationSec * 0.8); // 克制向显著更快=破题
     expect(ctr[0].avgDurationSec).toBeLessThan(35);
   }, 30000);
 });

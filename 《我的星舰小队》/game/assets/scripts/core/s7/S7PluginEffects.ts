@@ -33,11 +33,40 @@ const mod = (id: string, stat: string, v: Trio) => (q: 0 | 1 | 2): S7EffectBlock
 /** 30 件逐件构建器（q=品质下标）。返回 []=基础效果无引擎载体（挂牌·机制批③）。 */
 const PLUGIN_BUILDERS: Record<string, (q: 0 | 1 | 2) => S7EffectBlock[]> = {
   // ===== 战术槽 =====
-  plg01: affix('plg01', 'dmgTakenPct', [-0.08, -0.15, -0.25]), // 护盾：受伤−（传奇重击自罩盾=挂牌）
-  plg03: affix('plg03', 'shieldBreak', [0.15, 0.30, 0.50]),    // 破甲：破盾效率（传奇破盾降防=敌盾破无钩·挂牌）
-  plg05: mod('plg05', 'maxHp', [0.10, 0.22, 0.40]),            // 舰体：最大生命（传奇<30%减伤=M9 动态·挂牌）
-  plg06: affix('plg06', 'controlResist', [0.15, 0.30, 0.50]),  // 韧性：硬控时间−（传奇免疫首控=计数·挂牌）
-  plg08: affix('plg08', 'healTakenPct', [0.12, 0.25, 0.45]),   // 医修：受疗+（传奇溢疗转盾=M9·挂牌）
+  plg01: (q) => { // 护盾：受伤−；机制批③段二传奇接真：受"重击"（技能命中·真源口径表）自罩盾 最大生命10%·每场3次
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'dmgTakenPct', value: [-0.08, -0.15, -0.25][q], source: src('plg01') }];
+    if (q === 2) {
+      b.push({
+        kind: 'stack',
+        rule: {
+          ruleId: 'plg01_guard_shield', on: 'was_hit_by_skill', stat: 'dmgTakenDownPct', perStack: 0, maxStacks: 1,
+          onFullEffectRef: 'eff_plg_guard_shield', onFullScope: 'self', onFullMaxFires: 3, source: src('plg01'),
+        },
+        source: src('plg01'),
+      } as S7EffectBlock);
+    }
+    return b;
+  },
+  plg03: (q) => { // 破甲：破盾效率；机制批③段二传奇接真：本舰打破敌盾→其防−20%·3s（armorDownOnShieldBreak）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'shieldBreak', value: [0.15, 0.30, 0.50][q], source: src('plg03') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'armorDownOnShieldBreak', value: 0.20, source: src('plg03') });
+    return b;
+  },
+  plg05: (q) => { // 舰体：最大生命；机制批③段二传奇接真：<30% 时减伤+15%（lowHpDmgTakenDown）
+    const b: S7EffectBlock[] = [{ kind: 'modifier', stat: 'maxHp', op: 'pct', value: [0.10, 0.22, 0.40][q], source: src('plg05') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'lowHpDmgTakenDown', value: 0.15, source: src('plg05') });
+    return b;
+  },
+  plg06: (q) => { // 韧性：硬控时间−；机制批③段二传奇接真：每场免疫第一次硬控（firstControlImmune 闩锁）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'controlResist', value: [0.15, 0.30, 0.50][q], source: src('plg06') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'firstControlImmune', value: 1, source: src('plg06') });
+    return b;
+  },
+  plg08: (q) => { // 医修：受疗+；机制批③段二传奇接真：满血时溢出治疗转护盾（overhealToShieldPct·受方语义→施方词条=装它的船自己被奶溢出转盾——真源"满血时溢出治疗转成护盾"主语=受方·词条挂本舰即本舰受益 ✓）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'healTakenPct', value: [0.12, 0.25, 0.45][q], source: src('plg08') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'overhealToShieldPct', value: 1.0, source: src('plg08') });
+    return b;
+  },
   plg12: (q) => [ // 自愈：每秒回最大生命 0.5/1/1.8%（battle_start 挂长时限 regen=⑯b 定式）
     { kind: 'trigger', on: 'battle_start', effectRef: ['eff_plg_regen_1', 'eff_plg_regen_2', 'eff_plg_regen_3'][q], source: src('plg12') },
   ],
@@ -47,38 +76,105 @@ const PLUGIN_BUILDERS: Record<string, (q: 0 | 1 | 2) => S7EffectBlock[]> = {
     if (q === 2) b.push({ kind: 'trigger', on: 'cd', cdSec: cd, effectRef: 'eff_plg_dimmune', source: src('plg14') });
     return b;
   },
-  plg15: affix('plg15', 'dodgeRate', [0.08, 0.15, 0.25]),      // 警戒：闪避（⑩三段流派扶正：6/12/20→8/15/25——尖峰世界每点闪避=整发免伤·闪避坦 n102 40%→高光线·§14 同步·真源数字为暂定'后期真机调'口径）（传奇闪避必暴=无闪避事件钩·挂牌）
+  plg15: (q) => { // 警戒：闪避 8/15/25（⑩三段流派扶正）；机制批③段二传奇接真：闪避后下一击必暴（critAfterDodge 闩锁）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'dodgeRate', value: [0.08, 0.15, 0.25][q], source: src('plg15') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critAfterDodge', value: 1, source: src('plg15') });
+    return b;
+  },
   plg16: (q) => [ // 援护：相邻友军互摊 10/18/30%·传奇附加抬到 40%（M4 share·援护链=命名载体）
     { kind: 'trigger', on: 'battle_start', effectRef: ['eff_plg_share_10', 'eff_plg_share_18', 'eff_plg_share_40'][q], source: src('plg16') },
   ],
-  plg30: () => [], // 保命：致死免疫留1血=伤害预结算（⑨深坑·苏5★同族）·挂牌
+  plg30: (q) => { // 机制批③段二 保命接真：致死免疫一次留 1 血（每场 1 次·三档同效）；传奇+触发后短暂无敌 1.5s
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'lethalGuardOnce', value: 1, source: src('plg30') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'lethalGuardImmuneSec', value: 1.5, source: src('plg30') });
+    return b;
+  },
   // ===== 武器槽 =====
-  plg02: mod('plg02', 'attack', [0.08, 0.18, 0.35]),           // 火力（传奇暴击溅射=M7·挂牌）
-  plg04: affix('plg04', 'critRate', [0.08, 0.18, 0.30]),       // 瞄准（传奇暴击补刀=M7·挂牌）
-  plg09: affix('plg09', 'critDmg', [0.25, 0.50, 0.90]),        // 爆裂（传奇暴击加攻速=无暴击事件钩·挂牌）
-  plg10: mod('plg10', 'attackIntervalSec', [-0.074074, -0.152542, -0.230769]), // 急速：攻速+8/18/30% 折间隔
-  plg17: affix('plg17', 'dmgVsFortified', [0.12, 0.25, 0.45]), // 破障（传奇对其暴击率=条件暴击·挂牌）
+  plg02: (q) => { // 火力；机制批③段二传奇接真：暴击时该次伤害 30% 溅射到最近相邻 1 格（critSplashPct）
+    const b: S7EffectBlock[] = [{ kind: 'modifier', stat: 'attack', op: 'pct', value: [0.08, 0.18, 0.35][q], source: src('plg02') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critSplashPct', value: 0.30, source: src('plg02') });
+    return b;
+  },
+  plg04: (q) => { // 瞄准；机制批③段二传奇接真：暴击时额外补一下（攻×0.5·critFollowupAtkPct）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'critRate', value: [0.08, 0.18, 0.30][q], source: src('plg04') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critFollowupAtkPct', value: 0.5, source: src('plg04') });
+    return b;
+  },
+  plg09: (q) => { // 爆裂；机制批③段二传奇接真：暴击时攻速 +20%·3s（critHasteAmount）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'critDmg', value: [0.25, 0.50, 0.90][q], source: src('plg09') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critHasteAmount', value: 0.20, source: src('plg09') });
+    return b;
+  },
+  plg10: (q) => { // 急速：攻速+8/18/30% 折间隔；机制批③段二传奇接真：每10%攻速→+4%普伤（按自带攻速档静折=+12%·外源攻速不联动=记近似 §16d）
+    const b: S7EffectBlock[] = [{ kind: 'modifier', stat: 'attackIntervalSec', op: 'pct', value: [-0.074074, -0.152542, -0.230769][q], source: src('plg10') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'normalAtkDmgPct', value: 0.12, source: src('plg10') });
+    return b;
+  },
+  plg17: (q) => { // 破障；机制批③段二传奇接真：对带盾/高防目标暴击率 +12%（critRateVsFortified）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'dmgVsFortified', value: [0.12, 0.25, 0.45][q], source: src('plg17') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critRateVsFortified', value: 0.12, source: src('plg17') });
+    return b;
+  },
   plg19: (q) => { // 灭群：对小怪增伤·传奇+杀小怪缩 CD 0.5s（cd_refund+onKillRoleTags）
     const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'dmgVsSwarm', value: [0.15, 0.30, 0.55][q], source: src('plg19') }];
     if (q === 2) b.push({ kind: 'trigger', on: 'on_kill', onKillRoleTags: ['swarm', 'swarm_tough'], effectRef: 'eff_plg_cdr_05', source: src('plg19') });
     return b;
   },
-  plg20: affix('plg20', 'dmgVsBoss', [0.12, 0.25, 0.45]),      // 屠巨（传奇对Boss暴伤=条件暴伤·挂牌）
-  plg21: () => [], // 散射：splashPct=伤害行字段·插件层注入无通道（挂牌·同霖涤荡病）
-  plg22: () => [], // 充能：蓄力状态机=M7 交回（挂牌）
-  plg23: affix('plg23', 'lifesteal', [0.03, 0.06, 0.10]),      // 嗜血（传奇暴击吸血翻倍=暴击事件·挂牌）
+  plg20: (q) => { // 屠巨；机制批③段二传奇接真：对 Boss 暴伤 +30%（critDmgVsBoss）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'dmgVsBoss', value: [0.12, 0.25, 0.45][q], source: src('plg20') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critDmgVsBoss', value: 0.30, source: src('plg20') });
+    return b;
+  },
+  plg21: (q) => [ // 机制批③段二 散射接真：普攻附带相邻溅射 10/20/35%（词条注入通道·⑨"行级字段无插件层注入"挂牌解除）；传奇=扩到相邻 4 格
+    { kind: 'affix', affix: 'normalSplashPct', value: [0.10, 0.20, 0.35][q], source: src('plg21') },
+    { kind: 'affix', affix: 'normalSplashTargets', value: q === 2 ? 4 : 1, source: src('plg21') },
+  ],
+  plg22: (q) => { // 机制批③段二 充能接真：隔拍蓄力·下一发 +20/40/70%（chargedNormal 状态机）；传奇=满蓄发附十字 50% 溅射
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'chargedNormalPct', value: [0.20, 0.40, 0.70][q], source: src('plg22') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'chargedNormalSplashPct', value: 0.5, source: src('plg22') });
+    return b;
+  },
+  plg23: (q) => { // 嗜血；机制批③段二传奇接真：暴击时本次吸血翻倍（critLifestealDouble）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'lifesteal', value: [0.03, 0.06, 0.10][q], source: src('plg23') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'critLifestealDouble', value: 1, source: src('plg23') });
+    return b;
+  },
   // ===== 技能槽 =====
-  plg07: affix('plg07', 'skillHaste', [0.086957, 0.176471, 0.333333]), // 冷却：CD−8/15/25%（传奇首技减半=无注入通道·挂牌）
-  plg11: affix('plg11', 'skillDmgPct', [0.10, 0.22, 0.40]),    // 增幅（传奇范围+1格=行级档位·挂牌）
-  plg13: () => [], // 过载：技能暴击率专项=需新词条（引擎改动=机制批③）·挂牌
-  plg18: () => [], // 连发：repeatChance 仅普攻行·概率技能连放无载体（M7 完整版）·挂牌
+  plg07: (q) => { // 冷却：CD−8/15/25%；机制批③段二传奇接真：开局首技 CD 减半（firstSkillCdHalf·只压带首发延迟的触发·开局即放型天然满足=语义注）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'skillHaste', value: [0.086957, 0.176471, 0.333333][q], source: src('plg07') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'firstSkillCdHalf', value: 1, source: src('plg07') });
+    return b;
+  },
+  plg11: (q) => { // 增幅；机制批③段二传奇接真：技能作用范围常驻升一档（skillAreaUp·同扭蛋 area_up 消费点）
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'skillDmgPct', value: [0.10, 0.22, 0.40][q], source: src('plg11') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'skillAreaUp', value: 1, source: src('plg11') });
+    return b;
+  },
+  plg13: (q) => { // 机制批③段二 过载接真：技能暴击率专项 +12/25/45%（skillCritRate 新词条）；传奇=技能暴伤 +25%
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'skillCritRate', value: [0.12, 0.25, 0.45][q], source: src('plg13') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'skillCritDmgPct', value: 0.25, source: src('plg13') });
+    return b;
+  },
+  plg18: (q) => [ // 机制批③段二 连发接真：技能 8/16/28% 概率连放两次（skillRepeatChance）；传奇"第二次不耗蓄力/条件"＝天然满足记语义注（连放本就不耗层）
+    { kind: 'affix', affix: 'skillRepeatChance', value: [0.08, 0.16, 0.28][q], source: src('plg18') },
+  ],
   plg24: (q) => [ // 回充：普攻命中缩 CD 0.2/0.4/0.7s·传奇翻倍=1.4s（attack_landed+cd_refund）
     { kind: 'trigger', on: 'attack_landed', effectRef: ['eff_plg_cdr_02', 'eff_plg_cdr_04', 'eff_plg_cdr_14'][q], source: src('plg24') },
   ],
-  plg25: () => [], // 引爆：技能命中事件+区域=M7 族·挂牌
+  plg25: (q) => { // 机制批③段二 引爆接真：技能命中附带相邻额外伤 攻×0.3/0.6/1.0（skillDetonate）；传奇=波及十字 4 格
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'skillDetonateAtkPct', value: [0.3, 0.6, 1.0][q], source: src('plg25') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'skillDetonateCross', value: 1, source: src('plg25') });
+    return b;
+  },
   plg26: affix('plg26', 'effectAmp', [0.10, 0.22, 0.55]),      // 增效：+10/22/40%·传奇附加"再+一档"=40→55（§14）
-  plg27: () => [], // 循环：命中目标计数联动无载体（§14 旧✓判过乐观·本批更正为挂牌）
-  plg28: () => [], // 余震：延迟追加=M9 定时器·挂牌
+  plg27: (q) => { // 机制批③段二 循环接真：技能每命中 1 目标缩 CD 0.2/0.4/0.6s（数值域定·§14 基础档未给数）；传奇=满目标再 −1.5s
+    const b: S7EffectBlock[] = [{ kind: 'affix', affix: 'skillCdPerTargetSec', value: [0.2, 0.4, 0.6][q], source: src('plg27') }];
+    if (q === 2) b.push({ kind: 'affix', affix: 'skillCdFullBonusSec', value: 1.5, source: src('plg27') });
+    return b;
+  },
+  plg28: (q) => [ // 机制批③段二 余震接真：技能命中 1.5s 后延迟追加 攻×0.3/0.6/1.4（传奇附加=1.0→1.4·§14）
+    { kind: 'affix', affix: 'aftershockAtkPct', value: [0.3, 0.6, 1.4][q], source: src('plg28') },
+  ],
   plg29: affix('plg29', 'durationPct', [0.15, 0.30, 0.70]),    // 持久：+15/30/50%·传奇附加再延长=50→70（§14）
 };
 

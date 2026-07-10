@@ -101,6 +101,7 @@ const STATE_TAG_ORDER: S7BattleStateTag[] = [
   'blind', // ⑨机制批② M8：致盲（尾部追加=遍历顺序不变）
   'area_up', // 机制批③ 幸运扭蛋"范围+1"（尾部追加=遍历顺序不变）
   'lifesteal_up', // 机制批③ 幸运扭蛋"吸血"（尾部追加=遍历顺序不变）
+  'no_attack', // 机制批③段二 堡垒「要塞展开」停普攻（尾部追加=遍历顺序不变）
 ];
 const FRIENDLY_TAGS = new Set<string>([
   'self_team', 'lowest_hp_ally',
@@ -163,6 +164,26 @@ const ZERO_AFFIXES: Readonly<Record<S7AffixKey, number>> = Object.freeze({
   durationPct: 0, summonCapBonus: 0,
   // 机制批③ 星核词条缺省全 0（=引擎行为逐字节不变）
   skillHitCurHpPct: 0, skillHitCapAtkMult: 0, dmgSplitFattestPct: 0, luckyOnCast: 0,
+  // 机制批③段二 条件/专项词条族缺省全 0（=引擎行为逐字节不变）
+  normalAtkDmgPct: 0, skillCritRate: 0, skillCritDmgPct: 0,
+  critRateVsLowHp: 0, critRateVsHighHp: 0, critRateVsFortified: 0, critDmgVsBoss: 0,
+  dmgVsBurning: 0, dmgVsSummonSource: 0, armorPenVsSummonSource: 0, dmgVsKeyUnit: 0, dmgVsFullHp: 0,
+  shaveCurHpPct: 0, halfBreakAtkPct: 0, shatterChance: 0,
+  lowHpThresholdPct: 0, highHpThresholdPct: 0, executeLowHpPct: 0, executeBossMaxHpPct: 0,
+  saveAllyLethalOnce: 0, lethalGuardOnce: 0, lethalGuardImmuneSec: 0, critAfterDodge: 0,
+  overhealToShieldPct: 0, healFullShieldMaxHpPct: 0, shieldVsLowHp: 0,
+  buffAmpPct: 0, buffRiderCritRate: 0, buffTransferOnDeath: 0, coverageAmpPerAlly: 0, durationPctFullCoverage: 0,
+  debuffedTakenAmpTeam: 0, debuffedTakenIncludeBoss: 0, debuffedTakenPerDebuff: 0, teamCritVsDebuffed: 0,
+  healDispelCount: 0, healDispelHardControl: 0, healOnDispelAtkPct: 0, afterDispelImmuneSec: 0,
+  reflectAllRecentPct: 0, tauntReflectPct: 0, guardExtraCharges: 0, guardSelfDmgDownPct: 0,
+  shareForControlledPct: 0, focusMaxGuaranteedCrit: 0, extraNormalHitWhileAtkSpeedUp: 0,
+  normalSplashPct: 0, normalSplashTargets: 0, chargedNormalPct: 0, chargedNormalSplashPct: 0,
+  skillRepeatChance: 0, skillDetonateAtkPct: 0, skillDetonateCross: 0, skillCdPerTargetSec: 0, skillCdFullBonusSec: 0,
+  aftershockAtkPct: 0, lowHpDmgTakenDown: 0, summonAtkPct: 0, summonHpPct: 0, summonSyncFire: 0,
+  armorPerHpDecilePct: 0, lowHpArmorFlat: 0, dmgToTeamShieldPct: 0, shieldCapMaxHpMult: 0, overflowShieldToHealPct: 0,
+  normalAreaMinEnemies: 0, normalAreaAlways: 0,
+  armorDownOnShieldBreak: 0, firstControlImmune: 0, critSplashPct: 0, critFollowupAtkPct: 0, critHasteAmount: 0,
+  critLifestealDouble: 0, firstSkillCdHalf: 0, skillAreaUp: 0, buffRiderCritDmg: 0, shredOnHitChance: 0, armorPenVsHighestArmor: 0,
 });
 
 // ===== 机制批③ 幸运扭蛋：五路由的引擎内合成状态行（不进配置表·rowId 只作日志/演出锚点）=====
@@ -178,6 +199,60 @@ const GACHA_CRIT_ROW: S7BattleEffectParam = { ...GACHA_ROW_BASE, rowId: 'eff_cor
 const GACHA_AREA_ROW: S7BattleEffectParam = { ...GACHA_ROW_BASE, rowId: 'eff_core_gacha_area', stateTag: 'area_up' };
 const GACHA_LIFESTEAL_ROW: S7BattleEffectParam = { ...GACHA_ROW_BASE, rowId: 'eff_core_gacha_lifesteal', stateTag: 'lifesteal_up', stateAmount: 0.20 };
 const GACHA_OUTCOMES = ['crit', 'area', 'echo', 'lifesteal', 'cd'] as const;
+
+// ===== 机制批③段二 · 引擎内合成行与常量（不进配置表·rowId=日志/演出锚点）=====
+/** 保命插件传奇：触发免死后短暂无敌（dmg_taken_down 1.0=既有整发免伤路径）。 */
+const LETHAL_IMMUNE_ROW: S7BattleEffectParam = {
+  ...GACHA_ROW_BASE, rowId: 'eff_plg_lethal_immune', stateTag: 'dmg_taken_down', stateAmount: 1.0, durationSec: 1.5,
+  note: '保命传奇（引擎内合成行）',
+};
+/** 藏5★「装甲碎裂」（顺路升级）：碎甲=易伤 2s（全队对其增伤=易伤天然全队受益·真源口径）。 */
+const SHATTER_ROW: S7BattleEffectParam = {
+  ...GACHA_ROW_BASE, rowId: 'eff_pil_cang20_shatter', stateTag: 'vulnerable', durationSec: 2,
+  note: '藏5★装甲碎裂（引擎内合成行）',
+};
+/** 霖3★：被本舰净化的友军短时免疫新减益（时长由 afterDispelImmuneSec 词条注入）。 */
+const AFTER_DISPEL_IMMUNE_ROW: S7BattleEffectParam = {
+  ...GACHA_ROW_BASE, rowId: 'eff_pil_lin_s3_immune', stateTag: 'debuff_immune', durationSec: 2,
+  note: '霖3★净化后免疫（引擎内合成行）',
+};
+/** 岩3★：守护触发时自身短暂减伤（幅度由 guardSelfDmgDownPct 词条注入·时长 2s 数值域定）。 */
+const GUARD_SELF_BUFF_ROW: S7BattleEffectParam = {
+  ...GACHA_ROW_BASE, rowId: 'eff_pil_yan_s3_selfdown', stateTag: 'dmg_taken_down', stateAmount: 0.20, durationSec: 2,
+  note: '岩3★守护自减伤（引擎内合成行）',
+};
+/** 澈L100：本舰施加增益时附带小暴击增益（幅度由 buffRiderCritRate 词条注入）。 */
+const BUFF_RIDER_CRIT_ROW: S7BattleEffectParam = {
+  ...GACHA_ROW_BASE, rowId: 'eff_pil_che_l100_crit', stateTag: 'crit_rate_up', stateAmount: 0.08, durationSec: 6,
+  note: '澈L100增益附暴击（引擎内合成行）',
+};
+/** 增益方向的 M1 修正 tag（澈「增幅」/沛「润泽」的"状态幅度增效"消费面·施加给友军才算增益）。 */
+const BUFF_MOD_TAGS = new Set<S7BattleStateTag>([
+  'atk_up', 'atk_speed_up', 'dmg_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up', 'lifesteal_up',
+]);
+/** 岳能力/5★："攻击我方后排"事件知识窗口秒数（数值域定稿·§16d）。 */
+const BACKLINE_ATTACKER_WINDOW_SEC = 2.5;
+/** 余震插件：延迟追加伤的固定延迟秒数（数值域定稿·§16d）。 */
+const AFTERSHOCK_DELAY_SEC = 1.5;
+
+/** 机制批③段二 延迟结算项（小太阳完整版/蜂针定时爆破=zone 区域快照·余震=single 单体追加）。 */
+interface RtPendingBlast {
+  atTime: number;
+  casterId: string;
+  casterSide: S7AutoBattleSide;
+  /** 施放瞬间攻击力快照（施放者中途死亡照爆·同 M2 快照口径）。 */
+  atkSnapshot: number;
+  kind: 'zone' | 'single';
+  effectRef: string;
+  /** zone：锚点格（引爆时刻以在场者算·格子不追人）；single：目标 unitId（已死=空爆）。 */
+  anchorRow?: number;
+  anchorCol?: number;
+  targetId?: string;
+  /** 伤害=atkSnapshot×powerMult（延迟伤走直伤子结算口径·§16d）。 */
+  powerMult: number;
+  area?: 'cross' | 'block';
+  targetSide: S7AutoBattleSide;
+}
 
 interface RtStateInst {
   tag: S7BattleStateTag;
@@ -219,6 +294,8 @@ interface RtStateInst {
   guardProtect?: 'backline' | 'all';
   guardCooldownSec?: number;
   guardReadyAt?: number;
+  /** 机制批③段二 岩5★：本冷却窗剩余替挡次数（undefined=窗口开启时按 1+guardExtraCharges 重置）。 */
+  guardChargesLeft?: number;
   /** ⑨机制批② M4 分摊（share 态·受方持有）：分摊比例 / 承接模式 / 承接者 unitId（to_caster=施加者·adjacent 忽略）。 */
   sharePct?: number;
   shareMode?: 'adjacent' | 'to_caster';
@@ -231,6 +308,12 @@ interface RtStateInst {
   auraScale?: 'per_lowhp_ally';
   /** ⑨机制批② M8 致盲（blind 态·持有者）：普攻落空概率 (0,1]。 */
   blindChance?: number;
+  /** 机制批③段二：状态自然到期时由持有者释放的效果行（堡垒「要塞展开」结束反击·被驱散/死亡不触发）。 */
+  expireEffectRef?: string;
+  /** 机制批③段二：叠层态"叠满触发"已触发标记（迷雾L100·掉层后可再触发）。 */
+  onFullFired?: boolean;
+  /** 机制批③段二：持有 no_attack 态期间受击计数（堡垒A"被打积能结束大反击"·反击 damageScale=1+0.5×次·封顶+5）。 */
+  hitCounter?: number;
 }
 
 /** ⑦机制批① M3：叠层规则运行态。 */
@@ -244,6 +327,8 @@ interface RtStackRule {
   lastEventAt: number;
   /** target_switch 断档：跟踪的锁定目标。 */
   trackedTargetId: string | null;
+  /** 机制批③段二：叠满触发已放次数（onFullMaxFires 封顶用）。 */
+  onFullFires?: number;
 }
 
 /** 运行时触发项：块1 的触发积木 + 运行时计时/闩锁状态（块2）。 */
@@ -314,13 +399,38 @@ interface RtUnit {
   splitShotCount: number;
   /** 机制批③ C14 硬控递减：施加者 unitId → {n=窗口内已施加次数, at=最近施加时刻}（仅请求带旋钮时才分配）。 */
   hcDim?: Map<string, { n: number; at: number }>;
+  // ===== 机制批③段二 运行时字段（全部缺省 undefined/false=旧行为不变）=====
+  /** 保命插件：本场免死已用（每场 1 次闩锁）。 */
+  lethalGuardUsed?: boolean;
+  /** 苏5★替挡致命：本场已替挡过（每场 1 次闩锁）。 */
+  lethalSaveUsed?: boolean;
+  /** 甘霖SS复活：本场已复活过（每场 1 次闩锁）。 */
+  reviveUsed?: boolean;
+  /** 警戒传奇：闪避后下一击必暴（一次性闩锁·出手即清）。 */
+  guaranteedCritNext?: boolean;
+  /** 充能插件：true=已蓄力（下一发强化）；false/缺省=下一拍蓄力不出手。 */
+  chargedNormal?: boolean;
+  /** 影5★ Boss 侧：已对本 Boss 吃过"跌破阈值追加伤"的攻击者 unitId 集（每场每攻击者一次）。 */
+  bossExecuteDoneBy?: Set<string>;
+  /** 岳能力：本单位最近一次打中对方后排的时刻（事件知识目标窗口）。 */
+  lastHitBacklineAt?: number;
+  /** 岳5★：近期攻击者履历（窗口内·反射全部攻击者用）。 */
+  recentAttackers?: Array<{ id: string; at: number }>;
+  /** 翎5★：本 tick 击杀过"当时敌方存活最高攻目标"（stepTriggers 评估后随其余事件标志清）。 */
+  killedHighestAtkSinceTrigger?: boolean;
+  /** 机制批③段二 召唤覆写（derived.summonOverride 快照·本舰召唤物出场时消费）。 */
+  summonOverride?: { targetingTag?: string; normalEffectRef?: string };
+  /** 甘霖SS复活选人：阵亡时刻（stepCleanupDead 记账·复活选"最近阵亡"）。 */
+  diedAt?: number;
+  /** 韧性传奇：本场"免疫第一次硬控"已用（一次性闩锁）。 */
+  firstControlImmuneUsed?: boolean;
 }
 
 interface SummonBudget {
   remaining: number;
 }
 
-/** 召唤生命周期元数据（⑥8a）+ 机制批③ copyFrom（全息镜分身的施法者三围快照）。 */
+/** 召唤生命周期元数据（⑥8a）+ 机制批③ copyFrom（全息镜分身的施法者三围快照）+ 段二 继承/覆写。 */
 interface SummonMeta {
   sourceId: string | null;
   expireSec?: number;
@@ -334,6 +444,10 @@ interface SummonMeta {
     normalEffectRef: string;
     targetingTag: string;
   };
+  /** 机制批③段二 巡「召唤物属性继承」：攻/血按源词条放大（缺省=零回归）。 */
+  statScale?: { atkPct: number; hpPct: number };
+  /** 机制批③段二 召唤覆写：目标选择/普攻行变体（巡能力/哨卫L60/巡3★·缺省=零回归）。 */
+  override?: { targetingTag?: string; normalEffectRef?: string };
 }
 
 interface RtSpawnPlan {
@@ -374,6 +488,21 @@ class BattleRun {
   private anyAura = false;
   /** 机制批③ 曲率星门：本场是否已结算过整排对调（多颗同装/多次触发只算一次——对调两次=复原=负收益，语义上幂等）。 */
   private rankSwapDone = false;
+  // ===== 机制批③段二 存在门旗（spawnUnit 置真；false=对应扫描整段跳过=零回归）=====
+  /** 蔽「笼罩」在场（debuffedTakenAmpTeam>0 的单位存在）。 */
+  private anyCloak = false;
+  /** 蔽5★「全队对减益敌暴击+」在场。 */
+  private anyTeamCrit = false;
+  /** 苏5★「替挡致命」在场。 */
+  private anyLethalSave = false;
+  /** 沧3★「硬控友军分摊」在场。 */
+  private anyShareGuard = false;
+  /** 岳能力「打正在攻击我后排的敌」在场（backline_attacker_first 目标族=事件知识跟踪才开）。 */
+  private anyEventKnowledge = false;
+  /** 澈5★「增益转移」在场。 */
+  private anyBuffTransfer = false;
+  /** 机制批③段二 延迟结算队列（小太阳完整版/蜂针定时爆破/余震·空队列=零回归）。 */
+  private pendingBlasts: RtPendingBlast[] = [];
   private time = 0;
   private timeLimitSec = 0;
   private enemySeq = 0;
@@ -592,11 +721,26 @@ class BattleRun {
           if (st.expireAction === 'decay_1' && (st.stacks ?? 1) > 1 && st.durationSec !== undefined) {
             st.stacks = (st.stacks ?? 1) - 1;
             st.expireAt = this.time + st.durationSec;
+            if (st.onFullFired && st.maxStacks !== undefined && (st.stacks ?? 1) < st.maxStacks) st.onFullFired = false; // 掉层再满可再触发（迷雾L100）
             continue;
           }
           unit.states.delete(tag);
           if (tag === 'shield' && unit.shield > 0) unit.shield = 0; // 护盾随状态消退
           this.pushLog('state_expire', { actorId: unit.unitId, side: unit.side, stateTag: tag });
+          // 机制批③段二 堡垒「要塞展开」结束反击：状态自然到期→持有者放 expireEffectRef（被驱散删除不经此=不触发）。
+          if (st.expireEffectRef !== undefined && unit.alive) {
+            const eff = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', st.expireEffectRef);
+            if (eff) {
+              const hits = Math.min(10, st.hitCounter ?? 0);
+              const scale = 1 + 0.5 * hits; // 堡垒A「被打积能」：反击 ×(1+0.5×受击次·封顶+5)；无计数=×1（基础档）
+              const targets = this.selectTargets(unit, eff.targetingTag, eff.maxTargets, undefined);
+              this.pushLog('ultimate_cast', {
+                actorId: unit.unitId, side: unit.side, effectRef: eff.rowId, effectType: eff.effectType,
+                targetIds: targets.map((x) => x.unitId), note: 'state_expire_effect',
+              });
+              if (targets.length > 0) this.applyEffectToTargets(unit, eff, targets, undefined, scale);
+            }
+          }
         }
       }
       if (!unit.alive) continue;
@@ -697,6 +841,8 @@ class BattleRun {
   /** 3：评估并释放三类触发（CD / 开局即放 / 血量阈值）。on_kill/on_hit 留块2b；passive 走装配 modifier、不在此 fire。
    *  ⑥8a：沉默（silence）同硬控一样挡技能触发（但不挡普攻·见 canAct）；事件标志清理并入。 */
   private stepTriggers(): void {
+    // 机制批③段二：先结到点的延迟结算（小太阳后爆/蜂针引爆/余震·语义=定时触发归"三类触发"步·空队列=零回归）。
+    if (this.pendingBlasts.length > 0) this.settlePendingBlasts();
     for (const unit of this.stableUnits()) {
       if (!unit.alive) continue;
       if (this.hasControl(unit) || unit.states.has('silence')) continue; // 短路/晕眩/沉默：无法触发技能
@@ -710,6 +856,43 @@ class BattleRun {
       unit.attackLandedSinceTrigger = false;
       unit.skillCastSinceTrigger = false;
       if (unit.killedRolesSinceTrigger.length > 0) unit.killedRolesSinceTrigger = [];
+      if (unit.killedHighestAtkSinceTrigger) unit.killedHighestAtkSinceTrigger = false; // 机制批③段二（翎5★）
+    }
+  }
+
+  /** 机制批③段二：结算所有到点的延迟项——zone=以锚点格为中心收当刻在场者（格子不追人）·single=目标仍活才吃；
+   *  伤害=施放瞬间攻击力快照×倍率·走直伤子结算口径（先啃盾 1:1 不过甲不暴击不递归）。 */
+  private settlePendingBlasts(): void {
+    const due = this.pendingBlasts.filter((p) => p.atTime <= this.time + 1e-9);
+    if (due.length === 0) return;
+    this.pendingBlasts = this.pendingBlasts.filter((p) => p.atTime > this.time + 1e-9);
+    for (const p of due) {
+      const caster = this.units.find((u) => u.unitId === p.casterId);
+      const actor = caster ?? this.units[0]; // 施放者已死：快照照爆·记账退化给场上首单位（极端兜底·日志 actorId 仍写快照者）
+      const amount = Math.max(1, Math.round(p.atkSnapshot * p.powerMult));
+      if (p.kind === 'single') {
+        const target = this.units.find((u) => u.unitId === p.targetId && u.alive);
+        if (target) this.applySubHit(caster ?? actor, target, amount, p.effectRef, 'delayed_hit');
+        continue;
+      }
+      // zone：锚点格十字/3×3 覆盖判定（footprint 相交）。
+      const pr = p.anchorRow ?? 0;
+      const pc = p.anchorCol ?? 0;
+      const cells: Array<[number, number]> = p.area === 'cross'
+        ? [[pr, pc], [pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]]
+        : [
+          [pr - 1, pc - 1], [pr - 1, pc], [pr - 1, pc + 1],
+          [pr, pc - 1], [pr, pc], [pr, pc + 1],
+          [pr + 1, pc - 1], [pr + 1, pc], [pr + 1, pc + 1],
+        ];
+      const inArea = (u: RtUnit): boolean => {
+        for (const [r, c] of cells) {
+          if (r >= u.row && r < u.row + u.sizeRows && c >= u.col && c < u.col + u.sizeCols) return true;
+        }
+        return false;
+      };
+      const victims = sortBy(this.units.filter((u) => u.side === p.targetSide && u.alive && inArea(u)), (u) => [u.unitId]);
+      for (const v of victims) this.applySubHit(caster ?? actor, v, amount, p.effectRef, 'delayed_blast');
     }
   }
 
@@ -723,11 +906,19 @@ class BattleRun {
         return !t.fired && unit.maxHp > 0 && unit.hp / unit.maxHp < (t.block.threshold ?? 0);
       case 'on_kill': {
         if (t.fired || !unit.killedSinceTrigger) return false; // 可重复（fired 仅在 once=true 时闩）：每个有击杀的 tick 触发一次
+        // 机制批③段二（燎5★）：本 tick 击杀数门槛（缺省 1=旧行为）。
+        if ((t.block.minKills ?? 1) > unit.killedRolesSinceTrigger.length) return false;
+        // 机制批③段二（翎5★）：只在击杀过"当时敌方最高攻目标"时触发（缺省不过滤=旧行为）。
+        if (t.block.onKillHighestAttack === true && !unit.killedHighestAtkSinceTrigger) return false;
         // ⑦机制批①：击杀对象 roleTag 过滤（缺省不过滤=旧行为）。本 tick 击杀名单里有命中集合的才触发。
         const filter = t.block.onKillRoleTags;
         if (!filter || filter.length === 0) return true;
         return unit.killedRolesSinceTrigger.some((r) => filter.includes(r));
       }
+      case 'ally_lowhp':
+        // 机制批③段二（沧Lv1「驰援」）：有友军跌入残血（<threshold·缺省 C6）即触发；一次性（fireTrigger 闩 fired）。
+        return !t.fired && this.units.some((u) => u.side === unit.side && u !== unit && u.alive
+          && u.maxHp > 0 && u.hp / u.maxHp < (t.block.threshold ?? LOWHP_THRESHOLD));
       case 'on_hit':
         return !t.fired && unit.hitSinceTrigger; // 可重复（同上）
       case 'shield_broken':
@@ -751,9 +942,18 @@ class BattleRun {
   private stepNormalAttacks(): void {
     for (const unit of this.stableUnits()) {
       if (!this.canAct(unit)) continue;
+      // 机制批③段二 堡垒「要塞展开」：no_attack 态期间停普攻（技能照放·非硬控）；缺省无此态=零回归。
+      if (unit.states.has('no_attack')) continue;
       if (this.time + 1e-9 < unit.nextAttackAt) continue;
       const normal = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', unit.normalEffectRef);
       if (!normal) continue; // normalEffectRef='none' 或缺失：本次普攻跳过（不报错）
+      // 机制批③段二 充能插件：隔拍蓄力——未蓄力拍不出手只标记（照进冷却=出手节奏减半、下一发强化）。
+      if (unit.affixes.chargedNormalPct > 0 && !unit.chargedNormal) {
+        unit.chargedNormal = true;
+        this.pushLog('unit_attack', { actorId: unit.unitId, side: unit.side, targetIds: [], effectRef: normal.rowId, note: 'charging' });
+        unit.nextAttackAt = this.time + this.effInterval(unit);
+        continue;
+      }
       // 机制批③ 计数复释（影刃「残影」）：每满 splitEveryN 次出手后下一发分裂为 splitTargets 目标（各全额）。
       // 计数按"出手"算（含随后被致盲落空的出手）——计数在选目标前完成=不动 RNG 消费序；缺省缺席=零回归。
       let maxT = normal.maxTargets;
@@ -765,7 +965,36 @@ class BattleRun {
           maxT = Math.max(maxT, normal.splitTargets);
         }
       }
-      const targets = this.selectTargets(unit, unit.targetingTag, maxT, unit.attackRangeCells);
+      // 机制批③段二 散射插件/充能满蓄溅射：普攻附带相邻溅射（选区扩为十字/3×3·首目标满额其余按比例）。
+      let selTag = unit.targetingTag;
+      let splashOverride: number | undefined;
+      let scaleAll = 1;
+      if (DAMAGE_TYPES.has(normal.effectType)) {
+        // 群蜂「弹巢」（敌 ≥N 普攻升 3×3）/L100（恒 3×3）：条件 targeting 缩放（缺省 0=零回归）。
+        if (unit.affixes.normalAreaAlways > 0
+          || (unit.affixes.normalAreaMinEnemies > 0 && this.countAliveOf(opposite(unit.side)) >= unit.affixes.normalAreaMinEnemies)) {
+          selTag = 'block_area';
+          maxT = Math.max(maxT, 9);
+        }
+        if (unit.affixes.normalSplashPct > 0 && unit.affixes.normalSplashTargets >= 1) {
+          const extraN = Math.floor(unit.affixes.normalSplashTargets);
+          selTag = 'cross_area'; // 相邻 1 格=十字选区取最近 1·传奇 4=十字全收
+          maxT = Math.max(maxT, 1 + extraN);
+          splashOverride = unit.affixes.normalSplashPct;
+        }
+        if (unit.affixes.chargedNormalPct > 0 && unit.chargedNormal) {
+          scaleAll = 1 + unit.affixes.chargedNormalPct; // 满蓄发 ×(1+档位)
+          unit.chargedNormal = false;
+          if (unit.affixes.chargedNormalSplashPct > 0) {
+            selTag = 'cross_area';
+            maxT = Math.max(maxT, 5);
+            splashOverride = splashOverride ?? unit.affixes.chargedNormalSplashPct;
+          }
+        } else if (unit.affixes.chargedNormalPct > 0) {
+          unit.chargedNormal = false; // 保守分支（理论不达·蓄力在上方拦截）
+        }
+      }
+      const targets = this.selectTargets(unit, selTag, maxT, unit.attackRangeCells);
       if (targets.length === 0) continue; // 无可攻击目标：跳过，不报错，不重置冷却
       // ⑨机制批② M8 致盲：攻击者持 blind 态时普攻按 blindChance 概率落空（不掉血·只记 miss 日志·照进冷却）；
       // 缺省无 blind 态=首条短路不掷随机=零回归（同暴击/闪避口径）。
@@ -782,12 +1011,17 @@ class BattleRun {
         effectRef: normal.rowId,
         effectType: normal.effectType,
       });
-      this.applyEffectToTargets(unit, normal, targets);
+      this.applyEffectToTargets(unit, normal, targets, splashOverride, scaleAll);
       // ⑨机制批② M7 概率连击（极焰快速装填/锋矢L100）：普攻 repeatChance 概率额外再打一发（重选目标·单次不链）；
       // 缺省无 repeatChance=首条短路不掷随机=零回归（同暴击/闪避口径）。
       if (normal.repeatChance !== undefined && normal.repeatChance > 0 && this.rng.next() < normal.repeatChance) {
         const extra = this.selectTargets(unit, unit.targetingTag, normal.maxTargets, unit.attackRangeCells);
         if (extra.length > 0) this.applyEffectToTargets(unit, normal, extra);
+      }
+      // 机制批③段二 翎3★「夺势期普攻+1击」：持加攻速态期间普攻附带额外一击（重选目标·各判暴击）。
+      if (unit.affixes.extraNormalHitWhileAtkSpeedUp > 0 && unit.states.has('atk_speed_up')) {
+        const bonusHit = this.selectTargets(unit, unit.targetingTag, normal.maxTargets, unit.attackRangeCells);
+        if (bonusHit.length > 0) this.applyEffectToTargets(unit, normal, bonusHit);
       }
       unit.nextAttackAt = this.time + this.effInterval(unit);
     }
@@ -824,9 +1058,32 @@ class BattleRun {
     for (const unit of this.stableUnits()) {
       if (unit.alive || unit.downLogged) continue;
       unit.downLogged = true;
+      unit.diedAt = this.time; // 机制批③段二：甘霖SS复活按"最近阵亡"选人
       this.freeCells(unit);
+      // 机制批③段二 澈5★「增益转移」：被增益友军阵亡→其增益态原样搬给同阵营最高攻存活友军（同 tag 覆盖）。
+      if (this.anyBuffTransfer) this.transferBuffsOnDeath(unit);
       this.pushLog('unit_down', { actorId: unit.unitId, side: unit.side });
     }
+  }
+
+  /** 机制批③段二 澈5★：把死者身上的增益态（BUFF_TAGS ∩ 在身）搬给同阵营最高攻存活友军；无承接者=散佚。 */
+  private transferBuffsOnDeath(dead: RtUnit): void {
+    const carrier = this.units.find((u) => u.side === dead.side && u.alive && u.affixes.buffTransferOnDeath > 0);
+    if (!carrier) return;
+    const buffs: RtStateInst[] = [];
+    for (const tag of BUFF_TAGS) {
+      const st = dead.states.get(tag);
+      if (st && tag !== 'shield') buffs.push(st); // 护盾数值绑单位不搬（记§16d 口径）
+    }
+    if (buffs.length === 0) return;
+    const heirs = sortBy(this.units.filter((u) => u.side === dead.side && u.alive && u !== dead), (u) => [-u.attack, u.unitId]);
+    if (heirs.length === 0) return;
+    const heir = heirs[0];
+    for (const st of buffs) heir.states.set(st.tag, { ...st });
+    this.pushLog('state_apply', {
+      actorId: carrier.unitId, side: carrier.side, targetIds: [heir.unitId],
+      effectRef: 'buff_transfer', note: buffs.map((b) => b.tag).join(','),
+    });
   }
 
   /** 9：检查胜负或 timeout。 */
@@ -867,6 +1124,8 @@ class BattleRun {
     // 同 tick 内排在其后的 skill_cast 触发会立即看到本标志（触发顺序=积木顺序·确定性）。
     if (effect.effectKind === 'ultimate') unit.skillCastSinceTrigger = true;
     this.castLogged(unit, effect, 'ultimate_cast');
+    // 机制批③段二 蜂巢「同步开火」：本舰放技能→在场召唤物立即齐射一次（≥2=S 阶·连本舰普攻也触发）。
+    if (effect.effectKind === 'ultimate' && unit.affixes.summonSyncFire > 0) this.syncFireSummons(unit);
     if (!unit.coreTriggered && unit.coreEffectRef !== 'none') {
       const core = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', unit.coreEffectRef);
       if (core) {
@@ -910,6 +1169,70 @@ class BattleRun {
       this.resolveRankSwap(caster);
       return;
     }
+    // 机制批③段二 骁5★「击杀延长先锋窗」：延长自身 stateTag 态的到期时刻 +effectPower 秒（无该态=空转）。
+    if (effect.effectType === 'extend_state') {
+      const st = caster.states.get(effect.stateTag);
+      if (st) st.expireAt = roundTime(st.expireAt + effect.effectPower);
+      this.pushLog(logType, {
+        actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType,
+        targetIds: [caster.unitId], note: st ? 'extended' : 'no_state',
+      });
+      return;
+    }
+    // 机制批③段二 甘霖SS「复活」：复活一名最近阵亡友军（每场 1 次·血量=最大生命×reviveHpPct）+
+    // effectPower>0 时顺带全队回血（攻×power·SS"复活+全队回血"一行成型）。
+    if (effect.effectType === 'revive') {
+      this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType });
+      if (!caster.reviveUsed) {
+        const dead = sortBy(
+          this.units.filter((u) => u.side === caster.side && !u.alive && u.downLogged),
+          (u) => [-(u.diedAt ?? 0), u.unitId],
+        )[0];
+        if (dead) {
+          caster.reviveUsed = true;
+          dead.alive = true;
+          dead.downLogged = false;
+          dead.hp = Math.max(1, Math.round(dead.maxHp * (effect.reviveHpPct ?? 0.4)));
+          let placed = false;
+          if (this.canPlace(dead.side, dead.row, dead.col, dead.sizeRows, dead.sizeCols)) {
+            this.occupy(dead);
+            placed = true;
+          } else {
+            const cell = this.findEmptyCell(dead.side, dead.sizeRows, dead.sizeCols);
+            if (cell) {
+              dead.row = cell.row;
+              dead.col = cell.col;
+              dead.slotRef = dead.side === 'player' ? `p${cell.row}c${cell.col}` : `r${cell.row}c${cell.col}`;
+              this.occupy(dead);
+              placed = true;
+            }
+          }
+          if (!placed) {
+            // 满场无格：复活失败回滚（闩锁一并回滚=下次再试）。
+            dead.alive = false;
+            dead.downLogged = true;
+            dead.hp = 0;
+            caster.reviveUsed = false;
+          } else {
+            // 复活后大招 CD 重置为满 CD（防"复活即放大招"·§16d 数值域定稿）；普攻下一拍起。
+            for (const t2 of dead.triggers) {
+              if (t2.block.on === 'cd' && t2.block.cdSec !== undefined && t2.block.cdSec > 0) t2.nextFireAt = this.time + t2.block.cdSec;
+            }
+            dead.nextAttackAt = this.time + dead.attackIntervalSec;
+            this.pushLog('revive', {
+              actorId: caster.unitId, side: caster.side, targetIds: [dead.unitId],
+              effectRef: effect.rowId, amount: dead.hp, hpAfter: dead.hp,
+            });
+          }
+        }
+      }
+      if (effect.effectPower > 0) {
+        for (const u of this.units) {
+          if (u.side === caster.side && u.alive) this.heal(caster, u, effect);
+        }
+      }
+      return;
+    }
     if (SUMMON_TYPES.has(effect.effectType)) {
       this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType });
       const budget: SummonBudget = { remaining: effect.maxTargets };
@@ -925,7 +1248,8 @@ class BattleRun {
     // maxTargets 同步抬到该档几何上限；缺省无 area_up 态=选区参数逐字节不变。
     let selTag = effect.targetingTag;
     let selMax = effect.maxTargets;
-    if ((effect.effectKind === 'ultimate' || effect.effectKind === 'core') && caster.states.has('area_up')) {
+    if ((effect.effectKind === 'ultimate' || effect.effectKind === 'core')
+      && (caster.states.has('area_up') || caster.affixes.skillAreaUp > 0)) {
       const up = upgradeAreaTag(selTag);
       if (up) {
         selTag = up.tag;
@@ -946,12 +1270,93 @@ class BattleRun {
       this.resolveKillChain(caster, effect, targets[0], selTag);
     }
     // ⑨机制批② M7 多重释放（极焰SS 连放三次/群蜂饱和SS 连放两轮）：额外 repeatCount 次重选+重放；缺省无=零回归。
-    // 机制批③：扭蛋"连放"并入同一循环（+gachaExtraCast）。
-    const multiCast = Math.max(0, Math.floor(effect.repeatCount ?? 0)) + gachaExtraCast;
+    // 机制批③：扭蛋"连放"并入同一循环（+gachaExtraCast）；段二：连发插件概率连放（词条掷·仅 ultimate·缺省 0=不掷）。
+    let multiCast = Math.max(0, Math.floor(effect.repeatCount ?? 0)) + gachaExtraCast;
+    if (effect.effectKind === 'ultimate' && caster.affixes.skillRepeatChance > 0
+      && this.rng.next() < caster.affixes.skillRepeatChance) {
+      multiCast += 1;
+    }
     for (let i = 0; i < multiCast; i += 1) {
       const rt = this.selectTargets(caster, selTag, selMax, undefined);
       this.applyEffectToTargets(caster, effect, rt);
     }
+    // 机制批③段二 循环插件：技能每命中 1 目标缩 CD（传奇：命中满目标数再+固定值）；缺省 0=零回归。
+    if (effect.effectKind === 'ultimate' && caster.affixes.skillCdPerTargetSec > 0 && targets.length > 0) {
+      let refund = caster.affixes.skillCdPerTargetSec * targets.length;
+      if (caster.affixes.skillCdFullBonusSec > 0 && targets.length >= selMax) refund += caster.affixes.skillCdFullBonusSec;
+      for (const t of caster.triggers) {
+        if (t.block.on === 'cd' && Number.isFinite(t.nextFireAt)) {
+          t.nextFireAt = Math.max(this.time, t.nextFireAt - refund);
+        }
+      }
+    }
+  }
+
+  /** 机制批③段二 山岳「磁暴盾」：受伤×系数转护盾均分存活友军（累加式=转化语义·区别常规护盾"取较大"·§16d 口径）；
+   *  设 shieldCapMaxHpMult 时各盾封顶最大生命×系数、溢出×overflowShieldToHealPct 转全队回血（山岳A）。 */
+  private convertDamageToTeamShield(converter: RtUnit, hpDmg: number): void {
+    const total = Math.round(hpDmg * converter.affixes.dmgToTeamShieldPct);
+    if (total <= 0) return;
+    const allies = sortBy(this.units.filter((u) => u.side === converter.side && u.alive), (u) => [u.unitId]);
+    if (allies.length === 0) return;
+    const per = Math.max(1, Math.floor(total / allies.length));
+    let overflowTotal = 0;
+    for (const a of allies) {
+      let gain = per;
+      if (converter.affixes.shieldCapMaxHpMult > 0) {
+        const cap = Math.round(a.maxHp * converter.affixes.shieldCapMaxHpMult);
+        const room = Math.max(0, cap - a.shield);
+        if (gain > room) {
+          overflowTotal += gain - room;
+          gain = room;
+        }
+      }
+      if (gain <= 0) continue;
+      a.shield += gain;
+      const prevExpire = a.states.get('shield')?.expireAt ?? 0;
+      a.states.set('shield', { tag: 'shield', expireAt: Math.max(prevExpire, this.time + 6), sourceUnitId: converter.unitId });
+    }
+    this.pushLog('state_apply', {
+      actorId: converter.unitId, side: converter.side, targetIds: allies.map((a) => a.unitId),
+      effectRef: 'storm_shield', stateTag: 'shield', amount: total, note: 'damage_to_shield',
+    });
+    // 山岳A「溢盾转奶」：溢出量×系数 → 全队均分回血。
+    if (overflowTotal > 0 && converter.affixes.overflowShieldToHealPct > 0) {
+      const healTotal = Math.round(overflowTotal * converter.affixes.overflowShieldToHealPct);
+      const healPer = Math.max(1, Math.floor(healTotal / allies.length));
+      for (const a of allies) {
+        if (a.hp >= a.maxHp) continue;
+        const before = a.hp;
+        a.hp = Math.min(a.maxHp, a.hp + healPer);
+        if (a.hp !== before) {
+          this.pushLog('heal', {
+            actorId: converter.unitId, side: converter.side, targetIds: [a.unitId],
+            effectRef: 'storm_shield', amount: a.hp - before, note: 'shield_overflow_heal',
+            hpAfter: a.hp, shieldAfter: a.shield,
+          });
+        }
+      }
+    }
+  }
+
+  /** 机制批③段二 蜂巢「同步开火」：本舰在场召唤物各立即普攻一次（不动其冷却节奏）；词条 ≥2（S 阶）=本舰也普攻一次。 */
+  private syncFireSummons(source: RtUnit): void {
+    const drones = this.units.filter((u) => u.alive && u.summonedBy === source.unitId);
+    for (const d of drones) this.syncOneAttack(d);
+    if (source.affixes.summonSyncFire >= 2) this.syncOneAttack(source);
+  }
+
+  private syncOneAttack(unit: RtUnit): void {
+    if (!this.canAct(unit) || unit.states.has('no_attack')) return;
+    const normal = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', unit.normalEffectRef);
+    if (!normal) return;
+    const targets = this.selectTargets(unit, unit.targetingTag, normal.maxTargets, unit.attackRangeCells);
+    if (targets.length === 0) return;
+    this.pushLog('unit_attack', {
+      actorId: unit.unitId, side: unit.side, targetIds: targets.map((t) => t.unitId),
+      effectRef: normal.rowId, effectType: normal.effectType, note: 'sync_fire',
+    });
+    this.applyEffectToTargets(unit, normal, targets);
   }
 
   /** 机制批③ 幸运扭蛋路由：等权五选一（战斗种子 RNG·可复现）。返回本次技能的额外连放次数（echo=1 其余 0）。 */
@@ -1126,25 +1531,34 @@ class BattleRun {
     return this.rng.next() < c;
   }
 
-  private applyEffectToTargets(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[]): void {
+  private applyEffectToTargets(caster: RtUnit, effect: S7BattleEffectParam, targets: RtUnit[], splashOverride?: number, damageScaleAll = 1): void {
     const type = effect.effectType;
     // 机制批③ 弹跳衰减族：伤害行带 bounceTargets≥2 时改走弹跳链（首目标=常规选定的 targets[0]，逐跳弹向
     // 最近未命中敌；第 n 跳伤害 ×max(0,1−n×bounceDecayPct)）。stateTag/追加状态对"实际命中链"施加。
     // 缺省缺席=finalTargets===targets=逐字节不变。
     let finalTargets = targets;
     if (DAMAGE_TYPES.has(type)) {
-      if (effect.bounceTargets !== undefined && effect.bounceTargets > 1 && targets.length > 0) {
+      if (effect.maxHpPctDamage !== undefined && effect.maxHpPctDamage > 0) {
+        // 机制批③段二 比例伤行（炎3★致命一击/影5★Boss侧）：目标最大生命×系数（Boss 按 bossFactor 折）——
+        // 走直伤子结算口径（不吃攻/暴击/护甲乘区·先啃盾 1:1·§16d 口径）。
+        for (const t of targets) {
+          if (!t.alive) continue;
+          const factor = t.isBoss ? (effect.maxHpPctBossFactor ?? 1) : 1;
+          this.applySubHit(caster, t, Math.max(1, Math.round(t.maxHp * effect.maxHpPctDamage * factor)), effect.rowId, 'pct_damage');
+        }
+      } else if (effect.bounceTargets !== undefined && effect.bounceTargets > 1 && targets.length > 0) {
         finalTargets = this.resolveBounceChain(targets[0], effect.bounceTargets);
         const decay = effect.bounceDecayPct ?? 0;
         for (let i = 0; i < finalTargets.length; i += 1) {
-          const scale = 1 - i * decay;
+          const scale = (1 - i * decay) * damageScaleAll;
           if (scale <= 1e-9) { finalTargets = finalTargets.slice(0, i); break; }
           this.dealDamage(caster, finalTargets[i], effect, scale);
         }
       } else {
         // ⑨机制批② M7 溅射分伤（散射枪管/引爆器/极焰节点/贯日L40）：首目标满额、其余按 splashPct；缺省无 splashPct=全额=逐字节不变。
-        const splash = effect.splashPct;
-        for (let i = 0; i < targets.length; i += 1) this.dealDamage(caster, targets[i], effect, splash !== undefined && i > 0 ? splash : 1);
+        // 机制批③段二：splashOverride/damageScaleAll=词条驱动的普攻溅射与充能强化（缺省 undefined/1=逐字节不变）。
+        const splash = splashOverride ?? effect.splashPct;
+        for (let i = 0; i < targets.length; i += 1) this.dealDamage(caster, targets[i], effect, (splash !== undefined && i > 0 ? splash : 1) * damageScaleAll);
       }
       if (effect.stateTag !== 'none') {
         for (const t of finalTargets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
@@ -1173,6 +1587,31 @@ class BattleRun {
         for (const t of finalTargets) if (t.alive && this.rollStateChance(row)) this.applyState(caster, t, row.stateTag, row.durationSec, row);
       }
     }
+    // 机制批③段二 延迟爆点（小太阳完整版=灼烧行挂爆点/蜂针定时爆破=伤害行挂爆点·类型无关）：
+    // 以首目标锚点格快照区域，delayedBlastSec 秒后引爆 delayedBlastRef（缺省缺席=零回归）。
+    if (effect.delayedBlastRef !== undefined && (effect.delayedBlastSec ?? 0) > 0) {
+      const anchor = finalTargets[0] ?? targets[0];
+      if (anchor) this.schedulePendingZone(caster, effect, anchor);
+    }
+  }
+
+  /** 机制批③段二：登记一个区域延迟爆点（锚=首目标当前锚点格·攻击力施放瞬间快照·形状/倍率取爆点行）。 */
+  private schedulePendingZone(caster: RtUnit, hostEffect: S7BattleEffectParam, anchor: RtUnit): void {
+    const blast = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', hostEffect.delayedBlastRef ?? '');
+    if (!blast) return;
+    this.pendingBlasts.push({
+      atTime: roundTime(this.time + (hostEffect.delayedBlastSec ?? 0)),
+      casterId: caster.unitId,
+      casterSide: caster.side,
+      atkSnapshot: caster.attack,
+      kind: 'zone',
+      effectRef: blast.rowId,
+      anchorRow: anchor.row,
+      anchorCol: anchor.col,
+      powerMult: blast.effectPower,
+      area: blast.targetingTag === 'cross_area' ? 'cross' : 'block',
+      targetSide: opposite(caster.side),
+    });
   }
 
   /** 机制批③ 弹跳链目标解析：从首目标起逐跳选"距当前目标最近（曼哈顿距）的未命中同阵营敌人"；
@@ -1209,7 +1648,7 @@ class BattleRun {
   /** ⑨机制批② M5：从 target 移除至多 count 个状态。极性由目标阵营定——
    *  友军=净化（移除减益·硬控需 dispelHardControl）/ 敌方=驱散（移除增益）；按 §16c 优先级序·跳过不可驱散态。
    *  移除 shield 态同步清零护盾数值（镜像 stepExpireStates 口径）。 */
-  private applyDispel(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam, count: number): void {
+  private applyDispel(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam, count: number): number {
     const cleanse = target.side === caster.side; // 友军→净化减益；敌方→驱散增益
     const order = cleanse ? DISPEL_DEBUFF_ORDER : DISPEL_BUFF_ORDER;
     const allowHardControl = effect.dispelHardControl === true;
@@ -1229,6 +1668,34 @@ class BattleRun {
         effectRef: effect.rowId, note: (cleanse ? 'cleanse:' : 'dispel:') + removed.join(','),
       });
     }
+    return removed.length; // 机制批③段二：霖「涤荡」附属钩需要移除数（旧调用方不读=行为不变）
+  }
+
+  /** 机制批③段二 沛「润泽」覆盖计数：同阵营存活友军里"身上有本舰来源增益/护盾态"的人数；
+   *  with 变体把"即将被覆盖的目标"也计入（首个目标也算 1 人=真源"覆盖1人=+4%"口径）。 */
+  private coverageCountWith(src: RtUnit, incoming: RtUnit): number {
+    let n = 0;
+    for (const u of this.units) {
+      if (u.side !== src.side || !u.alive) continue;
+      if (u === incoming || this.coveredBy(u, src)) n += 1;
+    }
+    return n;
+  }
+
+  private allAlliesCoveredBy(src: RtUnit): boolean {
+    for (const u of this.units) {
+      if (u.side !== src.side || !u.alive) continue;
+      if (!this.coveredBy(u, src)) return false;
+    }
+    return true;
+  }
+
+  private coveredBy(unit: RtUnit, src: RtUnit): boolean {
+    for (const tag of BUFF_TAGS) {
+      const st = unit.states.get(tag);
+      if (st && st.sourceUnitId === src.unitId) return true;
+    }
+    return false;
   }
 
   private dealDamage(caster: RtUnit, target: RtUnit, effect: S7BattleEffectParam, damageScale = 1): void {
@@ -1237,6 +1704,8 @@ class BattleRun {
     // ⑥8a 闪避（受方词条·警戒雷达）：仅 dodgeRate>0 才掷随机（零回归模式同暴击）；闪避=完全落空，
     // 不掉血不破盾、不触发 on_hit / attack_landed，只记 amount=0 + dodged 标记的伤害日志。
     if (target.affixes.dodgeRate > 0 && this.rng.next() < target.affixes.dodgeRate) {
+      // 机制批③段二 警戒传奇「闪避后必暴」：闩下一击必暴（缺省词条 0=零写入）。
+      if (target.affixes.critAfterDodge > 0) target.guaranteedCritNext = true;
       this.pushLog('damage', {
         actorId: caster.unitId,
         side: caster.side,
@@ -1254,7 +1723,9 @@ class BattleRun {
     // 不触发 on_hit/attack_landed，只记 amount=0 + immune 标记（同 dodge 的"新内容才出现"口径；
     // 置于 dodge 之后保证既有 RNG 消费序不变）。
     const dmgReduction = Math.min(1, Math.max(0,
-      this.stateModSum(target, 'dmg_taken_down') + this.ruleStatSum(target, 'dmgTakenDownPct') + this.auraSum(target, 'dmgTakenDownPct')));
+      this.stateModSum(target, 'dmg_taken_down') + this.ruleStatSum(target, 'dmgTakenDownPct') + this.auraSum(target, 'dmgTakenDownPct')
+      // 机制批③段二 舰体传奇：自身 <30% 时减伤+（缺省 0=逐字节不变）。
+      + (target.affixes.lowHpDmgTakenDown > 0 && target.maxHp > 0 && target.hp / target.maxHp < LOWHP_THRESHOLD ? target.affixes.lowHpDmgTakenDown : 0)));
     if (dmgReduction >= 1) {
       this.pushLog('damage', {
         actorId: caster.unitId,
@@ -1275,20 +1746,54 @@ class BattleRun {
     // ⑥8a 破甲（施方词条·藏）：无视目标一部分防御；armorPen=0 时防御原值（零回归）。
     // ⑦机制批① 破防（armor_down 状态·受方）：再乘 (1−幅度)；无状态时乘 1=逐字节不变。
     const armorCut = Math.min(1, Math.max(0, this.stateModSum(target, 'armor_down')));
-    const effArmor = target.armor * (1 - Math.min(1, Math.max(0, caster.affixes.armorPen))) * (1 - armorCut);
+    // 机制批③段二 空L100「对召唤源穿防」：对 roleTag=summon_source 追加穿透（缺省 0=逐字节不变）。
+    let pen = caster.affixes.armorPen
+      + (target.roleTag === 'summon_source' ? caster.affixes.armorPenVsSummonSource : 0);
+    // 机制批③段二 藏5★「对最高防无视全部防御」：目标是"当时敌方存活最高防"才追加（缺省 0=逐字节不变）。
+    if (caster.affixes.armorPenVsHighestArmor > 0
+      && !this.units.some((u) => u.side === target.side && u.alive && u.armor > target.armor)) {
+      pen += caster.affixes.armorPenVsHighestArmor;
+    }
+    // 机制批③段二 堡垒「厚装」（每 10% 当前血防御 ×(1+系数)）+ S「低血保底防御」（<30% 时 +固定值）——缺省 0=逐字节不变。
+    let baseArmor = target.armor;
+    if (target.affixes.armorPerHpDecilePct > 0 && target.maxHp > 0) {
+      baseArmor *= 1 + target.affixes.armorPerHpDecilePct * Math.floor((target.hp / target.maxHp) * 10 + 1e-9);
+    }
+    if (target.affixes.lowHpArmorFlat > 0 && target.maxHp > 0 && target.hp / target.maxHp < LOWHP_THRESHOLD) {
+      baseArmor += target.affixes.lowHpArmorFlat;
+    }
+    const effArmor = baseArmor * (1 - Math.min(1, Math.max(0, pen))) * (1 - armorCut);
+    // 机制批③段二 尾部钩用的入手前快照（满血判定/破半跨线判定）。
+    const preHp = target.hp;
+    const preHpRatio = target.maxHp > 0 ? target.hp / target.maxHp : 0;
     let raw = this.effAttack(caster) * effect.effectPower * damageScale * 100 / (100 + effArmor); // ⑨M7 溅射：damageScale 缺省 1=逐字节不变
     if (target.states.has('vulnerable')) raw *= VULNERABLE_MULT;
     // 块4b-1：定向加伤词条（施法者插件提供）。对 Boss 用 dmgVsBoss，对其余（小怪/非 Boss 目标）用 dmgVsSwarm。
     raw *= 1 + (target.isBoss ? caster.affixes.dmgVsBoss : caster.affixes.dmgVsSwarm);
     // ⑥8a 条件伤害词条族（缺省 0=不变）：对残血(影斩首)/对高血(烬贪婪)/对带盾或高防(破障弹)。
-    if (caster.affixes.dmgVsLowHp > 0 && target.maxHp > 0 && target.hp / target.maxHp < LOWHP_THRESHOLD) {
+    // 机制批③段二：影 L20/L80·烬 L40 的阈值覆盖词条（缺省 0=用全局 C6/C7=逐字节不变）。
+    const lowThresh = caster.affixes.lowHpThresholdPct > 0 ? caster.affixes.lowHpThresholdPct : LOWHP_THRESHOLD;
+    const highThresh = caster.affixes.highHpThresholdPct > 0 ? caster.affixes.highHpThresholdPct : HIGHHP_THRESHOLD;
+    if (caster.affixes.dmgVsLowHp > 0 && target.maxHp > 0 && target.hp / target.maxHp < lowThresh) {
       raw *= 1 + caster.affixes.dmgVsLowHp;
     }
-    if (caster.affixes.dmgVsHighHp > 0 && target.maxHp > 0 && target.hp / target.maxHp > HIGHHP_THRESHOLD) {
+    if (caster.affixes.dmgVsHighHp > 0 && target.maxHp > 0 && target.hp / target.maxHp > highThresh) {
       raw *= 1 + caster.affixes.dmgVsHighHp;
     }
     if (caster.affixes.dmgVsFortified > 0 && (target.shield > 0 || target.armor >= FORTIFIED_ARMOR_THRESHOLD)) {
       raw *= 1 + caster.affixes.dmgVsFortified;
+    }
+    // 机制批③段二 条件增伤族（缺省 0=不变）：对燃烧敌(贯日A)/对召唤源(空L40)/对关键单位(蛰5★处决伤)/
+    // 对满血(烬3★)/普攻专项(烈阳重火力)。
+    if (caster.affixes.dmgVsBurning > 0 && target.states.has('burn')) raw *= 1 + caster.affixes.dmgVsBurning;
+    if (caster.affixes.dmgVsSummonSource > 0 && target.roleTag === 'summon_source') raw *= 1 + caster.affixes.dmgVsSummonSource;
+    if (caster.affixes.dmgVsKeyUnit > 0 && KEY_ROLE_TAGS.has(target.roleTag)) raw *= 1 + caster.affixes.dmgVsKeyUnit;
+    if (caster.affixes.dmgVsFullHp > 0 && target.hp >= target.maxHp) raw *= 1 + caster.affixes.dmgVsFullHp;
+    if (caster.affixes.normalAtkDmgPct > 0 && effect.effectKind === 'normal_attack') raw *= 1 + caster.affixes.normalAtkDmgPct;
+    // 机制批③段二 蔽「笼罩」：被控/带减益敌受全队伤害+（团队易伤·anyCloak 门=缺省整段跳过）。
+    if (this.anyCloak && target.side !== caster.side) {
+      const cloakAmp = this.cloakAmpFor(caster.side, target);
+      if (cloakAmp > 0) raw *= 1 + cloakAmp;
     }
     // ⑦机制批① 增伤（dmg_up 状态 + M3 叠层增伤轴 + 源「专注」对锁定目标专项轴）：和 0 → 不乘（逐字节不变）。
     const dmgUp = this.stateModSum(caster, 'dmg_up') + this.ruleStatSum(caster, 'dmgUpPct')
@@ -1308,9 +1813,27 @@ class BattleRun {
     // 块4b-2：暴击词条。仅 critRate>0 才掷随机数（&& 短路）——保证无暴击单位不消费 RNG、不扰动既有并列裁决序列（零回归）。
     //   命中暴击 → 伤害 ×(1+暴击伤害)。暴击倍率/概率为占位语义，精确值第二块。
     // ⑦机制批①：暴击率/暴伤 buff 状态并入判定与倍率（无状态时和 0=判定阈值与倍率逐字节不变）。
-    const critRate = caster.affixes.critRate + this.stateModSum(caster, 'crit_rate_up');
-    const crit = critRate > 0 && this.rng.next() < critRate;
-    if (crit) raw *= 1 + caster.affixes.critDmg + this.stateModSum(caster, 'crit_dmg_up');
+    let critRate = caster.affixes.critRate + this.stateModSum(caster, 'crit_rate_up');
+    // 机制批③段二 条件暴击族（缺省 0=判定阈值逐字节不变）：对残血(影L100)/对高血(烬L100)/对带盾高防(破障传奇)/
+    // 技能专项(过载)/全队对减益敌(蔽5★·anyTeamCrit 门)。
+    if (caster.affixes.critRateVsLowHp > 0 && target.maxHp > 0 && target.hp / target.maxHp < lowThresh) critRate += caster.affixes.critRateVsLowHp;
+    if (caster.affixes.critRateVsHighHp > 0 && target.maxHp > 0 && target.hp / target.maxHp > highThresh) critRate += caster.affixes.critRateVsHighHp;
+    if (caster.affixes.critRateVsFortified > 0 && (target.shield > 0 || target.armor >= FORTIFIED_ARMOR_THRESHOLD)) critRate += caster.affixes.critRateVsFortified;
+    if (isSkill && caster.affixes.skillCritRate > 0) critRate += caster.affixes.skillCritRate;
+    if (this.anyTeamCrit && target.side !== caster.side && this.targetHasDebuff(target)) {
+      critRate += this.teamCritAmpFor(caster.side);
+    }
+    let crit = critRate > 0 && this.rng.next() < critRate;
+    // 机制批③段二 必暴闩锁（不掷随机=新内容才生效）：警戒传奇"闪避后下一击必暴"·源5★"专注满层技能对锁定必暴"。
+    if (caster.guaranteedCritNext) {
+      crit = true;
+      caster.guaranteedCritNext = false;
+    } else if (!crit && isSkill && caster.affixes.focusMaxGuaranteedCrit > 0
+      && caster.lockedTargetId === target.unitId && this.focusAtMax(caster)) {
+      crit = true;
+    }
+    if (crit) raw *= 1 + caster.affixes.critDmg + this.stateModSum(caster, 'crit_dmg_up')
+      + (target.isBoss ? caster.affixes.critDmgVsBoss : 0) + (isSkill ? caster.affixes.skillCritDmgPct : 0);
     const dmg = Math.max(1, Math.round(raw));
 
     // ⑨机制批② M4 分摊：受方 share 态把 sharePct 转给承接者（援护链邻格互摊/山岳SS/沧3★指定者）·自己只承剩余；
@@ -1323,6 +1846,16 @@ class BattleRun {
         const shareTotal = Math.round(dmg * pct);
         receiverDmg = dmg - shareTotal;
         this.distributeShare(sharers, shareTotal, caster);
+      }
+    } else if (this.anyShareGuard && this.underHardControl(target)) {
+      // 机制批③段二 沧3★「友军被硬控时分摊」：受方无 share 态且正被硬控 → 同阵营持词条者替她分摊（anyShareGuard 门）。
+      const guardian = this.units.find((u) => u.side === target.side && u !== target && u.alive && u.affixes.shareForControlledPct > 0);
+      if (guardian) {
+        const shareTotal = Math.round(dmg * Math.min(1, Math.max(0, guardian.affixes.shareForControlledPct)));
+        if (shareTotal > 0) {
+          receiverDmg = dmg - shareTotal;
+          this.distributeShare([guardian], shareTotal, caster);
+        }
       }
     }
     let hpDmg = receiverDmg;
@@ -1339,12 +1872,50 @@ class BattleRun {
         target.states.delete('shield');
         target.shieldBrokenSinceTrigger = true; // ⑥8a：护盾被伤害打破（自然到期不算）
         hpDmg = Math.max(0, Math.round(overflowShieldPts / shieldMult));
+        // 机制批③段二 破甲传奇「破盾降防」：本舰打破敌护盾 → 给其上破防（armor_down 0.2·3s·词条驱动合成行）。
+        if (caster.affixes.armorDownOnShieldBreak > 0) {
+          this.applyState(caster, target, 'armor_down', 3, {
+            ...GACHA_ROW_BASE, rowId: 'eff_plg_shieldbreak_shred', stateTag: 'armor_down',
+            stateAmount: caster.affixes.armorDownOnShieldBreak, durationSec: 3, note: '破甲传奇（引擎内合成行）',
+          });
+        }
+      }
+    }
+    // 机制批③段二 致死预结算族（直接命中路径·缺省无词条=零回归）——顺序：自保（保命插件）→ 他保（苏5★替挡）。
+    if (hpDmg >= target.hp && target.hp > 0) {
+      if (target.affixes.lethalGuardOnce > 0 && !target.lethalGuardUsed) {
+        // 保命插件：免死留 1 血（每场 1 次）；传奇：随后短暂无敌（dmg_taken_down 1.0=整发免伤路径）。
+        target.lethalGuardUsed = true;
+        hpDmg = target.hp - 1;
+        this.pushLog('state_apply', { actorId: target.unitId, side: target.side, targetIds: [target.unitId], effectRef: 'lethal_guard', note: 'survive_at_1' });
+        if (target.affixes.lethalGuardImmuneSec > 0) {
+          this.applyState(target, target, 'dmg_taken_down', target.affixes.lethalGuardImmuneSec, LETHAL_IMMUNE_ROW);
+        }
+      } else if (this.anyLethalSave) {
+        // 苏5★「替挡致命」：同阵营持词条者替目标承受该击（每场 1 次·直伤子结算=先啃她的盾）。
+        const savior = this.units.find((u) => u.side === target.side && u !== target && u.alive
+          && u.affixes.saveAllyLethalOnce > 0 && !u.lethalSaveUsed);
+        if (savior) {
+          savior.lethalSaveUsed = true;
+          this.applySubHit(caster, savior, hpDmg, effect.rowId, 'lethal_guard_ally');
+          hpDmg = 0;
+        }
       }
     }
     if (hpDmg > 0) target.hp -= hpDmg;
     if (target.hp <= 0) {
       target.hp = 0;
       target.alive = false;
+    }
+    // 机制批③段二 堡垒A「被打积能」：要塞态（no_attack）期间受击计数（结束反击按次数放大）。
+    if (hpDmg > 0) {
+      const fort = target.states.get('no_attack');
+      if (fort) fort.hitCounter = (fort.hitCounter ?? 0) + 1;
+    }
+    // 机制批③段二 山岳「磁暴盾」（伤害转化族）：自身实际扣血×系数 → 护盾均分全队（累加式·上限=shieldCapMaxHpMult·
+    // 溢出×overflowShieldToHealPct 转全队回血=山岳A）。缺省词条 0=零行为。
+    if (target.affixes.dmgToTeamShieldPct > 0 && hpDmg > 0) {
+      this.convertDamageToTeamShield(target, hpDmg);
     }
     this.pushLog('damage', {
       actorId: caster.unitId,
@@ -1357,9 +1928,31 @@ class BattleRun {
       hpAfter: target.hp,
       shieldAfter: target.shield,
     });
+    // 机制批③段二 暴击事件族（缺省词条 0=零行为）：火力传奇溅射相邻/瞄准传奇补刀/爆裂传奇自加速。
+    if (crit) {
+      if (caster.affixes.critSplashPct > 0) {
+        const adjacents = sortBy(
+          this.units.filter((u) => u.side === target.side && u.alive && u !== target && this.isAdjacentCell(target, u)),
+          (u) => [Math.abs(u.row - target.row) + Math.abs(u.col - target.col), u.unitId],
+        );
+        if (adjacents.length > 0) {
+          this.applySubHit(caster, adjacents[0], Math.max(1, Math.round(dmg * caster.affixes.critSplashPct)), effect.rowId, 'crit_splash');
+        }
+      }
+      if (caster.affixes.critFollowupAtkPct > 0 && target.alive) {
+        this.applySubHit(caster, target, Math.max(1, Math.round(caster.attack * caster.affixes.critFollowupAtkPct)), effect.rowId, 'crit_followup');
+      }
+      if (caster.affixes.critHasteAmount > 0) {
+        this.applyState(caster, caster, 'atk_speed_up', 3, {
+          ...GACHA_ROW_BASE, rowId: 'eff_plg_crit_haste', stateTag: 'atk_speed_up',
+          stateAmount: caster.affixes.critHasteAmount, durationSec: 3, note: '爆裂传奇（引擎内合成行）',
+        });
+      }
+    }
     // ⑥8a 吸血（施方词条·嗜血弹）：按实际扣血量回吸；lifesteal=0 或未掉血时零行为零日志。
-    // 机制批③：扭蛋"吸血"限时态并入（无该态时和 0=判定与数值逐字节不变）。
-    const lifestealPct = caster.affixes.lifesteal + this.stateModSum(caster, 'lifesteal_up');
+    // 机制批③：扭蛋"吸血"限时态并入（无该态时和 0=判定与数值逐字节不变）；段二：嗜血传奇=暴击时本次吸血翻倍。
+    const lifestealPct = (caster.affixes.lifesteal + this.stateModSum(caster, 'lifesteal_up'))
+      * (crit && caster.affixes.critLifestealDouble > 0 ? 2 : 1);
     if (lifestealPct > 0 && hpDmg > 0 && caster.alive && caster.hp < caster.maxHp) {
       const healed = Math.min(caster.maxHp - caster.hp, Math.max(1, Math.round(hpDmg * lifestealPct)));
       caster.hp += healed;
@@ -1384,14 +1977,22 @@ class BattleRun {
     if (!target.alive) {
       caster.killedSinceTrigger = true;
       caster.killedRolesSinceTrigger.push(target.roleTag); // ⑦机制批①：击杀对象过滤用（内部采集·无行为分支）
+      // 机制批③段二 翎5★：本次击杀对象是否为"当时敌方存活最高攻目标"（含其本身·内部采集无行为分支）。
+      if (!this.units.some((u) => u.side === target.side && u.alive && u.attack > target.attack)) {
+        caster.killedHighestAtkSinceTrigger = true;
+      }
       this.deadCount[target.side] += 1;
-      this.accrueStackEvent(caster, 'kill'); // ⑦M3：贪吃星/燎3★
+      this.accrueStackEvent(caster, 'kill', target); // ⑦M3：贪吃星/燎3★
       this.accrueChargeKills(caster); // 机制批③：蓄力攒层（群蜂饱和·无 charge 触发=空循环零行为）
     } else {
       target.hitSinceTrigger = true;
       // ⑦M3：受击事件累积——污染体狂暴（被任意伤害命中）/ 铁壁「坚甲」（被技能伤害命中=真源"重击"口径）。
-      this.accrueStackEvent(target, 'was_hit');
-      if (isSkill) this.accrueStackEvent(target, 'was_hit_by_skill');
+      this.accrueStackEvent(target, 'was_hit', caster);
+      if (isSkill) this.accrueStackEvent(target, 'was_hit_by_skill', caster);
+    }
+    // 机制批③段二 岳能力「事件知识」：命中"对方后排"的攻击者记时间戳（anyEventKnowledge 门=缺省零写入）。
+    if (this.anyEventKnowledge && this.isBacklineOfSide(target)) {
+      caster.lastHitBacklineAt = this.time;
     }
     // ⑨机制批② M4 反弹（受方 reflect 态·岩反震/岳荆甲/铁壁A/磐石A/砺5★）：把"受到的伤害"一部分直扣攻击者。
     // 攻击者=caster 天然在手（在 dealDamage 内结算·非走 on_hit·避开 §5"攻击者上下文缺"深坑）；
@@ -1435,6 +2036,144 @@ class BattleRun {
         this.applySubHit(caster, fattest, Math.max(1, Math.round(dmg * caster.affixes.dmgSplitFattestPct)), effect.rowId, 'resonance_split');
       }
     }
+    // ===== 机制批③段二 命中后钩族（全部词条缺省 0=零回归·结算序=§16d 记档：削血→破半→碎甲→处决→引爆→余震→集火反射→嘲讽反弹）=====
+    // 烬3★「削血」：命中满血目标（入手前快照）追加削其当前生命×系数（直伤子结算）。
+    if (caster.affixes.shaveCurHpPct > 0 && preHp >= target.maxHp && target.alive && target.hp > 0) {
+      this.applySubHit(caster, target, Math.max(1, Math.round(target.hp * caster.affixes.shaveCurHpPct)), effect.rowId, 'hp_shave');
+    }
+    // 烬5★顺路升级「破半」：这一击把目标从半血以上打入半血及以下 → 追加一次结算（演出=爆点放大无飘字·总谱⑦）。
+    if (caster.affixes.halfBreakAtkPct > 0 && target.alive && target.maxHp > 0
+      && preHpRatio > 0.5 && target.hp / target.maxHp <= 0.5) {
+      this.applySubHit(caster, target, Math.max(1, Math.round(caster.attack * caster.affixes.halfBreakAtkPct)), effect.rowId, 'half_break');
+    }
+    // 藏5★顺路升级「装甲碎裂」：命中"当时敌方存活最高防目标"概率碎甲（易伤 2s=全队对其增伤·真源口径）。
+    if (caster.affixes.shatterChance > 0 && target.alive
+      && !this.units.some((u) => u.side === target.side && u.alive && u.armor > target.armor)
+      && this.rng.next() < caster.affixes.shatterChance) {
+      this.applyState(caster, target, 'vulnerable', SHATTER_ROW.durationSec, SHATTER_ROW);
+    }
+    // 藏3★「击中高防叠破防」：命中"当时敌方存活最高防目标"概率叠 armor_down（0.3·可叠2·5s·词条合成行）。
+    if (caster.affixes.shredOnHitChance > 0 && target.alive
+      && !this.units.some((u) => u.side === target.side && u.alive && u.armor > target.armor)
+      && this.rng.next() < caster.affixes.shredOnHitChance) {
+      this.applyState(caster, target, 'armor_down', 5, {
+        ...GACHA_ROW_BASE, rowId: 'eff_pil_cang20_shred', stateTag: 'armor_down',
+        stateAmount: 0.3, stateMaxStacks: 2, durationSec: 5, note: '藏3★破防叠（引擎内合成行）',
+      });
+    }
+    // 影5★「处决」：对 <阈值 非 Boss 直接即死（无视护盾/护甲·kill 记账归本舰）；
+    // Boss 侧=首次跌破阈值后本舰下一次命中追加最大生命×系数（每场每 Boss 一次·§16d 数值域定稿）。
+    if (caster.affixes.executeLowHpPct > 0 && target.alive && target.maxHp > 0
+      && target.hp / target.maxHp < caster.affixes.executeLowHpPct) {
+      if (!target.isBoss) {
+        const remain = target.hp;
+        target.hp = 0;
+        target.alive = false;
+        this.pushLog('damage', {
+          actorId: caster.unitId, side: caster.side, targetIds: [target.unitId],
+          effectRef: effect.rowId, amount: remain, note: 'execute', hpAfter: 0, shieldAfter: target.shield,
+        });
+        caster.killedSinceTrigger = true;
+        caster.killedRolesSinceTrigger.push(target.roleTag);
+        this.deadCount[target.side] += 1;
+        this.accrueStackEvent(caster, 'kill', target);
+        this.accrueChargeKills(caster);
+      } else if (caster.affixes.executeBossMaxHpPct > 0) {
+        const done = target.bossExecuteDoneBy ?? (target.bossExecuteDoneBy = new Set<string>());
+        if (!done.has(caster.unitId)) {
+          done.add(caster.unitId);
+          this.applySubHit(caster, target, Math.max(1, Math.round(target.maxHp * caster.affixes.executeBossMaxHpPct)), effect.rowId, 'execute_boss');
+        }
+      }
+    }
+    // 引爆插件（技能命中）：目标相邻敌人吃 攻×系数 额外伤（传奇=十字全收·缺省=最近相邻 1 个）。
+    if (isSkill && caster.affixes.skillDetonateAtkPct > 0) {
+      const adj = this.units.filter((u) => u.side === target.side && u.alive && u !== target && this.isAdjacentCell(target, u));
+      const picks = caster.affixes.skillDetonateCross > 0
+        ? adj.filter((u) => Math.abs(u.row - target.row) + Math.abs(u.col - target.col) === 1)
+        : sortBy(adj, (u) => [Math.abs(u.row - target.row) + Math.abs(u.col - target.col), u.unitId]).slice(0, 1);
+      for (const v of picks) {
+        this.applySubHit(caster, v, Math.max(1, Math.round(caster.attack * caster.affixes.skillDetonateAtkPct)), effect.rowId, 'detonate');
+      }
+    }
+    // 余震插件（技能命中）：目标 1.5s 后吃延迟追加伤 攻×系数（单体·目标死亡=空爆）。
+    if (isSkill && caster.affixes.aftershockAtkPct > 0 && target.alive) {
+      this.pendingBlasts.push({
+        atTime: roundTime(this.time + AFTERSHOCK_DELAY_SEC), casterId: caster.unitId, casterSide: caster.side,
+        atkSnapshot: caster.attack, kind: 'single', effectRef: effect.rowId, targetId: target.unitId,
+        powerMult: caster.affixes.aftershockAtkPct, targetSide: target.side,
+      });
+    }
+    // 岳5★「反射全部攻击者」：维护近期攻击者履历（窗口内）·本次受伤×系数均分反射（直伤子结算·记账归受方）。
+    if (target.affixes.reflectAllRecentPct > 0 && target.alive && dmg > 0) {
+      const ra = target.recentAttackers ?? (target.recentAttackers = []);
+      const kept = ra.filter((e) => this.time - e.at <= BACKLINE_ATTACKER_WINDOW_SEC + 1e-9 && e.id !== caster.unitId);
+      kept.push({ id: caster.unitId, at: this.time });
+      target.recentAttackers = kept;
+      const attackers = kept
+        .map((e) => this.units.find((u) => u.unitId === e.id))
+        .filter((u): u is RtUnit => !!u && u.alive);
+      if (attackers.length > 0) {
+        const per = Math.max(1, Math.round((dmg * target.affixes.reflectAllRecentPct) / attackers.length));
+        for (const a of attackers) this.applySubHit(target, a, per, 'reflect_all', 'reflect_all');
+      }
+    }
+    // 砺5★「按血差反弹给嘲讽目标」：反弹比例=系数×(已损血比例/0.5) 封顶系数（血越低反弹越肥·≤50% 血满额）。
+    if (target.affixes.tauntReflectPct > 0 && target.alive && target.maxHp > 0 && dmg > 0) {
+      const lostRatio = 1 - target.hp / target.maxHp;
+      const pct = Math.min(target.affixes.tauntReflectPct, target.affixes.tauntReflectPct * (lostRatio / 0.5));
+      const victim = this.units.find((u) => u.side !== target.side && u.alive
+        && u.states.get('taunt')?.tauntedBy === target.unitId);
+      if (victim && pct > 0) {
+        this.applySubHit(target, victim, Math.max(1, Math.round(dmg * pct)), 'taunt_reflect', 'taunt_reflect');
+      }
+    }
+  }
+
+  /** 机制批③段二 蔽「笼罩」总幅度：攻方阵营存在笼罩者且目标带减益 → 基础幅度(+Boss 门)+每种减益叠加（取最强笼罩者）。 */
+  private cloakAmpFor(attackerSide: S7AutoBattleSide, target: RtUnit): number {
+    let best = 0;
+    for (const u of this.units) {
+      if (u.side !== attackerSide || !u.alive || u.affixes.debuffedTakenAmpTeam <= 0) continue;
+      if (target.isBoss && u.affixes.debuffedTakenIncludeBoss <= 0) continue;
+      const debuffCount = DEBUFF_TAGS.filter((d) => target.states.has(d)).length;
+      if (debuffCount === 0) continue;
+      const amp = u.affixes.debuffedTakenAmpTeam + u.affixes.debuffedTakenPerDebuff * Math.max(0, debuffCount - 1);
+      if (amp > best) best = amp;
+    }
+    return best;
+  }
+
+  /** 机制批③段二 蔽5★：攻方阵营最强"全队对减益敌暴击+"幅度。 */
+  private teamCritAmpFor(attackerSide: S7AutoBattleSide): number {
+    let best = 0;
+    for (const u of this.units) {
+      if (u.side === attackerSide && u.alive && u.affixes.teamCritVsDebuffed > best) best = u.affixes.teamCritVsDebuffed;
+    }
+    return best;
+  }
+
+  private targetHasDebuff(target: RtUnit): boolean {
+    return DEBUFF_TAGS.some((d) => target.states.has(d));
+  }
+
+  /** 机制批③段二 源5★：专注（dmgVsLockedPct 轴）任一规则攒满层。 */
+  private focusAtMax(unit: RtUnit): boolean {
+    for (const r of unit.stackRules) {
+      if (r.rule.stat === 'dmgVsLockedPct' && r.rule.maxStacks !== undefined && this.ruleStacksOf(unit, r) >= r.rule.maxStacks) return true;
+    }
+    return false;
+  }
+
+  /** 机制批③段二：单位是否处于硬控（短路/晕眩/沉默·沧3★"被硬控友军"判据）。 */
+  private underHardControl(unit: RtUnit): boolean {
+    for (const tag of HARD_CONTROL_TAGS) if (unit.states.has(tag)) return true;
+    return false;
+  }
+
+  /** 机制批③段二 岳「事件知识」：受害者是否是其阵营的"后排"（玩家侧 col≤1·敌侧 col≥1；多格单位按锚点）。 */
+  private isBacklineOfSide(victim: RtUnit): boolean {
+    return victim.side === 'player' ? victim.col <= 1 : victim.col >= 1;
   }
 
   /** 机制批③ 直伤子结算（引力阱追伤/共鸣音叉分流）：先啃盾 1:1 再扣血（周期伤口径）、不过甲不暴击、
@@ -1476,16 +2215,32 @@ class BattleRun {
     // ⑥8a 护盾强度词条（已知小旋钮①·晨曦S质变/苏回光护盾侧/磐石专属）+ 技能效果量词条（增效插件）：
     // 全部缺省 0 → 与旧公式逐字节一致。
     const isSkill = effect.effectKind === 'ultimate' || effect.effectKind === 'core';
-    const powerMult = (1 + caster.affixes.shieldPower) * (isSkill ? 1 + caster.affixes.effectAmp : 1);
-    const amount = Math.round(Math.max(
-      Math.round(target.maxHp * SHIELD_HP_FRACTION),
-      Math.round(caster.attack * effect.effectPower),
-    ) * powerMult);
+    let powerMult = (1 + caster.affixes.shieldPower) * (isSkill ? 1 + caster.affixes.effectAmp : 1);
+    // 机制批③段二 苏L40/L80「残血盾量+」：对残血友军护盾量放大（缺省 0=逐字节不变）。
+    if (caster.affixes.shieldVsLowHp > 0 && target.maxHp > 0 && target.hp / target.maxHp < LOWHP_THRESHOLD) {
+      powerMult *= 1 + caster.affixes.shieldVsLowHp;
+    }
+    // 机制批③段二 沛「润泽」：覆盖越多每份越强（护盾侧·缺省 0=逐字节不变）。
+    if (caster.affixes.coverageAmpPerAlly > 0 && target.side === caster.side) {
+      powerMult *= 1 + this.coverageCountWith(caster, target) * caster.affixes.coverageAmpPerAlly;
+    }
+    // 机制批③段二 shieldMaxHpPct：护盾量改按"目标最大生命×系数"（护盾传奇/沛3★·缺省缺席=原公式逐字节不变）。
+    const baseAmount = effect.shieldMaxHpPct !== undefined && effect.shieldMaxHpPct > 0
+      ? Math.round(target.maxHp * effect.shieldMaxHpPct)
+      : Math.max(
+        Math.round(target.maxHp * SHIELD_HP_FRACTION),
+        Math.round(caster.attack * effect.effectPower),
+      );
+    const amount = Math.round(baseAmount * powerMult);
     // 同名状态不叠层：护盾量取较大值，刷新持续时间。
     target.shield = Math.max(target.shield, amount);
     // ⑥8a 持久力场词条：技能型持续效果时长 ×(1+durationPct)（普攻护盾不吃·真源"技能的持续型效果"口径）。
-    const duration = (effect.durationSec > 0 ? effect.durationSec : 1) * (isSkill ? 1 + caster.affixes.durationPct : 1);
-    target.states.set('shield', { tag: 'shield', expireAt: this.time + duration });
+    let duration = (effect.durationSec > 0 ? effect.durationSec : 1) * (isSkill ? 1 + caster.affixes.durationPct : 1);
+    // 机制批③段二 沛5★：覆盖全队时辅助持续再翻倍档（护盾侧）。
+    if (caster.affixes.durationPctFullCoverage > 0 && target.side === caster.side && this.allAlliesCoveredBy(caster)) {
+      duration *= 1 + caster.affixes.durationPctFullCoverage;
+    }
+    target.states.set('shield', { tag: 'shield', expireAt: this.time + duration, sourceUnitId: caster.unitId });
     this.pushLog('state_apply', {
       actorId: caster.unitId,
       side: caster.side,
@@ -1522,12 +2277,66 @@ class BattleRun {
       hpAfter: target.hp,
       shieldAfter: target.shield,
     });
+    // ===== 机制批③段二 治疗附属钩族（全部词条缺省 0=零回归）=====
+    // 苏L100/医修传奇「溢疗转盾」：溢出量×系数转护盾（同名护盾取较大值·6s 数值域定）。
+    const overflow = amount - healed;
+    if (caster.affixes.overhealToShieldPct > 0 && overflow > 0) {
+      const gain = Math.max(1, Math.round(overflow * caster.affixes.overhealToShieldPct));
+      target.shield = Math.max(target.shield, gain);
+      target.states.set('shield', { tag: 'shield', expireAt: this.time + 6, sourceUnitId: caster.unitId });
+      this.pushLog('state_apply', {
+        actorId: caster.unitId, side: caster.side, targetIds: [target.unitId],
+        effectRef: effect.rowId, stateTag: 'shield', amount: gain, note: 'overheal_to_shield',
+        hpAfter: target.hp, shieldAfter: target.shield,
+      });
+    }
+    // 苏3★「治满血给盾」：这次治疗把目标治到满血 → 获目标最大生命×系数护盾（6s）。
+    if (caster.affixes.healFullShieldMaxHpPct > 0 && healed > 0 && target.hp >= target.maxHp) {
+      const gain = Math.max(1, Math.round(target.maxHp * caster.affixes.healFullShieldMaxHpPct));
+      target.shield = Math.max(target.shield, gain);
+      target.states.set('shield', { tag: 'shield', expireAt: this.time + 6, sourceUnitId: caster.unitId });
+      this.pushLog('state_apply', {
+        actorId: caster.unitId, side: caster.side, targetIds: [target.unitId],
+        effectRef: effect.rowId, stateTag: 'shield', amount: gain, note: 'full_heal_shield',
+        hpAfter: target.hp, shieldAfter: target.shield,
+      });
+    }
+    // 霖「涤荡」（驾驶员层注入=词条通道）：治疗附驱散 N 个（效果行 dispelCount 之外相加）·L40 开硬控·
+    // L80/5★ 驱散成功附回血 攻×系数·3★ 净化后短时免疫新减益。
+    if (caster.affixes.healDispelCount > 0) {
+      const removed = this.applyDispel(caster, target, {
+        ...effect,
+        dispelCount: Math.floor(caster.affixes.healDispelCount),
+        dispelHardControl: caster.affixes.healDispelHardControl > 0,
+      }, Math.floor(caster.affixes.healDispelCount));
+      if (removed > 0) {
+        if (caster.affixes.healOnDispelAtkPct > 0 && target.alive && target.hp < target.maxHp) {
+          const extra = Math.max(1, Math.round(caster.attack * caster.affixes.healOnDispelAtkPct));
+          const b2 = target.hp;
+          target.hp = Math.min(target.maxHp, target.hp + extra);
+          this.pushLog('heal', {
+            actorId: caster.unitId, side: caster.side, targetIds: [target.unitId],
+            effectRef: effect.rowId, effectType: effect.effectType, amount: target.hp - b2, note: 'dispel_heal',
+            hpAfter: target.hp, shieldAfter: target.shield,
+          });
+        }
+        if (caster.affixes.afterDispelImmuneSec > 0) {
+          this.applyState(caster, target, 'debuff_immune', caster.affixes.afterDispelImmuneSec, AFTER_DISPEL_IMMUNE_ROW);
+        }
+      }
+    }
   }
 
   private applyState(caster: RtUnit, target: RtUnit, tag: S7BattleStateTag, durationSec: number, effect: S7BattleEffectParam): void {
     if (tag === 'none' || !target.alive) return;
     // ⑥8a 免控状态（守护铃/山岳不动）：持有 control_immune 期间硬控（短路/晕眩/沉默）施加直接落空。
     if (HARD_CONTROL_TAGS.includes(tag) && target.states.has('control_immune')) return;
+    // 机制批③段二 韧性传奇「免疫第一次硬控」：每场一次闩锁（缺省词条 0=零行为）。
+    if (HARD_CONTROL_TAGS.includes(tag) && target.affixes.firstControlImmune > 0 && !target.firstControlImmuneUsed) {
+      target.firstControlImmuneUsed = true;
+      this.pushLog('state_apply', { actorId: target.unitId, side: target.side, targetIds: [target.unitId], effectRef: 'first_control_immune', note: 'blocked:' + tag });
+      return;
+    }
     // ⑨机制批② M5：减益免疫（霖3★/净化模块传奇）——持有 debuff_immune 期间一切新减益（含硬控·真源"免疫新减益"）落空。
     if (DEBUFF_STATE_TAGS.includes(tag) && target.states.has('debuff_immune')) return;
     let duration = durationSec > 0 ? durationSec : 1;
@@ -1558,19 +2367,34 @@ class BattleRun {
     // ⑦机制批① M1/M2/M3 框架状态分支（旧 tag 一律走下方原路径=逐字节不变）。
     // 纸面规则（本批钉死·记数值细表机制批①日志章）：同 tag 重复施加=可叠(+1层至上限)+时长刷新，
     // 不可叠(上限1)=只刷新；每层幅度/上限/到期动作以最新一次施加为准；周期态结算节拍从最新施加重新起拍。
+    // 机制批③段二 沛5★「覆盖全队时辅助持续翻倍档」：施加增益/护盾且当前全队被本舰覆盖 → 时长再 ×(1+词条)。
+    if (caster.affixes.durationPctFullCoverage > 0 && target.side === caster.side
+      && BUFF_MOD_TAGS.has(tag) && this.allAlliesCoveredBy(caster)) {
+      duration *= 1 + caster.affixes.durationPctFullCoverage;
+    }
     if (MOD_STATE_TAGS.has(tag) || PERIODIC_STATE_TAGS.has(tag)) {
       const maxStacks = Math.max(1, Math.floor(effect.stateMaxStacks ?? 1));
       const prev = target.states.get(tag);
       const stacks = prev ? Math.min(maxStacks, (prev.stacks ?? 1) + 1) : 1;
+      // 机制批③段二 状态幅度增效消费点（澈「增幅」effectAmp 语义修正落点 + 沛「润泽」覆盖缩放）：
+      // 本舰对友军施加的增益态幅度 ×(1+buffAmpPct)×(1+覆盖数×coverageAmpPerAlly)（缺省 0=逐字节不变）。
+      let amountPer = effect.stateAmount ?? 0;
+      if (target.side === caster.side && BUFF_MOD_TAGS.has(tag)
+        && (caster.affixes.buffAmpPct > 0 || caster.affixes.coverageAmpPerAlly > 0)) {
+        const cov = caster.affixes.coverageAmpPerAlly > 0 ? this.coverageCountWith(caster, target) : 0;
+        amountPer *= (1 + caster.affixes.buffAmpPct) * (1 + cov * caster.affixes.coverageAmpPerAlly);
+      }
       const inst: RtStateInst = {
         tag,
         expireAt: this.time + duration,
-        amountPerStack: effect.stateAmount ?? 0,
+        amountPerStack: amountPer,
         stacks,
         maxStacks,
         expireAction: effect.stateExpireAction ?? 'clear',
         durationSec: duration,
       };
+      inst.sourceUnitId = caster.unitId; // 机制批③段二：覆盖计数/增益转移用元数据（周期态下方仍覆写=同值）
+      if (effect.expireEffectRef !== undefined) inst.expireEffectRef = effect.expireEffectRef;
       if (PERIODIC_STATE_TAGS.has(tag)) {
         // M2：结算量=施加瞬间快照（施加者基础攻/目标最大血/固定值三通道相加）——之后攻击变化不追溯。
         inst.tickAmount = (effect.stateTickAtkPct ?? 0) * caster.attack
@@ -1584,6 +2408,17 @@ class BattleRun {
         inst.sourceSide = caster.side;
         inst.srcEffectRef = effect.rowId;
       }
+      // 机制批③段二 迷雾L100「侵蚀叠满附沉默」：叠到上限的瞬间对同目标追加施放（到顶期间不重复·掉层再满可再触发）。
+      if (effect.onMaxStacksApplyRef !== undefined && maxStacks > 1) {
+        const wasFullFired = prev !== undefined && (prev.stacks ?? 1) >= maxStacks && prev.onFullFired === true;
+        if (stacks >= maxStacks && !wasFullFired) {
+          inst.onFullFired = true;
+          const row = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', effect.onMaxStacksApplyRef);
+          if (row && row.stateTag !== 'none') this.applyState(caster, target, row.stateTag, row.durationSec, row);
+        } else if (wasFullFired) {
+          inst.onFullFired = true;
+        }
+      }
       target.states.set(tag, inst);
       this.pushLog('state_apply', {
         actorId: caster.unitId,
@@ -1593,10 +2428,24 @@ class BattleRun {
         stateTag: tag,
         ...(stacks > 1 ? { stacks } : {}), // 仅叠层时带字段：单层施加日志保持既有形状
       });
+      // 机制批③段二 澈L100「增益附暴击」/澈3★「主C暴伤+」：本舰对友军施加增益时附带小增益（rider 行自身跳过=防递归）。
+      if (caster.affixes.buffRiderCritRate > 0 && target.side === caster.side
+        && BUFF_MOD_TAGS.has(tag) && effect !== BUFF_RIDER_CRIT_ROW && tag !== 'crit_rate_up') {
+        this.applyState(caster, target, 'crit_rate_up', GACHA_DURATION_SEC,
+          { ...BUFF_RIDER_CRIT_ROW, stateAmount: caster.affixes.buffRiderCritRate });
+      }
+      if (caster.affixes.buffRiderCritDmg > 0 && target.side === caster.side
+        && BUFF_MOD_TAGS.has(tag) && tag !== 'crit_rate_up' && tag !== 'crit_dmg_up') {
+        this.applyState(caster, target, 'crit_dmg_up', GACHA_DURATION_SEC,
+          { ...GACHA_ROW_BASE, rowId: 'eff_pil_che_s3_critdmg', stateTag: 'crit_dmg_up',
+            stateAmount: caster.affixes.buffRiderCritDmg, note: '澈3★主C暴伤（引擎内合成行）' });
+      }
       return;
     }
     // 同名状态不叠层，只刷新持续时间。⑨M4/M5 可选标记按 tag 附加（旧 tag=纯 {tag,expireAt}=逐字节不变）。
     const simple: RtStateInst = { tag, expireAt: this.time + duration };
+    simple.sourceUnitId = caster.unitId; // 机制批③段二：覆盖计数/增益转移用元数据（行为不读则无副作用）
+    if (effect.expireEffectRef !== undefined) simple.expireEffectRef = effect.expireEffectRef; // 堡垒要塞结束反击
     if (effect.applyUndispellable) simple.undispellable = true; // ⑨M5 守护铃「守护铃光」不可驱散
     if (tag === 'taunt') simple.tauntedBy = caster.unitId; // ⑨M4 记嘲讽施加者=被嘲讽者强制打它
     if (tag === 'reflect') { // ⑨M4 反弹参数施加瞬间快照（岩反震/岳荆甲/铁壁A/磐石A/砺5★）
@@ -1671,6 +2520,12 @@ class BattleRun {
         normalEffectRef: source.normalEffectRef,
         targetingTag: source.targetingTag,
       } : undefined,
+      // 机制批③段二 召唤物属性继承（巡 L20/L80 攻+·L100 血+）+召唤覆写（巡能力打后排/哨卫L60 嘲讽诱饵/巡3★溅射弹）：
+      // 全部来自召唤源词条/覆写快照（缺省 0/undefined=零回归）。
+      statScale: source && (source.affixes.summonAtkPct > 0 || source.affixes.summonHpPct > 0)
+        ? { atkPct: source.affixes.summonAtkPct, hpPct: source.affixes.summonHpPct }
+        : undefined,
+      override: source?.summonOverride,
     };
     const created: RtUnit[] = [];
     for (let i = 0; i < count; i += 1) {
@@ -1734,6 +2589,11 @@ class BattleRun {
         return sortBy(candidates, (u) => [u.maxHp > 0 && u.hp / u.maxHp < LOWHP_THRESHOLD ? 0 : 1, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
       case 'debuffed_first': // 蔽：已被控/带减益的优先
         return sortBy(candidates, (u) => [DEBUFF_TAGS.some((d) => u.states.has(d)) ? 0 : 1, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
+      case 'backline_attacker_first': // 机制批③段二 岳：优先打"窗口内攻击过我方后排"的敌人（事件知识目标·无嫌犯=最近）
+        return sortBy(candidates, (u) => [
+          u.lastHitBacklineAt !== undefined && this.time - u.lastHitBacklineAt <= BACKLINE_ATTACKER_WINDOW_SEC + 1e-9 ? 0 : 1,
+          this.dist(caster, u), u.unitId,
+        ]).slice(0, maxTargets);
       case 'first_column_first': // 骁：严格头排（敌侧 col 越小越靠前）
         return sortBy(candidates, (u) => [u.col, this.dist(caster, u), u.unitId]).slice(0, maxTargets);
       case 'lock_until_dead': { // 源：锁定一个打到死再换（锁存于本单位·死后换最近）
@@ -1790,7 +2650,18 @@ class BattleRun {
       if (!gs || (gs.guardReadyAt ?? 0) > this.time + 1e-9) continue; // 无守护态 / 冷却中
       const protects = gs.guardProtect === 'all' || this.isMoreBackline(target, g); // backline=被护者比守护者更靠后
       if (!protects) continue;
-      gs.guardReadyAt = this.time + (gs.guardCooldownSec ?? 0); // 进替挡冷却
+      // 机制批③段二 岩5★「守护双目标」：每个冷却窗替挡次数=1+guardExtraCharges（缺省 0=单次=旧行为逐动作一致）。
+      gs.guardChargesLeft = gs.guardChargesLeft ?? (1 + Math.max(0, Math.floor(g.affixes.guardExtraCharges)));
+      gs.guardChargesLeft -= 1;
+      if (gs.guardChargesLeft <= 0) {
+        gs.guardReadyAt = this.time + (gs.guardCooldownSec ?? 0); // 次数用尽才进替挡冷却
+        gs.guardChargesLeft = undefined;
+      }
+      // 机制批③段二 岩3★「守护触发自减伤」：替挡瞬间给自己短暂减伤（缺省词条 0=零行为）。
+      if (g.affixes.guardSelfDmgDownPct > 0) {
+        this.applyState(g, g, 'dmg_taken_down', GUARD_SELF_BUFF_ROW.durationSec,
+          { ...GUARD_SELF_BUFF_ROW, stateAmount: g.affixes.guardSelfDmgDownPct });
+      }
       return g;
     }
     return target;
@@ -1983,6 +2854,9 @@ class BattleRun {
   ): RtUnit {
     const cv = derived ?? stat; // 战斗数值：有装配结果用装配后的，否则用基线 stat（无装配时零行为变化）。
     const cf = summonMeta?.copyFrom; // 机制批③ 全息镜：分身三围快照覆盖（缺省 undefined=零行为变化）
+    // 机制批③段二 召唤继承/覆写（缺省 undefined=零行为变化）：属性放大与目标/普攻变体。
+    const ss = summonMeta?.statScale;
+    const so = summonMeta?.override;
     const unitId = side === 'player' ? `player_${slotRef}` : `enemy_${pad4(this.enemySeq++)}`;
     const triggers: RtTrigger[] = [];
     // 机制批③ 蓄力攒层（群蜂「饱和打击」）：单位行带 ultimateChargeKills>0 → 大招改"击杀攒层满放"模型（替代 CD 触发）；
@@ -2039,10 +2913,10 @@ class BattleRun {
       col,
       sizeRows: cv.sizeRows,
       sizeCols: cv.sizeCols,
-      maxHp: cf ? cf.maxHp : cv.maxHp,
-      hp: cf ? cf.maxHp : cv.maxHp,
-      attack: cf ? cf.attack : cv.attack,
-      baseAttack: cf ? cf.attack : cv.attack, // ⑨M9 贪吃星累积基数
+      maxHp: Math.round((cf ? cf.maxHp : cv.maxHp) * (ss ? 1 + ss.hpPct : 1)),
+      hp: Math.round((cf ? cf.maxHp : cv.maxHp) * (ss ? 1 + ss.hpPct : 1)),
+      attack: Math.round((cf ? cf.attack : cv.attack) * (ss ? 1 + ss.atkPct : 1)),
+      baseAttack: Math.round((cf ? cf.attack : cv.attack) * (ss ? 1 + ss.atkPct : 1)), // ⑨M9 贪吃星累积基数
       armor: cf ? cf.armor : cv.armor,
       attackIntervalSec: cf ? cf.attackIntervalSec : cv.attackIntervalSec,
       attackRangeCells: cf ? cf.attackRangeCells : cv.attackRangeCells,
@@ -2052,10 +2926,10 @@ class BattleRun {
       downLogged: false,
       isBoss: stat.targetType === 'boss',
       bossNodeId: stat.targetType === 'boss' ? stat.unitRef : null,
-      normalEffectRef: cf ? cf.normalEffectRef : cv.normalEffectRef,
+      normalEffectRef: so?.normalEffectRef ?? (cf ? cf.normalEffectRef : cv.normalEffectRef),
       ultimateEffectRef: cv.ultimateEffectRef,
       coreEffectRef: cv.coreEffectRef,
-      targetingTag: cf ? cf.targetingTag : cv.targetingTag,
+      targetingTag: so?.targetingTag ?? (cf ? cf.targetingTag : cv.targetingTag),
       coreTriggered: false,
       triggers,
       hitSinceTrigger: false,
@@ -2077,6 +2951,21 @@ class BattleRun {
       despawnWithSource: summonMeta ? summonMeta.despawnWithSource : false,
       splitShotCount: 0, // 机制批③ 计数复释：普攻出手计数（残影）
     };
+    // 机制批③段二 冷却传奇「开局首技 CD 减半」：只压带首发延迟（initialCd>0）的触发（开局即放型天然满足=语义注）。
+    if (unit.affixes.firstSkillCdHalf > 0) {
+      for (const t of triggers) {
+        if (t.block.on === 'cd' && t.nextFireAt > 0) t.nextFireAt = roundTime(t.nextFireAt / 2);
+      }
+    }
+    // 机制批③段二 召唤覆写快照（本舰未来召唤物消费·derived 无则缺省 undefined=零行为）。
+    if (derived?.summonOverride) unit.summonOverride = derived.summonOverride;
+    // 机制批③段二 存在门旗（缺省词条 0=旗保持 false=各扫描整段跳过）。
+    if (unit.affixes.debuffedTakenAmpTeam > 0) this.anyCloak = true;
+    if (unit.affixes.teamCritVsDebuffed > 0) this.anyTeamCrit = true;
+    if (unit.affixes.saveAllyLethalOnce > 0) this.anyLethalSave = true;
+    if (unit.affixes.shareForControlledPct > 0) this.anyShareGuard = true;
+    if (unit.affixes.buffTransferOnDeath > 0) this.anyBuffTransfer = true;
+    if (unit.targetingTag === 'backline_attacker_first') this.anyEventKnowledge = true;
     this.occupy(unit);
     this.units.push(unit);
     return unit;
@@ -2123,6 +3012,13 @@ class BattleRun {
   private countAliveEnemies(): number {
     let n = 0;
     for (const u of this.units) if (u.side === 'enemy' && u.alive) n += 1;
+    return n;
+  }
+
+  /** 机制批③段二：某阵营存活单位数（群蜂「弹巢」条件门用·敌我通用）。 */
+  private countAliveOf(side: S7AutoBattleSide): number {
+    let n = 0;
+    for (const u of this.units) if (u.side === side && u.alive) n += 1;
     return n;
   }
 
@@ -2180,14 +3076,72 @@ class BattleRun {
     }
   }
 
-  /** ⑦M3：事件累积（伤害结算/触发处直接调·即时生效于下一次结算读取；无规则单位零循环）。 */
-  private accrueStackEvent(unit: RtUnit, event: 'attack_landed' | 'was_hit' | 'was_hit_by_skill' | 'kill'): void {
+  /** ⑦M3：事件累积（伤害结算/触发处直接调·即时生效于下一次结算读取；无规则单位零循环）。
+   *  机制批③段二：+叠满触发钩（onFullEffectRef·炎3★致命一击/铁壁S坚甲回血）——层数攒到 maxStacks 的
+   *  瞬间释放效果（onFullScope=target 以 ctx 为锚/self 对自己）；onFullReset 缺省 true=触发后清零重攒。 */
+  private accrueStackEvent(unit: RtUnit, event: 'attack_landed' | 'was_hit' | 'was_hit_by_skill' | 'kill', ctx?: RtUnit): void {
     for (const r of unit.stackRules) {
       if (r.rule.on !== event) continue;
       if (r.rule.breakOn === 'target_switch') this.syncTrackedTarget(unit, r);
+      const before = r.stacks;
       r.stacks = Math.min(r.rule.maxStacks ?? Infinity, r.stacks + 1);
       r.lastEventAt = this.time;
+      if (r.rule.onFullEffectRef !== undefined && r.rule.maxStacks !== undefined
+        && before < r.rule.maxStacks && r.stacks >= r.rule.maxStacks
+        && (r.rule.onFullMaxFires === undefined || (r.onFullFires ?? 0) < r.rule.onFullMaxFires)) {
+        r.onFullFires = (r.onFullFires ?? 0) + 1;
+        const eff = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', r.rule.onFullEffectRef);
+        if (eff) {
+          const anchor = r.rule.onFullScope === 'target' ? (ctx ?? unit) : unit;
+          this.castAnchoredEffect(unit, eff, anchor);
+        }
+        if (r.rule.onFullReset !== false) r.stacks = 0;
+      }
     }
+  }
+
+  /** 机制批③段二 叠满触发的锚定释放：伤害行（含 maxHpPctDamage 比例伤）以锚为首目标、区域行以锚点格扩十字/3×3；
+   *  治疗/状态行按行自身 targetingTag 常规选目标（self_team 等）。 */
+  private castAnchoredEffect(caster: RtUnit, effect: S7BattleEffectParam, anchor: RtUnit): void {
+    if (DAMAGE_TYPES.has(effect.effectType) && anchor.side !== caster.side) {
+      let targets: RtUnit[] = [anchor];
+      if (effect.targetingTag === 'cross_area' || effect.targetingTag === 'block_area') {
+        const kind = effect.targetingTag === 'cross_area' ? 'cross' : 'block';
+        const candidates = this.units.filter((u) => u.side === anchor.side && u.alive && u.hp > 0);
+        targets = this.orderAreaAround(anchor, candidates, effect.maxTargets, kind);
+      }
+      this.pushLog('ultimate_cast', {
+        actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType,
+        targetIds: targets.map((t) => t.unitId), note: 'on_full',
+      });
+      this.applyEffectToTargets(caster, effect, targets);
+      return;
+    }
+    this.castLogged(caster, effect, 'ultimate_cast');
+  }
+
+  /** 以指定单位为区域中心的收集（叠满触发/延迟爆点共用·与 orderArea 同口径但主目标外部钦定）。 */
+  private orderAreaAround(primary: RtUnit, candidates: RtUnit[], maxTargets: number, kind: 'cross' | 'block'): RtUnit[] {
+    const pr = primary.row;
+    const pc = primary.col;
+    const cells: Array<[number, number]> = kind === 'cross'
+      ? [[pr, pc], [pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]]
+      : [
+        [pr - 1, pc - 1], [pr - 1, pc], [pr - 1, pc + 1],
+        [pr, pc - 1], [pr, pc], [pr, pc + 1],
+        [pr + 1, pc - 1], [pr + 1, pc], [pr + 1, pc + 1],
+      ];
+    const inArea = (u: RtUnit): boolean => {
+      for (const [r, c] of cells) {
+        if (r >= u.row && r < u.row + u.sizeRows && c >= u.col && c < u.col + u.sizeCols) return true;
+      }
+      return false;
+    };
+    const others = sortBy(
+      candidates.filter((u) => u !== primary && inArea(u)),
+      (u) => [Math.abs(u.row - pr) + Math.abs(u.col - pc), u.unitId],
+    );
+    return [primary, ...others].slice(0, Math.max(1, maxTargets));
   }
 
   /** ⑨机制批② M6：unit 从所有存活光环源收到的某轴总幅度（在场即生效·退场撤销·动态重算）；无光环=0（anyAura 门=行为不变）。 */

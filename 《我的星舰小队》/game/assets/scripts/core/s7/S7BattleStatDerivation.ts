@@ -52,6 +52,8 @@ export interface S7DerivedUnit {
   triggers: S7TriggerBlock[];
   /** ⑦机制批① 叠层规则积木（引擎消费；无积木=空数组=行为不变）。 */
   stackRules: S7StackRuleParam[];
+  /** 机制批③ 召唤覆写（巡能力/哨卫L60/巡3★·后者覆盖前者；undefined=召唤物按其行原样=行为不变）。 */
+  summonOverride?: { targetingTag?: string; normalEffectRef?: string };
 }
 
 const STAT_KEYS: S7StatKey[] = [
@@ -66,6 +68,26 @@ const AFFIX_KEYS: S7AffixKey[] = [
   'durationPct', 'summonCapBonus',
   // 机制批③ 星核词条（缺省 0=行为不变）：引力阱追伤两键/共鸣音叉分流/幸运扭蛋路由开关
   'skillHitCurHpPct', 'skillHitCapAtkMult', 'dmgSplitFattestPct', 'luckyOnCast',
+  // 机制批③段二 · 条件/专项词条族（缺省 0=行为不变·语义见 S7BattleEffectBlock 注释）
+  'normalAtkDmgPct', 'skillCritRate', 'skillCritDmgPct',
+  'critRateVsLowHp', 'critRateVsHighHp', 'critRateVsFortified', 'critDmgVsBoss',
+  'dmgVsBurning', 'dmgVsSummonSource', 'armorPenVsSummonSource', 'dmgVsKeyUnit', 'dmgVsFullHp',
+  'shaveCurHpPct', 'halfBreakAtkPct', 'shatterChance',
+  'lowHpThresholdPct', 'highHpThresholdPct', 'executeLowHpPct', 'executeBossMaxHpPct',
+  'saveAllyLethalOnce', 'lethalGuardOnce', 'lethalGuardImmuneSec', 'critAfterDodge',
+  'overhealToShieldPct', 'healFullShieldMaxHpPct', 'shieldVsLowHp',
+  'buffAmpPct', 'buffRiderCritRate', 'buffTransferOnDeath', 'coverageAmpPerAlly', 'durationPctFullCoverage',
+  'debuffedTakenAmpTeam', 'debuffedTakenIncludeBoss', 'debuffedTakenPerDebuff', 'teamCritVsDebuffed',
+  'healDispelCount', 'healDispelHardControl', 'healOnDispelAtkPct', 'afterDispelImmuneSec',
+  'reflectAllRecentPct', 'tauntReflectPct', 'guardExtraCharges', 'guardSelfDmgDownPct',
+  'shareForControlledPct', 'focusMaxGuaranteedCrit', 'extraNormalHitWhileAtkSpeedUp',
+  'normalSplashPct', 'normalSplashTargets', 'chargedNormalPct', 'chargedNormalSplashPct',
+  'skillRepeatChance', 'skillDetonateAtkPct', 'skillDetonateCross', 'skillCdPerTargetSec', 'skillCdFullBonusSec',
+  'aftershockAtkPct', 'lowHpDmgTakenDown', 'summonAtkPct', 'summonHpPct', 'summonSyncFire',
+  'armorPerHpDecilePct', 'lowHpArmorFlat', 'dmgToTeamShieldPct', 'shieldCapMaxHpMult', 'overflowShieldToHealPct',
+  'normalAreaMinEnemies', 'normalAreaAlways',
+  'armorDownOnShieldBreak', 'firstControlImmune', 'critSplashPct', 'critFollowupAtkPct', 'critHasteAmount',
+  'critLifestealDouble', 'firstSkillCdHalf', 'skillAreaUp', 'buffRiderCritDmg', 'shredOnHitChance', 'armorPenVsHighestArmor',
 ];
 
 function round6(x: number): number {
@@ -102,6 +124,7 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
   let coreEffectRef = base.coreEffectRef;
   const triggers: S7TriggerBlock[] = [];
   const stackRules: S7StackRuleParam[] = [];
+  let summonOverride: { targetingTag?: string; normalEffectRef?: string } | undefined;
 
   for (const b of blocks) {
     switch (b.kind) {
@@ -137,6 +160,10 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
       case 'stack':
         stackRules.push(b.rule);
         break;
+      case 'summon_override':
+        // 机制批③：多块合并（后者字段级覆盖前者）——巡能力(targeting)+巡3★(溅射弹变体行)可同时在场。
+        summonOverride = { ...(summonOverride ?? {}), ...(b.targetingTag ? { targetingTag: b.targetingTag } : {}), ...(b.normalEffectRef ? { normalEffectRef: b.normalEffectRef } : {}) };
+        break;
       default: {
         const _exhaustive: never = b;
         throw new Error(`未知积木类型: ${JSON.stringify(_exhaustive)}`);
@@ -162,5 +189,6 @@ export function deriveUnit(base: S7DeriveBaseStat, blocks: readonly S7EffectBloc
     coreEffectRef,
     triggers,
     stackRules,
+    ...(summonOverride ? { summonOverride } : {}),
   };
 }

@@ -85,7 +85,8 @@ export type S7AutoBattleLogType =
   | 'boss_phase'
   | 'battle_end'
   | 'rank_swap' // 机制批③ 曲率星门：开局整排对调（targetIds=被移动单位·note=对调的两列）——演出层开场星门动画锚点
-  | 'core_gacha'; // 机制批③ 幸运扭蛋：本次放技能随机到的强化（note=crit/area/echo/lifesteal/cd）——演出层扭蛋弹出锚点
+  | 'core_gacha' // 机制批③ 幸运扭蛋：本次放技能随机到的强化（note=crit/area/echo/lifesteal/cd）——演出层扭蛋弹出锚点
+  | 'revive'; // 机制批③段二 甘霖SS：复活（targetIds=被复活单位·amount=复活血量）——演出层复活光柱锚点
 
 /**
  * 单条事件日志。

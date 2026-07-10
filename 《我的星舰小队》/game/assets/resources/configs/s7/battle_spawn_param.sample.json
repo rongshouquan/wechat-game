@@ -776,7 +776,7 @@
     ],
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 12,
-    "note": "enc_n030 第1波：bu_boss_n030 x1（星盗头目放大·2x2 锚点 r0c2）"
+    "note": "enc_n030 第1波：bu_boss_n030 x1（星盗大副=星盗队长蓄力机制放大·2x2 锚点 r0c2）"
   },
   {
     "schemaVersion": "s7-0.1.0",

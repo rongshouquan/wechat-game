@@ -901,6 +901,8 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     'purify', // ⑨机制批② M5：纯净化/驱散
     'accumulate_attack', // ⑨机制批② M9：运行时属性累积（贪吃星）
     'rank_swap', // 机制批③：曲率星门开局整排对调
+    'revive', // 机制批③段二：甘霖SS复活
+    'extend_state', // 机制批③段二：骁5★延长自身状态
   ];
   // 伤害行 effectType 集（splashPct/bounceTargets/chainOnKillMax 等"仅伤害行"字段门共用·镜像 ConfigValidatorS7.ts）。
   const DAMAGE_EFFECT_TYPES = ['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'];
@@ -1071,7 +1073,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     const dur = num(row.durationSec); if (dur === null || dur < 0) fail('battle_effect_param', id, 'durationSec 必须 >= 0');
     if (typeof row.targetingTag !== 'string' || !ID_PATTERN.test(row.targetingTag)) fail('battle_effect_param', id, 'targetingTag 不合法');
     if (!BATTLE_STATE_TAGS.includes(row.stateTag)) fail('battle_effect_param', id, 'stateTag 非法');
-    else if (row.stateTag !== 'none' && !(dur > 0)) fail('battle_effect_param', id, '状态效果 durationSec 必须为正数');
+    else if (row.stateTag !== 'none' && row.effectType !== 'extend_state' && !(dur > 0)) fail('battle_effect_param', id, '状态效果 durationSec 必须为正数'); // extend_state=引用态非施加态（机制批③段二）
     if (row.summonUnitRef !== 'none') {
       if (!unitIdSet.has(row.summonUnitRef)) fail('battle_effect_param', id, `summonUnitRef "${row.summonUnitRef}" 必须为 none 或有效 battle_unit_stat_param.rowId`);
       if (!(dur > 0)) fail('battle_effect_param', id, '召唤效果 durationSec 必须为正数');
@@ -1096,7 +1098,7 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     const isPeriodicTag = PERIODIC_STATE_TAGS.includes(row.stateTag);
     const isFrameworkTag = isModTag || isPeriodicTag;
     if (row.effectType === 'apply_state' && row.stateTag === 'none') fail('battle_effect_param', id, 'apply_state 效果要求 stateTag ≠ none');
-    if (isModTag) {
+    if (isModTag && row.effectType !== 'extend_state') { // extend_state 只引用 tag 不施加（机制批③段二）
       const amt = num(row.stateAmount);
       if (amt === null || !(amt > 0) || !Number.isFinite(amt)) fail('battle_effect_param', id, `修正状态 ${row.stateTag} 要求 stateAmount 为正数（方向在 tag 名里）`);
     } else if (row.stateAmount !== undefined) {
@@ -1275,6 +1277,44 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     }
     if (row.effectType === 'rank_swap' && row.effectKind !== 'core') {
       fail('battle_effect_param', id, 'rank_swap（曲率星门）仅允许 effectKind=core（星核质变专属）');
+    }
+    // ---- 机制批③段二 可选字段门（镜像 ConfigValidatorS7.ts）----
+    if (row.maxHpPctDamage !== undefined) {
+      const mp = num(row.maxHpPctDamage);
+      if (mp === null || mp <= 0 || mp > 1) fail('battle_effect_param', id, 'maxHpPctDamage（可选）必须在 (0,1]');
+      else if (!DAMAGE_EFFECT_TYPES.includes(row.effectType)) fail('battle_effect_param', id, 'maxHpPctDamage（可选）仅允许配给伤害行');
+    }
+    if (row.maxHpPctBossFactor !== undefined) {
+      const bf = num(row.maxHpPctBossFactor);
+      if (bf === null || bf <= 0 || bf > 1) fail('battle_effect_param', id, 'maxHpPctBossFactor（可选）必须在 (0,1]');
+      else if (row.maxHpPctDamage === undefined) fail('battle_effect_param', id, 'maxHpPctBossFactor 需要 maxHpPctDamage 同时在场');
+    }
+    if (row.onMaxStacksApplyRef !== undefined) {
+      if (typeof row.onMaxStacksApplyRef !== 'string' || !effectIdSet.has(row.onMaxStacksApplyRef)) fail('battle_effect_param', id, 'onMaxStacksApplyRef 必须指向有效效果行');
+      else if ((row.stateMaxStacks ?? 1) < 2) fail('battle_effect_param', id, 'onMaxStacksApplyRef 需要 stateMaxStacks ≥ 2（叠满触发）');
+    }
+    if (row.expireEffectRef !== undefined && (typeof row.expireEffectRef !== 'string' || !effectIdSet.has(row.expireEffectRef))) {
+      fail('battle_effect_param', id, 'expireEffectRef 必须指向有效效果行');
+    }
+    if ((row.delayedBlastRef !== undefined) !== (row.delayedBlastSec !== undefined)) {
+      fail('battle_effect_param', id, 'delayedBlastRef/delayedBlastSec 必须成对出现');
+    } else if (row.delayedBlastRef !== undefined) {
+      const ds = num(row.delayedBlastSec);
+      if (typeof row.delayedBlastRef !== 'string' || !effectIdSet.has(row.delayedBlastRef)) fail('battle_effect_param', id, 'delayedBlastRef 必须指向有效效果行');
+      if (ds === null || ds <= 0) fail('battle_effect_param', id, 'delayedBlastSec 必须为正数');
+    }
+    if (row.reviveHpPct !== undefined) {
+      const rv = num(row.reviveHpPct);
+      if (rv === null || rv <= 0 || rv > 1) fail('battle_effect_param', id, 'reviveHpPct（可选）必须在 (0,1]');
+      else if (row.effectType !== 'revive') fail('battle_effect_param', id, 'reviveHpPct（可选）仅允许配给 effectType=revive');
+    }
+    if (row.effectType === 'extend_state' && (row.stateTag === 'none' || row.stateTag === undefined)) {
+      fail('battle_effect_param', id, 'extend_state 要求 stateTag 指定要延长的状态');
+    }
+    if (row.shieldMaxHpPct !== undefined) {
+      const sp = num(row.shieldMaxHpPct);
+      if (sp === null || sp <= 0 || sp > 1) fail('battle_effect_param', id, 'shieldMaxHpPct（可选）必须在 (0,1]');
+      else if (!['shield', 'shield_bubble'].includes(row.effectType)) fail('battle_effect_param', id, 'shieldMaxHpPct（可选）仅允许配给护盾行');
     }
   }
 

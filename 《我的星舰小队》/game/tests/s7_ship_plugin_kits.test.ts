@@ -216,9 +216,25 @@ describe('⑩A3-接线门扫描 · 插件 30 件三档逐点（真源保形）',
     expect(purifyLeg).toHaveLength(2); // 净化+免疫双触发
     expect(purifyLeg.every((t) => t.cdSec === 4.8)).toBe(true); // 传奇更勤（8→4.8=−40%）
   });
-  it('基础无载体件=空积木挂牌（散射/充能/过载/连发/引爆/循环/余震/保命）', () => {
-    for (const id of ['plg21', 'plg22', 'plg13', 'plg18', 'plg25', 'plg27', 'plg28', 'plg30']) {
-      expect(pluginBlocks(id, 'weapon', 'legendary'), `${id} 应挂牌返回空`).toHaveLength(0);
-    }
+  // 机制批③段二重定基（旧→新→为什么对）：旧断言=八件基础挂牌返回空（⑩A3 如实交回态守卫）；
+  // 本批词条注入通道建成、八件全部接真 → 守卫翻面为"逐件返回真积木"（挂牌态解除·防回退空壳）。
+  it('原八挂牌件（散射/充能/过载/连发/引爆/循环/余震/保命）=机制批③已接线（逐件词条形状）', () => {
+    const affixOf = (id: string, key: string, q: 'fine' | 'superior' | 'legendary' = 'legendary') =>
+      (pluginBlocks(id, 'weapon', q).find((b) => b.kind === 'affix' && (b as { affix?: string }).affix === key) as { value: number } | undefined);
+    expect(affixOf('plg21', 'normalSplashPct')!.value).toBe(0.35); // 散射：普攻溅射 35%
+    expect(affixOf('plg21', 'normalSplashTargets')!.value).toBe(4); // 传奇=十字 4 格
+    expect(affixOf('plg21', 'normalSplashTargets', 'fine')!.value).toBe(1); // 基础=相邻 1 格
+    expect(affixOf('plg22', 'chargedNormalPct')!.value).toBe(0.70); // 充能：满蓄 +70%
+    expect(affixOf('plg22', 'chargedNormalSplashPct')!.value).toBe(0.5); // 传奇满蓄溅射
+    expect(affixOf('plg13', 'skillCritRate')!.value).toBe(0.45); // 过载：技暴专项
+    expect(affixOf('plg13', 'skillCritDmgPct')!.value).toBe(0.25); // 传奇技暴伤
+    expect(affixOf('plg18', 'skillRepeatChance')!.value).toBe(0.28); // 连发：技能概率连放
+    expect(affixOf('plg25', 'skillDetonateAtkPct')!.value).toBe(1.0); // 引爆：攻×1.0
+    expect(affixOf('plg25', 'skillDetonateCross')!.value).toBe(1); // 传奇十字
+    expect(affixOf('plg27', 'skillCdPerTargetSec')!.value).toBe(0.6); // 循环：每目标 0.6s
+    expect(affixOf('plg27', 'skillCdFullBonusSec')!.value).toBe(1.5); // 传奇满目标 1.5s
+    expect(affixOf('plg28', 'aftershockAtkPct')!.value).toBe(1.4); // 余震传奇 ×1.4
+    expect(affixOf('plg30', 'lethalGuardOnce')!.value).toBe(1); // 保命：免死留 1 血
+    expect(affixOf('plg30', 'lethalGuardImmuneSec')!.value).toBe(1.5); // 传奇短暂无敌
   });
 });

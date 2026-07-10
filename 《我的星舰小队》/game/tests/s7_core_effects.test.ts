@@ -144,10 +144,16 @@ describe('⑩A2-战斗级手推 · 守护铃/超新星/小太阳/星鲸（开场
     expect(nova.length).toBeGreaterThan(0);
     expect(Math.min(...nova.map((d) => d.t))).toBeGreaterThanOrEqual(14);
   });
-  it('小太阳：CD16 周期 3×3·单发=125×3.6×0.8=360', async () => {
+  // 机制批③段二重定基（旧→新→为什么对）：旧=第一拍"灼烧折进爆伤 ×3.6 一次性"（360=125×3.6×0.8）；
+  // 本批完整版接真（§15 全语义）：3×3 灼烧 3s（攻×20%/s·无视防御）→ 锚点格延迟 3s 爆 ×3.0（直伤子结算·快照）。
+  it('小太阳完整版：灼烧 25/s×3 跳 + 3s 后爆 375（125×3.0 快照直伤）', async () => {
     const r = await runWith(rig({ enemyA: { maxHp: 100000000 } }), 'core08');
-    const sun = dmgEvents(r.log).filter((d) => d.source === 'player_p1c1' && d.amount === 360);
-    expect(sun.length).toBeGreaterThan(0);
+    const burn = r.log.filter((e) => e.type === 'damage' && e.effectType === 'burn' && e.amount === 25); // 125×0.2=25·无视防御
+    expect(burn.length).toBeGreaterThanOrEqual(3);
+    const blast = r.log.filter((e) => e.type === 'damage' && e.effectRef === 'eff_core_sun_blast' && e.amount === 375);
+    expect(blast.length).toBeGreaterThan(0);
+    const firstApply = r.log.find((e) => e.type === 'state_apply' && e.stateTag === 'burn');
+    expect((blast[0].timeSec ?? 0) - (firstApply?.timeSec ?? 0)).toBeCloseTo(3, 5); // 灼烧先上身·3s 后爆（延迟结算）
   });
   it('星鲸：开场召出 bu_s7_whale 入我方（限时 20s 生命周期包）', async () => {
     const r = await runWith(rig({ enemyA: { maxHp: 100000000 } }), 'core09');

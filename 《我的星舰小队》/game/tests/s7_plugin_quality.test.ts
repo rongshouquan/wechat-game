@@ -91,12 +91,14 @@ describe('块4a 解析器 pluginBlocks：品质缩放 + 传奇额外效果', () 
     expect(v('legendary')).toBeGreaterThan(v('superior'));
   });
 
-  it('传奇附加=可接线件才有（⑩A3 重定基：真源逐件制·灭群传奇=击杀触发、火力传奇=溅射挂牌无附加）', () => {
-    // 旧断言=槽位占位口径'传奇必附 affix'；真源三档制下传奇附加按件而定：
-    // plg19 灭群传奇=on_kill 缩CD触发件 ✓；plg02 火力传奇附加(暴击溅射)=M7 挂牌→无附加积木=正确。
+  // 机制批③段二重定基（旧→新→为什么对）：旧断言含"火力传奇无附加积木"（暴击溅射挂牌态）；
+  // 本批暴击事件族接真 → 火力传奇=critSplashPct 词条积木（挂牌态解除）。
+  it('传奇附加=逐件制（灭群传奇=击杀触发·火力传奇=暴击溅射词条=批③接真）', () => {
     expect(pluginBlocks('plg19', 'weapon', 'fine').some((x) => x.kind === 'trigger')).toBe(false);
     expect(pluginBlocks('plg19', 'weapon', 'legendary').some((x) => x.kind === 'trigger')).toBe(true);
-    expect(pluginBlocks('plg02', 'weapon', 'legendary').some((x) => x.kind === 'affix')).toBe(false);
+    expect(pluginBlocks('plg02', 'weapon', 'fine').some((x) => x.kind === 'affix')).toBe(false); // 基础档=纯 attack 修正无词条
+    expect(pluginBlocks('plg02', 'weapon', 'legendary')
+      .some((x) => x.kind === 'affix' && (x as { affix?: string }).affix === 'critSplashPct')).toBe(true);
   });
 
   it('冷却=skillHaste 词条、急速=负 pct 间隔修正、护盾=受伤词条（⑩A3 重定基：槽位占位→真源词条）', () => {

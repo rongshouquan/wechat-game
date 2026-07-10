@@ -101,6 +101,8 @@ const S7_BATTLE_EFFECT_TYPES = [
   'purify', // ⑨机制批② M5：纯净化/驱散（无伤无治·dispelCount 移除减益/增益）
   'accumulate_attack', // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 永久 +攻）
   'rank_swap', // 机制批③：曲率星门开局整排对调（只动 1×1·Boss 多格行跳过·全场一次）
+  'revive', // 机制批③段二：甘霖SS复活（复活最近阵亡友军·每场一次·effectPower>0 顺带全队回血）
+  'extend_state', // 机制批③段二：骁5★延长自身状态（stateTag 指定·effectPower=秒数）
 ];
 /** 伤害行 effectType 集（splashPct/bounceTargets/chainOnKillMax 等"仅伤害行"字段门共用·与引擎 DAMAGE_TYPES 对齐）。 */
 const S7_DAMAGE_EFFECT_TYPES = ['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'];
@@ -1411,7 +1413,7 @@ function validateBattle(
     if (typeof row.targetingTag !== 'string' || !ID_PATTERN.test(row.targetingTag)) errors.push({ table: 'battle_effect_param', id, message: 'targetingTag 不合法' });
     const stTag = row.stateTag;
     if (typeof stTag !== 'string' || !S7_BATTLE_STATE_TAGS.includes(stTag)) errors.push({ table: 'battle_effect_param', id, message: 'stateTag 非法' });
-    else if (stTag !== 'none' && (dur === null || dur <= 0)) errors.push({ table: 'battle_effect_param', id, message: '状态效果 durationSec 必须为正数' });
+    else if (stTag !== 'none' && row.effectType !== 'extend_state' && (dur === null || dur <= 0)) errors.push({ table: 'battle_effect_param', id, message: '状态效果 durationSec 必须为正数' }); // extend_state=引用态非施加态（机制批③段二）
     const summon = row.summonUnitRef;
     if (summon !== 'none') {
       if (typeof summon !== 'string' || !unitIds.has(summon)) errors.push({ table: 'battle_effect_param', id, message: `summonUnitRef "${String(summon)}" 必须为 none 或有效 battle_unit_stat_param.rowId` });
@@ -1445,7 +1447,7 @@ function validateBattle(
     if (row.effectType === 'apply_state' && stTag === 'none') {
       errors.push({ table: 'battle_effect_param', id, message: 'apply_state 效果要求 stateTag ≠ none' });
     }
-    if (isModTag) {
+    if (isModTag && row.effectType !== 'extend_state') { // extend_state 只引用 tag 不施加（机制批③段二）
       const amt = num(row.stateAmount);
       if (amt === null || !(amt > 0) || !Number.isFinite(amt)) errors.push({ table: 'battle_effect_param', id, message: `修正状态 ${String(stTag)} 要求 stateAmount 为正数（方向在 tag 名里）` });
     } else if (row.stateAmount !== undefined) {
@@ -1627,6 +1629,44 @@ function validateBattle(
     }
     if (row.effectType === 'rank_swap' && row.effectKind !== 'core') {
       errors.push({ table: 'battle_effect_param', id, message: 'rank_swap（曲率星门）仅允许 effectKind=core（星核质变专属）' });
+    }
+    // ---- 机制批③段二 可选字段门 ----
+    if (row.maxHpPctDamage !== undefined) {
+      const mp = num(row.maxHpPctDamage);
+      if (mp === null || mp <= 0 || mp > 1) errors.push({ table: 'battle_effect_param', id, message: 'maxHpPctDamage（可选）必须在 (0,1]' });
+      else if (!S7_DAMAGE_EFFECT_TYPES.includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'maxHpPctDamage（可选）仅允许配给伤害行' });
+    }
+    if (row.maxHpPctBossFactor !== undefined) {
+      const bf = num(row.maxHpPctBossFactor);
+      if (bf === null || bf <= 0 || bf > 1) errors.push({ table: 'battle_effect_param', id, message: 'maxHpPctBossFactor（可选）必须在 (0,1]' });
+      else if (row.maxHpPctDamage === undefined) errors.push({ table: 'battle_effect_param', id, message: 'maxHpPctBossFactor 需要 maxHpPctDamage 同时在场' });
+    }
+    if (row.onMaxStacksApplyRef !== undefined) {
+      if (typeof row.onMaxStacksApplyRef !== 'string' || !effectIds.has(row.onMaxStacksApplyRef)) errors.push({ table: 'battle_effect_param', id, message: 'onMaxStacksApplyRef 必须指向有效效果行' });
+      else if ((num(row.stateMaxStacks) ?? 1) < 2) errors.push({ table: 'battle_effect_param', id, message: 'onMaxStacksApplyRef 需要 stateMaxStacks ≥ 2（叠满触发）' });
+    }
+    if (row.expireEffectRef !== undefined && (typeof row.expireEffectRef !== 'string' || !effectIds.has(row.expireEffectRef))) {
+      errors.push({ table: 'battle_effect_param', id, message: 'expireEffectRef 必须指向有效效果行' });
+    }
+    if ((row.delayedBlastRef !== undefined) !== (row.delayedBlastSec !== undefined)) {
+      errors.push({ table: 'battle_effect_param', id, message: 'delayedBlastRef/delayedBlastSec 必须成对出现' });
+    } else if (row.delayedBlastRef !== undefined) {
+      const ds = num(row.delayedBlastSec);
+      if (typeof row.delayedBlastRef !== 'string' || !effectIds.has(row.delayedBlastRef)) errors.push({ table: 'battle_effect_param', id, message: 'delayedBlastRef 必须指向有效效果行' });
+      if (ds === null || ds <= 0) errors.push({ table: 'battle_effect_param', id, message: 'delayedBlastSec 必须为正数' });
+    }
+    if (row.reviveHpPct !== undefined) {
+      const rv = num(row.reviveHpPct);
+      if (rv === null || rv <= 0 || rv > 1) errors.push({ table: 'battle_effect_param', id, message: 'reviveHpPct（可选）必须在 (0,1]' });
+      else if (row.effectType !== 'revive') errors.push({ table: 'battle_effect_param', id, message: 'reviveHpPct（可选）仅允许配给 effectType=revive' });
+    }
+    if (row.effectType === 'extend_state' && (row.stateTag === 'none' || row.stateTag === undefined)) {
+      errors.push({ table: 'battle_effect_param', id, message: 'extend_state 要求 stateTag 指定要延长的状态' });
+    }
+    if (row.shieldMaxHpPct !== undefined) {
+      const sp = num(row.shieldMaxHpPct);
+      if (sp === null || sp <= 0 || sp > 1) errors.push({ table: 'battle_effect_param', id, message: 'shieldMaxHpPct（可选）必须在 (0,1]' });
+      else if (!['shield', 'shield_bubble'].includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'shieldMaxHpPct（可选）仅允许配给护盾行' });
     }
   }
 

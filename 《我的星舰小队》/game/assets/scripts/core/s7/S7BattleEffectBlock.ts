@@ -55,7 +55,86 @@ export type S7AffixKey =
   | 'skillHitCurHpPct'
   | 'skillHitCapAtkMult'
   | 'dmgSplitFattestPct'
-  | 'luckyOnCast';
+  | 'luckyOnCast'
+  // 机制批③段二 · 条件/专项词条族（缺省 0=逐字节不变；消费点=dealDamage/addShield/heal/castLogged 各注明）：
+  | 'normalAtkDmgPct' // 烈阳「重火力」：普攻专项伤害%（普攻行才吃）
+  | 'skillCritRate' // 过载插件：技能暴击率专项（isSkill 才并入暴击率）
+  | 'skillCritDmgPct' // 过载传奇：技能暴伤专项
+  | 'critRateVsLowHp' // 影 L100：对残血目标暴击率+
+  | 'critRateVsHighHp' // 烬 L100：对高血目标暴击率+
+  | 'critRateVsFortified' // 破障传奇：对带盾/高防目标暴击率+
+  | 'critDmgVsBoss' // 屠巨传奇：对 Boss 暴伤+
+  | 'dmgVsBurning' // 贯日 A：对燃烧中的敌人增伤
+  | 'dmgVsSummonSource' // 空 L40：对召唤源增伤（roleTag=summon_source）
+  | 'armorPenVsSummonSource' // 空 L100：对召唤源穿防
+  | 'dmgVsKeyUnit' // 蛰 5★：对治疗/召唤源处决伤（KEY_ROLE_TAGS）
+  | 'dmgVsFullHp' // 烬 3★：对满血目标额外增伤
+  | 'shaveCurHpPct' // 烬 3★：命中满血目标削其当前生命%（直伤子结算）
+  | 'halfBreakAtkPct' // 烬 5★ 顺路升级「破半」：目标被本舰打入半血以下的那一击追加 攻×系数（演出=爆点无飘字）
+  | 'shatterChance' // 藏 5★ 顺路升级「装甲碎裂」：命中最高防敌概率碎甲（全队易伤=vulnerable）
+  | 'lowHpThresholdPct' // 影 L20/L80：本舰"残血"判定阈值覆盖（dmgVsLowHp/处决判定用·0=用全局 C6）
+  | 'highHpThresholdPct' // 烬 L40：本舰"高血"判定阈值覆盖（0=用全局 C7）
+  | 'executeLowHpPct' // 影 5★：对 <阈值 非 Boss 直接处决（即死）
+  | 'executeBossMaxHpPct' // 影 5★ Boss 侧：目标首次跌破阈值后下一击追加最大生命×系数（每场每 Boss 一次）
+  | 'saveAllyLethalOnce' // 苏 5★：友军将被致死时本舰替其挡下该击（每场 1 次·伤害转本舰）
+  | 'lethalGuardOnce' // 保命插件：致死伤害免疫一次留 1 血（每场 1 次）
+  | 'lethalGuardImmuneSec' // 保命传奇：触发后短暂无敌秒数
+  | 'critAfterDodge' // 警戒传奇：闪避后下一击必暴击（一次性闩锁）
+  | 'overhealToShieldPct' // 苏 L100/医修传奇：溢出治疗×系数转护盾
+  | 'healFullShieldMaxHpPct' // 苏 3★：治到满血的友军获护盾（其最大生命×系数）
+  | 'shieldVsLowHp' // 苏 L40/L80：对残血友军护盾量+
+  | 'buffAmpPct' // 澈「增幅」：本舰施加的增益态幅度×(1+系数)（状态幅度增效消费点·effectAmp 语义修正落点）
+  | 'buffRiderCritRate' // 澈 L100：本舰施加增益时附带暴击率小增益
+  | 'buffTransferOnDeath' // 澈 5★：被本舰增益的友军阵亡时其增益转移给最高攻存活友军
+  | 'coverageAmpPerAlly' // 沛「润泽」：本舰增益/护盾按"被本舰覆盖友军数"每人+系数放大
+  | 'durationPctFullCoverage' // 沛 5★：覆盖全队时本舰辅助持续额外+（叠在 durationPct 上）
+  | 'debuffedTakenAmpTeam' // 蔽「笼罩」：被控/带减益敌受全队伤害+（团队易伤·本舰在场生效）
+  | 'debuffedTakenIncludeBoss' // 蔽 L40：笼罩对 Boss 也生效（0=Boss 免疫笼罩）
+  | 'debuffedTakenPerDebuff' // 蔽 3★：目标每种减益再叠系数
+  | 'teamCritVsDebuffed' // 蔽 5★：全队对被控/减益敌暴击率+
+  | 'healDispelCount' // 霖「涤荡」：本舰治疗附驱散 N 个（驾驶员层注入=词条通道·效果行 dispelCount 之外相加）
+  | 'healDispelHardControl' // 霖 L40：本舰治疗驱散可清硬控（>0=开）
+  | 'healOnDispelAtkPct' // 霖 L80/5★：驱散成功附回血 攻×系数
+  | 'afterDispelImmuneSec' // 霖 3★：被本舰净化的友军短时免疫新减益秒数
+  | 'reflectAllRecentPct' // 岳 5★：受击时把伤害×系数均分反射给窗口内全部攻击者
+  | 'tauntReflectPct' // 砺 5★：受击按已损血比例把伤害一部分反弹给自己嘲讽中的目标（封顶=本系数）
+  | 'guardExtraCharges' // 岩 5★：守护每个冷却窗可替挡次数+N（基础 1 → 5★=2）
+  | 'guardSelfDmgDownPct' // 岩 3★：守护触发时自身获短暂减伤（幅度）
+  | 'shareForControlledPct' // 沧 3★：友军被硬控时本舰为其分摊伤害%
+  | 'focusMaxGuaranteedCrit' // 源 5★：专注满层时本舰技能对锁定目标必定暴击（>0=开）
+  | 'extraNormalHitWhileAtkSpeedUp' // 翎 3★：夺势（加攻速态）期间普攻附带额外一击
+  | 'normalSplashPct' // 散射插件/烈阳 L100：普攻附带相邻溅射（伤害比例）
+  | 'normalSplashTargets' // 散射档位：溅射波及的相邻目标数（1=相邻1格·传奇 4=十字）
+  | 'chargedNormalPct' // 充能插件：普攻改"隔拍蓄力"——蓄力拍不出手、下一发 ×(1+系数)
+  | 'chargedNormalSplashPct' // 充能传奇：满蓄那发附带十字溅射（比例）
+  | 'skillRepeatChance' // 连发插件：技能概率连放两次（castLogged 掷·传奇"第二次不耗蓄力"=天然满足记语义注）
+  | 'skillDetonateAtkPct' // 引爆插件：技能命中附带目标相邻额外伤 攻×系数（直伤子结算）
+  | 'skillDetonateCross' // 引爆传奇：额外伤波及十字 4 格（>0=开·缺省相邻 1 格）
+  | 'skillCdPerTargetSec' // 循环插件：技能每命中 1 目标缩 CD 秒数
+  | 'skillCdFullBonusSec' // 循环传奇：命中满目标数时额外缩 CD 秒数
+  | 'aftershockAtkPct' // 余震插件：技能命中的敌人 1.5s 后受延迟追加伤 攻×系数
+  | 'lowHpDmgTakenDown' // 舰体传奇：自身 <30% 时减伤+
+  | 'summonAtkPct' // 巡 L20/L80：本舰召唤物攻击+%（召唤物属性继承通道）
+  | 'summonHpPct' // 巡 L100：本舰召唤物血量+%
+  | 'summonSyncFire' // 蜂巢「同步开火」：本舰放技能时在场召唤物齐射一次（≥2=S 阶·连本舰普攻也触发）
+  | 'armorPerHpDecilePct' // 堡垒「厚装」：每 10% 当前血 → 防御 ×(1+系数)（动态属性联动）
+  | 'lowHpArmorFlat' // 堡垒 S「低血保底防御」：自身 <30% 时防御 +固定值
+  | 'dmgToTeamShieldPct' // 山岳「磁暴盾」：自身受到伤害×系数转化为护盾均分全队（伤害转化族）
+  | 'shieldCapMaxHpMult' // 山岳 A 前置：本单位护盾上限=最大生命×系数（>0 才启用·配溢出转化）
+  | 'overflowShieldToHealPct' // 山岳 A「溢盾转奶」：超出护盾上限的部分×系数转全队回血
+  | 'normalAreaMinEnemies' // 群蜂「弹巢」：场上敌数 ≥ 此值时普攻升 3×3（条件 targeting 缩放）
+  | 'normalAreaAlways' // 群蜂 L100：普攻恒为 3×3（>0=开）
+  | 'armorDownOnShieldBreak' // 破甲传奇：本舰打破敌护盾时给其上破防（armor_down 0.2·3s）
+  | 'firstControlImmune' // 韧性传奇：每场免疫第一次硬控（一次性闩锁）
+  | 'critSplashPct' // 火力传奇：暴击时该次伤害×系数溅射到最近相邻 1 格
+  | 'critFollowupAtkPct' // 瞄准传奇：暴击时额外补一下（攻×系数·直伤子结算）
+  | 'critHasteAmount' // 爆裂传奇：暴击时自身攻速+系数·3s
+  | 'critLifestealDouble' // 嗜血传奇：暴击时本次吸血翻倍（>0=开）
+  | 'firstSkillCdHalf' // 冷却传奇：开局首个技能 CD 减半（只作用于带首发延迟的触发·开局即放型天然满足=语义注）
+  | 'skillAreaUp' // 增幅传奇：技能作用范围常驻升一档（同扭蛋 area_up 消费点）
+  | 'buffRiderCritDmg' // 澈3★：本舰施加增益时附带主C暴伤小增益
+  | 'shredOnHitChance' // 藏3★：命中最高防敌概率叠破防（armor_down 可叠2）
+  | 'armorPenVsHighestArmor'; // 藏5★：对'当时敌方最高防目标'追加穿透（1.0=无视全部防御）
 
 /** 动作落在哪个槽（普攻 / 大招 / 星核）。星核质变可覆盖 normal 槽（如过载核心把普攻换原子炮）。 */
 export type S7ActionSlot = 'normal' | 'ultimate' | 'core';
@@ -86,9 +165,10 @@ export interface S7AffixBlock {
  *  ⑦机制批① 新增：on='skill_cast'（本单位放出一次 ultimate 类效果·战鼓；core 类不算——真源"放技能"口径）。 */
 export interface S7TriggerBlock {
   kind: 'trigger';
-  /** 机制批③：'on_kill_charge'=蓄力攒层（击杀攒 threshold 层满放·引擎按单位行 ultimateChargeKills 内部合成，配置不直接写）。 */
+  /** 机制批③：'on_kill_charge'=蓄力攒层（击杀攒 threshold 层满放·引擎按单位行 ultimateChargeKills 内部合成，配置不直接写）；
+   *  'ally_lowhp'=有友军跌入残血（<threshold·沧Lv1「驰援」·配 once 用）。 */
   on: 'battle_start' | 'cd' | 'on_kill' | 'hp_below' | 'on_hit' | 'ally_down' | 'passive'
-    | 'shield_broken' | 'attack_landed' | 'skill_cast' | 'on_kill_charge';
+    | 'shield_broken' | 'attack_landed' | 'skill_cast' | 'on_kill_charge' | 'ally_lowhp';
   /** on='cd' 时的冷却秒数。 */
   cdSec?: number;
   /** on='cd' 时的首发延迟秒数；缺省 0=开局即放（既有语义）。 */
@@ -100,6 +180,10 @@ export interface S7TriggerBlock {
   /** ⑦机制批① 可选（on='on_kill' 专用）：击杀对象 roleTag 过滤——本 tick 击杀名单与集合有交集才触发
    *  （蛰「斩链」杀治疗/召唤源、空「净场」杀召唤物；缺省=任意击杀都触发·旧行为不变）。 */
   onKillRoleTags?: string[];
+  /** 机制批③ 可选（on='on_kill' 专用）：本 tick 击杀数 ≥ 此值才触发（燎5★"一次出手 2+ 杀刷新 CD"）；缺省=1。 */
+  minKills?: number;
+  /** 机制批③ 可选（on='on_kill' 专用）：只在本 tick 击杀过"当时敌方存活最高攻目标"时触发（翎5★"杀高攻效果翻倍"变体行）。 */
+  onKillHighestAttack?: boolean;
   /** 触发后释放的动作，指向 battle_effect_param.rowId。 */
   effectRef: string;
   source?: string;
@@ -133,6 +217,26 @@ export interface S7StackRuleParam {
   breakGapSec?: number;
   /** 断档动作：clear=层数清零（缺省）/ decay_1=只降 1 层（炎 Lv100 口径·每满一个 gap 降一次）。 */
   breakAction?: 'clear' | 'decay_1';
+  /** 机制批③ 可选（砺3★「愈坚翻倍」）：自身血量 < 此比例时本规则每层幅度 ×2；缺省=不翻倍。 */
+  doubleBelowHpPct?: number;
+  /** 机制批③ 可选（叠满触发钩·炎3★致命一击/铁壁S坚甲叠满回血）：层数攒到 maxStacks 的瞬间释放此效果行。 */
+  onFullEffectRef?: string;
+  /** 机制批③ 可选（配 onFullEffectRef）：target=以"触发叠层那次命中的目标"为锚（炎3★/5★十字）/ self=对自己放（铁壁S 回血）；缺省 self。 */
+  onFullScope?: 'target' | 'self';
+  /** 机制批③ 可选（配 onFullEffectRef）：触发后层数清零重攒（炎3★"清零"口径）；缺省 true。 */
+  onFullReset?: boolean;
+  /** 机制批③ 可选（配 onFullEffectRef·护盾传奇"每场 3 次"）：叠满触发的每场次数上限；缺省=不限。 */
+  onFullMaxFires?: number;
+  source?: string;
+}
+
+/** 机制批③ ①'' 召唤覆写类：改写本舰召唤物的行为/普攻（巡「召唤物优先打后排」/哨卫L60 嘲讽诱饵/巡3★ 溅射无人机）。 */
+export interface S7SummonOverrideBlock {
+  kind: 'summon_override';
+  /** 本舰召唤物的目标选择覆写（如 backline_first）。 */
+  targetingTag?: string;
+  /** 本舰召唤物的普攻效果行覆写（变体行·如溅射无人机弹）。 */
+  normalEffectRef?: string;
   source?: string;
 }
 
@@ -157,4 +261,5 @@ export type S7EffectBlock =
   | S7TriggerBlock
   | S7BehaviorBlock
   | S7ActionBlock
-  | S7StackBlock;
+  | S7StackBlock
+  | S7SummonOverrideBlock;

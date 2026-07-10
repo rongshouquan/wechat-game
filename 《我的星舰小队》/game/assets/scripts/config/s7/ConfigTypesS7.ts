@@ -698,7 +698,9 @@ export type S7BattleEffectType =
   | 'apply_state'
   | 'purify' // ⑨机制批② M5：纯净化/驱散（无伤无治·按目标阵营移除减益/增益·dispelCount 条）
   | 'accumulate_attack' // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 触发·本场永久 +effectPower×基础攻·无上限）
-  | 'rank_swap'; // 机制批③ 曲率星门：开局一次性把对方"最前有人排↔最后有人排"逐行对调（只动 1×1 单位·多格 Boss 所在行跳过·全场只结算一次）
+  | 'rank_swap' // 机制批③ 曲率星门：开局一次性把对方"最前有人排↔最后有人排"逐行对调（只动 1×1 单位·多格 Boss 所在行跳过·全场只结算一次）
+  | 'revive' // 机制批③段二 甘霖SS：复活一名最近阵亡友军（reviveHpPct 血量·每场 1 次=触发 once/引擎闩锁）
+  | 'extend_state'; // 机制批③段二 骁5★：延长自身某状态（stateTag 指定·effectPower=延长秒数·无该态=空转）
 // ⑦机制批① M1 限时属性修正状态（幅度=效果行 stateAmount·时长=durationSec·全配置驱动；
 // 方向编码在 tag 里，stateAmount 一律填正数）：
 //   atk_up/atk_down=加攻/虚弱 · atk_speed_up/atk_speed_down=加攻速/减速 · armor_down=破防
@@ -721,7 +723,8 @@ export type S7BattleStateTag =
   | 'aura' // ⑨机制批② M6：光环（源持态·消费点动态求和·在场即生效退场撤销·磐石力场/号角催进/哨卫联防/沧坚壁/空5★）
   | 'blind' // ⑨机制批② M8：致盲（减益·持有者普攻按 blindChance 概率落空·迷雾普攻/致盲领域/SS）
   | 'area_up' // 机制批③ 幸运扭蛋"范围+1"：持有期间技能作用范围升一档（单体→十字→3×3·消费点=castLogged 选区）
-  | 'lifesteal_up'; // 机制批③ 幸运扭蛋"吸血"：限时吸血加成（M1 框架态·stateAmount 驱动·与嗜血词条相加）
+  | 'lifesteal_up' // 机制批③ 幸运扭蛋"吸血"：限时吸血加成（M1 框架态·stateAmount 驱动·与嗜血词条相加）
+  | 'no_attack'; // 机制批③段二 堡垒「要塞展开」：持有期间不普攻（技能照放·非硬控——canAct 不拦、只拦 stepNormalAttacks）
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -823,6 +826,26 @@ export interface S7BattleEffectParam {
   /** 机制批③ 可选（全息镜·仅召唤行）：分身三围=施法者当时快照×本系数（maxHp/attack/armor；攻速/射程/普攻/
    *  targetingTag 同施法者·不继承词条/技能/星核）。缺省缺席=用 summonUnitRef 行自身三围（星鲸口径·逐字节不变）。 */
   copyCasterStatsPct?: number;
+  /** 机制批③段二 可选（伤害行）：伤害改按"目标最大生命×本系数"结算（炎3★致命一击 0.15/影5★Boss 侧 0.08），
+   *  不吃攻击/暴击乘区（固定比例伤·过减伤/易伤照常）。缺省缺席=按攻击公式=逐字节不变。 */
+  maxHpPctDamage?: number;
+  /** 机制批③段二 可选（配 maxHpPctDamage）：对 Boss 的比例折减（炎致命一击 Boss=×0.5）；缺省 1=不折。 */
+  maxHpPctBossFactor?: number;
+  /** 机制批③段二 可选（状态施加行·迷雾L100「侵蚀叠满附沉默」）：本行状态叠到 stateMaxStacks 的瞬间，
+   *  对同一目标追加施加此效果行（一次性·到顶期间重复施加不再触发，掉层后再叠满可再触发）。 */
+  onMaxStacksApplyRef?: string;
+  /** 机制批③段二 可选（状态施加行·堡垒「要塞展开」）：本行施加的状态自然到期瞬间，由持有者释放此效果行
+   *  （要塞结束反击·被驱散/死亡不触发）。 */
+  expireEffectRef?: string;
+  /** 机制批③段二 可选（伤害/状态行·小太阳完整版/蜂针定时爆破）：结算后以"首目标锚点格"为中心，
+   *  delayedBlastSec 秒后释放 delayedBlastRef（区域快照=格子不追人·敌我按引爆时刻在场者算）。 */
+  delayedBlastRef?: string;
+  delayedBlastSec?: number;
+  /** 机制批③段二 可选（effectType='revive'·甘霖SS）：复活血量=最大生命×本系数（缺省 0.4）。 */
+  reviveHpPct?: number;
+  /** 机制批③段二 可选（护盾行·护盾传奇"最大生命10%自罩盾"/沛3★小盾）：护盾量改按"目标最大生命×本系数"
+   *  计（替代 max(maxHp×20%,攻×倍率) 公式·shieldPower/增效仍乘）。缺省缺席=原公式=逐字节不变。 */
+  shieldMaxHpPct?: number;
   note: string;
 }
 
