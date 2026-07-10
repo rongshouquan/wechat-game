@@ -211,6 +211,62 @@ export function genLineup(family: LineupFamily, targetTeamPower: number, problem
   return { lineup, teamPower: plan.shipPower * 5, plan };
 }
 
+/** ⑩三段 · 自定义阵容构建器（B5 五态矩阵/B6 克制装配/流派图鉴共用）：
+ *  在 genLineup 同一套刻度反解与积木注入上，开放 舰组/站位/驾驶员置换/核/插件 覆写——
+ *  "无工具中位队/错舰态/堆坦态/流派构筑"全靠 pilotMap 与装配覆写表达，战力刻度保持贴 target。 */
+export interface CustomLineupOpts {
+  ships: string[];
+  targetTeamPower: number;
+  /** 站位（缺省=SLOTS 中位摆位）。 */
+  slots?: string[];
+  /** shipId → pilotId 置换（缺省=恒等 pilotOfShip）。 */
+  pilotMap?: Record<string, string>;
+  /** shipId → coreId（缺省=无核；'default' 走 plan.withCore 规则给第二舰）。 */
+  coreMap?: Record<string, string>;
+  /** 全队三槽插件覆写（缺省=SLOT_PLUGINS 按阶三档）。 */
+  slotPlugins?: string[];
+}
+export function genLineupCustom(opts: CustomLineupOpts): {
+  lineup: S7BattleLineupUnitInput[]; teamPower: number; plan: GrowthPlan;
+} {
+  const plan = solveGrowthPlan(opts.targetTeamPower);
+  const slots = opts.slots ?? SLOTS;
+  const tierIdx = TIERS.indexOf(plan.tier);
+  const attrMult = Math.pow(TIER_ATTR_MULT, tierIdx) - 1;
+  const extra: S7EffectBlock[] = [
+    { kind: 'affix', affix: 'critRate', value: 0.05, source: 'crit_base' },
+    { kind: 'affix', affix: 'critDmg', value: 0.5, source: 'crit_base' },
+  ];
+  if (attrMult > 0) {
+    extra.push(
+      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: attrMult, source: 'tier_up' },
+      { kind: 'modifier', stat: 'attack', op: 'pct', value: attrMult, source: 'tier_up' },
+      { kind: 'modifier', stat: 'armor', op: 'pct', value: attrMult, source: 'tier_up' },
+    );
+  }
+  const pilotCombat = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel) - 1;
+  const pluginIds = opts.slotPlugins ?? SLOT_PLUGINS;
+  const plugins: S7BattleLineupPluginInput[] = plan.plugins.map((q, i) => ({ pluginId: pluginIds[i], quality: q }));
+  const lineup: S7BattleLineupUnitInput[] = opts.ships.map((shipId, i) => {
+    const shipExtra = pilotCombat > 0
+      ? [...extra, { kind: 'modifier', stat: GUARD_SHIPS.has(shipId) ? 'armor' : 'attack', op: 'pct', value: pilotCombat, source: 'pilot_scale' } as S7EffectBlock]
+      : extra;
+    const coreId = opts.coreMap?.[shipId];
+    return {
+      shipId,
+      slotRef: slots[i],
+      pilotId: opts.pilotMap?.[shipId] ?? pilotOfShip(shipId),
+      pilotLevel: plan.pilotLevel,
+      pilotStar: plan.pilotStar,
+      ...(coreId ? { coreId } : {}),
+      plugins,
+      shipLevel: plan.level,
+      extraBlocks: shipExtra,
+    };
+  });
+  return { lineup, teamPower: plan.shipPower * 5, plan };
+}
+
 // ===== ② 压力值 → 敌配属性映射 v0（规则成文=细表 §19）=====
 
 /** k 合同数字（第一段实证终值·§18）。 */
@@ -237,6 +293,9 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
   bu_enemy_summon_source: { hpW: 1.4, atkW: 0.4, armor: 12, interval: 1.4, effHpMult: 1.6 },
   bu_enemy_shield: { hpW: 0.9, atkW: 0.8, armor: 25, interval: 1.3, effHpMult: 2.0 },
   bu_enemy_boss_add: { hpW: 0.7, atkW: 0.8, armor: 8, interval: 1.2 },
+  // ⑩三段（B7 悬赏威胁位/带宽探针用·主线 spawn 未布=不影响既有落数）：真源载体两形状。
+  bu_enemy_pollution: { hpW: 1.1, atkW: 1.0, armor: 10, interval: 1.4 },   // 污染体：精英·爆发窗口（喷毒+受击狂暴=机制承伤·血权略厚）
+  bu_enemy_stormtower: { hpW: 0.9, atkW: 0.5, armor: 12, interval: 1.6 },  // 磁暴塔：削弱塔（威胁在磁暴场非火力·攻权低）
 };
 /** 墙关陡度（⑥三段·经济尺墙矩阵>0 的真墙）：到达态（power<P 数个点）打不过、破墙态（≥P）能过——
  *  没有陡度时战斗侧在贴线处必胜（手感靶设计），墙会比经济模型软=毕业节奏漂移（milestone 验收实证）。
@@ -246,13 +305,21 @@ const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
   // 破墙态盾奶站得住"的临界带——生存平衡点对战力差远陡于 TTK。
   // ⑩A0 重对（v0.7 压力表 γ 1.125/1.086·曲线变陡后墙工况全体漂移·⑥终值随 v0.6 作废）：
   n060: { pool: 1.05, dps: 1.20 }, // v0.6 值 1.35 在新表下过深（到达态 20% 胜）·首真墙=火力检定语义不变
-  n102: { pool: 1.15, dps: 1.05 } /* 唯一二值硬墙（§20.2）·⑩二段终值：全接线世界（天赋+核+舰装备+插件真效果）三硬边界=贴线0%(77s)·×1.12 0%(84s)·×1.5 100%(55.7s)·到达态含默认工具可胜=挂 B5 五态矩阵终校·走刀史 0.60→0.70(一段)→0.85/1.10/1.00→1.05(二段·世界每强一轮墙跟一轮=四点③) */,
+  n102: { pool: 0.85, dps: 0.70 } /* 唯一二值硬墙（§20.2）·⑩二段终值：全接线世界（天赋+核+舰装备+插件真效果）三硬边界=贴线0%(77s)·×1.12 0%(84s)·×1.5 100%(55.7s)·到达态含默认工具可胜=挂 B5 五态矩阵终校·走刀史 0.60→0.70(一段)→0.85/1.10/1.00→1.05(二段·世界每强一轮墙跟一轮=四点③) */,
   n120: { pool: 1.45, dps: 1.18 }, // ⑩二段终值：全接线世界马拉松带 106.2s（走刀史 0.98→1.45=核+装备两轮碾开后回带）
   n150: { pool: 1.40, dps: 1.05 }, // ⑩二段终值：毕业马拉松 114.4s 险胜带（走刀史 0.96→0.86→1.40）
   n084: { pool: 0.74, dps: 0.95 }, // 余势墙：新表 P +27% 后 0.82 偏厚（70s）·回落保"破大墙后爽段"速通感
   n138: { pool: 0.75, dps: 0.90 }, // 余势墙：新表下 78-87s 尚可·先保持观察
 };
 
+/** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·§20.2 n102 特例）：
+ *  塔×3 设计密度下守恒摊薄杀死了单塔尖峰（A0 记档）——标量 dps/pool 五轮实证分不开五态（①双护卫组合
+ *  杀敌速度=错舰队一半·任何①能清的池③都能竞速）。对症=把尖峰还给每座塔：间隔 1.3→3.0s、单发×2.31
+ *  （单位 DPS 守恒·总量不变）——塔回到最高攻（砺咬塔=任务单弹药1 叙事复原）、尖峰打穿脆皮/坦体扛得住，
+ *  护后排工具的价值=挡尖峰（二值机理回归 v0.6 形态·密度保持设计 3 座）。 */
+const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number }>> = {
+  n102: { bu_enemy_backline: { interval: 3.0 } },
+};
 /** Boss 行分成（血池/火力占比·余量归 adds）。 */
 const BOSS_SHARE = { hp: 0.65, dps: 0.3 }; // 首扫诊断：0.5 全压单点=前排瞬融·Boss=重锤节奏不是速射炮
 
@@ -353,12 +420,12 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   let hpWSum = 0;
   let atkWSum = 0;
   for (const r of normalRows) {
-    const shape = ROLE_SHAPE[roleKeyOf(r)] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 };
+    const shape = { ...(ROLE_SHAPE[roleKeyOf(r)] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 }), ...(NODE_SHAPE_OVERRIDE[nodeId]?.[roleKeyOf(r)] ?? {}) };
     hpWSum += shape.hpW * (counts.get(r) ?? 0);
     atkWSum += shape.atkW * (counts.get(r) ?? 0);
   }
   for (const r of normalRows) {
-    const shape = ROLE_SHAPE[roleKeyOf(r)] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 };
+    const shape = { ...(ROLE_SHAPE[roleKeyOf(r)] ?? { hpW: 1, atkW: 1, armor: 10, interval: 1.2 }), ...(NODE_SHAPE_OVERRIDE[nodeId]?.[roleKeyOf(r)] ?? {}) };
     const hpPer = (hpWSum > 0 ? (Math.max(0, poolLeft) * shape.hpW) / hpWSum : 0) / (shape.effHpMult ?? 1);
     const dpsPer = atkWSum > 0 ? (Math.max(0, dpsLeft) * shape.atkW) / atkWSum : 0;
     units[r] = {

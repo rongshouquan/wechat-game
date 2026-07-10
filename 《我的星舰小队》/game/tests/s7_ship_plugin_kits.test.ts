@@ -202,7 +202,7 @@ describe('⑩A3-接线门扫描 · 插件 30 件三档逐点（真源保形）',
     expect(affixOf('plg26', 'legendary', 'effectAmp')).toBe(0.55); // 传奇附加=再+一档（§14 40→55）
     expect(affixOf('plg29', 'legendary', 'durationPct')).toBe(0.70); // 传奇附加=再延长（§14 50→70）
     expect(affixOf('plg23', 'superior', 'lifesteal')).toBe(0.06);
-    expect(affixOf('plg15', 'legendary', 'dodgeRate')).toBe(0.20);
+    expect(affixOf('plg15', 'legendary', 'dodgeRate')).toBe(0.25); // ⑩三段流派扶正 8/15/25（闪避坦成型·§14 记档）
     expect(affixOf('plg01', 'legendary', 'dmgTakenPct')).toBe(-0.25);
   });
   it('触发件形状：灭群传奇=on_kill+小怪过滤·回充=attack_landed·净化传奇=双触发 4.8s', () => {

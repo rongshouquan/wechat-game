@@ -47,7 +47,7 @@ const PLUGIN_BUILDERS: Record<string, (q: 0 | 1 | 2) => S7EffectBlock[]> = {
     if (q === 2) b.push({ kind: 'trigger', on: 'cd', cdSec: cd, effectRef: 'eff_plg_dimmune', source: src('plg14') });
     return b;
   },
-  plg15: affix('plg15', 'dodgeRate', [0.06, 0.12, 0.20]),      // 警戒：闪避（传奇闪避必暴=无闪避事件钩·挂牌）
+  plg15: affix('plg15', 'dodgeRate', [0.08, 0.15, 0.25]),      // 警戒：闪避（⑩三段流派扶正：6/12/20→8/15/25——尖峰世界每点闪避=整发免伤·闪避坦 n102 40%→高光线·§14 同步·真源数字为暂定'后期真机调'口径）（传奇闪避必暴=无闪避事件钩·挂牌）
   plg16: (q) => [ // 援护：相邻友军互摊 10/18/30%·传奇附加抬到 40%（M4 share·援护链=命名载体）
     { kind: 'trigger', on: 'battle_start', effectRef: ['eff_plg_share_10', 'eff_plg_share_18', 'eff_plg_share_40'][q], source: src('plg16') },
   ],
