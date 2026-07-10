@@ -18,10 +18,10 @@ export const PUZZLE_LINEUP_SIZE = 5;
 /** 解锁节点（Ron 2026-07-05 修订①：打通 n040 后解锁·替代原"第5关后"·沿用回廊的"通关节点检查"门控成例）。 */
 export const DAILY_PUZZLE_UNLOCK_NODE = 'n040';
 
-// ===== 占位数值（阶段三统一校准；改这里不改逻辑，照 S7DeepCorridor / S7StarportBounty 的 exported const 成例）=====
-/** 每日首胜小奖：星贝 + 通用星舰碎片（占位·GDD S10.9"星贝+通用碎片"；精确币种与量第三块定）。 */
-export const PUZZLE_REWARD_CARGO = 20;   // starCargo 星贝
-export const PUZZLE_REWARD_SHARD = 3;    // shipBlueprint 通用星舰碎片
+// ===== v0.7 校准终值（步5 回写·机器真源 PARAMS.puzzle：星贝 30/通碎 2.5——通碎按整数取上沿 3·推演敏感性 ±0 天=无感·记细表 §14）=====
+/** 每日首胜小奖：星贝 + 通用星舰碎片（GDD S10.9）。 */
+export const PUZZLE_REWARD_CARGO = 30;   // starCargo 星贝（v0.7）
+export const PUZZLE_REWARD_SHARD = 3;    // shipBlueprint 通用星舰碎片（尺 2.5 取整上沿）
 
 /**
  * 每日首胜小奖（纯函数·占位）。星矿不入（守 S9 星矿四来源）；无广告翻倍（GDD S13.2 推演零广告）。
