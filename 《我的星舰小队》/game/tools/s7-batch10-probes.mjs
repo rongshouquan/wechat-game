@@ -70,7 +70,7 @@ async function b5(mod) {
   console.log(`②a 单件（只砺·磐石换岳）      ：${fmt(s2a)}`);
   const s2b = await runSet(mod, base, 'n102', mk({ shp05: 'pil05', shp06: 'pil07' }).lineup, SAMPLES, 'b5s2b');
   console.log(`②b 单件（只岩·铁壁换岳）      ：${fmt(s2b)}`);
-  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];
+  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13']; // 段三载体重定：迷雾→贯日（同 entry 中位口径）
   const s3 = await runSet(mod, base, 'n102', mk({ shp05: 'pil07', shp01: 'pil06', shp09: 'pil05' }, MEDIAN, 1, undefined).lineup, SAMPLES, 'b5s3', toolProbe);
   console.log(`③ 错舰（砺装极焰+岩装烈阳）   ：${fmt(s3)} | 能力真发动：嘲讽 ${s3.probes.every((p) => p.taunt > 0) ? '✓' : '✗'} 守护 ${s3.probes.every((p) => p.guard) ? '✓' : '✗'}`);
   const s3a = await runSet(mod, base, 'n102', mk({ shp05: 'pil07', shp01: 'pil06', shp09: 'pil05' }, MEDIAN, 1, undefined).lineup, SAMPLES, 'b5s3a', (res) => aliveProbe(res));
@@ -90,7 +90,7 @@ async function b5(mod) {
 async function b6(mod) {
   const base = mod.loadBundle();
   const pressure = mod.loadPressure();
-  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];
+  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13']; // 段三载体重定：迷雾→贯日（同 entry 中位口径）
   const median = (node, core = 'core08') =>
     mod.genLineupCustom({ ships: MEDIAN, targetTeamPower: pressure[Number(node.slice(1))], coreMap: { shp01: core } }).lineup;
   const custom = (node, ships, opts = {}) =>
@@ -136,7 +136,7 @@ async function b7(mod) {
   const base = mod.loadBundle();
   const P = mod.loadPressure()[num];
   const LIB = ['bu_enemy_charge', 'bu_enemy_backline', 'bu_enemy_summon_source', 'bu_enemy_pollution'];
-  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];
+  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13']; // 段三载体重定：迷雾→贯日（同 entry 中位口径）
   const player = mod.genLineupCustom({ ships: MEDIAN, targetTeamPower: P, coreMap: { shp01: 'core08' } }).lineup; // 玩家=贴线中位（§20.8 实测口径）
   console.log(`# B7 · 悬赏威胁位四档（基底 ${NODE}·P=${P}·玩家=贴线中位·samples=${SAMPLES}·威胁库=控制/点名/召唤/爆发窗口(⑩新)）`);
   for (const [tier, mult, threats] of [['新手', 0.7, 0], ['普通', 1.0, 0], ['困难', 1.5, 1], ['噩梦', 2.2, 2]]) {
@@ -179,7 +179,7 @@ async function b7(mod) {
 async function bw(mod) {
   const base = mod.loadBundle();
   const pressure = mod.loadPressure();
-  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];
+  const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13']; // 段三载体重定：迷雾→贯日（同 entry 中位口径）
   // 两档旋钮：窄=现行（暴击5%/×1.5·敌0%）；中=暴击15%/×1.75+敌暴击10%/×1.5（随机源=弹药5 点名四旋钮的实测组合）
   const KNOBS = [
     ['窄档(现行)', { crit: 0.05, critDmg: 0.5, enemyCrit: 0 }],
@@ -212,7 +212,7 @@ async function builds(mod) {
   const pressure = mod.loadPressure();
   const BUILDS = [
     ['闪避坦', { ships: ['shp05', 'shp06', 'shp01', 'shp09', 'shp13'], slotPlugins: ['plg02', 'plg07', 'plg15'], coreMap: { shp01: 'core08' } }, 'n102'],
-    ['反弹流', { ships: ['shp06', 'shp05', 'shp01', 'shp09', 'shp13'], pilotMap: { shp06: 'pil07', shp05: 'pil05' }, slotPlugins: ['plg02', 'plg07', 'plg16'], coreMap: { shp01: 'core08' } }, 'n102'], // v2：铁壁怒吼(舰载区域嘲讽)×岳荆甲=把火拉进反弹甲+磐石岩守护
+    ['反弹流', { ships: ['shp06', 'shp05', 'shp01', 'shp09', 'shp13'], pilotMap: { shp06: 'pil06', shp05: 'pil05' }, slotPlugins: ['plg02', 'plg07', 'plg16'], coreMap: { shp06: 'core15' }, slots: ['p0c2', 'p1c2', 'p1c1', 'p2c1', 'p1c0'] }, 'n102'], // 段三v4c·完全同构B5①（核挂铁壁·磐石p0c2铁壁p1c2）+反弹件替第三槽：铁壁×砺咬塔+磐石×岩守护（B5②a实证单件必死=双工具是地板）+全队反弹件=Ron亲述'嘲讽吸塔火反噬塔本体'（岳反弹强化线=进阶件另测）
     ['嘲讽歪坦', { ships: ['shp08', 'shp01', 'shp09', 'shp17', 'shp13'], pilotMap: { shp08: 'pil06' }, slotPlugins: ['plg02', 'plg07', 'plg05'], coreMap: { shp01: 'core08' } }, 'n060'], // 歪坦主场=单点 Boss（嘲讽拉锤上高甲山岳）
     ['燃烧叠层', { ships: ['shp05', 'shp11', 'shp10', 'shp01', 'shp13'], pilotMap: { shp11: 'pil01' }, coreMap: { shp11: 'core08' } }, 'n059'],
     ['召唤海', { ships: ['shp05', 'shp18', 'shp19', 'shp09', 'shp13'], pilotMap: { shp18: 'pil19' }, coreMap: { shp18: 'core09' } }, 'n102'], // 召唤海主场候补=尖峰关（召唤物身体吸塔火）
