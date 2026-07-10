@@ -29,6 +29,7 @@ import { coreBlocks } from './S7CoreEffects';
 import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES } from './S7PluginEffects';
 import { pilotBlocks } from './S7PilotEffects';
 import { shipGrowthBlocks, pilotGrowthBlocks } from './S7UnitGrowth';
+import { shipBlocks } from './S7ShipEffects';
 
 const MAX_LINEUP = 5;
 /** 每艘星舰固定 3 槽（武器/技能(CD)/战术），不能堆同类、同名不重复（v1.0 §5.3）。 */
@@ -56,6 +57,9 @@ export interface S7BattleLineupUnitInput {
   plugins?: S7BattleLineupPluginInput[];
   /** 星舰等级（C1b 升级变强）：缺省 1 级；经 S7UnitGrowth.shipGrowthBlocks 折成成长积木放大血/攻。 */
   shipLevel?: number;
+  /** 机制批③段二b 星舰阶级（0-4=C/B/A/S/SS）：喂 shipBlocks 阶门（A 大质变/SS 终极质变）；
+   *  缺省 0=C 阶无质变（属性跳仍由调用方 unitAscendBlocks 折算·本处只开机制门）。 */
+  shipTier?: number;
   /** 驾驶员等级：⑩A1 起喂 pilotBlocks 级门（Lv1 解锁天赋·Lv20/40/60/80/100 大节点）；
    *  缺省 0=只有能力无天赋（最保守·总控回执⑤）。pilotGrowthBlocks 仍占位空（§5.2 无原始属性）。 */
   pilotLevel?: number;
@@ -275,6 +279,8 @@ export class S7BattleEncounterAssembler {
         // C1b 升级变强：星舰/驾驶员等级成长积木（按战力倍率放大血/攻；pilot 占位空）。
         ...shipGrowthBlocks(growthBands, item.shipLevel ?? 1),
         ...pilotGrowthBlocks(growthBands, item.pilotLevel ?? 1),
+        // 机制批③段二b：星舰大节点/升阶质变积木（级门 20-100·阶门 A/SS·缺省 Lv1/C=空=行为不变）。
+        ...shipBlocks(item.shipId, item.shipLevel ?? 1, item.shipTier ?? 0),
         ...(item.coreId ? coreBlocks(item.coreId) : []),
         // ⑩A1：驾驶员积木按级/星取（缺省 Lv0/1★=最保守·只有能力无天赋——总控回执⑤钉死缺省语义）。
         ...(item.pilotId ? pilotBlocks(item.pilotId, item.pilotLevel ?? 0, item.pilotStar ?? 1) : []),

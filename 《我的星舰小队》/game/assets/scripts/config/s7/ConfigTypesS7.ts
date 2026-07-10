@@ -681,6 +681,9 @@ export interface S7BattleUnitStatParam {
    *  攒满本值立即释放并清零重攒（溢出层随清零丢弃·真源"释放后层数清零"）；此时 ultimateCdSec 允许为 0。
    *  蓄力不可被打断，仅沉默能阻止其释放（真源口径表）。缺省缺席=CD 触发模型=逐字节不变。 */
   ultimateChargeKills?: number;
+  /** 机制批③段二b 可选（亡语通道·哨卫A「诱饵盒被打爆反击」）：本单位死亡清理时以自身为锚释放此效果行
+   *  （攻击力按本行 attack 快照·区域以死亡时锚点格算）。缺省缺席=零行为。 */
+  onDeathEffectRef?: string;
   coreEffectRef: string;
   note: string;
 }
@@ -846,6 +849,9 @@ export interface S7BattleEffectParam {
   /** 机制批③段二 可选（护盾行·护盾传奇"最大生命10%自罩盾"/沛3★小盾）：护盾量改按"目标最大生命×本系数"
    *  计（替代 max(maxHp×20%,攻×倍率) 公式·shieldPower/增效仍乘）。缺省缺席=原公式=逐字节不变。 */
   shieldMaxHpPct?: number;
+  /** 机制批③段二b 可选（伤害行·霹雳SS「引爆所有被短路敌」）：只结算"当前持有此状态"的目标，其余跳过。
+   *  缺省缺席=全目标结算=逐字节不变。 */
+  requireTargetState?: S7BattleStateTag;
   note: string;
 }
 

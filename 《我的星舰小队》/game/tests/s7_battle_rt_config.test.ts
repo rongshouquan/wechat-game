@@ -55,13 +55,16 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   由"只造被引用行"的入库版脚本自然清除（旧值≡死数据，删除不改任何战斗行为）→ 41+192=233。
     // ⑩A4：+2 全局真源载体行（污染体/磁暴塔=敌人真源§3/§4 在册敌人补配置行）·n138 阶段召唤 add→pollution（节点行数不变）。
     // 机制批③段一：+1 全息镜分身占位行（bu_s7_hologram·三围由 copyCasterStatsPct 施法者快照覆盖·结构基线）→ 44 基础。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(236); // 44 基础 + 192 节点敌行
+    // 机制批③段二b：+4（嘲讽诱饵盒/爆炸诱饵盒/嘲讽堡垒=哨卫 L60/A/SS 召唤变体·大型母舰无人机=蜂巢SS）→ 48 基础。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(240); // 48 基础 + 192 节点敌行
     // ⑩A1：+50 驾驶员效果行（eff_pil_*·细表§13）；⑩A2：+8 星核效果行（eff_core_*·小太阳/星鲸/时光糖/护罩/战鼓/贪吃星/烟花·§15）→ 42+50+8+15=115。
     // ⑩A3：+18 舰装备行（张盾/怒吼/冲锋号/催进/微风/致盲领域/侵蚀/联防/普攻变体…）+14 插件行（cdr×5/净化/免疫/援护×4/自愈×3）；⑩A4：+5（污染体两件/污染潮/磁暴场/终Boss全屏）。
     // 机制批③段一：+5（曲率星门 rank_swap/彩虹棱镜弹跳普攻/全息镜召唤/群蜂饱和打击/影刃分裂普攻·6 深坑核+同族挂牌件接线）。
     // 机制批③段二a：+15（炎3★/5★致命一击×2/影3★再判/燎5★刷新/沧驰援两件/沧5★光环/骁5★延长/翎5★双倍夺势/
     //   沛L40回血+3★小盾/空3★清场/巡3★溅射无人机弹/护盾传奇自罩盾/小太阳后爆——驾驶员质变+插件传奇接线）。
-    expect(readTable('battle_effect_param')).toHaveLength(172); // 42+50+8+18+14+5+5+15 全局 + 15 节点召唤行
+    // 机制批③段二b：+132（20 舰大节点 L20-L100 档位行 + A/S/SS 质变行 + 蜂针延迟爆/迷雾普攻致盲接真件——
+    //   舰侧阶/级装配通道 shipBlocks 的数据面·逐行注"批③2b"）。
+    expect(readTable('battle_effect_param')).toHaveLength(304); // 42+50+8+18+14+5+5+15+132 全局 + 15 节点召唤行
     expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
     expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）
     expect(readTable('battle_boss_phase_param')).toHaveLength(21); // 7个Boss x 3阶段（+n030 首Boss 三阶段）

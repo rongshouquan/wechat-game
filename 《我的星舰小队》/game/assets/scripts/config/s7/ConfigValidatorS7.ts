@@ -125,6 +125,7 @@ const S7_BATTLE_STATE_TAGS = [
   'aura', // ⑨机制批② M6：光环（源持态·消费点动态求和）
   'blind', // ⑨机制批② M8：致盲（持有者普攻按 blindChance 概率落空）
   'area_up', // 机制批③：扭蛋"范围+1"（技能作用范围升一档·引擎合成行为主·白名单登记防拼错）
+  'no_attack', // 机制批③段二b：堡垒「要塞展开」停普攻态
   ...S7_MOD_STATE_TAGS,
   ...S7_PERIODIC_STATE_TAGS,
 ];
@@ -1335,6 +1336,10 @@ function validateBattle(
     }
     const ucd = num(row.ultimateCdSec);
     if (ucd === null || ucd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'ultimateCdSec 必须 >= 0（无大招写 0；块2 大招触发冷却）' });
+    // 机制批③段二b 可选（亡语·哨卫A）：必须指向有效效果行。
+    if (row.onDeathEffectRef !== undefined && (typeof row.onDeathEffectRef !== 'string' || !effectIds.has(row.onDeathEffectRef))) {
+      errors.push({ table: 'battle_unit_stat_param', id, message: 'onDeathEffectRef 必须指向有效效果行' });
+    }
     // 机制批③ 可选（蓄力攒层·群蜂饱和打击）：>0 时大招改"击杀攒层满放"模型（此时 ultimateCdSec 允许 0）。
     if (row.ultimateChargeKills !== undefined) {
       const uck = num(row.ultimateChargeKills);
@@ -1667,6 +1672,10 @@ function validateBattle(
       const sp = num(row.shieldMaxHpPct);
       if (sp === null || sp <= 0 || sp > 1) errors.push({ table: 'battle_effect_param', id, message: 'shieldMaxHpPct（可选）必须在 (0,1]' });
       else if (!['shield', 'shield_bubble'].includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'shieldMaxHpPct（可选）仅允许配给护盾行' });
+    }
+    if (row.requireTargetState !== undefined) {
+      if (!S7_BATTLE_STATE_TAGS.includes(String(row.requireTargetState)) || row.requireTargetState === 'none') errors.push({ table: 'battle_effect_param', id, message: 'requireTargetState（可选）必须为有效状态 tag' });
+      else if (!S7_DAMAGE_EFFECT_TYPES.includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'requireTargetState（可选）仅允许配给伤害行（霹雳SS 引爆被短路敌）' });
     }
   }
 

@@ -800,11 +800,11 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
+    "normalEffectRef": "eff_s7_normal_fog",
     "ultimateEffectRef": "eff_s7_zhimang",
     "ultimateCdSec": 11,
     "coreEffectRef": "none",
-    "note": "迷雾号·细表§12真值(⑥第一段)·工程·致盲系待M8·先纯伤(专属绑蔽)·迷雾致盲+侵蚀⑩A3"
+    "note": "迷雾号·细表§12真值(⑥第一段)·工程·致盲系待M8·先纯伤(专属绑蔽)·迷雾致盲+侵蚀⑩A3·批③2b普攻致盲接真(→eff_s7_normal_fog·§11 40%落空3s)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -902,6 +902,27 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_s7_big_drone",
+    "targetType": "prop",
+    "unitRef": "none",
+    "roleTag": "summon_unit",
+    "maxHp": 800,
+    "attack": 60,
+    "armor": 15,
+    "attackIntervalSec": 0.9,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 0,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "批③2b 蜂巢SS：大型母舰无人机（高血高伤·限时 15s·数值域定）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "bu_s7_decoy",
     "targetType": "prop",
     "unitRef": "none",
@@ -920,6 +941,95 @@
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
     "note": "哨卫诱饵盒（不攻击·几何吸火·血=哨卫60%）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_s7_decoy_fortress",
+    "targetType": "prop",
+    "unitRef": "none",
+    "roleTag": "summon_unit",
+    "maxHp": 1400,
+    "attack": 120,
+    "armor": 40,
+    "attackIntervalSec": 1.43,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 0,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "none",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "批③2b 哨卫SS：高血嘲讽堡垒（1400 血·全场嘲讽 cd2·亡语爆炸沿用）",
+    "onDeathEffectRef": "eff_s7_decoy_boom",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "cd",
+        "cdSec": 2,
+        "effectRef": "eff_s7_decoy_taunt_all"
+      }
+    ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_s7_decoy_boom",
+    "targetType": "prop",
+    "unitRef": "none",
+    "roleTag": "summon_unit",
+    "maxHp": 480,
+    "attack": 120,
+    "armor": 30,
+    "attackIntervalSec": 1.43,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 0,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "none",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "批③2b 哨卫A：爆炸诱饵盒（亡语十字 ×1.5·attack=爆炸当量锚 120·含嘲讽=并档 L60）",
+    "onDeathEffectRef": "eff_s7_decoy_boom",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "cd",
+        "cdSec": 2.5,
+        "effectRef": "eff_s7_decoy_taunt"
+      }
+    ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_s7_decoy_taunt",
+    "targetType": "prop",
+    "unitRef": "none",
+    "roleTag": "summon_unit",
+    "maxHp": 480,
+    "attack": 1,
+    "armor": 30,
+    "attackIntervalSec": 1.43,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 0,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "none",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "批③2b 哨卫L60：嘲讽诱饵盒（cd2.5 嘲讽附近·血=源60% 口径沿用）",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "cd",
+        "cdSec": 2.5,
+        "effectRef": "eff_s7_decoy_taunt"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",

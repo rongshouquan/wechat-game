@@ -184,6 +184,7 @@ const ZERO_AFFIXES: Readonly<Record<S7AffixKey, number>> = Object.freeze({
   normalAreaMinEnemies: 0, normalAreaAlways: 0,
   armorDownOnShieldBreak: 0, firstControlImmune: 0, critSplashPct: 0, critFollowupAtkPct: 0, critHasteAmount: 0,
   critLifestealDouble: 0, firstSkillCdHalf: 0, skillAreaUp: 0, buffRiderCritDmg: 0, shredOnHitChance: 0, armorPenVsHighestArmor: 0,
+  skillRepeatCount: 0, fortressChargePct: 0,
 });
 
 // ===== 机制批③ 幸运扭蛋：五路由的引擎内合成状态行（不进配置表·rowId 只作日志/演出锚点）=====
@@ -732,7 +733,7 @@ class BattleRun {
             const eff = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', st.expireEffectRef);
             if (eff) {
               const hits = Math.min(10, st.hitCounter ?? 0);
-              const scale = 1 + 0.5 * hits; // 堡垒A「被打积能」：反击 ×(1+0.5×受击次·封顶+5)；无计数=×1（基础档）
+              const scale = 1 + unit.affixes.fortressChargePct * hits; // 堡垒A「被打积能」：×(1+系数×受击次·封顶10次)·基础档系数0=×1
               const targets = this.selectTargets(unit, eff.targetingTag, eff.maxTargets, undefined);
               this.pushLog('ultimate_cast', {
                 actorId: unit.unitId, side: unit.side, effectRef: eff.rowId, effectType: eff.effectType,
@@ -1059,6 +1060,19 @@ class BattleRun {
       if (unit.alive || unit.downLogged) continue;
       unit.downLogged = true;
       unit.diedAt = this.time; // 机制批③段二：甘霖SS复活按"最近阵亡"选人
+      // 机制批③段二b 亡语（哨卫A 诱饵盒爆炸反击）：死亡清理时以死亡锚点格放效果（缺省缺席=零行为）。
+      const deathRef = (this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', unit.unitStatRef) as { onDeathEffectRef?: string } | null)?.onDeathEffectRef;
+      if (deathRef !== undefined) {
+        const eff = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', deathRef);
+        if (eff) {
+          const foes = this.units.filter((u) => u.side !== unit.side && u.alive && u.hp > 0);
+          const kind = eff.targetingTag === 'block_area' ? 'block' : 'cross';
+          const victims = this.orderAreaAround(unit, foes, eff.maxTargets, kind).filter((u) => u.side !== unit.side);
+          for (const v of victims) {
+            this.applySubHit(unit, v, Math.max(1, Math.round(unit.attack * eff.effectPower)), eff.rowId, 'death_blast');
+          }
+        }
+      }
       this.freeCells(unit);
       // 机制批③段二 澈5★「增益转移」：被增益友军阵亡→其增益态原样搬给同阵营最高攻存活友军（同 tag 覆盖）。
       if (this.anyBuffTransfer) this.transferBuffsOnDeath(unit);
@@ -1271,7 +1285,8 @@ class BattleRun {
     }
     // ⑨机制批② M7 多重释放（极焰SS 连放三次/群蜂饱和SS 连放两轮）：额外 repeatCount 次重选+重放；缺省无=零回归。
     // 机制批③：扭蛋"连放"并入同一循环（+gachaExtraCast）；段二：连发插件概率连放（词条掷·仅 ultimate·缺省 0=不掷）。
-    let multiCast = Math.max(0, Math.floor(effect.repeatCount ?? 0)) + gachaExtraCast;
+    let multiCast = Math.max(0, Math.floor(effect.repeatCount ?? 0)) + gachaExtraCast
+      + (effect.effectKind === 'ultimate' ? Math.max(0, Math.floor(caster.affixes.skillRepeatCount)) : 0); // 段二b：极焰SS/群蜂SS 词条连放
     if (effect.effectKind === 'ultimate' && caster.affixes.skillRepeatChance > 0
       && this.rng.next() < caster.affixes.skillRepeatChance) {
       multiCast += 1;
@@ -1556,9 +1571,13 @@ class BattleRun {
         }
       } else {
         // ⑨机制批② M7 溅射分伤（散射枪管/引爆器/极焰节点/贯日L40）：首目标满额、其余按 splashPct；缺省无 splashPct=全额=逐字节不变。
-        // 机制批③段二：splashOverride/damageScaleAll=词条驱动的普攻溅射与充能强化（缺省 undefined/1=逐字节不变）。
+        // 机制批③段二：splashOverride/damageScaleAll=词条驱动的普攻溅射与充能强化（缺省 undefined/1=逐字节不变）；
+        // 段二b：requireTargetState=只打带指定状态的目标（霹雳SS 引爆被短路敌·缺省缺席=全结算）。
         const splash = splashOverride ?? effect.splashPct;
-        for (let i = 0; i < targets.length; i += 1) this.dealDamage(caster, targets[i], effect, (splash !== undefined && i > 0 ? splash : 1) * damageScaleAll);
+        for (let i = 0; i < targets.length; i += 1) {
+          if (effect.requireTargetState !== undefined && !targets[i].states.has(effect.requireTargetState)) continue;
+          this.dealDamage(caster, targets[i], effect, (splash !== undefined && i > 0 ? splash : 1) * damageScaleAll);
+        }
       }
       if (effect.stateTag !== 'none') {
         for (const t of finalTargets) if (t.alive && this.rollStateChance(effect)) this.applyState(caster, t, effect.stateTag, effect.durationSec, effect);
@@ -2467,6 +2486,13 @@ class BattleRun {
       if (simple.shareMode === 'to_caster') simple.shareTargetId = caster.unitId;
     }
     if (tag === 'aura') { // ⑨M6 光环参数（源持态·消费点动态求和·在场即生效/退场撤销）
+      // 机制批③段二b：同单位重复上 aura=保留更强档（幅度优先）——舰侧 L 节点升档触发与行级基础触发
+      // 同拍先后不定，保强规则让升档恒胜（单光环单位无比较=零回归）。
+      const prevAura = target.states.get('aura');
+      if (prevAura && (prevAura.auraAmount ?? 0) > (effect.auraAmount ?? 0)) {
+        prevAura.expireAt = this.time + duration; // 只续时不降档
+        return;
+      }
       simple.auraStat = effect.auraStat;
       if (effect.auraAmount !== undefined) simple.auraAmount = effect.auraAmount;
       simple.auraScope = effect.auraScope;

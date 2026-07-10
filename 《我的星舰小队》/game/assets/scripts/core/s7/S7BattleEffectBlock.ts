@@ -134,7 +134,9 @@ export type S7AffixKey =
   | 'skillAreaUp' // 增幅传奇：技能作用范围常驻升一档（同扭蛋 area_up 消费点）
   | 'buffRiderCritDmg' // 澈3★：本舰施加增益时附带主C暴伤小增益
   | 'shredOnHitChance' // 藏3★：命中最高防敌概率叠破防（armor_down 可叠2）
-  | 'armorPenVsHighestArmor'; // 藏5★：对'当时敌方最高防目标'追加穿透（1.0=无视全部防御）
+  | 'armorPenVsHighestArmor' // 藏5★：对'当时敌方最高防目标'追加穿透（1.0=无视全部防御）
+  | 'skillRepeatCount' // 极焰SS「连放三次」/群蜂SS「连放两轮」：技能固定额外重放次数（词条通道=与行级 repeatCount 相加）
+  | 'fortressChargePct'; // 堡垒A「被打积能」：要塞期间每受击一次·结束反击 ×(1+系数×次数·封顶10次)
 
 /** 动作落在哪个槽（普攻 / 大招 / 星核）。星核质变可覆盖 normal 槽（如过载核心把普攻换原子炮）。 */
 export type S7ActionSlot = 'normal' | 'ultimate' | 'core';

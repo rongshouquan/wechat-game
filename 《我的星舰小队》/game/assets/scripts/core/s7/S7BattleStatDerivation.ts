@@ -88,6 +88,7 @@ const AFFIX_KEYS: S7AffixKey[] = [
   'normalAreaMinEnemies', 'normalAreaAlways',
   'armorDownOnShieldBreak', 'firstControlImmune', 'critSplashPct', 'critFollowupAtkPct', 'critHasteAmount',
   'critLifestealDouble', 'firstSkillCdHalf', 'skillAreaUp', 'buffRiderCritDmg', 'shredOnHitChance', 'armorPenVsHighestArmor',
+  'skillRepeatCount', 'fortressChargePct',
 ];
 
 function round6(x: number): number {

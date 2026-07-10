@@ -73,6 +73,20 @@ describe('S7BattleEncounterAssembler - 装备星核解析为效果积木 (块3b)
     expect(out.request.playerUnits[0].effectBlocks).toBeUndefined();
   });
 
+  it('机制批③段二b：lineup 带 shipLevel/shipTier → shipBlocks 大节点/升阶质变积木入战（装配通道咬合）', async () => {
+    const asm = await assemblerOf(loadBundle());
+    const out = asm.assemble({
+      progress: progressAt('n001'), runSeed: 'tier',
+      lineup: [{ shipId: 'shp12', slotRef: 'p0c2', shipLevel: 100, shipTier: 4 }], // 霹雳 SS·Lv100
+    });
+    const blocks = out.request.playerUnits[0].effectBlocks ?? [];
+    expect(blocks.some((b) => b.kind === 'trigger' && (b as { effectRef?: string }).effectRef === 'eff_s7_liansuo_ss_boom')).toBe(true); // SS 引爆短路
+    expect(blocks.some((b) => b.kind === 'action' && (b as { effectRef?: string }).effectRef === 'eff_s7_liansuo_a')).toBe(true); // A/L 档连锁闪电
+    // 对照（防假过）：Lv1/C 阶不产生任何舰侧质变积木。
+    const base = asm.assemble({ progress: progressAt('n001'), runSeed: 'tier', lineup: [{ shipId: 'shp12', slotRef: 'p0c2', shipLevel: 1, shipTier: 0 }] });
+    expect((base.request.playerUnits[0].effectBlocks ?? []).length).toBe(0);
+  });
+
   it('J：lineup 带 extraBlocks(建筑全队加成) → 并入该单位 effectBlocks', async () => {
     const asm = await assemblerOf(loadBundle());
     const out = asm.assemble({
