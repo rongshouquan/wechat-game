@@ -58,7 +58,7 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     expect(rt.getAll('pilot_config')).toHaveLength(20); // ⑩A1 驾驶员 20 真配（扩容=第一段四点②已拍）
     expect(rt.getAll('core_config')).toHaveLength(7); // 块3b 注册新手核 core07
     expect(rt.getById<{ name: string }>('core_config', 'core07')?.name).toBe('陨星弹'); // ④块2真机：core07 显示名=陨星弹(真源§1·原"过载核心")，改回则变红
-    expect(rt.getAll('plugin_config')).toHaveLength(18);
+    expect(rt.getAll('plugin_config')).toHaveLength(30) /* ⑩A3 插件对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表） */;
     expect(rt.getAll('mainline_node_config')).toHaveLength(150);
   });
 

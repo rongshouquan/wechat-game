@@ -3,7 +3,7 @@
     "schemaVersion": "s7-0.1.0",
     "rowId": "puzzle_backline_001",
     "threatType": "backline",
-    "threatHint": "后排三座狙击塔远程点名 + 一头冲锋兽顶在最前：没有真护卫扛线、前排输出会被冲锋兽连着塔火力秒穿——两艘护卫（磐石/铁壁）顶最前列 c2 扛兽、输出藏 c0 抢拆三塔。",
+    "threatHint": "后排三座狙击塔远程点名 + 一头冲锋兽顶在最前：没有真护卫扛线、前排输出会被冲锋兽连着塔火力秒穿——双护卫顶最前列 c2 扛兽，奶舰居中续航（嘲讽系驾驶员还能替后排吸一座塔的火），输出藏 c0 抢拆三塔。",
     "enemyFormation": [
       {
         "unitStatRef": "bu_enemy_backline",
@@ -22,8 +22,8 @@
         "slotRef": "r2c0"
       }
     ],
-    "enemyHpPct": 5,
-    "enemyAtkPct": 0.75,
+    "enemyHpPct": 7,
+    "enemyAtkPct": 0.85,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -113,8 +113,8 @@
         "slotRef": "r2c3"
       }
     ],
-    "enemyHpPct": 18,
-    "enemyAtkPct": 0.5,
+    "enemyHpPct": 20,
+    "enemyAtkPct": 0.6,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -208,7 +208,7 @@
         "slotRef": "r3c1"
       }
     ],
-    "enemyHpPct": 25,
+    "enemyHpPct": 29,
     "enemyAtkPct": 1.4,
     "candidatePacks": [
       {
@@ -280,7 +280,7 @@
     "schemaVersion": "s7-0.1.0",
     "rowId": "puzzle_heal_001",
     "threatType": "heal",
-    "threatHint": "敌后排奶妈狂奶最残友军——磨不死，要么爆发盖过回复、要么先点掉奶源。",
+    "threatHint": "敌后排奶妈狂奶最残友军——磨不死，要么爆发盖过回复、要么先点掉奶源；真装备世界下裸输出队会被磨穿，要有护卫锚前排+点源手拆奶。",
     "enemyFormation": [
       {
         "unitStatRef": "bu_enemy_support",
@@ -303,8 +303,8 @@
         "slotRef": "r3c1"
       }
     ],
-    "enemyHpPct": 21,
-    "enemyAtkPct": 1.61,
+    "enemyHpPct": 25,
+    "enemyAtkPct": 2,
     "candidatePacks": [
       {
         "packId": "pk1",
@@ -349,24 +349,24 @@
     ],
     "authorSolution": [
       {
-        "packId": "pk1",
-        "slotRef": "p0c2"
-      },
-      {
-        "packId": "pk2",
+        "packId": "pk8",
         "slotRef": "p1c2"
       },
       {
-        "packId": "pk3",
-        "slotRef": "p2c2"
+        "packId": "pk2",
+        "slotRef": "p0c0"
       },
       {
         "packId": "pk4",
-        "slotRef": "p0c1"
+        "slotRef": "p1c0"
       },
       {
-        "packId": "pk5",
-        "slotRef": "p1c1"
+        "packId": "pk1",
+        "slotRef": "p2c0"
+      },
+      {
+        "packId": "pk3",
+        "slotRef": "p0c1"
       }
     ],
     "note": "威胁=治疗。解=远程狙(长波后排打击)速杀后排奶妈+爆发(闪电镰)盖过回复，前排硬壳顶。"

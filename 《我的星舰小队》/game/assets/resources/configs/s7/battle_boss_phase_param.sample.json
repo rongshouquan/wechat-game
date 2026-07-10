@@ -251,10 +251,10 @@
       "eff_state_vulnerable"
     ],
     "summonUnitRefs": [
-      "bu_n138_add"
+      "bu_n138_pollution"
     ],
     "summonCountCap": 4,
-    "note": "血量50%：召唤污染体(4只)+爆发核弹+目标易伤叠加"
+    "note": "血量50%：召唤污染体(4只·⑩A4 真载体=喷毒+受击狂暴)+爆发核弹+目标易伤叠加"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -279,11 +279,11 @@
     "triggerValue": 20,
     "effectRefs": [
       "eff_state_berserk",
-      "eff_ult_burst_nuke"
+      "eff_s7_cataclysm"
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "狂暴窗口 + 爆发"
+    "note": "阶段3 狂暴全屏：狂暴+全屏 ×1.2（真源§5 终Boss·⑩A4·原单体核弹改全屏）"
   },
   {
     "schemaVersion": "s7-0.1.0",

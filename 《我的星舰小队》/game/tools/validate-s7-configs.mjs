@@ -32,7 +32,7 @@ const TIER_A = {
   ship_config: { idField: 'shipId', count: 20, ids: seq('shp', 1, 20) },
   pilot_config: { idField: 'pilotId', count: 20, ids: seq('pil', 1, 20) }, // ⑩A1：驾驶员 20 天赋接线·扩容已拍（第一段四点②）
   core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
-  plugin_config: { idField: 'pluginId', count: 18, ids: seq('plg', 1, 18) },
+  plugin_config: { idField: 'pluginId', count: 30, ids: seq('plg', 1, 30) }, // ⑩A3：插件残项接线·对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表安全）
 };
 const TIER_B = ['source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param', 'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param', 'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check', 'commission_affix_param'];
 // 悬赏词缀定位型/键真源（镜像 core/s7/S7CommissionAffix.ts 与 S7BattleEffectBlock.ts）：改这些两处校验器都要改。

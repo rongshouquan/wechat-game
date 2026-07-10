@@ -108,14 +108,20 @@ function landBundle(tables, mod) {
       stat.nodeRows += 1;
       return nodeRowId;
     };
-    const ensureSpecialtyRow = (kind, share) => {
+    const ensureSpecialtyRow = (kind, share, templateId = 'bu_enemy_boss_add') => {
       const nodeRowId = `bu_${nodeId}_${kind}`;
       if (blockById.has(nodeRowId)) return nodeRowId;
-      const template = unitById.get('bu_enemy_boss_add');
-      const shape = mod.ROLE_SHAPE.bu_enemy_boss_add; // 防/间隔=职业形状固定值（§19.2·非模板行遗留值）
+      const template = unitById.get(templateId);
+      if (!template) throw new Error(`缺专属行模板：${templateId}（${nodeId}）`);
+      // 防/间隔：add/sadd=职业形状固定值（§19.2·字节兼容⑥口径）；其他真源载体（⑩A4 起·如污染体）=模板行自带值。
+      const shape = templateId === 'bu_enemy_boss_add'
+        ? mod.ROLE_SHAPE.bu_enemy_boss_add
+        : { armor: template.armor, interval: template.attackIntervalSec };
       const noteBody = kind === 'add'
         ? `${nodeId} Boss adds·⑩落数(池${share.hp * 100}%/火${share.dps * 100}%)`
-        : `${nodeId} 母舰产出·⑩落数(池${share.hp * 100}%/火${share.dps * 100}%)`;
+        : kind === 'sadd'
+          ? `${nodeId} 母舰产出·⑩落数(池${share.hp * 100}%/火${share.dps * 100}%)`
+          : `${nodeId} 阶段召唤载体 ${kind}·⑩落数(池${share.hp * 100}%/火${share.dps * 100}%·基=${templateId}·机制随模板)`;
       const row = {
         ...template,
         rowId: nodeRowId,
@@ -128,7 +134,8 @@ function landBundle(tables, mod) {
       block.push(row);
       blockById.set(nodeRowId, row);
       if (kind === 'add') stat.addRows += 1;
-      else stat.saddRows += 1;
+      else if (kind === 'sadd') stat.saddRows += 1;
+      else stat.carrierRows = (stat.carrierRows ?? 0) + 1; // ⑩A4：阶段召唤真源载体（如污染体）
       return nodeRowId;
     };
 
@@ -150,12 +157,15 @@ function landBundle(tables, mod) {
       }
       sp.unitStatRef = ensureNodeRow(globalId);
     }
-    // ② Boss 阶段召唤引用面：boss_add → 专属 add 行；其余职业 → 节点职业行。
+    // ② Boss 阶段召唤引用面：boss_add → 专属 add 行；spawn 计划已含的职业 → 节点职业行；
+    //    其余真源载体（⑩A4 起·如污染体=不在 spawn 计划的阶段专属召唤）→ 按 add 份额落专属行、机制字段随模板。
     for (const ph of tables.battle_boss_phase_param) {
       if (ph.bossNodeId !== nodeId || !Array.isArray(ph.summonUnitRefs)) continue;
-      ph.summonUnitRefs = ph.summonUnitRefs.map((ref) => (
-        ref === 'bu_enemy_boss_add' ? ensureSpecialtyRow('add', ADD_SHARE) : ensureNodeRow(ref)
-      ));
+      ph.summonUnitRefs = ph.summonUnitRefs.map((ref) => {
+        if (ref === 'bu_enemy_boss_add') return ensureSpecialtyRow('add', ADD_SHARE);
+        if (scale.units[ref]) return ensureNodeRow(ref);
+        return ensureSpecialtyRow(suffixOfGlobal(ref), ADD_SHARE, ref);
+      });
     }
     // ③ 母舰节点化：召唤效果 + 产出行 + 母舰行改指节点效果。
     const summonRowId = `bu_${nodeId}_summon_source`;

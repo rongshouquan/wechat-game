@@ -1,20 +1,426 @@
 [
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg01","name":"破盾校准器","slotTag":"tactical","roleNote":"破盾补强","coverProblemTags":["shield"],"fitRefs":["shp02","core01","core06"],"freePathNote":"主线、Boss、信标、星辉货舱可作为免费来源","upgradeNote":"只强化破盾标签，不写成本"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg02","name":"同列集火镜","slotTag":"weapon","roleNote":"集火修正","coverProblemTags":["shield","berserk"],"fitRefs":["shp02","shp07","core01"],"freePathNote":"主线、精英、信标免费来源","upgradeNote":"只强化集火方向，不写倍率"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg03","name":"远距锁定镜","slotTag":"tactical","roleNote":"后排优先","coverProblemTags":["backline","summon"],"fitRefs":["shp03","core02"],"freePathNote":"主线、信标、星辉货舱免费来源","upgradeNote":"只强化目标倾向"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg04","name":"穿透弹道片","slotTag":"weapon","roleNote":"越线打击","coverProblemTags":["backline"],"fitRefs":["shp03","shp10","core02"],"freePathNote":"精英、信标、补给免费来源","upgradeNote":"不写穿透数值"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg05","name":"支援压制节点","slotTag":"tactical","roleNote":"后排支援限制","coverProblemTags":["backline","burst"],"fitRefs":["shp09","shp05","core05"],"freePathNote":"Boss、信标、星辉货舱免费来源","upgradeNote":"不写沉默概率或时长"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg06","name":"开场护航协议","slotTag":"tactical","roleNote":"爆发缓冲","coverProblemTags":["burst"],"fitRefs":["shp01","shp11","core03"],"freePathNote":"主线、7 天扩张、补给免费来源","upgradeNote":"不写护盾数值"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg07","name":"阵线稳固架","slotTag":"skill","roleNote":"前排稳定","coverProblemTags":["burst","swarm"],"fitRefs":["shp01","shp06","core03"],"freePathNote":"主线、信标、打捞免费来源","upgradeNote":"不写防御数值"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg08","name":"窗口响应器","slotTag":"tactical","roleNote":"蓄力窗口应对","coverProblemTags":["burst","berserk"],"fitRefs":["shp05","shp07","core05"],"freePathNote":"精英、Boss、信标免费来源","upgradeNote":"不写触发类型或秒数"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg09","name":"扇区扩散件","slotTag":"weapon","roleNote":"范围清场","coverProblemTags":["swarm","summon"],"fitRefs":["shp04","core04"],"freePathNote":"主线、补给、星辉货舱免费来源","upgradeNote":"不写范围半径或伤害"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg10","name":"连锁补刀件","slotTag":"weapon","roleNote":"清残补位","coverProblemTags":["swarm"],"fitRefs":["shp10","shp04","core04"],"freePathNote":"主线、打捞、信标免费来源","upgradeNote":"不写连锁概率"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg11","name":"低压续航阀","slotTag":"skill","roleNote":"容错修正","coverProblemTags":["burst","berserk"],"fitRefs":["shp06","core03"],"freePathNote":"主线、任务、补给免费来源","upgradeNote":"不承担治疗核心质变"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg12","name":"狂暴预警标记","slotTag":"tactical","roleNote":"Boss 预警","coverProblemTags":["berserk"],"fitRefs":["shp05","shp11","core05"],"freePathNote":"Boss、精英、信标免费来源","upgradeNote":"不写 Boss 阶段时间轴"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg13","name":"集火同步器","slotTag":"skill","roleNote":"队伍窗口配合","coverProblemTags":["shield","berserk"],"fitRefs":["shp07","core06","core01"],"freePathNote":"7 天扩张、信标、星辉货舱免费来源","upgradeNote":"不写伤害倍率"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg14","name":"保命缓冲芯片","slotTag":"tactical","roleNote":"高压容错","coverProblemTags":["berserk","burst"],"fitRefs":["shp06","shp11","core03"],"freePathNote":"Boss、星辉货舱、补给免费来源","upgradeNote":"不写复活或具体护盾值"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg15","name":"召唤物优先标定","slotTag":"tactical","roleNote":"召唤物清理","coverProblemTags":["summon"],"fitRefs":["shp08","shp04","core04"],"freePathNote":"星域中段主线、信标免费来源","upgradeNote":"不替代反召唤星舰"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg16","name":"召唤源压制器","slotTag":"tactical","roleNote":"召唤源压制","coverProblemTags":["summon","backline"],"fitRefs":["shp08","shp03","core02"],"freePathNote":"精英、Boss、信标免费来源","upgradeNote":"不写召唤生态数值"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg17","name":"面域净化片","slotTag":"weapon","roleNote":"面域清理","coverProblemTags":["swarm","summon"],"fitRefs":["shp04","shp08","core04"],"freePathNote":"主线、打捞、星辉货舱免费来源","upgradeNote":"不成为唯一召唤解法"},
-  {"schemaVersion":"s7-0.1.0","pluginId":"plg18","name":"负载均衡组件","slotTag":"skill","roleNote":"泛用轻补位","coverProblemTags":["shield","swarm","berserk"],"fitRefs":["shp12","shp07","core06"],"freePathNote":"主线、信标、免费货舱候选","upgradeNote":"只做轻补位，不提供星核级质变"}
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg01",
+    "name": "护盾插件",
+    "slotTag": "tactical",
+    "effectNote": "受伤 −8/−15/−25%·传奇+受重击自罩盾(挂牌M9小件)",
+    "roleNote": "护盾向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg02",
+    "name": "火力插件",
+    "slotTag": "weapon",
+    "effectNote": "伤害 +8/+18/+35%·传奇+暴击溅射(挂牌M7)",
+    "roleNote": "火力向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "swarm",
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg03",
+    "name": "破甲插件",
+    "slotTag": "tactical",
+    "effectNote": "破盾效率 +15/+30/+50%·传奇+破盾降防(挂牌·敌盾破无钩)",
+    "roleNote": "破甲向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "shield"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg04",
+    "name": "瞄准插件",
+    "slotTag": "weapon",
+    "effectNote": "暴击率 +8/+18/+30%·传奇+暴击补刀(挂牌M7)",
+    "roleNote": "瞄准向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg05",
+    "name": "舰体插件",
+    "slotTag": "tactical",
+    "effectNote": "最大生命 +10/+22/+40%·传奇+<30%减伤(挂牌M9动态)",
+    "roleNote": "舰体向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg06",
+    "name": "韧性插件",
+    "slotTag": "tactical",
+    "effectNote": "硬控时间 −15/−30/−50%·传奇+免疫首次硬控(挂牌M9小件)",
+    "roleNote": "韧性向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg07",
+    "name": "冷却插件",
+    "slotTag": "skill",
+    "effectNote": "技能CD −8/−15/−25%·传奇+开局首技减半(挂牌·无初始CD注入通道)",
+    "roleNote": "冷却向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg08",
+    "name": "医修插件",
+    "slotTag": "tactical",
+    "effectNote": "受治疗 +12/+25/+45%·传奇+溢疗转盾(挂牌M9小件)",
+    "roleNote": "医修向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg09",
+    "name": "爆裂插件",
+    "slotTag": "weapon",
+    "effectNote": "暴击伤害 +25/+50/+90%·传奇+暴击加攻速(挂牌·无暴击事件钩)",
+    "roleNote": "爆裂向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg10",
+    "name": "急速插件",
+    "slotTag": "weapon",
+    "effectNote": "攻速 +8/+18/+30%·传奇+攻速转普伤(挂牌M9动态)",
+    "roleNote": "急速向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "swarm"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg11",
+    "name": "增幅插件",
+    "slotTag": "skill",
+    "effectNote": "技能伤害 +10/+22/+40%·传奇+范围+1格(挂牌·行级档位)",
+    "roleNote": "增幅向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "shield",
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg12",
+    "name": "自愈插件",
+    "slotTag": "tactical",
+    "effectNote": "每秒回最大生命 0.5/1/1.8%·传奇+濒死自愈翻倍(挂牌·条件倍率)",
+    "roleNote": "自愈向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg13",
+    "name": "过载插件",
+    "slotTag": "skill",
+    "effectNote": "技能暴击率专项(基础挂牌=需新词条·引擎改动=机制批③)",
+    "roleNote": "过载向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg14",
+    "name": "净化插件",
+    "slotTag": "tactical",
+    "effectNote": "周期自清 1 减益(cd装配·基础8s)·传奇=更勤4.8s+免疫减益2s ✅⑩A3",
+    "roleNote": "净化向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "backline",
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg15",
+    "name": "警戒插件",
+    "slotTag": "tactical",
+    "effectNote": "闪避率 +6/+12/+20%·传奇+闪避必暴(挂牌·无闪避事件钩)",
+    "roleNote": "警戒向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg16",
+    "name": "援护插件",
+    "slotTag": "tactical",
+    "effectNote": "相邻友军互摊 10/18/30%·传奇 40% ✅⑩A3(M4 share)",
+    "roleNote": "援护向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "burst",
+      "backline"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg17",
+    "name": "破障插件",
+    "slotTag": "weapon",
+    "effectNote": "对带盾/高防 +12/+25/+45%·传奇+对其暴击率(挂牌条件暴击)",
+    "roleNote": "破障向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "shield"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg18",
+    "name": "连发插件",
+    "slotTag": "skill",
+    "effectNote": "技能概率连放(基础挂牌=repeatChance仅普攻行·概率技能连放无载体=M7完整版)",
+    "roleNote": "连发向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg19",
+    "name": "灭群插件",
+    "slotTag": "weapon",
+    "effectNote": "对普通小怪 +15/+30/+55%·传奇+杀小怪缩CD0.5s ✅⑩A3",
+    "roleNote": "灭群向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "swarm"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg20",
+    "name": "屠巨插件",
+    "slotTag": "weapon",
+    "effectNote": "对Boss/精英 +12/+25/+45%·传奇+对Boss暴伤(挂牌条件暴伤)",
+    "roleNote": "屠巨向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg21",
+    "name": "散射插件",
+    "slotTag": "weapon",
+    "effectNote": "普攻溅射(基础挂牌=splashPct是伤害行字段·插件层注入无通道)",
+    "roleNote": "散射向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "swarm"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg22",
+    "name": "充能插件",
+    "slotTag": "weapon",
+    "effectNote": "停火蓄力强化下一发(基础挂牌=蓄力状态机·M7交回)",
+    "roleNote": "充能向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg23",
+    "name": "嗜血插件",
+    "slotTag": "weapon",
+    "effectNote": "造成伤害回 3/6/10% 生命·传奇+暴击吸血翻倍(挂牌暴击事件)",
+    "roleNote": "嗜血向词条（真源§1 武器槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg24",
+    "name": "回充插件",
+    "slotTag": "skill",
+    "effectNote": "普攻命中缩技能CD 0.2/0.4/0.7s·传奇 1.4s ✅⑩A3",
+    "roleNote": "回充向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "berserk"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg25",
+    "name": "引爆插件",
+    "slotTag": "skill",
+    "effectNote": "技能命中附相邻额外伤(基础挂牌=技能命中事件+区域·M7族)",
+    "roleNote": "引爆向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "swarm"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg26",
+    "name": "增效插件",
+    "slotTag": "skill",
+    "effectNote": "技能效果量 +10/+22/+40%·传奇 +55% ✅⑩A3",
+    "roleNote": "增效向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "shield"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg27",
+    "name": "循环插件",
+    "slotTag": "skill",
+    "effectNote": "命中目标越多缩CD越多(基础挂牌=计数联动无载体·§14旧✓判过乐观·本批更正)",
+    "roleNote": "循环向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "swarm"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg28",
+    "name": "余震插件",
+    "slotTag": "skill",
+    "effectNote": "技能命中延迟追加伤(基础挂牌=M9定时器)",
+    "roleNote": "余震向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg29",
+    "name": "持久插件",
+    "slotTag": "skill",
+    "effectNote": "持续型效果时长 +15/+30/+50%·传奇 +70% ✅⑩A3",
+    "roleNote": "持久向词条（真源§2 技能槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "pluginId": "plg30",
+    "name": "保命插件",
+    "slotTag": "tactical",
+    "effectNote": "致死免疫留1血(基础挂牌=伤害预结算·苏5★同族⑨深坑·传奇无敌随之挂)",
+    "roleNote": "保命向词条（真源§3 战术槽）",
+    "coverProblemTags": [
+      "burst"
+    ],
+    "fitRefs": [],
+    "freePathNote": "打捞/合成/商店（插件经济=⑧口径）",
+    "upgradeNote": "品质制三档（精良/优秀/传奇）·数值=插件真源+细表§14"
+  }
 ]

@@ -42,7 +42,18 @@ function row(b: Bundle, table: S7ConfigTableName, rowId: string): Row {
 /** 克隆一行并覆盖字段后推入表（新 rowId）。unitRef 等继承源行（过实体表存在性校验）。 */
 function addRowFrom(b: Bundle, table: S7ConfigTableName, srcRowId: string, newRowId: string, overrides: Row): Row {
   const src = row(b, table, srcRowId);
-  const clone = { ...JSON.parse(JSON.stringify(src)) as Row, rowId: newRowId, ...overrides };
+  const base = JSON.parse(JSON.stringify(src)) as Row;
+  // ⑩A3 重定基（旧→新→为什么对）：真装备接线后 舰行自带普攻变体/大招/触发/叠层（如极焰=20%连发·磐石=张盾+力场）——
+  // 本试验台是引擎机制守卫、需要"裸行"中性夹具（旧前提=灰盒行天然裸）；克隆时剥掉接线通道，要测哪条由用例显式 override。
+  delete base.extraTriggerBlocks;
+  delete base.stackRules;
+  delete base.alsoApplyStateRefs;
+  if (String(srcRowId).startsWith("bu_ship")) {
+    base.normalEffectRef = "eff_basic_attack";
+    base.ultimateEffectRef = "none";
+    base.ultimateCdSec = 0;
+  }
+  const clone = { ...base, rowId: newRowId, ...overrides };
   (b[table] as Row[]).push(clone);
   return clone;
 }

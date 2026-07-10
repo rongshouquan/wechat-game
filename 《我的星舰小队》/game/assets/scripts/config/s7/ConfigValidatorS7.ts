@@ -241,7 +241,7 @@ export const S7_EXPECTED_COUNT: Record<TierATable, number> = {
   ship_config: 20,
   pilot_config: 20, // ⑩A1 扩容（第一段四点②已拍）
   core_config: 7,
-  plugin_config: 18,
+  plugin_config: 30, // ⑩A3 对齐真源 30 件
 };
 
 export const S7_DEFAULT_IDS: Record<TierATable, string[]> = {
@@ -249,7 +249,7 @@ export const S7_DEFAULT_IDS: Record<TierATable, string[]> = {
   ship_config: seq('shp', 1, 20), // ⑥第一段：12→20
   pilot_config: seq('pil', 1, 20),
   core_config: seq('core', 1, 7),
-  plugin_config: seq('plg', 1, 18),
+  plugin_config: seq('plg', 1, 30),
 };
 
 function isReservedTierAId(table: TierATable, id: string): boolean {

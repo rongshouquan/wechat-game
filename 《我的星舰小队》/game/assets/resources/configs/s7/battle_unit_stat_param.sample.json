@@ -15,7 +15,7 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
+    "normalEffectRef": "eff_s7_normal_reload",
     "ultimateEffectRef": "eff_s7_jihuopao",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
@@ -81,7 +81,7 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
+    "normalEffectRef": "eff_s7_normal_cuizhen",
     "ultimateEffectRef": "eff_s7_dingshibaopo",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
@@ -104,10 +104,17 @@
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
     "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
+    "ultimateEffectRef": "eff_s7_zhangdun",
+    "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "磐石号·细表§12真值(⑥第一段)·护卫·张盾/力场待M1M6(专属绑岩)"
+    "note": "磐石号·细表§12真值(⑥第一段)·护卫·张盾/力场待M1M6(专属绑岩)·磐石张盾+力场⑩A3",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "battle_start",
+        "effectRef": "eff_s7_liliang_aura"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -126,10 +133,26 @@
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
     "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
+    "ultimateEffectRef": "eff_s7_nuhou",
+    "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "铁壁号·细表§12真值(⑥第一段)·护卫·怒吼/坚甲待M4M3"
+    "note": "铁壁号·细表§12真值(⑥第一段)·护卫·怒吼/坚甲待M4M3·铁壁怒吼+坚甲⑩A3",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "skill_cast",
+        "effectRef": "eff_s7_nuhou_selfdr"
+      }
+    ],
+    "stackRules": [
+      {
+        "ruleId": "shp06_jianjia",
+        "on": "was_hit_by_skill",
+        "stat": "dmgTakenDownPct",
+        "perStack": 0.06,
+        "maxStacks": 3
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -235,7 +258,7 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
+    "normalEffectRef": "eff_s7_normal_burnray",
     "ultimateEffectRef": "eff_s7_guanchuan",
     "ultimateCdSec": 9,
     "coreEffectRef": "none",
@@ -257,7 +280,7 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_s7_normal_x09",
+    "normalEffectRef": "eff_s7_normal_x09_slow",
     "ultimateEffectRef": "eff_s7_liansuo",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
@@ -564,7 +587,7 @@
     "unitRef": "n102",
     "roleTag": "boss_backline",
     "maxHp": 44710,
-    "attack": 312,
+    "attack": 468,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 7,
@@ -618,7 +641,23 @@
     "ultimateEffectRef": "eff_ult_burst_nuke",
     "ultimateCdSec": 9,
     "coreEffectRef": "none",
-    "note": "n138 污染巨兽（SF05爆发Boss），占3x3·⑩落数(P=19308·§19映射)"
+    "note": "n138 污染巨兽（SF05爆发Boss），占3x3·⑩A4 爆发窗口接线：污染潮 cd12（全屏×0.8+全队燃烧）+随时间狂暴+2%攻/s（真源§5）·⑩落数(P=19308·§19映射)",
+    "stackRules": [
+      {
+        "ruleId": "n138_rage",
+        "on": "per_second",
+        "stat": "atkPct",
+        "perStack": 0.02
+      }
+    ],
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "cd",
+        "cdSec": 12,
+        "effectRef": "eff_pollution_tide"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -679,11 +718,18 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "lowest_hp_ally",
-    "normalEffectRef": "none",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
+    "normalEffectRef": "eff_s7_normal_flag",
+    "ultimateEffectRef": "eff_s7_chongfenghao",
+    "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "号角号·细表§12真值(⑥第一段)·支援·增益系全待M1M6·先落属性"
+    "note": "号角号·细表§12真值(⑥第一段)·支援·增益系全待M1M6·先落属性·号角冲锋号+催进+旗⑩A3",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "battle_start",
+        "effectRef": "eff_s7_cuijin_aura"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -724,10 +770,18 @@
     "sizeCols": 1,
     "targetingTag": "self_team",
     "normalEffectRef": "eff_s7_normal_groupheal",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
+    "ultimateEffectRef": "eff_s7_chunfeng_jinghua",
+    "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "春风号·细表§12真值(⑥第一段)·支援·群奶普攻·净化待M5"
+    "note": "春风号·细表§12真值(⑥第一段)·支援·群奶普攻·净化待M5·春风净化+微风⑩A3",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "cd",
+        "cdSec": 4,
+        "effectRef": "eff_s7_weifeng"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -746,10 +800,10 @@
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
     "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
+    "ultimateEffectRef": "eff_s7_zhimang",
+    "ultimateCdSec": 11,
     "coreEffectRef": "none",
-    "note": "迷雾号·细表§12真值(⑥第一段)·工程·致盲系待M8·先纯伤(专属绑蔽)"
+    "note": "迷雾号·细表§12真值(⑥第一段)·工程·致盲系待M8·先纯伤(专属绑蔽)·迷雾致盲+侵蚀⑩A3"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -793,7 +847,14 @@
     "ultimateEffectRef": "eff_s7_youerhe",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "哨卫号·细表§12真值(⑥第一段)·工程·诱饵盒(几何吸火)"
+    "note": "哨卫号·细表§12真值(⑥第一段)·工程·诱饵盒(几何吸火)·哨卫联防⑩A3",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "battle_start",
+        "effectRef": "eff_s7_lianfang_aura"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -879,6 +940,71 @@
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
     "note": "星鲸召唤体（星核·细表§15）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "targetType": "enemy",
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "passiveEnergyPerSec": 3,
+    "normalEffectRef": "eff_normal_polluted",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "rowId": "bu_enemy_pollution",
+    "unitRef": "enemy_pollution",
+    "roleTag": "pollution",
+    "maxHp": 500,
+    "attack": 40,
+    "armor": 10,
+    "attackIntervalSec": 1.4,
+    "attackRangeCells": 99,
+    "targetingTag": "nearest_random_tie",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "on_hit",
+        "effectRef": "eff_pollution_spray"
+      }
+    ],
+    "stackRules": [
+      {
+        "ruleId": "pollution_rage",
+        "on": "was_hit",
+        "stat": "atkPct",
+        "perStack": 0.1
+      }
+    ],
+    "note": "⑩A4 污染体（真源§4·精英）：普攻挂易伤+受击喷燃烧+越受击越狂暴（+10%攻/次）——n138 阶段召唤真载体+悬赏威胁库第4类（爆发窗口）·基值=模板（落数按 add 份额 3%/6% 缩放）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "targetType": "enemy",
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "passiveEnergyPerSec": 3,
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "rowId": "bu_enemy_stormtower",
+    "unitRef": "enemy_stormtower",
+    "roleTag": "stormtower",
+    "maxHp": 450,
+    "attack": 35,
+    "armor": 12,
+    "attackIntervalSec": 1.6,
+    "attackRangeCells": 99,
+    "targetingTag": "nearest_random_tie",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_storm_field"
+      }
+    ],
+    "note": "⑩A4 磁暴塔（真源§3·精英）：周期磁暴场=我方一片减速（克制#10 削弱我方的敌侧真载体·净化/快清克制·悬赏威胁库候补）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3029,7 +3155,7 @@
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
     "maxHp": 8025,
-    "attack": 158,
+    "attack": 236,
     "armor": 10,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 7,
@@ -4620,24 +4746,39 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n138_add",
     "targetType": "enemy",
-    "unitRef": "enemy_boss_add",
-    "roleTag": "boss_add",
-    "maxHp": 1978,
-    "attack": 58,
-    "armor": 8,
-    "attackIntervalSec": 1.2,
-    "attackRangeCells": 1,
-    "passiveEnergyPerSec": 4,
     "sizeRows": 1,
     "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
+    "passiveEnergyPerSec": 3,
+    "normalEffectRef": "eff_normal_polluted",
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n138 Boss adds·⑩落数(池3%/火6%)"
+    "rowId": "bu_n138_pollution",
+    "unitRef": "enemy_pollution",
+    "roleTag": "pollution",
+    "maxHp": 1978,
+    "attack": 67,
+    "armor": 10,
+    "attackIntervalSec": 1.4,
+    "attackRangeCells": 99,
+    "targetingTag": "nearest_random_tie",
+    "extraTriggerBlocks": [
+      {
+        "kind": "trigger",
+        "on": "on_hit",
+        "effectRef": "eff_pollution_spray"
+      }
+    ],
+    "stackRules": [
+      {
+        "ruleId": "pollution_rage",
+        "on": "was_hit",
+        "stat": "atkPct",
+        "perStack": 0.1
+      }
+    ],
+    "note": "n138 阶段召唤载体 pollution·⑩落数(池3%/火6%·基=bu_enemy_pollution·机制随模板)"
   },
   {
     "schemaVersion": "s7-0.1.0",

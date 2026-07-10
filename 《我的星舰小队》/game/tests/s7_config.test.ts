@@ -49,7 +49,7 @@ describe('s7 tier a config', () => {
     expect(b.ship_config).toHaveLength(20); // ⑥第一段重定基：默认盘 12→20（真源首发 20 舰·映射细表§12）
     expect(b.pilot_config).toHaveLength(20); // ⑩A1 驾驶员 20 真配（扩容=第一段四点②已拍）
     expect(b.core_config).toHaveLength(7);
-    expect(b.plugin_config).toHaveLength(18);
+    expect(b.plugin_config).toHaveLength(30) /* ⑩A3 插件对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表） */;
   });
 
   it('indexes rows by lowercase id', () => {
