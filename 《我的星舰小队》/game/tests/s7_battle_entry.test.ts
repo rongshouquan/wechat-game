@@ -1,6 +1,6 @@
 // CC-07D: S7 战斗入口上下文层测试。
 // 覆盖：current-node context（n001 normal / n084·n150 boss / 一个 elite）、守卫（unknown/out_of_order/
-// not_battle_node）、boss 不叠加 template_modifier 且 n150 pressureMax=14500、构建不改 progress、
+// not_battle_node）、boss 不叠加 template_modifier 且 n150 推荐战力=v0.7 快照 32094、构建不改 progress、
 // 以及静态隔离（不 import 流程版战斗/流程引擎模块）。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -41,8 +41,8 @@ describe('s7 battle entry - current node context', () => {
     expect(c.boss).toBeNull();
     expect(c.pressure.scope).toBe('normal');
     expect(c.pressure.pressureRefKey).toBe('sf01');
-    expect(c.pressure.min).toBe(200);
-    expect(c.pressure.max).toBe(1200);
+    expect(c.pressure.min).toBe(45);   // 步5 重定基：显示带=v0.7 快照 sf01 普通段（旧占位带 200-1200 作废）
+    expect(c.pressure.max).toBe(2973);
     expect(c.pressure.recommend).toBeNull();
     expect(c.pressure.secondaryPressureCap).toBe(1);
     expect(typeof c.pressure.templateModifier).toBe('number'); // 非 boss 有参考系数
@@ -60,8 +60,8 @@ describe('s7 battle entry - current node context', () => {
     expect(c.stageType).toBe('elite');
     expect(c.pressure.scope).toBe('elite');
     expect(c.pressure.pressureRefKey).toBe('sf01');
-    expect(c.pressure.min).toBe(900);
-    expect(c.pressure.max).toBe(1500);
+    expect(c.pressure.min).toBe(91);   // 步5 重定基：sf01 精英带=v0.7（n006/n059）
+    expect(c.pressure.max).toBe(2973);
     expect(c.pressure.recommend).toBeNull();
     expect(c.pressure.secondaryPressureCap).toBe(1);
   });
@@ -80,11 +80,11 @@ describe('s7 battle entry - current node context', () => {
     expect(c.secondaryPressure).toBe('swarm_low');
     expect(c.pressure.scope).toBe('boss');
     expect(c.pressure.pressureRefKey).toBe('n084');
-    expect(c.pressure.recommend).toBe(1500);
+    expect(c.pressure.recommend).toBe(6113); // 步5 重定基：n084 推荐战力=v0.7 快照真值
     expect(c.pressure.templateModifier).toBeNull(); // boss 不叠加 template_modifier
   });
 
-  it('resolves n150 as boss with pressureMax capped at 14500 and no modifier stacking', async () => {
+  it('resolves n150 as boss with v0.7 snapshot pressure and no modifier stacking', async () => {
     const entry = await buildEntry();
     const res = entry.resolveCurrentContext(progressAt('n150'));
     expect(res.ok).toBe(true);
@@ -93,9 +93,9 @@ describe('s7 battle entry - current node context', () => {
     expect(c.stageType).toBe('boss');
     expect(c.templateId).toBe('t10');
     expect(c.mainProblemTag).toBe('berserk');
-    expect(c.pressure.min).toBe(12500);
-    expect(c.pressure.max).toBe(14500); // 上限保持 14500，不上探
-    expect(c.pressure.recommend).toBe(13600);
+    expect(c.pressure.min).toBe(28885); // 步5 重定基：n150=v0.7 快照 32094±10% 显示带（旧 B1 刻度作废）
+    expect(c.pressure.max).toBe(35303);
+    expect(c.pressure.recommend).toBe(32094); // 对表守卫同款：==v0.7 快照
     expect(c.pressure.templateModifier).toBeNull();
     expect(c.noAdCheckTag).toBe('no_ad_boss6_check');
   });

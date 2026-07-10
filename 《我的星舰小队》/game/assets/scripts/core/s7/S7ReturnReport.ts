@@ -13,6 +13,7 @@
 import { S7MainlineModel, S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BuildingState, getBuildingLevel } from './S7BuildingState';
 import { S7PopulationState, residentStorageExtensionHours } from './S7Population';
+import { habitatStaffCap } from './S7BuildingEffects';
 import { computeS7OfflineSettlement, S7OfflineSettlement, S7_HABITAT_BUILDING_ID } from './S7OfflineSettlement';
 import { computePatrolGains, S7PatrolResult } from './S7PatrolProduction';
 import { S7SalvageState } from './S7SalvageState';
@@ -22,6 +23,8 @@ import { S7AutoBattleRng } from './S7AutoBattleRng';
 
 /** 回港报告翻倍广告点位 id（S13.2 #1；每日上限见 S7AdPointPolicy.S7_AD_POINT_DAILY_LIMITS）。 */
 export const RETURN_REPORT_DOUBLE_AD_POINT = 'return_report_double';
+/** #1 回港翻倍倍率 = ×1.5（Ron 2026-07-07 拍A 定案·B2 削峰 ×2→×1.5·机器真源 PARAMS.ads.offlineDoubleMult）。 */
+export const RETURN_REPORT_DOUBLE_MULT = 1.5;
 
 /** 报告里一条已完成打捞（奖励已预掷·确定性）。 */
 export interface S7ReturnReportSalvageEntry {
@@ -59,10 +62,11 @@ export function buildS7ReturnReport(
   now: number,
 ): S7ReturnReportData {
   const offline = computeS7OfflineSettlement(model, buildings, population, progress, lastOnlineTime, now);
+  const habitatLevel = getBuildingLevel(buildings, S7_HABITAT_BUILDING_ID);
   const patrol = computePatrolGains(offline.elapsedSeconds, {
     clearedStarfieldTier: model.clearedStarfieldTier(progress.clearedNodeIds),
-    habitatLevel: getBuildingLevel(buildings, S7_HABITAT_BUILDING_ID),
-    extraStorageHours: residentStorageExtensionHours(population.residents),
+    habitatLevel,
+    extraStorageHours: residentStorageExtensionHours(population.residents, habitatStaffCap(habitatLevel)),
   });
   const entries: S7ReturnReportSalvageEntry[] = [];
   for (const m of salvage.missions) {
@@ -71,7 +75,7 @@ export function buildS7ReturnReport(
       missionId: m.id,
       tier: m.tier,
       hours: m.hours,
-      rewards: rollSalvageRewards(salvageConfig, m.tier, m.hours, new S7AutoBattleRng(`report_${m.id}_${m.endTime}`)),
+      rewards: rollSalvageRewards(salvageConfig, m.tier, m.hours, new S7AutoBattleRng(`report_${m.id}_${m.endTime}`), getBuildingLevel(buildings, 'bld_salvage_port')),
     });
   }
   return {
@@ -84,7 +88,8 @@ export function buildS7ReturnReport(
 }
 
 /**
- * 领取报告的软货币部分（离线 + 巡逻；doubled=看广告翻倍·只作用于这两段，S13 #1）。
+ * 领取报告的软货币部分（离线 + 巡逻；doubled=看广告加成 ×1.5·只作用于这两段，S13 #1）。
+ * 倍率 ×1.5 = Ron 2026-07-07 拍A 定案（旧 ×2 作废）；金额四舍五入入账。
  * 只加钱包里已有的键（防脏键污染，与 applyOfflineGains 同口径）；返回实际入账汇总（供 UI 飘字/文案）。
  * 打捞段不在此处理——由应用侧逐条 applySalvageReward（含非钱包奖励）。
  */
@@ -93,11 +98,11 @@ export function claimReturnReportCurrencies(
   report: S7ReturnReportData,
   doubled: boolean,
 ): Record<string, number> {
-  const mult = doubled ? 2 : 1;
+  const mult = doubled ? RETURN_REPORT_DOUBLE_MULT : 1;
   const total: Record<string, number> = {};
   const addAll = (gains: Record<string, number>): void => {
     for (const key of Object.keys(gains)) {
-      const amt = gains[key] * mult;
+      const amt = Math.round(gains[key] * mult);
       if (!Object.prototype.hasOwnProperty.call(resources, key)) continue;
       if (typeof amt === 'number' && Number.isFinite(amt) && amt > 0) {
         resources[key] += amt;

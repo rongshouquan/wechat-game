@@ -19,11 +19,13 @@ export type S7AdPoint =
   | 'cargo_extra_pick'           // #7 星辉货舱多选：免费 1 + 看广告再 1（唯一不限次点位·天然限频）
   | 'merchant_refresh'           // #8 商人每日刷新：看广告多刷 1 次
   | 'defeat_consolation_double'  // #9 战败安慰双倍：主线战败基础安慰包 ×2（块5）
-  | 'corridor_milestone_double'; // #10 深空回廊里程碑翻倍：里程碑奖励全键 ×2（块3）
+  | 'corridor_milestone_double'  // #10 回廊里程碑翻倍（福利广告·券不可恢复）
+  | 'escort_fail_guard'; // #10 深空回廊里程碑翻倍：里程碑奖励全键 ×2（块3）
 
 export const S7_AD_POINTS: readonly S7AdPoint[] = Object.freeze([
   'return_report_double', 'daily_supply_chest', 'clear_reward_double', 'triple_pick_extra', 'salvage_speedup',
   'sponsor_supply', 'cargo_extra_pick', 'merchant_refresh', 'defeat_consolation_double', 'corridor_milestone_double',
+  'escort_fail_guard', // #11 委托失败保卡（S13.2 总修订案·免费 1 次/日+券可无限恢复；接线随作战大厅重构=灰盒批）
 ]);
 
 /** 广告结果：看完(ok) / 未看完被关 / 加载失败 / 无填充。仅 ok 时调用方才发奖。 */

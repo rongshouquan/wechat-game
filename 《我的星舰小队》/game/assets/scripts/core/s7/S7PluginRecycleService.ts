@@ -10,29 +10,37 @@
 import { S7ResourceState } from '../../save/S7SaveService';
 import { S7PluginQuality } from './S7PluginEffects';
 import { S7PluginInventoryState, removeOwnedPlugin, findOwnedPlugin } from './S7PluginInventory';
+import { merchantRecycleSteps } from './S7BuildingEffects';
 
-/** 回收星贝基值（占位，第二块定）：品质越高越值钱。 */
-const RECYCLE_BASE_BY_QUALITY: Record<S7PluginQuality, number> = { fine: 10, superior: 25, legendary: 60 };
-
-/** 折损率（占位，第二块按 recycle_param 插件行区间 [20,40] 定点；此处取中点 30%）。 */
-const RECYCLE_REFUND_RATE = 0.3;
+/** 回收星贝终值（步5 回写·传奇 150=初值表 v0.7 尺内值〔步3 清淤入模〕；精良/优秀=尺外比例值·未入尺注记）。
+ *  商人回收价档（Lv3/6/9 各 +15·细案⑤）只作用传奇件：150→165→180→195。 */
+const RECYCLE_BY_QUALITY: Record<S7PluginQuality, number> = { fine: 30, superior: 75, legendary: 150 };
+export const RECYCLE_LEGENDARY_STEP_ADD = 15;
 
 export type S7RecycleResult =
   | { ok: true; starbeiGained: number }
   | { ok: false; code: 'instance_not_found' };
 
+/** 某品质当前回收价（merchantLevel=商人小站等级·回收价档只作用传奇件）。 */
+export function pluginRecyclePrice(quality: S7PluginQuality, merchantLevel = 0): number {
+  const base = RECYCLE_BY_QUALITY[quality];
+  return quality === 'legendary' ? base + RECYCLE_LEGENDARY_STEP_ADD * merchantRecycleSteps(merchantLevel) : base;
+}
+
 /**
  * 回收一个插件实例 → 星贝(starCargo) 入账并出库。就地修改 inv 与 resources；找不到实例返回 not_found 且不改动。
+ * merchantLevel = 商人小站等级（传奇件回收价档 Lv3/6/9）。
  */
 export function recyclePlugin(
   inv: S7PluginInventoryState,
   resources: S7ResourceState,
   instanceId: string,
+  merchantLevel = 0,
 ): S7RecycleResult {
   const inst = findOwnedPlugin(inv, instanceId);
   if (!inst) return { ok: false, code: 'instance_not_found' };
 
-  const starbei = Math.max(1, Math.round(RECYCLE_BASE_BY_QUALITY[inst.quality] * RECYCLE_REFUND_RATE));
+  const starbei = pluginRecyclePrice(inst.quality, merchantLevel);
   resources.starCargo += starbei; // 星贝 = starCargo（6 货币映射拍板）
   removeOwnedPlugin(inv, instanceId);
   return { ok: true, starbeiGained: starbei };

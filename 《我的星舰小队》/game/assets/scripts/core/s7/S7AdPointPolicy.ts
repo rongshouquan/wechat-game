@@ -31,7 +31,12 @@ export const S7_AD_POINT_DAILY_LIMITS: Readonly<Record<S7AdPoint, number | null>
   merchant_refresh: 1,           // #8（原 2 → 1）
   defeat_consolation_double: 1,  // #9（原 2 → 1）
   corridor_milestone_double: 1,  // #10（原不限 → 1）
+  escort_fail_guard: 1,          // #11 委托失败保卡（免费 1 次/日·券可无限恢复·接线随灰盒批）
 });
+
+/** 福利广告三点位铁顶（S13.2 总修订案五·v0.7 WELFARE_POINTS）：#5 打捞秒完 / #6 赞助券 / #10 回廊里程碑——
+ *  每日 1 次铁顶、**广告券不可恢复**（券态不出现·防'福利点位变印钞机'）。其余点位券可无限恢复。 */
+export const S7_WELFARE_AD_POINTS: ReadonlySet<S7AdPoint> = new Set<S7AdPoint>(['salvage_speedup', 'sponsor_supply', 'corridor_milestone_double']);
 
 /** 赞助补给一次广告发放补给券张数（S13 #6·决策⑤：×10；占位·第三块按"广告整体加速≤25-30%"配平抽卡供给）。 */
 export const S7_SPONSOR_SUPPLY_TICKETS = 10;
@@ -60,6 +65,7 @@ export function s7AdButtonState(
   if (strongGuideActive) return { kind: 'hidden' }; // 决策④ 新手期全隐（全点位·含不限次的货舱多选）
   const limit = S7_AD_POINT_DAILY_LIMITS[point];
   if (limit === null || usedToday < limit) return { kind: 'available' };
+  if (S7_WELFARE_AD_POINTS.has(point)) return { kind: 'hidden' }; // 福利三点位铁顶：券不可恢复（总修订案五）
   const n = Math.floor(tickets);
   if (n > 0) return { kind: 'ticket', tickets: n };
   return { kind: 'hidden' };

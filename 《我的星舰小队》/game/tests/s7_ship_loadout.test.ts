@@ -47,7 +47,7 @@ function squad2(): S7SquadState {
   const s = createDefaultS7Squad();
   grantShip(s, 'shp01'); grantShip(s, 'shp02');
   grantPilot(s, 'pil01'); grantPilot(s, 'pil02');
-  grantCore(s, 'core01', 1);
+  grantCore(s, 'core10', 1);
   return s;
 }
 const lo = (s: S7SquadState, shipId: string) => s.shipLoadouts[shipId];
@@ -158,33 +158,33 @@ describe('S7ShipLoadout · 插件装/卸（按船）', () => {
 describe('S7ShipLoadout · 星核装/卸（按船）', () => {
   it('装核：not_owned_ship / not_owned_core / 成功', () => {
     const s = squad2();
-    expect(equipCore(s, 'shp99', 'core01')).toEqual({ ok: false, code: 'not_owned_ship' });
+    expect(equipCore(s, 'shp99', 'core10')).toEqual({ ok: false, code: 'not_owned_ship' });
     expect(equipCore(s, 'shp01', 'core99')).toEqual({ ok: false, code: 'not_owned_core' });
-    expect(equipCore(s, 'shp01', 'core01')).toEqual({ ok: true });
-    expect(lo(s, 'shp01').coreId).toBe('core01');
+    expect(equipCore(s, 'shp01', 'core10')).toEqual({ ok: true });
+    expect(lo(s, 'shp01').coreId).toBe('core10');
   });
 
   it('只拥有 1 份：装第二艘 → 份数用满·自动从第一艘挪走（同时在场数 ≤ 拥有份数·Ron 2026）', () => {
     const s = squad2();
-    equipCore(s, 'shp01', 'core01');
-    expect(equipCore(s, 'shp02', 'core01')).toEqual({ ok: true });
+    equipCore(s, 'shp01', 'core10');
+    expect(equipCore(s, 'shp02', 'core10')).toEqual({ ok: true });
     expect(lo(s, 'shp01').coreId).toBeNull(); // 份数用满→从原船挪走让位
-    expect(lo(s, 'shp02').coreId).toBe('core01');
+    expect(lo(s, 'shp02').coreId).toBe('core10');
   });
 
   it('拥有 2 份同种核 → 可同时装 2 艘（Ron 2026 改·不再"一场只1个")', () => {
     const s = squad2();
-    grantCore(s, 'core01', 1); // 再拥有 1 份 → 共 2 份
-    expect(equipCore(s, 'shp01', 'core01')).toEqual({ ok: true });
-    expect(equipCore(s, 'shp02', 'core01')).toEqual({ ok: true }); // 份数没用满 → 直接多装
-    expect(lo(s, 'shp01').coreId).toBe('core01');
-    expect(lo(s, 'shp02').coreId).toBe('core01'); // 两艘同时在场
+    grantCore(s, 'core10', 1); // 再拥有 1 份 → 共 2 份
+    expect(equipCore(s, 'shp01', 'core10')).toEqual({ ok: true });
+    expect(equipCore(s, 'shp02', 'core10')).toEqual({ ok: true }); // 份数没用满 → 直接多装
+    expect(lo(s, 'shp01').coreId).toBe('core10');
+    expect(lo(s, 'shp02').coreId).toBe('core10'); // 两艘同时在场
   });
 
   it('把别船的核装本舰 → 别船失去该核(挪过来)·本舰原核退回可用池(非互换·Ron 2026 改)', () => {
     const s = squad2();
     grantCore(s, 'core02', 1);
-    equipCore(s, 'shp01', 'core01'); // shp01=core01
+    equipCore(s, 'shp01', 'core10'); // shp01=core01
     equipCore(s, 'shp02', 'core02'); // shp02=core02（仅 1 份）
     expect(equipCore(s, 'shp01', 'core02')).toEqual({ ok: true }); // 把 shp02 的 core02 装到 shp01
     expect(lo(s, 'shp01').coreId).toBe('core02');
@@ -193,7 +193,7 @@ describe('S7ShipLoadout · 星核装/卸（按船）', () => {
 
   it('卸核：not_owned_ship / 置空 / 幂等', () => {
     const s = squad2();
-    equipCore(s, 'shp01', 'core01');
+    equipCore(s, 'shp01', 'core10');
     expect(unequipCore(s, 'shp99')).toEqual({ ok: false, code: 'not_owned_ship' });
     expect(unequipCore(s, 'shp01')).toEqual({ ok: true });
     expect(lo(s, 'shp01').coreId).toBeNull();

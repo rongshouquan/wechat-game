@@ -22,14 +22,15 @@ const fsReader: S7TableReader = async (tableName) =>
   JSON.parse(readFileSync(path.join(S7_DIR, `${tableName}.sample.json`), 'utf-8')) as unknown[];
 
 describe('s7 config runtime loading layer (CC-07A)', () => {
-  it('manifest enumerates exactly the 45 s7 tables', () => {
-    expect(S7_RUNTIME_TABLE_NAMES).toHaveLength(45);
-    expect(new Set(S7_RUNTIME_TABLE_NAMES).size).toBe(45);
+  it('manifest enumerates exactly the 44 s7 tables', () => {
+    // 步5 重定基：45→44（upgrade_cost_param 随升级成本公式化退役=表删除）。
+    expect(S7_RUNTIME_TABLE_NAMES).toHaveLength(44);
+    expect(new Set(S7_RUNTIME_TABLE_NAMES).size).toBe(44);
   });
 
   it('assembles all 45 tables into a bundle of non-empty row arrays', async () => {
     const bundle = await assembleS7Bundle(fsReader);
-    expect(Object.keys(bundle)).toHaveLength(45);
+    expect(Object.keys(bundle)).toHaveLength(44);
     for (const t of S7_RUNTIME_TABLE_NAMES) {
       expect(Array.isArray(bundle[t])).toBe(true);
       if (t === 'enhance_cost_param') { expect(bundle[t].length).toBe(0); continue; } // 首发无强化系统→该表为空(砍星核5阶§5.4/插件不分等级§5.3)
@@ -42,7 +43,7 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     const rt = await S7ConfigRuntime.load(fsReader);
     expect(rt.isLoaded()).toBe(true);
     expect(rt.version).toBe('s7-0.1.0');
-    expect(rt.tableNames).toHaveLength(45);
+    expect(rt.tableNames).toHaveLength(44);
     // 每张表都可经只读入口访问；除 enhance_cost_param(首发无强化→空)、
     // risk_fallback_70_config(70回退机制已作废，2026-07-02→恒空)外均非空
     for (const t of rt.tableNames) {
@@ -56,7 +57,7 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     expect(rt.getAll('battle_template_config')).toHaveLength(10);
     expect(rt.getAll('ship_config')).toHaveLength(20); // ⑥第一段重定基：默认盘 12→20（细表§12）
     expect(rt.getAll('pilot_config')).toHaveLength(20); // ⑩A1 驾驶员 20 真配（扩容=第一段四点②已拍）
-    expect(rt.getAll('core_config')).toHaveLength(7); // 块3b 注册新手核 core07
+    expect(rt.getAll('core_config')).toHaveLength(16); // 步5 收编：core07-22 真核 16 颗（core01-06 旧占位删除）
     expect(rt.getById<{ name: string }>('core_config', 'core07')?.name).toBe('陨星弹'); // ④块2真机：core07 显示名=陨星弹(真源§1·原"过载核心")，改回则变红
     expect(rt.getAll('plugin_config')).toHaveLength(30) /* ⑩A3 插件对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表） */;
     expect(rt.getAll('mainline_node_config')).toHaveLength(150);
@@ -75,7 +76,7 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     const bundle = await assembleS7Bundle(fsReader);
     const rt = await S7ConfigRuntime.load(createInMemoryS7TableReader(bundle));
     expect(rt.isLoaded()).toBe(true);
-    expect(rt.tableNames).toHaveLength(45);
+    expect(rt.tableNames).toHaveLength(44);
     expect(rt.getAll('ship_config')).toHaveLength(20); // ⑥第一段重定基：默认盘 12→20（细表§12）
   });
 

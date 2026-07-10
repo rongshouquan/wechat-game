@@ -163,3 +163,11 @@ export function unreadMailCount(box: S7MailboxState): number {
 export function claimableMailCount(box: S7MailboxState, now: number): number {
   return box.mails.reduce((n, m) => (!m.claimed && !isExpired(m, now) ? n + 1 : n), 0);
 }
+
+// ===== 迎新邮件包（步5 回写·尺子 PARAMS.mail 终值·任务单 A9-2 未列=常量先落）=====
+/** 迎新邮件三包（第 1/3/7 个登录日·一次性）：量值=v0.7 终值；发信钩子（登录日记账）归工程灰盒批。 */
+export const WELCOME_MAIL_PACKS = Object.freeze({
+  day1: { supplyTicket: 10, hullAlloy: 300, starOre: 300, starCargo: 200 },
+  day3: { supplyTicket: 5, beaconCommon: 2 },
+  day7: { supplyTicket: 8, beaconRare: 1 },
+});

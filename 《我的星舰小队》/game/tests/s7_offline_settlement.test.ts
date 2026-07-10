@@ -43,9 +43,10 @@ const progress0 = () => createDefaultS7MainlineProgress(); // clearedNodeIds=[] 
 describe('C step1 · computeS7OfflineSettlement', () => {
   it('居住舱 lv1、离线 1 小时、星域档 0、无居民：进账=基础产率，hasGains', () => {
     const s = computeS7OfflineSettlement(model, habitatAt(1), createDefaultS7Population(), progress0(), 0, HOUR_MS);
-    expect(s.gains.starOre).toBe(OFFLINE_BASE_RATE_PER_HOUR.starOre); // 300
-    expect(s.gains.hullAlloy).toBe(OFFLINE_BASE_RATE_PER_HOUR.hullAlloy); // 120
-    expect(s.gains.pilotToken).toBe(OFFLINE_BASE_RATE_PER_HOUR.pilotToken); // 80
+    // 步5 重定基：v0.7 基础 62/24/16 + 居住舱 lv1 产率 +2%（细案③逐级表 lv1=2·旧 lv1=0 作废）。
+    expect(s.gains.starOre).toBe(Math.floor(OFFLINE_BASE_RATE_PER_HOUR.starOre * 1.02)); // 63
+    expect(s.gains.hullAlloy).toBe(Math.floor(OFFLINE_BASE_RATE_PER_HOUR.hullAlloy * 1.02)); // 24
+    expect(s.gains.pilotToken).toBe(Math.floor(OFFLINE_BASE_RATE_PER_HOUR.pilotToken * 1.02)); // 16
     expect(s.hasGains).toBe(true);
     expect(s.overflowed).toBe(false);
     expect(s.elapsedSeconds).toBe(3600);
@@ -68,7 +69,7 @@ describe('C step1 · computeS7OfflineSettlement', () => {
     const s = computeS7OfflineSettlement(model, habitatAt(1), createDefaultS7Population(), progress0(), 0, 1000 * HOUR_MS);
     expect(s.overflowed).toBe(true);
     expect(s.effectiveSeconds).toBe(s.capSeconds); // lv1 居住舱 36h 封顶
-    expect(s.gains.starOre).toBe(Math.floor((OFFLINE_BASE_RATE_PER_HOUR.starOre * s.capSeconds) / 3600));
+    expect(s.gains.starOre).toBe(Math.floor((OFFLINE_BASE_RATE_PER_HOUR.starOre * 1.02 * s.capSeconds) / 3600)); // lv1 +2%
   });
 
   it('居住舱升级 → 同样离线 1 小时进账更高（产率加成）——养成可见', () => {

@@ -41,10 +41,9 @@ describe('块5 · 今日补给箱', () => {
       // 键集护栏：只可能出 定死结构的 3 软货币 + 彩蛋（普通信标 或 通用碎片其一），不出别的键。
       const allowed = new Set(['hullAlloy', 'pilotToken', 'starCargo', 'beaconCommon', 'shipBlueprint', 'pilotShardUniversal']);
       for (const k of Object.keys(r)) expect(allowed.has(k), k).toBe(true);
-      // 彩蛋互斥：信标与通用碎片不同时出。
-      const bonusKinds = ['beaconCommon', 'shipBlueprint', 'pilotShardUniversal'].filter((k) => r[k] !== undefined);
-      expect(bonusKinds.length <= 1 || (bonusKinds.length === 1)).toBe(true);
-      expect(['beaconCommon' in r, ('shipBlueprint' in r) || ('pilotShardUniversal' in r)].filter(Boolean).length <= 1).toBe(true);
+      // 步5 重定基：彩蛋两层独立掷（v0.7 期望对齐 信标0.25+通碎1.0/箱·旧 else-if 互斥作废）——可同出。
+      const shardKinds = ['shipBlueprint', 'pilotShardUniversal'].filter((k) => r[k] !== undefined);
+      expect(shardKinds.length).toBeLessThanOrEqual(1); // 通碎仍只出舰/员其一
     }
   });
 
@@ -53,8 +52,8 @@ describe('块5 · 今日补给箱', () => {
     for (let d = 0; d < 400; d += 1) {
       const r = rollDailySupplyChest(30_000 + d, 1);
       if (r.beaconCommon !== undefined) { beacon += 1; expect(r.beaconCommon).toBe(1); }
-      else if (r.shipBlueprint !== undefined || r.pilotShardUniversal !== undefined) shard += 1;
-      else plain += 1;
+      if (r.shipBlueprint !== undefined || r.pilotShardUniversal !== undefined) shard += 1;
+      if (r.beaconCommon === undefined && r.shipBlueprint === undefined && r.pilotShardUniversal === undefined) plain += 1;
     }
     expect(beacon).toBeGreaterThan(0);
     expect(shard).toBeGreaterThan(0);

@@ -47,20 +47,25 @@ export const ECHO_BOSS_CYCLE_STEP = 0.5;
  * 经济口径（Ron 2026-07-04）：每层小奖=从里程碑预算里拆分、总量不变——**§3 经济循环体检表不动**；
  * 精确拆分比例与数量第三块数值校准定，改这几个常量即可，不动逻辑。星矿不入每层小奖（守 S9 星矿四来源）。
  */
-export const CORRIDOR_LAYER_ALLOY_BASE = 12;
-export const CORRIDOR_LAYER_ALLOY_PER = 0.6;
-export const CORRIDOR_LAYER_TOKEN_BASE = 10;
-export const CORRIDOR_LAYER_TOKEN_PER = 0.5;
-export const CORRIDOR_LAYER_CARGO_BASE = 6;
-export const CORRIDOR_LAYER_CARGO_PER = 0.4;
+export const CORRIDOR_LAYER_ALLOY_BASE = 22; // v0.7 校准终值（机器真源 PARAMS.corridor）
+export const CORRIDOR_LAYER_ALLOY_PER = 5.5;
+export const CORRIDOR_LAYER_TOKEN_BASE = 15;
+export const CORRIDOR_LAYER_TOKEN_PER = 3.6;
+export const CORRIDOR_LAYER_CARGO_BASE = 4;
+export const CORRIDOR_LAYER_CARGO_PER = 1.0;
 /** 里程碑宝箱（星矿/星贝/通用碎片 + 信标·占位·随里程碑序号 idx 增长）。 */
-export const CORRIDOR_MS_ORE_BASE = 200;
-export const CORRIDOR_MS_ORE_PER = 40;
-export const CORRIDOR_MS_CARGO_BASE = 120;
-export const CORRIDOR_MS_CARGO_PER = 30;
-export const CORRIDOR_MS_SHARD_BASE = 2; // 通用星舰碎片 shipBlueprint
-export const CORRIDOR_MS_SHARD_PER = 1;
-export const CORRIDOR_MS_BEACON_AMOUNT = 1;
+export const CORRIDOR_MS_ORE_BASE = 100;
+export const CORRIDOR_MS_ORE_PER = 60;
+export const CORRIDOR_MS_CARGO_BASE = 50;
+export const CORRIDOR_MS_CARGO_PER = 25;
+export const CORRIDOR_MS_SHARD_BASE = 4; // 通用碎片（舰/员对半·v0.7 msUniversal）
+export const CORRIDOR_MS_SHARD_PER = 1.6;
+export const CORRIDOR_MS_BEACON_AMOUNT = 2;
+// B7 稀缺线挪回廊（步4）：宝石入里程碑·不乘 #10 翻倍（稀缺线不挂广告）。
+export const CORRIDOR_MS_GEM_BASE = 16;
+export const CORRIDOR_MS_GEM_PER = 1.8;
+// #10 里程碑翻倍倍率（B2 削峰 ×2→×2.5·机器真源 msMult）。
+export const CORRIDOR_MS_AD_MULT = 2.5;
 /** 信标升档深度（占位）：≥RARE 层出稀有、≥EPIC 层出史诗（浅层普通）——深层喂打捞，新旧系统咬合。 */
 export const CORRIDOR_RARE_BEACON_LAYER = 25;
 export const CORRIDOR_EPIC_BEACON_LAYER = 50;
@@ -290,32 +295,36 @@ export function corridorLayerPlan(
   };
 }
 
-// ===== 双层奖励（纯函数·占位）=====
+// ===== 双层奖励（纯函数·v0.7 校准终值）=====
 
 /**
- * 每层首通小奖（合金/驾驶记录/星贝碎屑·自动入账·占位）。layer≤0 → 空。
+ * 每层首通小奖（合金/驾驶记录/星贝碎屑·自动入账）。layer≤0 → 空。
  * 从里程碑预算拆分·总量不变（见顶部常量注释）；星矿不入（守 S9）。
  */
 export function corridorLayerReward(layer: number): Record<string, number> {
   if (layer <= 0) return {};
   return {
-    hullAlloy: CORRIDOR_LAYER_ALLOY_BASE + Math.floor(layer * CORRIDOR_LAYER_ALLOY_PER),
-    pilotToken: CORRIDOR_LAYER_TOKEN_BASE + Math.floor(layer * CORRIDOR_LAYER_TOKEN_PER),
-    starCargo: CORRIDOR_LAYER_CARGO_BASE + Math.floor(layer * CORRIDOR_LAYER_CARGO_PER),
+    hullAlloy: Math.round(CORRIDOR_LAYER_ALLOY_BASE + layer * CORRIDOR_LAYER_ALLOY_PER),
+    pilotToken: Math.round(CORRIDOR_LAYER_TOKEN_BASE + layer * CORRIDOR_LAYER_TOKEN_PER),
+    starCargo: Math.round(CORRIDOR_LAYER_CARGO_BASE + layer * CORRIDOR_LAYER_CARGO_PER),
   };
 }
 
 /**
- * 里程碑宝箱内容（星矿/星贝/通用碎片 + 信标·占位）。非里程碑层 → 空。
+ * 里程碑宝箱内容（星矿/星贝/通用碎片对半 + 信标 + **星空宝石**·v0.7）。非里程碑层 → 空。
  * 信标按深度升档：浅层普通 → ≥25 稀有 → ≥50 史诗（深层喂打捞）。直发货币·不走宝箱系统（不污染背包）。
+ * 宝石线（B7 步4 稀缺线挪回廊）：msGem 16+1.8×idx——爬塔独一份的攒头（"攒宝石换想要的核"）。
  */
 export function corridorMilestoneReward(layer: number): Record<string, number> {
   if (layer <= 0 || layer % CORRIDOR_MILESTONE_INTERVAL !== 0) return {};
   const idx = layer / CORRIDOR_MILESTONE_INTERVAL; // 1,2,3,...
+  const uni = CORRIDOR_MS_SHARD_BASE + idx * CORRIDOR_MS_SHARD_PER;
   const out: Record<string, number> = {
-    starOre: CORRIDOR_MS_ORE_BASE + Math.floor(idx * CORRIDOR_MS_ORE_PER),
-    starCargo: CORRIDOR_MS_CARGO_BASE + Math.floor(idx * CORRIDOR_MS_CARGO_PER),
-    shipBlueprint: CORRIDOR_MS_SHARD_BASE + Math.floor(idx * CORRIDOR_MS_SHARD_PER),
+    starOre: Math.round(CORRIDOR_MS_ORE_BASE + idx * CORRIDOR_MS_ORE_PER),
+    starCargo: Math.round(CORRIDOR_MS_CARGO_BASE + idx * CORRIDOR_MS_CARGO_PER),
+    shipBlueprint: Math.round(uni / 2),
+    pilotShardUniversal: Math.round(uni / 2),
+    starGem: Math.round(CORRIDOR_MS_GEM_BASE + idx * CORRIDOR_MS_GEM_PER),
   };
   const beaconKey = layer >= CORRIDOR_EPIC_BEACON_LAYER ? 'beaconEpic'
     : layer >= CORRIDOR_RARE_BEACON_LAYER ? 'beaconRare' : 'beaconCommon';
@@ -324,12 +333,13 @@ export function corridorMilestoneReward(layer: number): Record<string, number> {
 }
 
 /**
- * 看广告翻倍（广告点位 #10·里程碑奖励翻倍）：全部键 ×2·**无排除项**
- * （Ron 2026-07-04：软货币/碎片/信标全翻·信标吞吐被打捞时间门控天然限速·里程碑本无唯一物·经济安全）。
+ * 看广告翻倍（广告点位 #10·里程碑奖励 ×2.5=B2 削峰终值）：**星空宝石除外**
+ * （B7 步4：msGem 不乘 #10——稀缺线不挂广告·分层靠爬得深不靠看广告；
+ *  旧 Ron 2026-07-04"无排除项"口径随 B7 宝石入里程碑修订——当时里程碑里没有宝石）。
  */
 export function doubleCorridorReward(rewards: Record<string, number>): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const k of Object.keys(rewards)) out[k] = rewards[k] * 2;
+  for (const k of Object.keys(rewards)) out[k] = k === 'starGem' ? rewards[k] : Math.round(rewards[k] * CORRIDOR_MS_AD_MULT);
   return out;
 }
 

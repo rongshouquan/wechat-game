@@ -14,12 +14,12 @@ export const DEFEAT_CONSOLATION_DOUBLE_AD_POINT = 'defeat_consolation_double';
 /** 基础包每日发放计数 key（走 S7AdDailyCounter 载体·非广告点位·白送计数）。 */
 export const CONSOLATION_PACK_COUNTER_KEY = 'defeat_consolation_pack';
 
-// ===== 占位数值（第三块统一校准）=====
+// ===== v0.7 校准终值（机器真源 PARAMS.consolation·照抄不调数）=====
 /** 基础包每日上限（次）。 */
 export const CONSOLATION_PACK_DAILY_LIMIT = 3;
 /** 基础包内容（小额·白送）。 */
-export const CONSOLATION_ALLOY = 30;
-export const CONSOLATION_TOKEN = 20;
+export const CONSOLATION_ALLOY = 45;
+export const CONSOLATION_TOKEN = 30;
 /** 当日第 1 败额外附普通信标张数。 */
 export const CONSOLATION_FIRST_DEFEAT_BEACON = 1;
 

@@ -1,6 +1,46 @@
 [
-  {"schemaVersion":"s7-0.1.0","rowId":"d7","anchorDay":"d7","nodeRangeNote":"N020-N024","powerIndex":2300,"powerIndexMin":2000,"powerIndexMax":2800,"internalOnly":true,"freePathNote":"5 舰免费、第 7 天完整自选星核成立"},
-  {"schemaVersion":"s7-0.1.0","rowId":"d14","anchorDay":"d14","nodeRangeNote":"N037 左右","powerIndex":5600,"powerIndexMin":4800,"powerIndexMax":6500,"internalOnly":true,"freePathNote":"第二星域 Boss 后可进入 N038/N039"},
-  {"schemaVersion":"s7-0.1.0","rowId":"d21","anchorDay":"d21","nodeRangeNote":"N056 左右","powerIndex":9300,"powerIndexMin":8000,"powerIndexMax":10500,"internalOnly":true,"freePathNote":"3 核免费路径成立，5 核不是主线门槛"},
-  {"schemaVersion":"s7-0.1.0","rowId":"d28","anchorDay":"d28","nodeRangeNote":"N075 可通","powerIndex":13200,"powerIndexMin":12000,"powerIndexMax":14500,"internalOnly":true,"freePathNote":"75 主线不看广告可通"}
+  {
+   "schemaVersion": "s7-0.1.0",
+   "rowId": "d7",
+   "anchorDay": "d7",
+   "nodeRangeNote": "n059 左右（v0.7 普通档里程碑）",
+   "powerIndex": 2912,
+   "powerIndexMin": 2500,
+   "powerIndexMax": 3350,
+   "internalOnly": true,
+   "freePathNote": "零广告可毕业红线在册（v0.7 §2.4）·首真墙 n060 D7-9 破"
+  },
+  {
+   "schemaVersion": "s7-0.1.0",
+   "rowId": "d14",
+   "anchorDay": "d14",
+   "nodeRangeNote": "n091 左右",
+   "powerIndex": 6782,
+   "powerIndexMin": 5800,
+   "powerIndexMax": 7800,
+   "internalOnly": true,
+   "freePathNote": "sf03 段推进期"
+  },
+  {
+   "schemaVersion": "s7-0.1.0",
+   "rowId": "d21",
+   "anchorDay": "d21",
+   "nodeRangeNote": "n101 左右",
+   "powerIndex": 9031,
+   "powerIndexMin": 7700,
+   "powerIndexMax": 10400,
+   "internalOnly": true,
+   "freePathNote": "n102 真Boss墙下（护后排工具依赖关·普通档墙 2 天）"
+  },
+  {
+   "schemaVersion": "s7-0.1.0",
+   "rowId": "d28",
+   "anchorDay": "d28",
+   "nodeRangeNote": "n119 左右",
+   "powerIndex": 13512,
+   "powerIndexMin": 11600,
+   "powerIndexMax": 15500,
+   "internalOnly": true,
+   "freePathNote": "n120 墙下攒力期（普通档墙 3 天）"
+  }
 ]

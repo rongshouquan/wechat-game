@@ -1,64 +1,76 @@
-// 星港悬赏板（第2.5块·块2，纯 TS，不依赖 cc）：GDD-v2.0 S10.8。整体取代旧「每日委托」玩法。
-// 定位：每天凌晨 4 点（s7DayKey）刷出 4 张悬赏卡的日常辅助战斗档；所有场次真打（看戏找策略、不秒结算/不速刷）。
+// 星港悬赏板（步5 收尾批回写·纯 TS，不依赖 cc）：GDD-v2.0 S10.8（2026-07-07 总修订案重构后口径）。
+// 定位：每天凌晨 4 点（s7DayKey）刷出 3 张护航委托的日常辅助战斗档；所有场次真打（看戏找策略、不秒结算/不速刷）。
 //
-// 口径（GDD S10.8）：
-// - 生成：每天 s7DayKey 变化时刷出 4 张卡，按日界种子确定性生成（seed=bounty_<dayKey>，杀进程重进不换卡，
-//   同打捞预掷先例）；卡=主题(护航/演习) + 品质(铜/银/金) + 词缀(条数随品质 铜1/银2/金3)。
-// - 品质：金卡稀罕型（单张 GOLD_RATE 占位 8%）+ 暗保底（连续 PITY_DAYS 天无金必出一张·玩家无感知）。
-// - 积压：未做的卡留板，上限 BOARD_CAP_BASE=12（居住舱 Lv5→16 / Lv10→20，沿用既有钩子）；每登录日 +4，
-//   超上限掉最旧。老档积压次数折算成等量铜卡（存档 v20→v21，见 normalizeS7Bounty）。
-// - 产出：护航=合金(+少量星贝)、演习=驾驶记录；品质倍率 铜1/银1.6/金3；金卡附赠实物(信标/通用碎片/加速券轮换)；
-//   星矿不入（守 S9 星矿四来源）。护航运输船满血=完美护航 ×1.25（彩蛋，复用召唤积木）。
-// - 遇袭（护航专属·小概率 AMBUSH_RATE 占位 15%·按卡确定性）：追加一场星盗遭遇战，赢=额外小包、输=不罚照常结算。
-// - 出战=进主线同款备战选 5 舰（默认上次阵容）；被词缀影响的单位在备战挂标记（见 S7CommissionAffix）。
+// 口径（GDD S10.8 终版·数值终值=初值表 v0.7 §6-1·机器真源 TRUTHS/PARAMS.bounty）：
+// - 生成：每登录日刷 3 张全护航卡（演习已剥离进木桩=S7DrillConfig）；按日界种子确定性生成
+//   （seed=bounty_<dayKey>，杀进程重进不换卡）；卡=品质(铜/银/金) + 词缀(条数随品质 铜1/银2/金3)。
+// - 品质=明保底（Ron 2026-07-07 拍板·取代旧"金8%+暗保底"）：每天 3 张必含 ≥1 张银色；每 3 天必出 1 张金色
+//   （日程表确定性=受控方差·单张期望 金1/9·银1/3·铜5/9）。
+// - 积压：未做的卡留板，上限 6/9/12（居住舱基础/Lv5/Lv10=S7BuildingEffects.bountyBoardCap·细案③）；
+//   超上限掉最旧；停玩天不发卡（登录日才刷=发卡"每登录日"口径）。
+// - 产出：单张合金 495·星贝 20 ×星域系数^0.6 ×品质倍率(1/1.6/3) ×难度倍率 ×完美1.25；
+//   星域系数取 ^0.6=难度爬档已是显式进度倍率、全系数会双重计 progression（机器真源 coefPow）。
+//   金卡附赠实物(信标/通用碎片/补给券轮换·确定性)；星矿不入（守 S9 星矿四来源）。
+// - 难度四档自选（总修订案 1a·数值面先落·选择 UI 归工程灰盒批）：新手0.7/普通1.0/困难1.5/噩梦2.2；
+//   推荐战力=压力表定点 n10/n55/n98/n130（v0.7 快照值内嵌常量·对表测试钉与 json 一致）。
+// - 遇袭（护航专属·15%·按卡确定性）：追加一场星盗遭遇战，赢=额外小包、输=折损本单入账 30%。
 // - 词缀=本场对我方指定定位型的 buff+debuff（S7CommissionAffix 应用·配置表 commission_affix_param 驱动）。
-// - 数值全 v0.1 占位（产率/倍率/概率/保底/实物），阶段三数值校准统一精校。
 
 import { S7MainlineModel } from './S7MainlineProgress';
 import { starfieldCoefficient } from './S7OfflineProduction';
+import { bountyBoardCap } from './S7BuildingEffects';
 import { s7DayKey } from './S7AdDailyCounter';
 import { S7EffectBlock } from './S7BattleEffectBlock';
 import { S7AutoBattleResult } from './S7AutoBattleTypes';
 import { S7AutoBattleRng } from './S7AutoBattleRng';
+
+export { bountyBoardCap } from './S7BuildingEffects';
 
 export type S7BountyTheme = 'escort' | 'drill';
 export type S7BountyQuality = 'bronze' | 'silver' | 'gold';
 export const S7_BOUNTY_THEMES: readonly S7BountyTheme[] = Object.freeze(['escort', 'drill']);
 export const S7_BOUNTY_QUALITIES: readonly S7BountyQuality[] = Object.freeze(['bronze', 'silver', 'gold']);
 
-// ===== 占位数值（阶段三统一校准；改这里不改逻辑）=====
-/** 每天刷出的卡数（GDD S10.8：4 张）。 */
-export const DAILY_CARDS = 4;
-/** 单张金卡概率（占位 8%·期望两三天一张）。 */
-export const GOLD_RATE = 0.08;
-/** 单张银卡概率（占位 32%；铜=1-金-银）。 */
-export const SILVER_RATE = 0.32;
-/** 暗保底：连续 PITY_DAYS 次刷新无金 → 下一次强制出一张金（玩家无感知）。 */
-export const PITY_DAYS = 4;
+// ===== v0.7 校准终值（照抄不调数）=====
+/** 每天刷出的卡数（总修订案：4→3 张·全护航）。 */
+export const DAILY_CARDS = 3;
+/** 明保底：每 GOLD_EVERY_DAYS 个发卡日必出 1 张金（dayKey % 3 === 0 的发卡日）。 */
+export const GOLD_EVERY_DAYS = 3;
+/** 明保底：每天 3 张必含的银卡张数。 */
+export const SILVER_PER_DAY = 1;
 /** 品质定词缀条数（铜1/银2/金3）。 */
 export const AFFIX_COUNT: Readonly<Record<S7BountyQuality, number>> = Object.freeze({ bronze: 1, silver: 2, gold: 3 });
 /** 品质产出倍率（铜1/银1.6/金3）。 */
 export const QUALITY_MULT: Readonly<Record<S7BountyQuality, number>> = Object.freeze({ bronze: 1, silver: 1.6, gold: 3 });
-/** 完美护航加成倍率（运输船满血·占位 +25%）。 */
+/** 完美护航加成倍率（运输船满血 ×1.25）。 */
 export const PERFECT_BONUS_MULT = 1.25;
-/** 护航遇袭触发概率（占位 15%·按卡确定性）。 */
+/** 护航遇袭触发概率（15%·按卡确定性）。 */
 export const AMBUSH_RATE = 0.15;
-/** 悬赏板容量：基础 12，居住舱 Lv5→16 / Lv10→20。 */
-export const BOARD_CAP_BASE = 12;
-/** 老档折算铜卡上限（迁移用·取基础容量）。 */
-export const LEGACY_MIGRATION_CAP = BOARD_CAP_BASE;
+/** 星域系数衰减指数（难度爬档已是显式进度倍率·全系数=双重计）。 */
+export const BOUNTY_COEF_POW = 0.6;
+/** 老档折算铜卡上限（迁移用·取基础容量 6）。 */
+export const LEGACY_MIGRATION_CAP = 6;
 
-/** 基础产出/张（护航=合金+少量星贝、演习=驾驶记录；占位·×星域系数×品质倍率后向下取整）。 */
-export const BOUNTY_BASE_REWARDS: Readonly<Record<S7BountyTheme, Readonly<Record<string, number>>>> = Object.freeze({
-  escort: Object.freeze({ hullAlloy: 80, starCargo: 10 }),
-  drill: Object.freeze({ pilotToken: 60 }),
+/** 难度四档（总修订案 1a）：倍率 + 推荐战力（=v0.7 压力表 n10/n55/n98/n130 快照值·对表测试钉 json 一致）。 */
+export type S7BountyDifficulty = 'novice' | 'normal' | 'hard' | 'nightmare';
+export const BOUNTY_DIFFICULTY_MULTS: Readonly<Record<S7BountyDifficulty, number>> = Object.freeze({
+  novice: 0.7, normal: 1.0, hard: 1.5, nightmare: 2.2,
 });
-/** 金卡附赠实物轮换（普通信标 / 通用星舰碎片 / 打捞加速券〔现钱包无专用券·占位 supplyTicket〕），按 genDayKey 日轮换。 */
+export const BOUNTY_DIFFICULTY_REC_POWER: Readonly<Record<S7BountyDifficulty, number>> = Object.freeze({
+  novice: 140, normal: 2972, hard: 8443, nightmare: 17319,
+});
+
+/** 基础产出/张（护航=合金+星贝·v0.7 终值 495/20；drill 行=老开发档积压消化用量·新卡不再生成演习）。 */
+export const BOUNTY_BASE_REWARDS: Readonly<Record<S7BountyTheme, Readonly<Record<string, number>>>> = Object.freeze({
+  escort: Object.freeze({ hullAlloy: 495, starCargo: 20 }),
+  drill: Object.freeze({ pilotToken: 370 }),
+});
+/** 金卡附赠实物轮换（普通信标 / 通用星舰碎片 / 补给券），按获得次数轮换（期望各 1/3=机器真源 goldPhysical）。 */
 export const GOLD_PHYSICAL_ROTATION: readonly string[] = Object.freeze(['beaconCommon', 'shipBlueprint', 'supplyTicket']);
 export const GOLD_PHYSICAL_AMOUNT = 1;
-/** 遇袭额外小包轮换（通用碎片 / 加速券），按 genDayKey 日轮换。 */
+/** 遇袭额外小包轮换（通用碎片 / 补给券），按获得次数轮换（期望各 1/2=机器真源 ambushWinBonus 0.5/0.5）。 */
 export const AMBUSH_BONUS_ROTATION: readonly string[] = Object.freeze(['shipBlueprint', 'supplyTicket']);
-export const AMBUSH_BONUS_AMOUNT = 2;
+export const AMBUSH_BONUS_AMOUNT = 1;
 
 /** 运输船 battle_unit_stat_param.rowId（护航专用 prop 单位·不攻击可被打·沿用块2 配置）。 */
 export const ESCORT_TRANSPORT_STAT_REF = 'bu_commission_transport';
@@ -77,13 +89,14 @@ export interface S7BountyCard {
   affixIds: string[];
 }
 
-/** 悬赏板存档子状态（本模块拥有形状 + createDefault/normalize，S7SaveService 组合，v21）。 */
+/** 悬赏板存档子状态（本模块拥有形状 + createDefault/normalize，S7SaveService 组合，v21）。
+ *  注：旧"noGoldDays 暗保底计数"随明保底日程表退役（字段仍规范化收纳=脏档兼容·恒 0）。 */
 export interface S7BountyState {
   /** 板上现有卡（未做的积压 + 今日新刷；上限随居住舱）。 */
   cards: S7BountyCard[];
   /** 上次生成日 s7DayKey；<=0 = 从未生成过。 */
   lastGenDayKey: number;
-  /** 连续无金刷新次数（暗保底计数·玩家无感知）。 */
+  /** （已退役·恒 0）旧暗保底连续无金计数——明保底日程表下不再使用。 */
   noGoldDays: number;
   /** 已获金卡实物次数（轮换索引·Ron 拍板：按获得次数轮转、确定性；避免同日多金给同实物）。 */
   goldPhysicalCount: number;
@@ -161,22 +174,7 @@ export function seedBountyFromLegacyCommissions(escortStock: number, drillStock:
   return { cards, lastGenDayKey: 0, noGoldDays: 0, goldPhysicalCount: 0, ambushBonusCount: 0 };
 }
 
-// ===== 容量 =====
-
-/** 悬赏板容量（基础 12，居住舱 Lv5→16 / Lv10→20；沿用既有居住舱钩子）。 */
-export function bountyBoardCap(habitatLevel: number): number {
-  const lv = Number.isFinite(habitatLevel) && habitatLevel > 0 ? Math.floor(habitatLevel) : 0;
-  return lv >= 10 ? 20 : lv >= 5 ? 16 : BOARD_CAP_BASE;
-}
-
-// ===== 确定性日刷 =====
-
-function rollQuality(rng: S7AutoBattleRng): S7BountyQuality {
-  const r = rng.next();
-  if (r < GOLD_RATE) return 'gold';
-  if (r < GOLD_RATE + SILVER_RATE) return 'silver';
-  return 'bronze';
-}
+// ===== 确定性日刷（明保底日程表·总修订案）=====
 
 /** 从词缀池里确定性抽 count 个不重复 id（池不足则取全部）。 */
 function drawDistinctAffixes(pool: readonly string[], count: number, rng: S7AutoBattleRng): string[] {
@@ -198,44 +196,50 @@ function buildCard(
   return { id: `${dayKey}_${slot}`, genDayKey: dayKey, theme, quality, affixIds };
 }
 
-/**
- * 生成某一天的 4 张卡（确定性：seed=bounty_<dayKey>）+ 更新暗保底计数。
- * 暗保底：进入这次刷新前已连续 noGoldDays 次无金，若本次仍无金且已达阈值 → 确定性挑一张升金。
- * 返回本次 4 张卡 + 刷新后的连续无金次数（有金→0，无金→+1）。
- */
-export function generateDayCards(
-  dayKey: number, noGoldDays: number, affixPool: readonly string[],
-): { cards: S7BountyCard[]; noGoldDays: number } {
-  const rng = new S7AutoBattleRng(`bounty_${dayKey}`);
-  const cards: S7BountyCard[] = [];
-  for (let slot = 0; slot < DAILY_CARDS; slot += 1) {
-    const theme: S7BountyTheme = rng.next() < 0.5 ? 'escort' : 'drill';
-    cards.push(buildCard(dayKey, slot, theme, rollQuality(rng), affixPool, rng));
-  }
-  let hasGold = cards.some((c) => c.quality === 'gold');
-  if (!hasGold && noGoldDays >= PITY_DAYS - 1) {
-    const idx = rng.nextInt(DAILY_CARDS);
-    cards[idx] = buildCard(dayKey, idx, cards[idx].theme, 'gold', affixPool, rng); // 升金·重抽 3 词缀
-    hasGold = true;
-  }
-  return { cards, noGoldDays: hasGold ? 0 : noGoldDays + 1 };
+/** 明保底：该发卡日是否为金卡日（每 3 天必出 1 金=dayKey 模 3 的确定性日程·玩家可预期）。 */
+export function isGoldDay(dayKey: number): boolean {
+  return ((dayKey % GOLD_EVERY_DAYS) + GOLD_EVERY_DAYS) % GOLD_EVERY_DAYS === 0;
 }
 
 /**
- * 日刷入口（懒结算）：s7DayKey 变化时刷出今日 4 张加入板、按居住舱容量封顶（超则掉最旧）；同日重进不重刷。
- * 未做的卡留板（积压）；不做跨缺勤天数补刷（积压=你自己没做完的卡，不是缺勤天数囤卡）。返回是否新刷了一批。
+ * 生成某一天的 3 张全护航卡（确定性：seed=bounty_<dayKey>·明保底日程表）：
+ * 金卡日=金1+银1+铜1；普通日=银1+铜2（"每天必含 ≥1 银、每 3 天必出 1 金"→ 单张期望 金1/9·银1/3·铜5/9）。
+ * 品质在 3 个槽位间确定性洗位（同日重进不换卡）。
+ */
+export function generateDayCards(
+  dayKey: number, affixPool: readonly string[],
+): { cards: S7BountyCard[] } {
+  const rng = new S7AutoBattleRng(`bounty_${dayKey}`);
+  const qualities: S7BountyQuality[] = isGoldDay(dayKey)
+    ? ['gold', 'silver', 'bronze']
+    : ['silver', 'bronze', 'bronze'];
+  // 洗位（Fisher-Yates·确定性）：品质构成是日程表、槽位顺序留随机观感。
+  for (let i = qualities.length - 1; i > 0; i -= 1) {
+    const j = rng.nextInt(i + 1);
+    const t = qualities[i]; qualities[i] = qualities[j]; qualities[j] = t;
+  }
+  const cards: S7BountyCard[] = [];
+  for (let slot = 0; slot < DAILY_CARDS; slot += 1) {
+    cards.push(buildCard(dayKey, slot, 'escort', qualities[slot], affixPool, rng));
+  }
+  return { cards };
+}
+
+/**
+ * 日刷入口（懒结算）：s7DayKey 变化时刷出今日 3 张加入板、按居住舱容量封顶（超则掉最旧）；同日重进不重刷。
+ * 未做的卡留板（积压=6/9/12·细案③）；不做跨缺勤天数补刷（停玩天不发卡=发卡"每登录日"口径·§10㉙）。
+ * 返回是否新刷了一批。
  */
 export function refreshBountyBoard(
   state: S7BountyState, habitatLevel: number, now: number, affixPool: readonly string[],
 ): boolean {
   const dayKey = s7DayKey(now);
   if (state.lastGenDayKey === dayKey) return false; // 今日已刷
-  const prevNoGold = state.lastGenDayKey <= 0 ? 0 : state.noGoldDays;
-  const { cards, noGoldDays } = generateDayCards(dayKey, prevNoGold, affixPool);
+  const { cards } = generateDayCards(dayKey, affixPool);
   for (const c of cards) state.cards.push(c);
   const cap = bountyBoardCap(habitatLevel);
   if (state.cards.length > cap) state.cards.splice(0, state.cards.length - cap); // 超容量掉最旧
-  state.noGoldDays = noGoldDays;
+  state.noGoldDays = 0; // 明保底日程表下退役字段·恒 0
   state.lastGenDayKey = dayKey;
   return true;
 }
@@ -273,17 +277,22 @@ export function ambushBonusItem(ambushBonusCount: number): string {
 }
 
 /**
- * 一张卡的产出（纯函数）：基础(按 theme) × 星域系数(tier) × 品质倍率；护航完美 ×1.25；全部向下取整。
+ * 一张卡的产出（纯函数）：基础(按 theme) × 星域系数^0.6 × 品质倍率 × 难度倍率；护航完美 ×1.25；全部向下取整。
+ * 难度缺省 normal（=×1.0·难度选择 UI 归灰盒批·数值面先备）。
  * 金卡附赠实物按 goldPhysicalIndex 轮换（=当前已获金卡实物次数；非金卡忽略该参数）。实物并进货币表。
  */
-export function bountyCardRewards(card: S7BountyCard, tier: number, perfect: boolean, goldPhysicalIndex = 0): Record<string, number> {
-  const coef = starfieldCoefficient(tier);
+export function bountyCardRewards(
+  card: S7BountyCard, tier: number, perfect: boolean, goldPhysicalIndex = 0,
+  difficulty: S7BountyDifficulty = 'normal',
+): Record<string, number> {
+  const coef = Math.pow(starfieldCoefficient(tier), BOUNTY_COEF_POW);
   const qMult = QUALITY_MULT[card.quality];
+  const dMult = BOUNTY_DIFFICULTY_MULTS[difficulty] ?? 1;
   const perfectMult = card.theme === 'escort' && perfect ? PERFECT_BONUS_MULT : 1;
   const base = BOUNTY_BASE_REWARDS[card.theme];
   const out: Record<string, number> = {};
   for (const key of Object.keys(base)) {
-    const amt = Math.floor(base[key] * coef * qMult * perfectMult);
+    const amt = Math.floor(base[key] * coef * qMult * dMult * perfectMult);
     if (amt > 0) out[key] = amt;
   }
   if (card.quality === 'gold') {
@@ -299,10 +308,11 @@ export function bountyCardRewards(card: S7BountyCard, tier: number, perfect: boo
  */
 export function settleBountyCard(
   state: S7BountyState, cardId: string, tier: number, perfect: boolean,
+  difficulty: S7BountyDifficulty = 'normal',
 ): { card: S7BountyCard; rewards: Record<string, number> } | null {
   const card = findBountyCard(state, cardId);
   if (!card) return null;
-  const rewards = bountyCardRewards(card, tier, perfect, state.goldPhysicalCount);
+  const rewards = bountyCardRewards(card, tier, perfect, state.goldPhysicalCount, difficulty);
   if (card.quality === 'gold') state.goldPhysicalCount += 1;
   completeBountyCard(state, cardId);
   return { card, rewards };

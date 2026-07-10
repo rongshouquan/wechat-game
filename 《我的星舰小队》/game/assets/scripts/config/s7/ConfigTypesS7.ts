@@ -57,7 +57,7 @@ export interface S7PilotConfig {
   forbiddenBindingNote: string;
 }
 
-/** 星核配置（默认盘 core01-core06 共 6 个；CORE-RSV 不进入本表）。 */
+/** 星核配置（默认盘 core07-core22 真核 16 颗=步5 收编；CORE-RSV 不进入本表）。 */
 export interface S7CoreConfig {
   schemaVersion: string;
   coreId: string;
@@ -132,22 +132,6 @@ export interface S7FreeResourceAnchorParam {
   supplyTicket: number;
   starCargo: number;
   sourceScopeNote: string;
-}
-
-/** 升级成本（星舰 / 驾驶员，等级段总成本）。 */
-export interface S7UpgradeCostParam {
-  schemaVersion: string;
-  rowId: string;
-  targetType: 'ship' | 'pilot';
-  bandId: string;
-  maxLevel: number;
-  // 6a-2：删废弃币 battleLog 列（升级不再扣 battleLog）。
-  starOre: number;
-  hullAlloy: number;
-  shipBlueprint: number;
-  pilotToken: number;
-  sourceTagPolicy: string;
-  note: string;
 }
 
 /** 强化成本（星核 5 阶 / 插件 +15）。 */
@@ -611,7 +595,7 @@ export interface S7GrowthBandParam {
   rowId: string;
   targetType: S7GrowthTargetType;
   curveType: S7GrowthCurveType;
-  /** 与 upgrade_cost_param.bandId / enhance_cost_param.enhanceBand 对齐（core 为控制点段标识）。 */
+  /** 与 enhance_cost_param.enhanceBand 对齐（旧 upgrade_cost_param 已随步5 公式化退役）（core 为控制点段标识）。 */
   bandId: string;
   /** band_linear：段输出起始等级；control_point：控制点 index（stage）。 */
   fromIndex: number;
@@ -976,7 +960,6 @@ export interface S7ConfigBundle {
   source_tag_config: S7SourceTagConfig[];
   power_reference_param: S7PowerReferenceParam[];
   free_resource_anchor_param: S7FreeResourceAnchorParam[];
-  upgrade_cost_param: S7UpgradeCostParam[];
   enhance_cost_param: S7EnhanceCostParam[];
   growth_band_param: S7GrowthBandParam[];
   refund_param: S7RefundParam[];
@@ -1027,7 +1010,6 @@ export const S7_ID_FIELD: Record<S7ConfigTableName, string> = {
   source_tag_config: 'rowId',
   power_reference_param: 'rowId',
   free_resource_anchor_param: 'rowId',
-  upgrade_cost_param: 'rowId',
   enhance_cost_param: 'rowId',
   growth_band_param: 'rowId',
   refund_param: 'rowId',
@@ -1076,7 +1058,6 @@ export const S7_TABLE_FILES: Record<S7ConfigTableName, string> = {
   source_tag_config: 's7/source_tag_config.sample',
   power_reference_param: 's7/power_reference_param.sample',
   free_resource_anchor_param: 's7/free_resource_anchor_param.sample',
-  upgrade_cost_param: 's7/upgrade_cost_param.sample',
   enhance_cost_param: 's7/enhance_cost_param.sample',
   growth_band_param: 's7/growth_band_param.sample',
   refund_param: 's7/refund_param.sample',

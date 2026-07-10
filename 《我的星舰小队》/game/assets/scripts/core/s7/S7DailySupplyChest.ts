@@ -12,16 +12,16 @@ import { S7AutoBattleRng } from './S7AutoBattleRng';
 /** 广告点位 id（S13.2 #2）。 */
 export const DAILY_SUPPLY_CHEST_AD_POINT = 'daily_supply_chest';
 
-// ===== 占位数值（第三块统一校准；改这里不改逻辑）=====
+// ===== v0.7 校准终值（机器真源 PARAMS.supplyChest·照抄不调数）=====
 /** 基础组合量（±抖动前）：合金 / 驾驶记录 / 星贝。 */
-export const SUPPLY_CHEST_ALLOY_BASE = 40;
-export const SUPPLY_CHEST_TOKEN_BASE = 30;
+export const SUPPLY_CHEST_ALLOY_BASE = 35;
+export const SUPPLY_CHEST_TOKEN_BASE = 25;
 export const SUPPLY_CHEST_CARGO_BASE = 10;
 /** 各量抖动幅度（±pct·0.2=±20%·确定性 rng 掷）。 */
 export const SUPPLY_CHEST_JITTER_PCT = 0.2;
 /** 小概率彩蛋：普通信标×1 概率（0-1）。 */
-export const SUPPLY_CHEST_BEACON_CHANCE = 0.12;
-/** 未中信标时：少量通用碎片概率（0-1）+ 数量（舰/员碎片随机其一）。 */
+export const SUPPLY_CHEST_BEACON_CHANCE = 0.25; // v0.7：0.25 信标期望/箱
+/** 通用碎片层（独立于信标层·v0.7 universal EV=1.0/箱=0.25×4）：概率 + 数量（舰/员碎片随机其一）。 */
 export const SUPPLY_CHEST_SHARD_CHANCE = 0.25;
 export const SUPPLY_CHEST_SHARD_AMOUNT = 4;
 
@@ -41,10 +41,9 @@ export function rollDailySupplyChest(dayKey: number, openIndex: number): Record<
     pilotToken: jitter(SUPPLY_CHEST_TOKEN_BASE),
     starCargo: jitter(SUPPLY_CHEST_CARGO_BASE),
   };
-  // 彩蛋层：小概率普通信标×1；未中则再掷"少量通用碎片"（舰/员随机其一）；两层都未中=纯软货币组合。
-  if (rng.next() < SUPPLY_CHEST_BEACON_CHANCE) {
-    out.beaconCommon = 1;
-  } else if (rng.next() < SUPPLY_CHEST_SHARD_CHANCE) {
+  // 彩蛋两层独立掷（v0.7 期望对齐：信标 0.25/箱 + 通碎 1.0/箱——旧 else-if 互斥口径作废）。
+  if (rng.next() < SUPPLY_CHEST_BEACON_CHANCE) out.beaconCommon = 1;
+  if (rng.next() < SUPPLY_CHEST_SHARD_CHANCE) {
     out[rng.next() < 0.5 ? 'shipBlueprint' : 'pilotShardUniversal'] = SUPPLY_CHEST_SHARD_AMOUNT;
   }
   return out;

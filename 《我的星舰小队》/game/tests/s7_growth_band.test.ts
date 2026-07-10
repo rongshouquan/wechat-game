@@ -13,7 +13,7 @@ const S7_DIR = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', '
 
 const TABLE_NAMES: S7ConfigTableName[] = [
   'battle_template_config', 'ship_config', 'pilot_config', 'core_config', 'plugin_config',
-  'source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param',
+  'source_tag_config', 'power_reference_param', 'free_resource_anchor_param',
   'enhance_cost_param', 'growth_band_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param',
   'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check',
   'enemy_schema_config', 'boss_skeleton_config', 'prebattle_preview_config',

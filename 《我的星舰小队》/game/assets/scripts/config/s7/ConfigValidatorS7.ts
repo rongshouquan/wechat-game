@@ -55,7 +55,7 @@ type TierATable = 'battle_template_config' | 'ship_config' | 'pilot_config' | 'c
 const TIER_A_TABLES: TierATable[] = ['battle_template_config', 'ship_config', 'pilot_config', 'core_config', 'plugin_config'];
 
 const TIER_B_TABLES: S7ConfigTableName[] = [
-  'source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param',
+  'source_tag_config', 'power_reference_param', 'free_resource_anchor_param',
   'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param',
   'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check',
   'commission_affix_param', 'daily_puzzle_param',
@@ -240,7 +240,7 @@ export const S7_EXPECTED_COUNT: Record<TierATable, number> = {
   // ⑥第一段 20 舰落地（2026-07-07·细表§12）：默认盘 12→20（真源首发 20 舰·shp01-20 映射记细表）。
   ship_config: 20,
   pilot_config: 20, // ⑩A1 扩容（第一段四点②已拍）
-  core_config: 7,
+  core_config: 16, // 步5 收编：core07-22 真核 16 颗（core01-06 旧占位随收编删除）
   plugin_config: 30, // ⑩A3 对齐真源 30 件
 };
 
@@ -248,7 +248,7 @@ export const S7_DEFAULT_IDS: Record<TierATable, string[]> = {
   battle_template_config: seq('t', 1, 10),
   ship_config: seq('shp', 1, 20), // ⑥第一段：12→20
   pilot_config: seq('pil', 1, 20),
-  core_config: seq('core', 1, 7),
+  core_config: seq('core', 7, 22),
   plugin_config: seq('plg', 1, 30),
 };
 
@@ -657,18 +657,6 @@ function validateTierB(
     }
   }
 
-  // upgrade_cost_param：等级上限 40
-  let shipMaxLv = 0; let pilotMaxLv = 0;
-  for (const row of rowsByTable.upgrade_cost_param) {
-    const id = String(row.rowId);
-    if (row.targetType !== 'ship' && row.targetType !== 'pilot') errors.push({ table: 'upgrade_cost_param', id, message: 'targetType 非法' });
-    const lv = num(row.maxLevel) ?? 0;
-    if (row.targetType === 'ship') shipMaxLv = Math.max(shipMaxLv, lv);
-    if (row.targetType === 'pilot') pilotMaxLv = Math.max(pilotMaxLv, lv);
-  }
-  if (shipMaxLv !== 40) errors.push({ table: 'upgrade_cost_param', id: 'ship', message: `星舰等级上限必须为 40，实际 ${shipMaxLv}` });
-  if (pilotMaxLv !== 40) errors.push({ table: 'upgrade_cost_param', id: 'pilot', message: `驾驶员等级上限必须为 40，实际 ${pilotMaxLv}` });
-
   // 首发无强化系统：砍星核 5 阶强化（v1.0 §5.4「不做重复星核深层养成（留 P1）」）、插件不分等级（§5.3）。
   // → enhance_cost_param 应为空；P1 若做星核深层养成再启用本表与对应校验。
   if (rowsByTable.enhance_cost_param.length > 0) {
@@ -685,7 +673,7 @@ function validateTierB(
     }
   }
 
-  // pressure_param：min<=max；N075<=14500；modifier 不叠 Boss
+  // pressure_param：min<=max；n150 钉 v0.7 快照；modifier 不叠 Boss
   for (const row of rowsByTable.pressure_param) {
     const id = String(row.rowId);
     const scope = row.scope;
@@ -700,8 +688,9 @@ function validateTierB(
     } else {
       const lo = num(row.pressureMin); const hi = num(row.pressureMax);
       if (lo === null || hi === null || lo > hi) errors.push({ table: 'pressure_param', id, message: 'pressureMin <= pressureMax 不成立' });
-      if (scope === 'boss' && row.refKey === 'n150' && (hi === null || hi > 14500)) {
-        errors.push({ table: 'pressure_param', id, message: 'N150（终Boss）压力上限必须 <= 14500，不上探 15500' });
+      // 步5 对表守卫：n150 推荐战力钉 v0.7 快照精确值（32094）——压力表重校时此处红=提醒重落显示带。
+      if (scope === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 32094) {
+        errors.push({ table: 'pressure_param', id, message: 'N150 推荐战力必须==v0.7 快照 32094（重校后同步重落）' });
       }
     }
   }

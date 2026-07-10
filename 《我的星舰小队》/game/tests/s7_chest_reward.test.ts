@@ -95,12 +95,10 @@ describe('S7 开箱 · 默认配置 §10.6 自检', () => {
     expect(def.adPicks).toBe(1);
   });
 
-  it('信标包个数范围符合 §10.6「3~5 个」', () => {
-    const bundle = CFG.chests.starlightCargo.options.find((o) => o.kind === 'beaconBundle');
-    expect(bundle).toBeTruthy();
-    if (bundle && bundle.kind === 'beaconBundle') {
-      expect(bundle.minCount).toBe(3);
-      expect(bundle.maxCount).toBe(5);
-    }
+  it('信标包个数=7-11（步5 重定基：选项面值=3×整箱期望〔选1/3口径〕·v0.7 §6 cargoChest 信标 EV 3 枚/箱→选项 9）', () => {
+    const bundle = CFG.chests.starlightCargo.options.find((o) => o.kind === 'beaconBundle')!;
+    if (bundle.kind !== 'beaconBundle') throw new Error('bad');
+    expect(bundle.minCount).toBe(7);
+    expect(bundle.maxCount).toBe(11);
   });
 });

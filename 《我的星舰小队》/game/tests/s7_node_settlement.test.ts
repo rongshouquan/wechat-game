@@ -38,11 +38,13 @@ async function ensure(): Promise<void> {
 const progressAt = (nodeId: string): S7MainlineProgressState => ({ currentNodeId: nodeId, clearedNodeIds: [] });
 
 describe('C1b-step1a 节点奖励解析 resolveNodeRewardGrants', () => {
-  it('n001 解析出软货币（取首个 reward_param 行的 min；改动#3后只剩 hullAlloy25，星矿移出必得进三选一）', async () => {
+  it('n001 固定三件套=55/36/24（步5 重定基：公式驱动 基值×档位×星域系数·sf01 normal=×1·v0.7 §6 mainline·旧 reward_param 包链路 25 作废）', async () => {
     await ensure();
     const grants = resolveNodeRewardGrants(runtime, 'n001');
     expect(grants).toEqual([
-      { resourceId: 'hullAlloy', amount: 25 },
+      { resourceId: 'hullAlloy', amount: 55 },
+      { resourceId: 'pilotToken', amount: 36 },
+      { resourceId: 'starCargo', amount: 24 },
     ]);
   });
 
@@ -74,8 +76,10 @@ describe('C1b-step1a 首通结算 settleS7NodeVictory', () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.grants).toEqual([
-      { resourceId: 'hullAlloy', amount: 25 },
-    ]);
+      { resourceId: 'hullAlloy', amount: 55 },
+      { resourceId: 'pilotToken', amount: 36 },
+      { resourceId: 'starCargo', amount: 24 },
+    ]); // 步5 重定基：公式驱动三件套（同上）
     expect(r.completedNodeId).toBe('n001');
     expect(r.nextNodeId).toBe('n002');
     expect(r.finished).toBe(false);
@@ -111,6 +115,7 @@ describe('C1b-step1a 首通结算 settleS7NodeVictory', () => {
     if (!r.ok) return;
     applyResourceGrants(resources, r.grants);
     expect(resources.starOre).toBe(0); // 改动#3：星矿不再随节点结算必得
-    expect(resources.hullAlloy).toBe(25);
+    expect(resources.hullAlloy).toBe(55); // 步5 重定基：v0.7 fixedAlloyBase 55（sf01 normal ×1）
+    expect(resources.starCargo).toBe(24);
   });
 });

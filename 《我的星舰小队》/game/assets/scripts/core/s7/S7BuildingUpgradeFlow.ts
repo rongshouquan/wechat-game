@@ -9,9 +9,13 @@
 
 import { S7ResourceState } from '../../save/S7SaveService';
 import { S7BuildingState, isBuildingUnlocked, getBuildingLevel, S7_BUILDING_MAX_LEVEL } from './S7BuildingState';
-import { buildingUpgradeStarOreCost } from './S7BuildingCost';
-import { S7PopulationState, applyWorkerDiscount } from './S7Population';
+import { buildingUpgradeStarOreCost, discountedBuildingUpgradeCost } from './S7BuildingCost';
+import { S7PopulationState } from './S7Population';
+import { workerBuildDiscountPct } from './S7BuildingEffects';
 import { upgradeBuilding, S7BuildingUpgradeResult } from './S7BuildingUpgradeService';
+
+/** 居住舱建筑 id（工人折扣的门槛与费率挂居住舱等级·细案③）。 */
+const HABITAT_ID = 'bld_habitat';
 
 /** 一栋建筑在升级面板里的只读视图行（供 UI 直接渲染）。 */
 export interface S7BuildingUpgradeRow {
@@ -40,12 +44,13 @@ export function buildBuildingUpgradeView(
   population: S7PopulationState,
 ): S7BuildingUpgradeRow[] {
   const ore = typeof resources.starOre === 'number' ? resources.starOre : 0;
+  const discPct = workerBuildDiscountPct(getBuildingLevel(state, HABITAT_ID), population.workers);
   return buildingIds.map((buildingId) => {
     const unlocked = isBuildingUnlocked(state, buildingId);
     const level = getBuildingLevel(state, buildingId);
     const atMax = unlocked && level >= S7_BUILDING_MAX_LEVEL;
     const baseCost = buildingUpgradeStarOreCost(buildingId, level); // 未解锁/满级 → null
-    const discountedCost = baseCost === null ? null : applyWorkerDiscount(baseCost, population.workers);
+    const discountedCost = baseCost === null ? null : discountedBuildingUpgradeCost(baseCost, discPct);
     const canAfford = discountedCost !== null && ore >= discountedCost;
     return { buildingId, unlocked, level, maxLevel: S7_BUILDING_MAX_LEVEL, atMax, baseCost, discountedCost, canAfford };
   });
@@ -64,6 +69,7 @@ export function upgradeBuildingWithDiscount(
   const level = getBuildingLevel(state, buildingId);
   const baseCost = buildingUpgradeStarOreCost(buildingId, level);
   if (baseCost === null) return { ok: false, code: level < 1 ? 'not_unlocked' : 'max_level' };
-  const cost = applyWorkerDiscount(baseCost, population.workers);
+  const discPct = workerBuildDiscountPct(getBuildingLevel(state, HABITAT_ID), population.workers);
+  const cost = discountedBuildingUpgradeCost(baseCost, discPct);
   return upgradeBuilding(state, resources, buildingId, cost);
 }

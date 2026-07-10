@@ -252,13 +252,15 @@ describe('S7DeepCorridor - 双层奖励', () => {
     expect(corridorMilestoneReward(7)).toEqual({}); // 非里程碑层
   });
 
-  it('翻倍：全部键 ×2·无排除项（碎片/史诗信标也翻·Ron 拍板）', () => {
-    const doubled = doubleCorridorReward({ starOre: 200, shipBlueprint: 3, beaconEpic: 1 });
-    expect(doubled).toEqual({ starOre: 400, shipBlueprint: 6, beaconEpic: 2 });
-    // 真实里程碑翻倍：逐键恰好 2 倍
+  it('翻倍：×2.5（B2 削峰终值）·星空宝石除外（B7 稀缺线不挂广告·旧"×2 无排除"随宝石入里程碑修订）', () => {
+    const doubled = doubleCorridorReward({ starOre: 200, shipBlueprint: 3, beaconEpic: 1, starGem: 20 });
+    expect(doubled).toEqual({ starOre: 500, shipBlueprint: 8, beaconEpic: 3, starGem: 20 }); // round(×2.5)·gem 原样
     const m = corridorMilestoneReward(50);
     const d = doubleCorridorReward(m);
-    for (const k of Object.keys(m)) expect(d[k]).toBe(m[k] * 2);
+    for (const k2 of Object.keys(m)) {
+      if (k2 === 'starGem') expect(d[k2]).toBe(m[k2]);
+      else expect(d[k2]).toBe(Math.round(m[k2] * 2.5));
+    }
   });
 });
 

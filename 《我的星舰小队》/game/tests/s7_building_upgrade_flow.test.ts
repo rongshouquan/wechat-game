@@ -1,10 +1,12 @@
-// C·养成接入 step2：建筑升级编排单测（成本/折扣/校验/升级后状态）。纯结构，不读磁盘表。
+// C·养成接入 step2：建筑升级编排单测（步5 重定基：工人折扣改细案③费率新规——居住舱 Lv3 解锁门·
+// 无居住舱/低于 Lv3 时 20 工人零折扣；折扣验证场景改带 Lv3 居住舱。旧 applyWorkerDiscount(-0.5%/人)退役）。
 import { describe, it, expect } from 'vitest';
 import { createDefaultS7ResourceState } from '../assets/scripts/save/S7SaveService';
 import { createDefaultS7BuildingState, unlockBuilding, getBuildingLevel } from '../assets/scripts/core/s7/S7BuildingState';
 import { createDefaultS7Population } from '../assets/scripts/core/s7/S7Population';
-import { buildingUpgradeStarOreCost } from '../assets/scripts/core/s7/S7BuildingCost';
-import { applyWorkerDiscount } from '../assets/scripts/core/s7/S7Population';
+import { buildingUpgradeStarOreCost, discountedBuildingUpgradeCost } from '../assets/scripts/core/s7/S7BuildingCost';
+import { workerBuildDiscountPct } from '../assets/scripts/core/s7/S7BuildingEffects';
+import { bumpBuildingLevel } from '../assets/scripts/core/s7/S7BuildingState';
 import {
   buildBuildingUpgradeView,
   upgradeBuildingWithDiscount,
@@ -32,7 +34,7 @@ describe('C step2 · buildBuildingUpgradeView', () => {
     const row = buildBuildingUpgradeView(['bld_habitat'], state, res, createDefaultS7Population())[0];
     expect(row.unlocked).toBe(true);
     expect(row.level).toBe(1);
-    expect(row.baseCost).toBe(buildingUpgradeStarOreCost('bld_habitat', 1)); // round(120·1^1.3·1.1)=132
+    expect(row.baseCost).toBe(buildingUpgradeStarOreCost('bld_habitat', 1)); // round(120·1^1.3·1.1)=132 → ×3=396（v0.7 全局系数）
     expect(row.discountedCost).toBe(row.baseCost); // 0 工人 → 无折扣
     expect(row.canAfford).toBe(true);
   });
@@ -46,13 +48,18 @@ describe('C step2 · buildBuildingUpgradeView', () => {
     expect(row.canAfford).toBe(false);
   });
 
-  it('工人折扣：折后成本 < 原始成本', () => {
+  it('工人折扣（细案③）：居住舱 ≥Lv3 才生效·折后成本 < 原始成本', () => {
     const state = createDefaultS7BuildingState();
     unlockBuilding(state, 'bld_habitat');
     const res = createDefaultS7ResourceState();
     res.starOre = 100000;
+    // Lv1 居住舱：20 工人也零折扣（Lv3 解锁门·细案③）。
+    const rowLv1 = buildBuildingUpgradeView(['bld_habitat'], state, res, { residents: 0, workers: 20 })[0];
+    expect(rowLv1.discountedCost).toBe(rowLv1.baseCost);
+    // Lv3 居住舱：折扣生效（1%/名·编制 12 → 12%）。
+    bumpBuildingLevel(state, 'bld_habitat'); bumpBuildingLevel(state, 'bld_habitat'); // 升到 Lv3
     const row = buildBuildingUpgradeView(['bld_habitat'], state, res, { residents: 0, workers: 20 })[0];
-    expect(row.discountedCost).toBe(applyWorkerDiscount(row.baseCost!, 20));
+    expect(row.discountedCost).toBe(discountedBuildingUpgradeCost(row.baseCost!, workerBuildDiscountPct(3, 20)));
     expect(row.discountedCost!).toBeLessThan(row.baseCost!);
   });
 });
@@ -73,7 +80,7 @@ describe('C step2 · upgradeBuildingWithDiscount', () => {
     unlockBuilding(state, 'bld_habitat'); // lv1
     const res = createDefaultS7ResourceState();
     res.starOre = 100000;
-    const expectCost = applyWorkerDiscount(buildingUpgradeStarOreCost('bld_habitat', 1)!, 0);
+    const expectCost = discountedBuildingUpgradeCost(buildingUpgradeStarOreCost('bld_habitat', 1)!, 0);
     const r = upgradeBuildingWithDiscount(state, res, createDefaultS7Population(), 'bld_habitat');
     expect(r.ok).toBe(true);
     if (r.ok) {
@@ -96,10 +103,11 @@ describe('C step2 · upgradeBuildingWithDiscount', () => {
     expect(res.starOre).toBe(5); // 未扣
   });
 
-  it('工人折扣让同次升级少花星矿', () => {
+  it('工人折扣让同次升级少花星矿（居住舱 Lv3 起·细案③）', () => {
     const mk = () => {
       const state = createDefaultS7BuildingState();
       unlockBuilding(state, 'bld_habitat');
+      bumpBuildingLevel(state, 'bld_habitat'); bumpBuildingLevel(state, 'bld_habitat'); // 升到 Lv3=过解锁门（升级对象也是居住舱=Lv3→4 成本）
       const res = createDefaultS7ResourceState();
       res.starOre = 100000;
       return { state, res };

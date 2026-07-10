@@ -20,7 +20,7 @@ describe('⑥战力刻度 · 同刻度异搭配 → 战力相同（总纲1）', 
   it('两套完全不同的 舰×员×核 组合（同等级同装备档位）战力逐舰相等、队伍和相等', () => {
     // 组合A：极焰+影(核M) / 组合B：锁链+藏(核N)——舰/员/核全不同，档位全同（lv 缺省 1、无插件）。
     const a = squadOf({ shp01: { pilotId: 'pil01', coreId: 'core07', pluginInstanceIds: [] } });
-    const b = squadOf({ shp20: { pilotId: 'pil09', coreId: 'core03', pluginInstanceIds: [] } });
+    const b = squadOf({ shp20: { pilotId: 'pil09', coreId: 'core12', pluginInstanceIds: [] } });
     const pa = shipPowerOf(BANDS, a as never, 'shp01');
     const pb = shipPowerOf(BANDS, b as never, 'shp20');
     expect(pa).toBe(pb); // 换舰/换员/换核不改战力数字

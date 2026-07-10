@@ -606,13 +606,13 @@ describe('s7 save - corruption / structure fallback', () => {
     data.playerState.squad.ownedPilots = ['pil01'];
     data.playerState.squad.ownedCores = { core01: 1 };
     data.playerState.squad.formation = [{ slotRef: 'p0c2', shipId: 'shp01' }];
-    data.playerState.squad.shipLoadouts = { shp01: { pilotId: 'pil01', coreId: 'core01', pluginInstanceIds: ['pi1'] } };
+    data.playerState.squad.shipLoadouts = { shp01: { pilotId: 'pil01', coreId: 'core10', pluginInstanceIds: ['pi1'] } };
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
     expect(r.data.playerState.squad.ownedShips).toEqual(['shp01', 'shp02']);
     expect(r.data.playerState.squad.formation).toHaveLength(1);
     expect(r.data.playerState.squad.formation[0]).toEqual({ slotRef: 'p0c2', shipId: 'shp01' });
-    expect(r.data.playerState.squad.shipLoadouts).toEqual({ shp01: { pilotId: 'pil01', coreId: 'core01', pluginInstanceIds: ['pi1'] } }); // 驾驶员+装配往返不丢
+    expect(r.data.playerState.squad.shipLoadouts).toEqual({ shp01: { pilotId: 'pil01', coreId: 'core10', pluginInstanceIds: ['pi1'] } }); // 驾驶员+装配往返不丢
   });
 
   it('迁移 v11 旧档到当前：补默认空邮箱 mailbox，保留旧字段（加性迁移，无需重置）', () => {
@@ -673,6 +673,7 @@ describe('s7 save - corruption / structure fallback', () => {
     expect(r.data.playerState.gacha).toEqual({
       pity: { recruit: 0, refit: 0, exclusive: 0 },
       exchangeProgress: 0, exchangeClaimed: 0, exclusivePeriod: -1, exclusiveShipId: null,
+      freePullDayKey: 0, freePullsUsed: 0, // 步5：免费抽记账字段（细案⑥·加性迁移补默认）
     }); // 新字段补默认空
     expect(r.data.playerState.squad.ownedShips).toEqual(['shp01']); // 旧字段保留
     expect(r.data.playerState.resources.supplyTicket).toBe(20);
@@ -684,12 +685,14 @@ describe('s7 save - corruption / structure fallback', () => {
     data.playerState.gacha = {
       pity: { recruit: 3, refit: 7, exclusive: 1 },
       exchangeProgress: 120, exchangeClaimed: 2, exclusivePeriod: 4, exclusiveShipId: 'shp11',
+      freePullDayKey: 123, freePullsUsed: 2, // 步5：免费抽记账字段随档往返
     };
     persistS7Save(adapter, data, NOW + 10);
     const r = loadS7Save(adapter, NOW + 20);
     expect(r.data.playerState.gacha).toEqual({
       pity: { recruit: 3, refit: 7, exclusive: 1 },
       exchangeProgress: 120, exchangeClaimed: 2, exclusivePeriod: 4, exclusiveShipId: 'shp11',
+      freePullDayKey: 123, freePullsUsed: 2,
     });
   });
 

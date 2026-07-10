@@ -9,7 +9,7 @@ const S7_DIR = path.resolve(__dirname, '..', 'assets', 'resources', 'configs', '
 
 const TABLE_NAMES: S7ConfigTableName[] = [
   'battle_template_config', 'ship_config', 'pilot_config', 'core_config', 'plugin_config',
-  'source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param',
+  'source_tag_config', 'power_reference_param', 'free_resource_anchor_param',
   'enhance_cost_param', 'growth_band_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param',
   'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check',
   'enemy_schema_config', 'boss_skeleton_config', 'prebattle_preview_config',
@@ -48,7 +48,7 @@ describe('s7 tier a config', () => {
     expect(b.battle_template_config).toHaveLength(10);
     expect(b.ship_config).toHaveLength(20); // ⑥第一段重定基：默认盘 12→20（真源首发 20 舰·映射细表§12）
     expect(b.pilot_config).toHaveLength(20); // ⑩A1 驾驶员 20 真配（扩容=第一段四点②已拍）
-    expect(b.core_config).toHaveLength(7);
+    expect(b.core_config).toHaveLength(16); // 步5 收编重定基：7→16（core01-06 旧占位删除·core07-22=16 真核对齐星核真源）
     expect(b.plugin_config).toHaveLength(30) /* ⑩A3 插件对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表） */;
   });
 
@@ -114,17 +114,17 @@ describe('s7 tier b economy params', () => {
     expect(Number(floor.fullCore)).toBeLessThanOrEqual(Number(exp.fullCore));
   });
 
-  it('caps N150（终Boss）boss pressure at 14500 and keeps min<=max', () => {
-    const rows = readSample<Array<{ rowId: string; scope: string; refKey: string; pressureMax: number; appliesToBoss?: boolean }>>('pressure_param');
+  it('pins N150（终Boss）pressure to v0.7 snapshot and keeps min<=max', () => {
+    // 步5 重定基：旧'≤14500'=B1 时代旧刻度护栏；新=钉 v0.7 快照精确值 32094（压力表重校→红=提醒重落显示带·同敌配绊线哲学）。
+    const rows = readSample<Array<{ rowId: string; scope: string; refKey: string; pressureMax: number; pressureRecommend?: number; appliesToBoss?: boolean }>>('pressure_param');
     const finalBoss = rows.find((r) => r.rowId === 'bp_n150')!;
-    expect(finalBoss.pressureMax).toBeLessThanOrEqual(14500);
+    expect(finalBoss.pressureRecommend).toBe(32094);
     for (const r of rows.filter((x) => x.scope === 'template_modifier')) expect(r.appliesToBoss).toBe(false);
   });
 
-  it('enforces level caps lv40；首发无强化系统(enhance_cost_param 应为空)', () => {
-    const up = readSample<Array<{ targetType: string; maxLevel: number }>>('upgrade_cost_param');
-    expect(Math.max(...up.filter((r) => r.targetType === 'ship').map((r) => r.maxLevel))).toBe(40);
-    expect(Math.max(...up.filter((r) => r.targetType === 'pilot').map((r) => r.maxLevel))).toBe(40);
+  it('首发无强化系统(enhance_cost_param 应为空)', () => {
+    // 步5 重定基：旧 upgrade_cost_param'段总成本÷10+上限40'占位表已随公式化退役（舰=50×L^1.3 合金/员=40×L^1.2 记录·
+    // 1-100 全段=A9-4 补段·见 s7_unit_upgrade_service.test 手推），本测只保留 enhance 空表断言。
     const en = readSample<unknown[]>('enhance_cost_param');
     expect(en).toHaveLength(0); // 砍星核5阶强化(§5.4)+插件不分等级(§5.3) → enhance 表为空
   });

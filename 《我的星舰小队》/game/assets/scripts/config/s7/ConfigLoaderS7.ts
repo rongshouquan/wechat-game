@@ -19,7 +19,6 @@ const S7_TABLE_NAMES: S7ConfigTableName[] = [
   'source_tag_config',
   'power_reference_param',
   'free_resource_anchor_param',
-  'upgrade_cost_param',
   'enhance_cost_param',
   'growth_band_param',
   'refund_param',

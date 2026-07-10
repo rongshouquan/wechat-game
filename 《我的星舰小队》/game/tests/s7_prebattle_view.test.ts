@@ -52,7 +52,7 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(r.view.stageType).toBe('boss');
     expect(r.view.hasBoss).toBe(true);
     expect(r.view.enemies.some((e) => e.unitStatRef === 'bu_boss_n084' && e.isBoss)).toBe(true);
-    expect(r.view.recommendedPower).toBe(1500); // bp_n084 recommend
+    expect(r.view.recommendedPower).toBe(6113); // 步5 重定基：bp_n084 recommend=v0.7 快照真值
   });
 
   it('n008 现在已有遭遇（2c批量生产覆盖）：hasEncounter=true、敌情如实读出', () => {

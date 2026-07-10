@@ -1,11 +1,15 @@
-// 信标打捞配置（阶段一 D-step1，纯 TS，不依赖 cc）：v1.0 §10.2「打捞与信标」。
-//
-// ⚠️ 全表 v0.1 占位（Ron 已授权 Claude 定灰盒占位·第二块「打捞产出表+碎片经济」统一校准）：
-//   - 三档信标(普通/稀有/史诗) = 必得保底干货 + 概率发现分层；通用碎片每档保底 1 种(舰/员随机其一)。
-//   - 时间档 2h/8h/24h·收益随时长递增但每小时效率递减(decayWeight)；广告=直接完成当前打捞(块5 改行为·规则在 S7AdPointPolicy)。
-//   - 经济护栏(§10.2)：完整星核不进打捞(只给星核碎片)；完整星舰=C阶(重复折专属碎片)；
-//     居民/工人/星辉货舱/传奇插件「单次≤1」；高稀有只在高档概率层、不保底。
-//   - 现以 TS 常量承载(引擎吃 config·解耦可测)；第二块再决定是否迁进正式 config-resource。
+// 信标打捞配置（步5 收尾批回写·纯 TS，不依赖 cc）：v1.0 §10.2「打捞与信标」。
+// 数值终值 = 初值表 v0.7 §6 打捞表（机器真源 PARAMS.salvage/TRUTHS.salvageTimeMult·照抄不调数）：
+//   - 必得：星矿/星贝/通用碎片 ×时长档倍率（h2=1/h8=2.2/h24=3.8·每小时效率递减）；
+//     固定干货（稀有=核碎 0.25/史诗=核碎 0.5+宝石 0.5·期望值口径→运行时按概率掷整数件）。
+//   - 概率发现分两线（细案④⑤）：**经济线**（通碎/信标/核碎/宝石）吃基础掷骰数；
+//     **惊喜线**（插件/居民/工人/星辉货舱）另吃稀有发现加成（+5%/级顶+35%）+ Lv10 24h 额外一骰。
+//   - 掷骰数按时长档取表（h2/h8/h24 非线性·旧 baseRolls+perHour 线性口径作废）。
+//   - **长趟守恒刀**：24h 趟全部产出 ×0.72（队数 3/4/5 只给排面不给增量·细案④·选型记档初值表 §15）。
+//   - 每类发现"期望值→抽签"口径：单趟每类发现期望 = 掷骰数×单骰期望 ≤1（全表实测），
+//     按 floor+小数概率补一件 采样 → 期望精确=尺子、且天然满足"单次≤1"（Ron 2026-06-20 护栏）。
+// 经济护栏(§10.2)：完整星核不进打捞；完整星舰=C阶（本表已无该项·高稀有走信标档分层）；
+//   居民/工人/星辉货舱/各品质插件「单次≤1」（见上·采样天然满足）。
 
 /** 信标档。 */
 export type S7BeaconTier = 'common' | 'rare' | 'epic';
@@ -14,115 +18,75 @@ export const BEACON_RESOURCE: Record<S7BeaconTier, string> = {
   common: 'beaconCommon', rare: 'beaconRare', epic: 'beaconEpic',
 };
 
-/** 一条打捞奖励（收菜产出·manifest）。完整星舰/插件等的"已拥有则折碎片"在应用侧按 squad 判（见 S7SalvageService）。 */
+/** 时长档键（2h/8h/24h）。 */
+export type S7SalvageDurKey = 'h2' | 'h8' | 'h24';
+export const SALVAGE_DUR_HOURS: Record<S7SalvageDurKey, number> = { h2: 2, h8: 8, h24: 24 };
+export function salvageDurKeyOf(hours: number): S7SalvageDurKey | null {
+  return hours === 2 ? 'h2' : hours === 8 ? 'h8' : hours === 24 ? 'h24' : null;
+}
+
+/** 一条打捞奖励（收菜产出·manifest）。 */
 export type S7SalvageReward =
   | { kind: 'resource'; resourceId: string; amount: number }
-  | { kind: 'ship_body'; shipId: string }                         // 完整星舰 C 阶（应用侧：已拥有→折该船专属碎片）
-  | { kind: 'plugin'; quality: 'fine' | 'superior' | 'legendary' } // 插件（品质·对齐 S7PluginQuality·应用侧挑 pluginId 入库）
+  | { kind: 'plugin'; quality: 'fine' | 'superior' | 'legendary' } // 插件（品质·应用侧挑 pluginId 入库）
   | { kind: 'chest'; chestId: string; amount: number }            // 星辉货舱
   | { kind: 'population'; pop: 'resident' | 'worker'; amount: number };
 
-/** 概率发现项：一个奖励模板 + 权重 + 是否「单次≤1」。 */
-export interface S7DiscoveryEntry {
-  reward: S7SalvageReward;
-  weight: number;
-  /** 单次≤1（居民/工人/星辉货舱/传奇插件/完整星舰等·一次收菜最多出 1 个）。 */
-  cap1?: boolean;
-}
-
-/** 一档信标的产出定义。 */
+/** 一档信标的产出定义（v0.7 尺子同构）。 */
 export interface S7BeaconTierDef {
-  /** 必得软货币（2h 基线量·随时长 decay 放大）。 */
-  baseStarOre: number;
-  baseStarCargo: number;
-  /** 必得通用碎片量（每档保底 1 种·舰/员随机其一·2h 基线·随时长放大）。 */
-  universalShardBase: number;
-  /** 额外必得干货（稀有/史诗才有；普通为空）。 */
-  guaranteedExtra: S7SalvageReward[];
-  /** 概率发现：掷骰次数 = baseRolls + perHour×小时数（向下取整）。 */
-  baseRolls: number;
-  perHourRolls: number;
-  /** 概率发现奖励表（加权）。 */
-  discovery: S7DiscoveryEntry[];
+  /** 必得软货币/通碎（2h 基线量·×时长档倍率）。 */
+  ore: number;
+  cargo: number;
+  universal: number;
+  /** 固定干货（每趟期望值·不吃时长倍率·吃守恒刀；掷整数件）。 */
+  fixed: Partial<Record<'coreFrag' | 'starGem', number>>;
+  /** 掷骰数按时长档（经济线基数；惊喜线在此之上加成）。 */
+  rolls: Record<S7SalvageDurKey, number>;
+  /** 经济线单骰期望（通碎/信标/核碎/宝石）。 */
+  econEV: Partial<Record<'universal' | 'beaconCommon' | 'beaconRare' | 'beaconEpic' | 'coreFrag' | 'starGem', number>>;
+  /** 惊喜线单骰期望（插件/居民/工人/货舱·吃稀有发现加成）。 */
+  surpriseEV: Partial<Record<'finePlugin' | 'superiorPlugin' | 'legendaryPlugin' | 'resident' | 'worker' | 'cargoChest', number>>;
 }
 
 export interface S7SalvageConfig {
-  /** 时间档（小时）+ 软货币/碎片随时长的放大系数（递减：8h<4×2h、24h<3×8h）。 */
-  timeTiers: { hours: number; yieldMult: number }[];
+  /** 时长档倍率（每小时效率递减：h8=2.2 非 4×、h24=3.8 非 12×）。 */
+  timeMult: Record<S7SalvageDurKey, number>;
+  /** 长趟守恒刀：只落 24h 趟的全产出乘数（细案④队数 3/4/5 守恒）。 */
+  yieldScale: number;
+  yieldScaleDur: S7SalvageDurKey;
   tiers: Record<S7BeaconTier, S7BeaconTierDef>;
-  // 块5：原 adSpeedup（按档减时+内部每日上限）配置块移除——S13 #5 改行为"看广告=直接完成"，
-  // 每日 1 次统一走 S7AdPointPolicy，打捞配置不再持有广告规则。
+  /** 打捞加速券（商人星贝购·把一趟 2h 短趟产出升到 8h 档）——购买 UI 归灰盒批·价先落。 */
+  accelPriceStarCargo: number;
 }
 
-// ===== 默认配置（v0.1 占位探针·刻意好测/好演示·第二块校准）=====
-
-// 插件按档保留三品质（普通→精良 / 稀有→优秀 / 史诗→传奇+优秀·§10.2），
-// 但**每个品质单次打捞最多 1 个**（Ron 拍板 2026-06-20：避免长趟刷出多个同品质插件）——
-// 各插件发现项均 cap1，去重 key=`plugin:<品质>`，故同档可出"1传奇+1优秀"但同品质不重复。
-
-const R = (resourceId: string, amount: number): S7SalvageReward => ({ kind: 'resource', resourceId, amount });
+// ===== 默认配置（v0.7 校准终值·照抄机器真源）=====
 
 export const DEFAULT_S7_SALVAGE_CONFIG: S7SalvageConfig = {
-  // 2h 基线 1×；8h≈2.8×（非 4×·递减）；24h≈6×（非 12×·递减）。
-  timeTiers: [
-    { hours: 2, yieldMult: 1 },
-    { hours: 8, yieldMult: 2.8 },
-    { hours: 24, yieldMult: 6 },
-  ],
+  timeMult: { h2: 1, h8: 2.2, h24: 3.8 },
+  yieldScale: 0.72,
+  yieldScaleDur: 'h24',
   tiers: {
     common: {
-      baseStarOre: 100, baseStarCargo: 30, universalShardBase: 4,
-      guaranteedExtra: [],
-      baseRolls: 1, perHourRolls: 0.3,
-      discovery: [
-        { reward: { kind: 'plugin', quality: 'fine' }, weight: 30, cap1: true }, // 精良·单次≤1
-        { reward: R('shipBlueprint', 3), weight: 25 },   // 另 1 种通用碎片（舰）
-        { reward: R('pilotShardUniversal', 3), weight: 25 }, // 另 1 种通用碎片（员）
-        { reward: R('supplyTicket', 2), weight: 20 },
-        { reward: R('beaconCommon', 1), weight: 18 },
-        { reward: R('coreFrag', 2), weight: 6 },                 // 极低：星核碎片少量
-        { reward: { kind: 'population', pop: 'resident', amount: 1 }, weight: 3, cap1: true }, // 极低
-        { reward: { kind: 'population', pop: 'worker', amount: 1 }, weight: 3, cap1: true },
-        { reward: { kind: 'chest', chestId: 'starlightCargo', amount: 1 }, weight: 2, cap1: true }, // 极低：星辉货舱
-      ],
+      ore: 30, cargo: 14, universal: 1.5, fixed: {},
+      rolls: { h2: 1.6, h8: 3.8, h24: 8.2 },
+      econEV: { universal: 0.5, beaconCommon: 0.16, coreFrag: 0.004 },
+      surpriseEV: { finePlugin: 0.05, resident: 0.02, worker: 0.02, cargoChest: 0.01 },
     },
     rare: {
-      baseStarOre: 260, baseStarCargo: 90, universalShardBase: 8,
-      guaranteedExtra: [R('coreFrag', 5)], // 稀有保底 1 份稀有干货（星核碎片/优秀插件随一→占位给星核碎片）
-      baseRolls: 2, perHourRolls: 0.35,
-      discovery: [
-        { reward: { kind: 'plugin', quality: 'superior' }, weight: 28, cap1: true }, // 优秀·单次≤1
-        { reward: R('shipBlueprint', 6), weight: 22 },
-        { reward: R('pilotShardUniversal', 6), weight: 22 },
-        { reward: R('coreFrag', 6), weight: 18 },
-        { reward: R('beaconRare', 1), weight: 12 },
-        { reward: { kind: 'population', pop: 'resident', amount: 1 }, weight: 5, cap1: true },
-        { reward: { kind: 'population', pop: 'worker', amount: 1 }, weight: 5, cap1: true },
-        { reward: { kind: 'chest', chestId: 'starlightCargo', amount: 1 }, weight: 4, cap1: true },
-        { reward: { kind: 'ship_body', shipId: 'shp08' }, weight: 2, cap1: true }, // 极低：完整星舰 C 阶（占位指定一艘）
-        { reward: R('starGem', 2), weight: 2 },                   // 极低：星空宝石
-      ],
+      ore: 70, cargo: 38, universal: 2.5, fixed: { coreFrag: 0.25 },
+      rolls: { h2: 2.6, h8: 5.0, h24: 10.4 },
+      econEV: { universal: 0.8, beaconRare: 0.05, coreFrag: 0.008, starGem: 0.015 },
+      surpriseEV: { superiorPlugin: 0.05, resident: 0.03, worker: 0.03, cargoChest: 0.015 },
     },
     epic: {
-      baseStarOre: 600, baseStarCargo: 220, universalShardBase: 16,
-      guaranteedExtra: [R('coreFrag', 10), R('starGem', 5)], // 史诗保底：星核碎片小笔 + 星空宝石小笔
-      baseRolls: 3, perHourRolls: 0.4,
-      discovery: [
-        { reward: { kind: 'plugin', quality: 'legendary' }, weight: 14, cap1: true }, // 传奇·单次≤1（仅史诗）
-        { reward: { kind: 'plugin', quality: 'superior' }, weight: 20, cap1: true }, // 优秀·单次≤1
-        { reward: R('shipBlueprint', 12), weight: 18 },
-        { reward: R('pilotShardUniversal', 12), weight: 18 },
-        { reward: R('coreFrag', 12), weight: 16 },
-        { reward: R('starGem', 5), weight: 12 },
-        { reward: R('beaconEpic', 1), weight: 8 },
-        { reward: { kind: 'population', pop: 'resident', amount: 1 }, weight: 8, cap1: true },
-        { reward: { kind: 'population', pop: 'worker', amount: 1 }, weight: 8, cap1: true },
-        { reward: { kind: 'chest', chestId: 'starlightCargo', amount: 1 }, weight: 7, cap1: true },
-        { reward: { kind: 'ship_body', shipId: 'shp09' }, weight: 4, cap1: true }, // 完整星舰 C 阶
-      ],
+      ore: 160, cargo: 95, universal: 4, fixed: { coreFrag: 0.5, starGem: 0.5 },
+      rolls: { h2: 3.8, h8: 7.0, h24: 12.6 },
+      econEV: { universal: 1.2, beaconEpic: 0.05, coreFrag: 0.012, starGem: 0.05 },
+      surpriseEV: { superiorPlugin: 0.07, legendaryPlugin: 0.035, resident: 0.04, worker: 0.04, cargoChest: 0.02 },
     },
   },
+  accelPriceStarCargo: 150,
 };
 
-/** 通用碎片两种键（舰/员）——必得 1 种随机其一（§10.2）。 */
+/** 通用碎片两种键（舰/员）——通碎产出随机其一（§10.2）。 */
 export const UNIVERSAL_SHARD_KEYS = ['shipBlueprint', 'pilotShardUniversal'] as const;

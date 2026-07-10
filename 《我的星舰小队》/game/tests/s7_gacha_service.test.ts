@@ -1,17 +1,26 @@
-// 阶段一 C-step1：抽卡三池引擎单测——
-//   日序/轮换 · 当天开放类别 · 专属池单位集 · 单抽(发本体/折碎片) · 阶级地板保底 · 连抽扣券 ·
-//   专属池兑换进度/兑换箱(本体/溢出折碎片/×2叠领) · 轮换补发(走邮件·零头清零) · 脏档规范化。
-// 纯结构、确定性 RNG、不读磁盘。
+// 抽卡三池引擎单测（步5 收尾批重定基·S10.1 碎片化模型 + 初值表 v0.7 终值）——
+// 重定基总说明（旧→新→为什么对）：
+//   ① 旧"每抽=选单位·未拥有发本体/已拥有折15"灰盒模型 → 碎片化终值模型（每抽必得随机单位碎片 1-3〔期望 2.0〕+
+//     本体线 C7%/B2.5%/A0.8%+垫层·本体带阶级）——S10.1"大概率随机专属碎片"真源口径 + 机器真源 PARAMS.gacha；
+//   ② 旧"阶级地板 floorPityDraws=10（灰盒缩小值）·候选=aTier 名单" → 20 抽真概率保底（天然/保底 A 都清计数）·
+//     A 本体=开放池随机单位（名单制作废=旧占位分组文案·细表 §13 头注）；
+//   ③ 旧"保底重复折 60" → 全部重复体统一折 15（机器真源 dupFoldShards·"60=满A阶"为 v0.1 占位注释非拍板）；
+//   ④ 专属兑换阈值 50（灰盒缩小值）→ 200（§10.1 设计值·尺外注记）；
+//   ⑤ 新增：免费抽（补给站 Lv4/7）+ 十连九折（Lv10）计费面 + 抽到更高阶=升阶+旧体分解 15（§10.1 原文语义）。
 import { describe, it, expect } from 'vitest';
 import { S7AutoBattleRng } from '../assets/scripts/core/s7/S7AutoBattleRng';
 import {
   DEFAULT_S7_GACHA_CONFIG,
   S7GachaConfig,
   nonExclusiveShipIds,
+  bodyRankToShipTier,
+  bodyRankToPilotStar,
 } from '../assets/scripts/core/s7/S7GachaConfig';
 import {
   createDefaultS7GachaState,
   normalizeS7GachaState,
+  freePullsLeftToday,
+  spendFreePulls,
 } from '../assets/scripts/core/s7/S7GachaState';
 import {
   gachaDayIndex,
@@ -26,7 +35,8 @@ import {
   claimExchangeBox,
   exclusiveShardResourceId,
 } from '../assets/scripts/core/s7/S7GachaService';
-import { createDefaultS7Squad, grantShip } from '../assets/scripts/core/s7/S7Squad';
+import { createDefaultS7Squad, grantShip, isShipOwned } from '../assets/scripts/core/s7/S7Squad';
+import { createDefaultS7UnitTierState, getShipTier, setShipTier, getPilotStar } from '../assets/scripts/core/s7/S7UnitTierState';
 import { createDefaultS7ExclusiveShardInventory, getExclusiveShardCount } from '../assets/scripts/core/s7/S7ExclusiveShardInventory';
 import { createDefaultS7Mailbox } from '../assets/scripts/core/s7/S7Mailbox';
 
@@ -35,7 +45,17 @@ const DAY_MS = 86_400_000;
 function cfg(overrides: Partial<S7GachaConfig> = {}): S7GachaConfig {
   return { ...DEFAULT_S7_GACHA_CONFIG, ...overrides };
 }
-const rng = () => new S7AutoBattleRng('gacha-test-seed');
+const rng = (seed = 'gacha-test-seed') => new S7AutoBattleRng(seed);
+/** 一套抽卡上下文（state/squad/tiers/shards/mailbox）。 */
+function ctx() {
+  return {
+    state: createDefaultS7GachaState(),
+    squad: createDefaultS7Squad(),
+    tiers: createDefaultS7UnitTierState(),
+    shards: createDefaultS7ExclusiveShardInventory(),
+    mailbox: createDefaultS7Mailbox(),
+  };
+}
 
 describe('C-step1 · 日序与专属轮换', () => {
   it('gachaDayIndex：委托全游戏统一日界（北京凌晨4点重置=UTC+4h 移位）', () => {
@@ -46,11 +66,10 @@ describe('C-step1 · 日序与专属轮换', () => {
     expect(gachaDayIndex(DAY_MS * 7 + 123)).toBe(7);
   });
 
-  it('exclusivePeriodOf / currentExclusiveShipId：每 3 天轮换一艘(2 艘交替)', () => {
+  it('exclusivePeriodOf / currentExclusiveShipId：每 3 天轮换一艘(2 艘交替·名单=占位沿用挂牌)', () => {
     const c = DEFAULT_S7_GACHA_CONFIG;
     expect([0, 1, 2].map((d) => exclusivePeriodOf(c, d))).toEqual([0, 0, 0]);
     expect([3, 4, 5].map((d) => exclusivePeriodOf(c, d))).toEqual([1, 1, 1]);
-    // 期 0→shp10, 期 1→shp11, 期 2→shp10 ...
     expect([0, 1, 2].map((d) => currentExclusiveShipId(c, d))).toEqual(['shp10', 'shp10', 'shp10']);
     expect(currentExclusiveShipId(c, 3)).toBe('shp11');
     expect(currentExclusiveShipId(c, 6)).toBe('shp10');
@@ -61,267 +80,253 @@ describe('C-step1 · 日序与专属轮换', () => {
   });
 });
 
-describe('C-step1 · 当天开放类别 / 单位集', () => {
-  it('openCategoryIds：每天开 2 类、3 天走完一轮 6 类', () => {
+describe('C-step1 · 当天开放类别 / 单位集（步5 真 20/20 名单）', () => {
+  it('openCategoryIds：每天开 2 类、3 天走完一轮 6 类（新定位型分桶）', () => {
     const c = DEFAULT_S7_GACHA_CONFIG;
-    expect(openCategoryIds(c, 'refit', 0)).toEqual(['rf_guard', 'rf_breach']);
-    expect(openCategoryIds(c, 'refit', 1)).toEqual(['rf_snipe', 'rf_suppress']);
-    expect(openCategoryIds(c, 'refit', 2)).toEqual(['rf_charge', 'rf_versatile']);
-    expect(openCategoryIds(c, 'refit', 3)).toEqual(['rf_guard', 'rf_breach']); // 回卷
-    expect(openCategoryIds(c, 'recruit', 0)).toEqual(['rc_guard', 'rc_breach']);
+    expect(openCategoryIds(c, 'refit', 0)).toEqual(['rf_assault', 'rf_guard_a']);
+    expect(openCategoryIds(c, 'refit', 1)).toEqual(['rf_guard_b', 'rf_artillery']);
+    expect(openCategoryIds(c, 'refit', 2)).toEqual(['rf_support', 'rf_engineer']);
+    expect(openCategoryIds(c, 'refit', 3)).toEqual(['rf_assault', 'rf_guard_a']); // 回卷
+    expect(openCategoryIds(c, 'recruit', 0)).toEqual(['rc_assault_a', 'rc_assault_b']);
   });
 
-  it('openUnitIds：招募/整备=当天开放类别成员；专属池=全部非专属舰+当期专属', () => {
+  it('openUnitIds：招募/整备=当天开放类别成员；专属池=18 非专属舰+当期专属', () => {
     const c = DEFAULT_S7_GACHA_CONFIG;
-    expect(openUnitIds(c, 'refit', 0).sort()).toEqual(['shp01', 'shp02', 'shp05', 'shp06']); // guard+breach 成员
-    // 专属池：10 艘非专属 + shp10(期0专属)
+    expect(openUnitIds(c, 'refit', 0).sort()).toEqual(['shp01', 'shp02', 'shp03', 'shp04', 'shp05', 'shp06']); // 突击4+护卫磐铁2
     const ex0 = openUnitIds(c, 'exclusive', 0);
     expect(ex0).toContain('shp10');
     expect(ex0.sort()).toEqual([...nonExclusiveShipIds(c), 'shp10'].sort());
-    expect(ex0).not.toContain('shp11'); // 非当期专属不在池
-    expect(openUnitIds(c, 'exclusive', 3)).toContain('shp11'); // 期1专属
-  });
-});
-
-describe('C-step1 · 单抽：发本体 / 重复折碎片', () => {
-  it('未拥有 → 发本体(new_body)、不折碎片', () => {
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    const shards = createDefaultS7ExclusiveShardInventory();
-    const o = drawGachaOnce(state, squad, shards, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 0)!;
-    expect(o.result).toBe('new_body');
-    expect(o.shardsGained).toBe(0);
-    expect(squad.ownedShips).toContain(o.unitId); // 本体已发
-    expect(['shp01', 'shp02', 'shp05', 'shp06']).toContain(o.unitId); // 在当天开放集
+    expect(nonExclusiveShipIds(c)).toHaveLength(18); // 20 舰 − 2 专属（=机器真源 poolSizeShips 18）
   });
 
-  it('已拥有 → 折 15 专属碎片(dup_shards)、不重复发本体', () => {
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    ['shp01', 'shp02', 'shp05', 'shp06'].forEach((s) => grantShip(squad, s)); // 预拥有整备当天全集
-    const shards = createDefaultS7ExclusiveShardInventory();
-    const before = squad.ownedShips.length;
-    const o = drawGachaOnce(state, squad, shards, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 0)!;
-    expect(o.result).toBe('dup_shards');
-    expect(o.shardsGained).toBe(15);
-    expect(getExclusiveShardCount(shards, o.unitId)).toBe(15);
-    expect(squad.ownedShips.length).toBe(before); // 没多发本体
-  });
-
-  it('招募池抽到的是驾驶员(pilot)', () => {
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    const o = drawGachaOnce(state, squad, createDefaultS7ExclusiveShardInventory(), DEFAULT_S7_GACHA_CONFIG, rng(), 'recruit', 0)!;
-    expect(o.unitKind).toBe('pilot');
-    expect(squad.ownedPilots).toContain(o.unitId);
-  });
-
-  it('openUnitIds 为空(配置异常) → 返回 null', () => {
-    const c = cfg({ recruitCategories: [] });
-    expect(drawGachaOnce(createDefaultS7GachaState(), createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), c, rng(), 'recruit', 0)).toBeNull();
-  });
-});
-
-describe('C-step1 · 阶级地板保底(每 N 抽必出 ≥A/3★)', () => {
-  it('第 N 抽触发保底、计数清零；前 N-1 抽不触发', () => {
-    const c = cfg({ floorPityDraws: 5 });
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    const shards = createDefaultS7ExclusiveShardInventory();
-    const flags: boolean[] = [];
-    for (let i = 0; i < 5; i += 1) {
-      flags.push(drawGachaOnce(state, squad, shards, c, rng(), 'refit', 0)!.isFloor);
-    }
-    expect(flags).toEqual([false, false, false, false, true]); // 第 5 抽保底
-    expect(state.pity.refit).toBe(0); // 命中后清零
-    // 再抽 4 次仍不触发、第 10 抽再触发
-    let next = false;
-    for (let i = 0; i < 5; i += 1) next = drawGachaOnce(state, squad, shards, c, rng(), 'refit', 0)!.isFloor;
-    expect(next).toBe(true);
-  });
-
-  it('保底命中且 A 级候选已拥有 → 折 60(floor_shards)', () => {
-    const c = cfg({ floorPityDraws: 1, aTierShipIds: ['shp02'] }); // 每抽都保底、候选唯一
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    grantShip(squad, 'shp02'); // 预拥有该 A 级候选
-    const shards = createDefaultS7ExclusiveShardInventory();
-    const o = drawGachaOnce(state, squad, shards, c, rng(), 'refit', 0)!;
-    expect(o.isFloor).toBe(true);
-    expect(o.result).toBe('floor_shards');
-    expect(o.unitId).toBe('shp02');
-    expect(o.shardsGained).toBe(60);
-    expect(getExclusiveShardCount(shards, 'shp02')).toBe(60);
-  });
-
-  it('保底命中且 A 级候选未拥有 → 发本体(floor_body)', () => {
-    const c = cfg({ floorPityDraws: 1, aTierShipIds: ['shp11'] }); // 候选=专属舰(普通整备抽不到→必未拥有)
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    const o = drawGachaOnce(state, squad, createDefaultS7ExclusiveShardInventory(), c, rng(), 'refit', 0)!;
-    expect(o.result).toBe('floor_body');
-    expect(o.unitId).toBe('shp11');
-    expect(squad.ownedShips).toContain('shp11');
-  });
-});
-
-describe('C-step1 · 连抽扣券', () => {
-  it('drawGachaMany：抽 min(count, 可用券) 次、ticketsSpent 据此', () => {
-    const squad = createDefaultS7Squad();
-    const r1 = drawGachaMany(createDefaultS7GachaState(), squad, createDefaultS7ExclusiveShardInventory(), createDefaultS7Mailbox(), DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 10, 3, 0, 1000);
-    expect(r1.ticketsSpent).toBe(3); // 券不够，只抽 3
-    expect(r1.outcomes.length).toBe(3);
-    const r2 = drawGachaMany(createDefaultS7GachaState(), squad, createDefaultS7ExclusiveShardInventory(), createDefaultS7Mailbox(), DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 3, 99, 0, 1000);
-    expect(r2.ticketsSpent).toBe(3); // count 限制
-  });
-
-  it('drawGachaMany：配置异常(空池) → 不扣券', () => {
-    const c = cfg({ recruitCategories: [] });
-    const r = drawGachaMany(createDefaultS7GachaState(), createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), createDefaultS7Mailbox(), c, rng(), 'recruit', 5, 5, 0, 1000);
-    expect(r.ticketsSpent).toBe(0);
-  });
-});
-
-describe('C-step1 · 专属池进度兑换箱', () => {
-  it('availableExchangeBoxes = floor(进度/阈值) - 已领', () => {
-    const c = cfg({ exchangeThreshold: 2 });
-    const state = createDefaultS7GachaState();
-    state.exchangeProgress = 5;
-    expect(availableExchangeBoxes(state, c)).toBe(2); // floor(5/2)=2
-    state.exchangeClaimed = 1;
-    expect(availableExchangeBoxes(state, c)).toBe(1);
-  });
-
-  it('claimExchangeBox：首箱发本体、再箱(已拥有)溢出折碎片；无箱→no_box', () => {
-    const c = cfg({ exchangeThreshold: 2, exchangeOverflowShards: 60 });
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    const shards = createDefaultS7ExclusiveShardInventory();
-    refreshGachaToDay(state, createDefaultS7Mailbox(), c, 0, 1000); // 初始化当期专属=shp10
-    state.exchangeProgress = 4; // 2 箱可领
-    const c1 = claimExchangeBox(state, squad, shards, c, 0);
-    expect(c1).toMatchObject({ ok: true, result: 'exclusive_body', exclusiveShipId: 'shp10', boxesClaimed: 1 });
-    expect(squad.ownedShips).toContain('shp10');
-    const c2 = claimExchangeBox(state, squad, shards, c, 0);
-    expect(c2).toMatchObject({ ok: true, result: 'overflow_shards', shardsGained: 60 });
-    expect(getExclusiveShardCount(shards, 'shp10')).toBe(60);
-    expect(claimExchangeBox(state, squad, shards, c, 0)).toMatchObject({ ok: false, reason: 'no_box' });
-  });
-
-  it('claimExchangeBox claimAll=true：一次领光(×2 叠领)·首箱本体余箱碎片', () => {
-    const c = cfg({ exchangeThreshold: 2, exchangeOverflowShards: 60 });
-    const state = createDefaultS7GachaState();
-    const squad = createDefaultS7Squad();
-    const shards = createDefaultS7ExclusiveShardInventory();
-    refreshGachaToDay(state, createDefaultS7Mailbox(), c, 0, 1000);
-    state.exchangeProgress = 4; // 2 箱
-    const r = claimExchangeBox(state, squad, shards, c, 0, true);
-    expect(r).toMatchObject({ ok: true, result: 'exclusive_body', boxesClaimed: 2 });
-    expect(squad.ownedShips).toContain('shp10'); // 首箱本体
-    expect(getExclusiveShardCount(shards, 'shp10')).toBe(60); // 余 1 箱折碎片
-    expect(state.exchangeClaimed).toBe(2);
-  });
-
-  it('isExclusive：专属池抽到当期专属舰=true；其它池/非专属舰=false（专属恒A级·§10.1）', () => {
-    // 专属池只含专属舰（清空整备类别→非专属舰为空）→ 必抽到专属。
-    const c = cfg({ refitCategories: [], exclusiveShipIds: ['shp10'] });
-    const o = drawGachaOnce(createDefaultS7GachaState(), createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), c, rng(), 'exclusive', 0)!;
-    expect(o.unitId).toBe('shp10');
-    expect(o.isExclusive).toBe(true);
-    // 整备池抽到的是普通舰 → 非专属。
-    const o2 = drawGachaOnce(createDefaultS7GachaState(), createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 0)!;
-    expect(o2.isExclusive).toBe(false);
-  });
-
-  it('专属池每抽累加兑换进度', () => {
-    const c = cfg({ exchangeThreshold: 100 });
-    const state = createDefaultS7GachaState();
-    refreshGachaToDay(state, createDefaultS7Mailbox(), c, 0, 1000);
-    drawGachaOnce(state, createDefaultS7Squad(), createDefaultS7ExclusiveShardInventory(), c, rng(), 'exclusive', 0);
-    expect(state.exchangeProgress).toBe(1);
-  });
-});
-
-describe('C-step1 · 轮换补发(走邮件·零头清零)', () => {
-  it('首次刷新：仅初始化期号/专属、不算轮换、不发邮件', () => {
+  it('池名单=真 id 全集：招募 20 员（pil01-20）·整备+专属=20 舰（shp01-20）', () => {
     const c = DEFAULT_S7_GACHA_CONFIG;
-    const state = createDefaultS7GachaState();
-    const box = createDefaultS7Mailbox();
-    const r = refreshGachaToDay(state, box, c, 0, 1000);
-    expect(r).toMatchObject({ rotated: false, settledBoxes: 0, mailId: null });
-    expect(state.exclusivePeriod).toBe(0);
-    expect(state.exclusiveShipId).toBe('shp10');
-    expect(box.mails.length).toBe(0);
+    const pilots = c.recruitCategories.flatMap((x) => x.memberIds).sort();
+    expect(pilots).toEqual(Array.from({ length: 20 }, (_, i) => `pil${String(i + 1).padStart(2, '0')}`));
+    const ships = [...nonExclusiveShipIds(c), ...c.exclusiveShipIds].sort();
+    expect(ships).toEqual(Array.from({ length: 20 }, (_, i) => `shp${String(i + 1).padStart(2, '0')}`));
+  });
+});
+
+describe('步5 · 出货终值钉（对表：运行时值==校准值）', () => {
+  it('碎片 1-3/抽（期望 2.0）·本体率 C7%/B2.5%/A0.8%·保底 20·重复折 15·兑换 200', () => {
+    const c = DEFAULT_S7_GACHA_CONFIG;
+    expect(c.shardPerPullMin).toBe(1);
+    expect(c.shardPerPullMax).toBe(3);
+    expect(c.bodyP).toEqual({ C: 0.07, B: 0.025, A: 0.008 });
+    expect(c.pityDraws).toBe(20);
+    expect(c.dupFoldShards).toBe(15);
+    expect(c.exchangeThreshold).toBe(200);
+    expect(c.exchangeOverflowShards).toBe(60);
   });
 
-  it('轮换时忘领满格 → 邮件补发(本体+余格折碎片)、进度清零(零头不补偿)', () => {
-    const c = cfg({ exchangeThreshold: 2, exchangeOverflowShards: 60, rotationDays: 3 });
-    const state = createDefaultS7GachaState();
-    const box = createDefaultS7Mailbox();
-    refreshGachaToDay(state, box, c, 0, 1000); // 期0·shp10
-    state.exchangeProgress = 5; // floor(5/2)=2 箱, 零头 1
-    state.exchangeClaimed = 0;
-    const r = refreshGachaToDay(state, box, c, 3, 2000); // 跳到期1·shp11
-    expect(r).toMatchObject({ rotated: true, settledBoxes: 2 });
-    expect(r.mailId).not.toBeNull();
-    const mail = box.mails.find((m) => m.id === r.mailId)!;
-    expect(mail.kind).toBe('gacha_rotation_makeup');
-    // 补发=1 本体(OLD 专属 shp10) + (2-1)*60 碎片
-    expect(mail.rewards).toEqual([
-      { type: 'unit', unitKind: 'ship', unitId: 'shp10' },
-      { type: 'resource', resourceId: exclusiveShardResourceId('shp10'), amount: 60 },
-    ]);
-    // 进度清零、刷新到新期
-    expect(state.exchangeProgress).toBe(0);
-    expect(state.exchangeClaimed).toBe(0);
-    expect(state.exclusivePeriod).toBe(1);
-    expect(state.exclusiveShipId).toBe('shp11');
+  it('本体阶级映射：舰 C/B/A=阶 0/1/2·员=1★/2★/3★（"本体阶级=抽卡稀有度"口径）', () => {
+    expect([bodyRankToShipTier('C'), bodyRankToShipTier('B'), bodyRankToShipTier('A')]).toEqual([0, 1, 2]);
+    expect([bodyRankToPilotStar('C'), bodyRankToPilotStar('B'), bodyRankToPilotStar('A')]).toEqual([1, 2, 3]);
+  });
+});
+
+describe('C-step1 · 单抽（碎片化模型）', () => {
+  it('每抽必得随机开放单位碎片 1-3', () => {
+    const { state, squad, tiers, shards } = ctx();
+    const o = drawGachaOnce(state, squad, tiers, shards, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 0)!;
+    expect(o).not.toBeNull();
+    expect(openUnitIds(DEFAULT_S7_GACHA_CONFIG, 'refit', 0)).toContain(o.shardUnitId);
+    expect(o.shardAmount).toBeGreaterThanOrEqual(1);
+    expect(o.shardAmount).toBeLessThanOrEqual(3);
+    expect(getExclusiveShardCount(shards, o.shardUnitId)).toBe(o.shardAmount);
   });
 
-  it('轮换但无忘领满格(进度不足一格) → 不发邮件、零头清零', () => {
-    const c = cfg({ exchangeThreshold: 50, rotationDays: 3 });
-    const state = createDefaultS7GachaState();
-    const box = createDefaultS7Mailbox();
-    refreshGachaToDay(state, box, c, 0, 1000);
-    state.exchangeProgress = 30; // 不足 1 格
-    const r = refreshGachaToDay(state, box, c, 3, 2000);
-    expect(r).toMatchObject({ rotated: true, settledBoxes: 0, mailId: null });
-    expect(box.mails.length).toBe(0);
+  it('碎片量分布：1-3 均匀·均值≈2（1000 抽窗）', () => {
+    const { state, squad, tiers, shards } = ctx();
+    const r = rng('shard-dist');
+    let sum = 0;
+    for (let i = 0; i < 1000; i += 1) {
+      const o = drawGachaOnce(state, squad, tiers, shards, DEFAULT_S7_GACHA_CONFIG, r, 'refit', 0)!;
+      sum += o.shardAmount;
+    }
+    expect(sum / 1000).toBeGreaterThan(1.85);
+    expect(sum / 1000).toBeLessThan(2.15);
+  });
+
+  it('20 抽硬保底：计数 19 时下一抽必出 A 本体（viaPity）且计数清零', () => {
+    const { state, squad, tiers, shards } = ctx();
+    state.pity.refit = 19;
+    const o = drawGachaOnce(state, squad, tiers, shards, DEFAULT_S7_GACHA_CONFIG, rng('pity-hit'), 'refit', 0)!;
+    expect(o.body).not.toBeNull();
+    expect(o.body!.rank).toBe('A');
+    expect(o.body!.viaPity).toBe(true);
+    expect(state.pity.refit).toBe(0);
+  });
+
+  it('真概率保底：天然 A 也清计数（保底进度条语义）', () => {
+    // 垫层拉满让天然 A 好出（测试注入 100% A：bodyP.A=1）——结构断言非分布断言。
+    const c = cfg({ bodyP: { C: 0, B: 0, A: 1 } });
+    const { state, squad, tiers, shards } = ctx();
+    state.pity.refit = 5;
+    const o = drawGachaOnce(state, squad, tiers, shards, c, rng(), 'refit', 0)!;
+    expect(o.body!.rank).toBe('A');
+    expect(o.body!.viaPity).toBe(false); // 天然出的（计数 6<20）
+    expect(state.pity.refit).toBe(0);    // 同样清零=真概率保底
+  });
+
+  it('新到手本体带阶级：A 本体=舰 A 阶（tier 2）', () => {
+    const c = cfg({ bodyP: { C: 0, B: 0, A: 1 } });
+    const { state, squad, tiers, shards } = ctx();
+    const o = drawGachaOnce(state, squad, tiers, shards, c, rng(), 'refit', 0)!;
+    expect(o.body!.result).toBe('new');
+    expect(isShipOwned(squad, o.body!.unitId)).toBe(true);
+    expect(getShipTier(tiers, o.body!.unitId)).toBe(2);
+  });
+
+  it('重复本体折 15；抽到更高阶=升到该阶+旧体分解 15（§10.1"高阶留低阶分解"）', () => {
+    const c = cfg({ bodyP: { C: 0, B: 0, A: 1 } });
+    const { state, squad, tiers, shards } = ctx();
+    // 预置：拥有全部开放单位（C 阶）→ A 本体必是"已拥有但更高阶"→ upgraded+折15。
+    for (const id of openUnitIds(c, 'refit', 0)) grantShip(squad, id);
+    const o = drawGachaOnce(state, squad, tiers, shards, c, rng(), 'refit', 0)!;
+    expect(o.body!.result).toBe('upgraded');
+    expect(o.body!.foldShards).toBe(15);
+    expect(getShipTier(tiers, o.body!.unitId)).toBe(2); // 升到 A 阶
+    // 再抽一次同单位（已 A 阶）→ 纯重复折 15、阶级不再动。
+    setShipTier(tiers, o.body!.unitId, 4); // 抬到 SS 阶（高于 A）
+    const before = getExclusiveShardCount(shards, o.body!.unitId);
+    let dup = null as ReturnType<typeof drawGachaOnce>;
+    const r2 = rng('dup-check');
+    for (let i = 0; i < 200 && !dup; i += 1) {
+      const oo = drawGachaOnce(state, squad, tiers, shards, c, r2, 'refit', 0)!;
+      if (oo.body && oo.body.unitId === o.body!.unitId) dup = oo;
+    }
+    expect(dup).not.toBeNull();
+    expect(dup!.body!.result).toBe('dup');
+    expect(getShipTier(tiers, o.body!.unitId)).toBe(4); // 不降阶
+    expect(getExclusiveShardCount(shards, o.body!.unitId)).toBeGreaterThan(before); // 折 15 入账（另含每抽碎片）
+  });
+
+  it('招募池：员本体=星级（3★=A）', () => {
+    const c = cfg({ bodyP: { C: 0, B: 0, A: 1 } });
+    const { state, squad, tiers, shards } = ctx();
+    const o = drawGachaOnce(state, squad, tiers, shards, c, rng(), 'recruit', 0)!;
+    expect(o.unitKind).toBe('pilot');
+    expect(getPilotStar(tiers, o.body!.unitId)).toBe(3);
+  });
+
+  it('A 本体出量受硬保底下界约束（真 RNG 2000 抽：A ≥ floor(n/20)）', () => {
+    const { state, squad, tiers, shards } = ctx();
+    const r = rng('a-floor');
+    let aBodies = 0;
+    for (let i = 0; i < 2000; i += 1) {
+      const o = drawGachaOnce(state, squad, tiers, shards, DEFAULT_S7_GACHA_CONFIG, r, 'refit', 0)!;
+      if (o.body?.rank === 'A') aBodies += 1;
+    }
+    expect(aBodies).toBeGreaterThanOrEqual(100); // 2000/20=100 硬下界
+    expect(aBodies).toBeLessThan(200); // 0.008+1/20≈5.7% 上界余量（防疯出）
+  });
+
+  it('空池（配置异常）→ null 不动状态', () => {
+    const c = cfg({ refitCategories: [], exclusiveShipIds: [] });
+    const { state, squad, tiers, shards } = ctx();
+    expect(drawGachaOnce(state, squad, tiers, shards, c, rng(), 'refit', 0)).toBeNull();
+    expect(state.pity.refit).toBe(0);
+  });
+});
+
+describe('C-step1 · 连抽计费（免费抽 + 十连九折=细案⑥）', () => {
+  it('连抽扣券：券不足按可支付数抽（免费 0）', () => {
+    const { state, squad, tiers, shards, mailbox } = ctx();
+    const r = drawGachaMany(state, squad, tiers, shards, mailbox, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 5, 3, 0, 0);
+    expect(r.outcomes).toHaveLength(3);
+    expect(r.ticketsSpent).toBe(3);
+    expect(r.freePullsSpent).toBe(0);
+  });
+
+  it('免费抽先花：2 免费+1 券抽 3 次', () => {
+    const { state, squad, tiers, shards, mailbox } = ctx();
+    const r = drawGachaMany(state, squad, tiers, shards, mailbox, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 3, 10, 0, 0, { freePulls: 2 });
+    expect(r.outcomes).toHaveLength(3);
+    expect(r.freePullsSpent).toBe(2);
+    expect(r.ticketsSpent).toBe(1);
+  });
+
+  it('十连整额：补给站 Lv10 九折收 9 券、未满级收 10 券（细案⑥ Lv10 里程碑）', () => {
+    const a = ctx();
+    const r10 = drawGachaMany(a.state, a.squad, a.tiers, a.shards, a.mailbox, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 10, 20, 0, 0, { supplyLevel: 10 });
+    expect(r10.outcomes).toHaveLength(10);
+    expect(r10.ticketsSpent).toBe(9); // 九折
+    const b = ctx();
+    const r9 = drawGachaMany(b.state, b.squad, b.tiers, b.shards, b.mailbox, DEFAULT_S7_GACHA_CONFIG, rng(), 'refit', 10, 20, 0, 0, { supplyLevel: 9 });
+    expect(r9.ticketsSpent).toBe(10); // 未满级原价
+  });
+
+  it('免费抽状态记账：跨天自动重置口径', () => {
+    const st = createDefaultS7GachaState();
+    expect(freePullsLeftToday(st, 100, 2)).toBe(2);
+    spendFreePulls(st, 100, 1);
+    expect(freePullsLeftToday(st, 100, 2)).toBe(1);
+    spendFreePulls(st, 100, 1);
+    expect(freePullsLeftToday(st, 100, 2)).toBe(0);
+    expect(freePullsLeftToday(st, 101, 2)).toBe(2); // 跨天重置
+  });
+});
+
+describe('C-step1 · 专属池兑换（阈值 200=§10.1 设计值）', () => {
+  it('每抽 +1 进度；满 200 出兑换箱；首箱发当期专属本体、其余溢出折 60', () => {
+    const { state, squad, tiers, shards, mailbox } = ctx();
+    drawGachaMany(state, squad, tiers, shards, mailbox, DEFAULT_S7_GACHA_CONFIG, rng(), 'exclusive', 10, 10, 0, 0);
+    expect(state.exchangeProgress).toBe(10);
+    state.exchangeProgress = 401; // 直接置进度（2 箱+零头）
+    expect(availableExchangeBoxes(state, DEFAULT_S7_GACHA_CONFIG)).toBe(2);
+    const res = claimExchangeBox(state, squad, shards, DEFAULT_S7_GACHA_CONFIG, 0, true);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.exclusiveShipId).toBe('shp10');
+      expect(res.result).toBe('exclusive_body');
+      expect(res.shardsGained).toBe(60); // 第 2 箱溢出折 60
+      expect(res.boxesClaimed).toBe(2);
+    }
+    expect(isShipOwned(squad, 'shp10')).toBe(true);
+  });
+
+  it('轮换补发：跨期未领满格 → 邮件（本体+余格折碎片）·零头清零', () => {
+    const { state, squad, tiers, shards, mailbox } = ctx();
+    void squad; void tiers; void shards;
+    refreshGachaToDay(state, mailbox, DEFAULT_S7_GACHA_CONFIG, 0, 0);
+    state.exchangeProgress = 450; // 2 满格+零头
+    const r = refreshGachaToDay(state, mailbox, DEFAULT_S7_GACHA_CONFIG, 3, DAY_MS * 3); // 进期 1
+    expect(r.rotated).toBe(true);
+    expect(r.settledBoxes).toBe(2);
+    expect(mailbox.mails).toHaveLength(1);
+    const rewards = mailbox.mails[0].rewards;
+    expect(rewards[0]).toEqual({ type: 'unit', unitKind: 'ship', unitId: 'shp10' });
+    expect(rewards[1]).toEqual({ type: 'resource', resourceId: exclusiveShardResourceId('shp10'), amount: 60 });
     expect(state.exchangeProgress).toBe(0); // 零头清零
   });
-
-  it('补发仅 1 格 → 只发本体、无折碎片项', () => {
-    const c = cfg({ exchangeThreshold: 2, rotationDays: 3 });
-    const state = createDefaultS7GachaState();
-    const box = createDefaultS7Mailbox();
-    refreshGachaToDay(state, box, c, 0, 1000);
-    state.exchangeProgress = 3; // 1 格 + 零头 1
-    const r = refreshGachaToDay(state, box, c, 3, 2000);
-    expect(r.settledBoxes).toBe(1);
-    const mail = box.mails.find((m) => m.id === r.mailId)!;
-    expect(mail.rewards).toEqual([{ type: 'unit', unitKind: 'ship', unitId: 'shp10' }]);
-  });
 });
 
-describe('C-step1 · 存档规范化(防脏档)', () => {
-  it('normalize：保底/进度取非负整数、claimed 夹到 ≤ progress、期号取整(允许 -1)', () => {
-    const dirty = {
-      pity: { recruit: -3, refit: 2.5, exclusive: 4 },
-      exchangeProgress: 10,
-      exchangeClaimed: 99, // 超过 progress → 夹到 10
-      exclusivePeriod: 1.9, // 非整 → -1
-      exclusiveShipId: '',
+describe('C-step1 · 状态规范化（步5 新增免费抽字段）', () => {
+  it('normalizeS7GachaState：脏值回默认·免费抽字段收纳', () => {
+    const raw = {
+      pity: { recruit: 3, refit: -1, exclusive: 'x' },
+      exchangeProgress: 12.7,
+      exchangeClaimed: 99,
+      exclusivePeriod: 2,
+      exclusiveShipId: 'shp11',
+      freePullDayKey: 123,
+      freePullsUsed: 2,
     };
-    const s = normalizeS7GachaState(dirty);
-    expect(s.pity).toEqual({ recruit: 0, refit: 0, exclusive: 4 });
-    expect(s.exchangeProgress).toBe(10);
-    expect(s.exchangeClaimed).toBe(10);
-    expect(s.exclusivePeriod).toBe(-1);
-    expect(s.exclusiveShipId).toBeNull();
+    const s = normalizeS7GachaState(raw);
+    expect(s.pity).toEqual({ recruit: 3, refit: 0, exclusive: 0 });
+    expect(s.exchangeProgress).toBe(0); // 非整数回 0
+    expect(s.exchangeClaimed).toBe(0); // 钳 ≤ progress
+    expect(s.exclusivePeriod).toBe(2);
+    expect(s.exclusiveShipId).toBe('shp11');
+    expect(s.freePullDayKey).toBe(123);
+    expect(s.freePullsUsed).toBe(2);
   });
 
-  it('normalize 非对象 → 默认空状态', () => {
-    expect(normalizeS7GachaState(null)).toEqual(createDefaultS7GachaState());
-    expect(normalizeS7GachaState(42)).toEqual(createDefaultS7GachaState());
+  it('默认态：免费抽字段归零', () => {
+    const s = createDefaultS7GachaState();
+    expect(s.freePullDayKey).toBe(0);
+    expect(s.freePullsUsed).toBe(0);
   });
 });

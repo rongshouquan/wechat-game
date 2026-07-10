@@ -8,7 +8,6 @@
 // 星域放大曲线口径（§19 成文）：不设独立曲线——压力值 P 本身已含星域递进（经济尺双锚生成法），
 //   映射只吃 P、星域系数不二次乘（否则双重计价）。
 import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
 import {
@@ -39,16 +38,19 @@ function clone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v)) as T;
 }
 
-/** 逐关到达时点养成态（⑧ --milestones 文本输出解析·普通档）：nodeId → { day, power }。
- *  机读字段待⑧补 JSON（已回总控加需求）；解析只读输出、不碰经济尺文件。 */
-export function loadMilestones(): Map<string, { day: number; power: number }> {
-  const out = execSync('node tools/simulate-s7-economy.mjs --milestones', { cwd: GAME_ROOT, encoding: 'utf-8', maxBuffer: 32 * 1024 * 1024 });
-  const map = new Map<string, { day: number; power: number }>();
-  for (const line of out.split(/\r?\n/)) {
-    const m = line.match(/^(n\d{3})\tD(\d+)\t(\d+)\t/);
-    if (m) map.set(m[1], { day: Number(m[2]), power: Number(m[3]) });
+/** 逐关到达时点养成态（步5 A9-6 机读字段化：读 json 快照 standard.<档>.expected.milestones·
+ *  与压力表同源同锚〔敌配按快照落数·快照变化→落数守卫红提醒重落〕；旧"跑尺子抠文本输出"解析退役）。
+ *  tier 缺省普通档（⑥到达态口径）。 */
+export function loadMilestones(tier = '普通'): Map<string, { day: number; power: number }> {
+  const d = JSON.parse(readFileSync(PRESSURE_JSON, 'utf-8')) as {
+    standard?: Record<string, { expected?: { milestones?: { node: number; day: number; power: number }[] } }>;
+  };
+  const rows = d.standard?.[tier]?.expected?.milestones;
+  if (!Array.isArray(rows) || rows.length < 100) {
+    throw new Error(`milestones 机读字段异常：${tier} 档仅 ${rows?.length ?? 0} 行（json 快照缺字段？）`);
   }
-  if (map.size < 100) throw new Error(`milestones 解析异常：仅 ${map.size} 行`);
+  const map = new Map<string, { day: number; power: number }>();
+  for (const r of rows) map.set(`n${String(r.node).padStart(3, '0')}`, { day: r.day, power: r.power });
   return map;
 }
 

@@ -45,8 +45,10 @@ describe('C1b-step1b playS7Node（纯函数）', () => {
     expect(o.settlement && o.settlement.ok).toBe(true);
     if (o.settlement && o.settlement.ok) {
       expect(o.settlement.grants).toEqual([
-        { resourceId: 'hullAlloy', amount: 25 }, // 改动#3：星矿移出必得，进三选一
-      ]);
+        { resourceId: 'hullAlloy', amount: 55 },
+        { resourceId: 'pilotToken', amount: 36 },
+        { resourceId: 'starCargo', amount: 24 },
+      ]); // 步5 重定基：v0.7 固定三件套公式驱动（55/36/24×档位×星域·n001=sf01 normal ×1）
       expect(o.settlement.nextNodeId).toBe('n002');
     }
     expect(JSON.stringify(progress)).toBe(before); // 纯函数不改入参
@@ -69,7 +71,7 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     expect(o.won).toBe(true);
     expect(s.currentNodeId).toBe('n002');
     expect(s.resources.starOre).toBe(0); // 改动#3：星矿不再随节点结算必得
-    expect(s.resources.hullAlloy).toBe(25);
+    expect(s.resources.hullAlloy).toBe(55); // 步5 重定基：v0.7 固定三件套（55/36/24×档位×星域·n001=55）
   });
 
   // ⚠️ 样例 battle_encounter_param 只给了 3 个节点的战斗(enc_n001/n084/n150,不连续；2026-07-02 拓扑改造后
@@ -111,7 +113,7 @@ describe('C1b-step1b S7RunSession（最小循环）', () => {
     }
     expect(path).toEqual(['n002', 'n003', 'n004', 'n005', 'n006']); // 逐节点前移
     expect(s.resources.starOre).toBe(0); // 改动#3：星矿不再随节点结算必得
-    expect(s.resources.hullAlloy).toBe(125); // 5×25
+    expect(s.resources.hullAlloy).toBe(275); // 步5 重定基：5 关 ×55（n001-n005 全 sf01 normal）
   });
 
   it('n008 现在已有遭遇（2c批量生产覆盖）：能正常开打，不再抛错', async () => {

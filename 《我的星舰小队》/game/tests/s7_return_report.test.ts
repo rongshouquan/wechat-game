@@ -73,20 +73,20 @@ describe('块1 · buildS7ReturnReport', () => {
       model, habitatAt(1), createDefaultS7Population(), progressWith([]),
       createDefaultS7Salvage(), DEFAULT_S7_SALVAGE_CONFIG, NOW - HOUR_MS, NOW,
     );
-    expect(rep.offline.gains.starOre).toBe(OFFLINE_BASE_RATE_PER_HOUR.starOre);
+    expect(rep.offline.gains.starOre).toBe(Math.floor(OFFLINE_BASE_RATE_PER_HOUR.starOre * 1.02)); // 步5：lv1 产率+2%（细案③）
     expect(rep.patrol.hasGains).toBe(false);
     expect(rep.hasAny).toBe(true);
   });
 
-  it('星域档 1（n060 通关）：巡逻段 = 基础×1.6 与离线同窗口；离线段吃同一系数', () => {
+  it('星域档 1（n060 通关）：巡逻段 = 基础×1.7（v0.7 七档表）；离线星矿吃 ^0.5 开方衰减', () => {
     const rep = buildS7ReturnReport(
       model, habitatAt(1), createDefaultS7Population(), progressWith(['n060']),
       createDefaultS7Salvage(), DEFAULT_S7_SALVAGE_CONFIG, NOW - HOUR_MS, NOW,
     );
-    expect(rep.patrol.gains.hullAlloy).toBe(Math.floor(PATROL_BASE_RATE_PER_HOUR.hullAlloy * 1.6));
-    expect(rep.patrol.gains.starCargo).toBe(Math.floor(PATROL_BASE_RATE_PER_HOUR.starCargo * 1.6));
+    expect(rep.patrol.gains.hullAlloy).toBe(Math.floor(PATROL_BASE_RATE_PER_HOUR.hullAlloy * 1.7));
+    expect(rep.patrol.gains.starCargo).toBe(Math.floor(PATROL_BASE_RATE_PER_HOUR.starCargo * 1.7));
     // 离线同系数：星矿 = 300 × 1.6 ×（1+居住舱lv1加成0%）
-    expect(rep.offline.gains.starOre).toBe(Math.floor(OFFLINE_BASE_RATE_PER_HOUR.starOre * 1.6));
+    expect(rep.offline.gains.starOre).toBe(Math.floor(OFFLINE_BASE_RATE_PER_HOUR.starOre * Math.pow(1.7, 0.5) * 1.02)); // 星矿 ^0.5 衰减 + lv1 +2%
     expect(rep.elapsedSeconds).toBe(3600);
   });
 
@@ -129,13 +129,13 @@ describe('块1 · claimReturnReportCurrencies / removeClaimedSalvageMissions', (
     expect(total.hullAlloy).toBe(rep.offline.gains.hullAlloy + rep.patrol.gains.hullAlloy);
   });
 
-  it('翻倍领取：离线+巡逻全部 ×2（S13 #1 只翻软货币段）', () => {
+  it('翻倍领取：离线+巡逻全部 ×1.5（S13 #1·Ron 2026-07-07 拍A 定案·旧 ×2 作废·四舍五入）', () => {
     const rep = buildTier1Report();
     const res = createDefaultS7ResourceState() as unknown as Record<string, number>;
     claimReturnReportCurrencies(res, rep, true);
-    expect(res.starOre).toBe(rep.offline.gains.starOre * 2);
-    expect(res.hullAlloy).toBe((rep.offline.gains.hullAlloy + rep.patrol.gains.hullAlloy) * 2);
-    expect(res.starCargo).toBe(rep.patrol.gains.starCargo * 2);
+    expect(res.starOre).toBe(Math.round(rep.offline.gains.starOre * 1.5));
+    expect(res.hullAlloy).toBe(Math.round(rep.offline.gains.hullAlloy * 1.5) + Math.round(rep.patrol.gains.hullAlloy * 1.5));
+    expect(res.starCargo).toBe(Math.round(rep.patrol.gains.starCargo * 1.5)); // 巡逻星贝同 ×1.5
   });
 
   it('钱包脏键护栏：resources 缺某键则该键跳过不报错（与 applyOfflineGains 同口径）', () => {

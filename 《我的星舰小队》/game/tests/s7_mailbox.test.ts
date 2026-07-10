@@ -110,7 +110,7 @@ describe('G2 · 邮件收发/领取', () => {
       mails: [{ id: 'm1', kind: 'k', title: 't', rewards: [
         { type: 'unit', unitKind: 'pilot', unitId: 'pil03' },
         { type: 'unit', unitKind: 'ship', unitId: '' },
-        { type: 'unit', unitKind: 'core', unitId: 'core01' },
+        { type: 'unit', unitKind: 'core', unitId: 'core10' },
       ], read: false, claimed: false, createdAt: T, expireAt: null }],
       nextSeq: 2,
     });

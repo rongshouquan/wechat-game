@@ -15,7 +15,8 @@ export interface S7ShopOffer {
   offerId: string;
   item: S7ShopItem;
   price: number;
-  purchaseLimit: number;
+  /** 每周期购买上限（null=不限购〔广告券〕）。 */
+  purchaseLimit: number | null;
   rare: boolean;
 }
 
@@ -34,9 +35,14 @@ export function createDefaultS7Merchant(): S7MerchantState {
   return { offers: [], dailyBought: {}, cycleKey: -1, freeRefreshRemaining: 0 };
 }
 
-/** 商品在 dailyBought / 购买上限里的归并 key：资源用 resourceId，插件用 `plugin:<品质>`。 */
+/** 商品在 dailyBought / 购买上限里的归并 key：资源用 resourceId，插件用 `plugin:<品质>`，组合包用名字，核用池名。 */
 export function shopItemKey(item: S7ShopItem): string {
-  return item.kind === 'resource' ? `res:${item.resourceId}` : `plugin:${item.quality}`;
+  switch (item.kind) {
+    case 'resource': return `res:${item.resourceId}`;
+    case 'plugin': return `plugin:${item.quality}`;
+    case 'bundle': return `bundle:${item.name}`;
+    case 'core': return `core:${item.pool}`;
+  }
 }
 
 const nonNegInt = (v: unknown): number => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0);
@@ -52,6 +58,15 @@ function normItem(raw: unknown): S7ShopItem | null {
   if (o.kind === 'plugin' && typeof o.quality === 'string' && S7_PLUGIN_QUALITIES.includes(o.quality as S7PluginQuality)) {
     return { kind: 'plugin', quality: o.quality as S7PluginQuality };
   }
+  if (o.kind === 'bundle' && typeof o.name === 'string' && o.name.length > 0 && Array.isArray(o.resources)) {
+    const rs = o.resources
+      .map((r) => (r && typeof r === 'object' ? r : {}) as Record<string, unknown>)
+      .filter((r) => typeof r.resourceId === 'string' && (r.resourceId as string).length > 0 && finitePos(r.amount) > 0)
+      .map((r) => ({ resourceId: r.resourceId as string, amount: Math.floor(finitePos(r.amount)) }));
+    if (rs.length === 0) return null;
+    return { kind: 'bundle', name: o.name, resources: rs };
+  }
+  if (o.kind === 'core' && o.pool === 'flow') return { kind: 'core', pool: 'flow' };
   return null;
 }
 
@@ -68,7 +83,7 @@ export function normalizeS7Merchant(raw: unknown): S7MerchantState {
       const item = normItem(row.item);
       if (!item) continue;
       seen.add(id);
-      out.offers.push({ offerId: id, item, price: Math.floor(finitePos(row.price)), purchaseLimit: nonNegInt(row.purchaseLimit), rare: row.rare === true });
+      out.offers.push({ offerId: id, item, price: Math.floor(finitePos(row.price)), purchaseLimit: row.purchaseLimit === null ? null : nonNegInt(row.purchaseLimit), rare: row.rare === true });
     }
   }
   const db = (src.dailyBought && typeof src.dailyBought === 'object' ? src.dailyBought : {}) as Record<string, unknown>;

@@ -7,6 +7,7 @@
 //   - 防套利：周期购买上限(dailyBought 跨刷新保留·跨天重置) + 刷新上限 + 回收折损 + 不可回收表(本引擎不提供本体/星核/碎片回收)。
 
 import { S7AutoBattleRng } from './S7AutoBattleRng';
+import { merchantRareSlots, merchantPriceMult, merchantRecycleSteps } from './S7BuildingEffects';
 import { S7MerchantConfig, S7ShopItem, S7ShopOfferTemplate } from './S7MerchantConfig';
 import { S7MerchantState, S7ShopOffer, shopItemKey } from './S7MerchantState';
 import { S7BeaconTier, BEACON_RESOURCE } from './S7SalvageConfig';
@@ -17,40 +18,46 @@ export function merchantDayKey(now: number): number {
   return s7DayKey(now);
 }
 
-/** 轮换格数（随商人小站等级增多·§10.3"更多次/更多格"）。lv1→5、每 2 级 +1、封顶 8（占位）。 */
-export function merchantStockSlots(merchantLevel: number): number {
-  if (merchantLevel <= 0) return 0;
-  return Math.min(8, 5 + Math.floor((merchantLevel - 1) / 2));
-}
+// 稀有格数（Lv1×1/Lv4×2/Lv7×3）= S7BuildingEffects.merchantRareSlots（细案⑤ Ron 亲排 10 级表·旧 5-8 槽占位作废）。
 
 /** 加权取一个模板（candidates 非空）。 */
-function pickWeighted(cands: S7ShopOfferTemplate[], rng: S7AutoBattleRng): S7ShopOfferTemplate {
-  const total = cands.reduce((s, t) => s + Math.max(0, t.rareWeight ?? 1), 0);
+function templateWeight(t: S7ShopOfferTemplate, merchantLevel: number): number {
+  const w = merchantLevel >= 8 && typeof t.rareWeightLv8 === 'number' ? t.rareWeightLv8 : (t.rareWeight ?? 1);
+  return Math.max(0, w);
+}
+function pickWeighted(cands: S7ShopOfferTemplate[], merchantLevel: number, rng: S7AutoBattleRng): S7ShopOfferTemplate {
+  const total = cands.reduce((s, t) => s + templateWeight(t, merchantLevel), 0);
   let x = rng.next() * total;
-  for (const t of cands) { x -= Math.max(0, t.rareWeight ?? 1); if (x < 0) return t; }
+  for (const t of cands) { x -= templateWeight(t, merchantLevel); if (x < 0) return t; }
   return cands[cands.length - 1];
 }
 
+/** 上货价（Lv10 全场九折·四舍五入）。 */
+function stockPrice(basePrice: number, merchantLevel: number): number {
+  return Math.round(basePrice * merchantPriceMult(merchantLevel));
+}
+
 /**
- * 生成一批货架（轮换制）：常驻格(补给券)全上 + 从轮换池随机铺 merchantStockSlots(等级) 格（同批不重复品类·受 minMerchantLevel 门槛）。
- * 就地写 state.offers。每次刷新调用 → 货架肉眼可见换一批。
+ * 生成一批货架（百货化）：常驻区全上 + 从稀有格池随机铺 merchantRareSlots(等级) 格
+ * （Lv1×1/Lv4×2/Lv7×3·同批不重复品类·受 minMerchantLevel 权重档门槛·Lv8 起流通核用升频权重）。
+ * 价格上货时套 Lv10 九折。就地写 state.offers。每次刷新调用 → 稀有格肉眼可见换一批。
  */
 export function generateMerchantStock(state: S7MerchantState, config: S7MerchantConfig, merchantLevel: number, rng: S7AutoBattleRng): void {
   const offers: S7ShopOffer[] = [];
   let n = 0;
   for (const t of config.alwaysOffers) {
-    offers.push({ offerId: `o${n}`, item: t.item, price: t.price, purchaseLimit: t.purchaseLimit, rare: t.rare === true });
+    offers.push({ offerId: `o${n}`, item: t.item, price: stockPrice(t.price, merchantLevel), purchaseLimit: t.purchaseLimit, rare: t.rare === true });
     n += 1;
   }
-  const slots = merchantStockSlots(merchantLevel);
+  const slots = merchantRareSlots(merchantLevel);
   const usedKeys = new Set<string>();
   for (const t of config.alwaysOffers) usedKeys.add(shopItemKey(t.item)); // 常驻品类不再轮换重复
   for (let i = 0; i < slots; i += 1) {
-    const cands = config.rollPool.filter((t) => merchantLevel >= (t.minMerchantLevel ?? 1) && !usedKeys.has(shopItemKey(t.item)));
+    const cands = config.rarePool.filter((t) => merchantLevel >= (t.minMerchantLevel ?? 1) && !usedKeys.has(shopItemKey(t.item)));
     if (cands.length === 0) break;
-    const t = pickWeighted(cands, rng);
+    const t = pickWeighted(cands, merchantLevel, rng);
     usedKeys.add(shopItemKey(t.item));
-    offers.push({ offerId: `o${n}`, item: t.item, price: t.price, purchaseLimit: t.purchaseLimit, rare: t.rare === true });
+    offers.push({ offerId: `o${n}`, item: t.item, price: stockPrice(t.price, merchantLevel), purchaseLimit: t.purchaseLimit, rare: t.rare === true });
     n += 1;
   }
   state.offers = offers;
@@ -67,8 +74,9 @@ export function refreshMerchantToCycle(state: S7MerchantState, config: S7Merchan
   return true;
 }
 
-/** 某 offer 本周期还能买几个（购买上限 - 已购）。 */
+/** 某 offer 本周期还能买几个（购买上限 - 已购；null=不限购〔广告券〕→ 恒有余量）。 */
 export function offerRemaining(state: S7MerchantState, offer: S7ShopOffer): number {
+  if (offer.purchaseLimit === null) return Number.MAX_SAFE_INTEGER;
   return Math.max(0, offer.purchaseLimit - (state.dailyBought[shopItemKey(offer.item)] ?? 0));
 }
 
@@ -102,7 +110,7 @@ export type S7RefreshResult =
 /** 手动刷新时应保留已购计数的商品 key 集（keepBoughtOnRefresh·块5 广告券每日限购防绕过）。 */
 function keepBoughtKeys(config: S7MerchantConfig): Set<string> {
   const keys = new Set<string>();
-  for (const t of config.alwaysOffers.concat(config.rollPool)) {
+  for (const t of config.alwaysOffers.concat(config.rarePool)) {
     if (t.keepBoughtOnRefresh) keys.add(shopItemKey(t.item));
   }
   return keys;
@@ -141,7 +149,9 @@ export function refreshMerchantShop(
   return { ok: true, mode, remaining: 0 };
 }
 
-/** 商人小站升级时调：当场 +n 次免费刷新（一次性·非永久抬上限·Ron 2026-06-21）。 */
+/** 商人小站升级时调：当场 +n 次免费刷新（一次性额度·非每日上限+1·Ron 2026-06-21 原拍；
+ *  2026-07-10 Ron 拍"保留"：升级后立刻免费刷出一茬符合新等级刷新率的商品=升级即时反馈钩子；
+ *  全生涯共 9 次、量级≈0 不入尺（初值表简化声明 19）。 */
 export function grantMerchantFreeRefresh(state: S7MerchantState, n = 1): void {
   if (!Number.isInteger(n) || n <= 0) return;
   state.freeRefreshRemaining += n;
@@ -151,15 +161,21 @@ export function grantMerchantFreeRefresh(state: S7MerchantState, n = 1): void {
 
 export type S7RecycleResult = { ok: true; starCargoGained: number } | { ok: false; reason: 'insufficient' | 'bad_amount' };
 
-/** 回收信标 → 星贝（各档固定价·占位）。count 张该档信标须足够。 */
+/** 普通信标回收单价（25 基价 + 3/档·商人 Lv3/6/9 各升一档：25→28→31→34）。 */
+export function beaconCommonRecyclePrice(config: S7MerchantConfig, merchantLevel: number): number {
+  return config.recycle.beacon.common + config.recycle.beaconCommonStepAdd * merchantRecycleSteps(merchantLevel);
+}
+
+/** 回收信标 → 星贝（普通档吃回收价档；稀有/史诗=固定值·尺外沿用）。count 张该档信标须足够。 */
 export function recycleBeacon(
-  wallet: Record<string, number>, config: S7MerchantConfig, tier: S7BeaconTier, count: number,
+  wallet: Record<string, number>, config: S7MerchantConfig, tier: S7BeaconTier, count: number, merchantLevel = 0,
 ): S7RecycleResult {
   if (!Number.isInteger(count) || count <= 0) return { ok: false, reason: 'bad_amount' };
   const key = BEACON_RESOURCE[tier];
   if ((wallet[key] ?? 0) < count) return { ok: false, reason: 'insufficient' };
   wallet[key] -= count;
-  const gained = count * config.recycle.beacon[tier];
+  const unit = tier === 'common' ? beaconCommonRecyclePrice(config, merchantLevel) : config.recycle.beacon[tier];
+  const gained = count * unit;
   wallet.starCargo = (wallet.starCargo ?? 0) + gained;
   return { ok: true, starCargoGained: gained };
 }

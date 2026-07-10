@@ -31,10 +31,10 @@ const TIER_A = {
   // ⑥第一段 20 舰落地（2026-07-07·细表§12）：默认盘 12→20（与 ConfigValidatorS7.S7_EXPECTED_COUNT 双份同步）。
   ship_config: { idField: 'shipId', count: 20, ids: seq('shp', 1, 20) },
   pilot_config: { idField: 'pilotId', count: 20, ids: seq('pil', 1, 20) }, // ⑩A1：驾驶员 20 天赋接线·扩容已拍（第一段四点②）
-  core_config: { idField: 'coreId', count: 7, ids: seq('core', 1, 7) },
+  core_config: { idField: 'coreId', count: 16, ids: seq('core', 7, 22) },
   plugin_config: { idField: 'pluginId', count: 30, ids: seq('plg', 1, 30) }, // ⑩A3：插件残项接线·对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表安全）
 };
-const TIER_B = ['source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'upgrade_cost_param', 'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param', 'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check', 'commission_affix_param'];
+const TIER_B = ['source_tag_config', 'power_reference_param', 'free_resource_anchor_param', 'enhance_cost_param', 'refund_param', 'pressure_param', 'reward_param', 'shop_param', 'merchant_refresh_param', 'recycle_param', 'anti_arbitrage_check', 'commission_affix_param'];
 // 悬赏词缀定位型/键真源（镜像 core/s7/S7CommissionAffix.ts 与 S7BattleEffectBlock.ts）：改这些两处校验器都要改。
 const POSITION_TYPES = ['assault', 'guard', 'artillery', 'support', 'engineer'];
 const AFFIX_TARGET_TYPES = [...POSITION_TYPES, 'all'];
@@ -206,17 +206,6 @@ for (const row of tables.source_tag_config) {
   }
 }
 {
-  let shipMax = 0, pilotMax = 0;
-  for (const row of tables.upgrade_cost_param) {
-    if (!['ship', 'pilot'].includes(row.targetType)) fail('upgrade_cost_param', row.rowId, 'targetType 非法');
-    const lv = num(row.maxLevel) ?? 0;
-    if (row.targetType === 'ship') shipMax = Math.max(shipMax, lv);
-    if (row.targetType === 'pilot') pilotMax = Math.max(pilotMax, lv);
-  }
-  if (shipMax !== 40) fail('upgrade_cost_param', 'ship', `星舰等级上限必须 40，实际 ${shipMax}`);
-  if (pilotMax !== 40) fail('upgrade_cost_param', 'pilot', `驾驶员等级上限必须 40，实际 ${pilotMax}`);
-}
-{
   // 首发无强化系统：砍星核5阶强化(§5.4 留P1) + 插件不分等级(§5.3) → enhance_cost_param 应为空
   if (tables.enhance_cost_param.length > 0) fail('enhance_cost_param', '-', '首发无强化系统,enhance_cost_param 应为空(已砍星核5阶强化,§5.4)');
 }
@@ -234,7 +223,8 @@ for (const row of tables.pressure_param) {
   } else {
     const lo = num(row.pressureMin), hi = num(row.pressureMax);
     if (lo === null || hi === null || lo > hi) fail('pressure_param', row.rowId, 'pressureMin<=pressureMax 不成立');
-    if (s === 'boss' && row.refKey === 'n150' && (hi === null || hi > 14500)) fail('pressure_param', row.rowId, 'N150（终Boss）上限必须 <=14500');
+    // 步5 对表守卫：n150 推荐战力钉 v0.7 快照精确值（32094）——压力表重校（json 再生）时此处红=提醒重落显示带（同敌配绊线哲学）。
+    if (s === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 32094) fail('pressure_param', row.rowId, 'N150 推荐战力必须==v0.7 快照 32094（重校后同步重落）');
   }
 }
 for (const row of tables.reward_param) {

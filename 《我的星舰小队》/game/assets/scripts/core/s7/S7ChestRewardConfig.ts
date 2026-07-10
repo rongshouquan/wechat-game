@@ -29,21 +29,24 @@ export interface S7ChestRewardConfig {
   chests: Record<string, S7ChestDef>;
 }
 
-// ===== 默认配置（v0.1 占位探针·第二块校准）=====
-
+// ===== 默认配置（v0.7 校准终值换算·选项面值 = 3×整箱类目期望〔选 1/3 口径〕）=====
+// 机器真源 PARAMS.cargoChest：整箱期望 coreFrag 1.15 / starGem 1.65 / 信标 普1.0·稀1.4·史0.6（惊喜线让开箱数
+// +45% 后的"箱数涨内容降"总账守恒终值）。运行时=三选一结构（§10.6 设计真值），选项面值×3 使"免费选1"的
+// 期望==整箱期望。⚠️ 记账偏差：#7 广告再选一 = 第二个选项全额（≈整箱×2）vs 尺子 adPickMult ×1.5——
+// 结构差异（选项制 vs 整箱乘数）·量级小（敏感性 宝箱+1 天）·挂灰盒/回归批复校。
 export const DEFAULT_S7_CHEST_REWARD_CONFIG: S7ChestRewardConfig = {
   chests: {
-    // 星辉货舱：3 选项（星核碎片 / 星空宝石 / 信标包）·免费选 1·看广告再选 1。
+    // 星辉货舱：3 选项（星核碎片 / 星空宝石 / 信标包）·免费选 1·看广告再选 1（#7·不限次点位）。
     starlightCargo: {
       options: [
-        { kind: 'resourceRange', resourceId: 'coreFrag', min: 8, max: 16 },  // 星核碎片（随机量）
-        { kind: 'resourceRange', resourceId: 'starGem', min: 3, max: 6 },     // 星空宝石（随机量）
-        { // 3~5 个随机品质信标（普通多·史诗少）
-          kind: 'beaconBundle', minCount: 3, maxCount: 5,
+        { kind: 'resourceRange', resourceId: 'coreFrag', min: 2, max: 5 },   // 期望 3.5 ≈ 3×1.15
+        { kind: 'resourceRange', resourceId: 'starGem', min: 3, max: 7 },    // 期望 5 ≈ 3×1.65
+        { // 信标包：期望 9 枚 ≈ 3×(1.0+1.4+0.6)·权重=1.0:1.4:0.6 归一（高稀有浓缩包身份·A2 步1）
+          kind: 'beaconBundle', minCount: 7, maxCount: 11,
           tierWeights: [
-            { resourceId: 'beaconCommon', weight: 50 },
-            { resourceId: 'beaconRare', weight: 35 },
-            { resourceId: 'beaconEpic', weight: 15 },
+            { resourceId: 'beaconCommon', weight: 33 },
+            { resourceId: 'beaconRare', weight: 47 },
+            { resourceId: 'beaconEpic', weight: 20 },
           ],
         },
       ],
@@ -52,3 +55,16 @@ export const DEFAULT_S7_CHEST_REWARD_CONFIG: S7ChestRewardConfig = {
     },
   },
 };
+
+// ===== 行动宝藏（3 天活动结算·三选一·v0.7 treasure3）=====
+// 开箱 UI 归工程灰盒批（"开箱随后接"既有留后项）；内容常量先落=步5 回写口径。
+export type S7ActionTreasureOption =
+  | { kind: 'plugin'; quality: 'legendary'; count: number }
+  | { kind: 'resource'; resourceId: 'shipBlueprint' | 'pilotShardUniversal'; amount: number };
+
+/** 行动宝藏三选一（S10.5 自 v1.0 复原）：传奇插件×1 / 舰通用碎片×20 / 员通用碎片×20——选 1。 */
+export const ACTION_TREASURE_OPTIONS: readonly S7ActionTreasureOption[] = Object.freeze([
+  { kind: 'plugin', quality: 'legendary', count: 1 },
+  { kind: 'resource', resourceId: 'shipBlueprint', amount: 20 },
+  { kind: 'resource', resourceId: 'pilotShardUniversal', amount: 20 },
+]);

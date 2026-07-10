@@ -19,7 +19,7 @@ import {
   persistS7Save,
 } from '../../save/S7SaveService';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
-import { S7UpgradeCostParam, S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot, S7ShipConfig, S7PilotConfig, S7MainlineNodeConfig } from '../../config/s7/ConfigTypesS7';
+import { S7BattleUnitStatParam, S7GrowthBandParam, S7BattleEncounterParam, S7PluginConfig, S7PluginSlot, S7ShipConfig, S7PilotConfig, S7MainlineNodeConfig } from '../../config/s7/ConfigTypesS7';
 import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/S7MainlineProgress';
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel, getPilotLevel } from '../../core/s7/S7UnitLevelState';
@@ -78,7 +78,6 @@ import {
   refreshBountyBoard,
   generateDayCards,
   bountyBoardCap,
-  PITY_DAYS,
   findBountyCard,
   settleBountyCard,
   bountyBattleNodeId,
@@ -104,11 +103,12 @@ import {
 import { unlockBuildingWithStarOre } from '../../core/s7/S7BuildingUpgradeService';
 import { S7TutorialState, advanceStrongGuideStep, completeStrongGuide, hasSeenFirstTouch, markFirstTouchSeen } from '../../core/s7/S7TutorialState';
 import { S7BuildingState, isBuildingUnlocked, unlockBuilding, createDefaultS7BuildingState, getBuildingLevel } from '../../core/s7/S7BuildingState';
-import { S7PopulationState, createDefaultS7Population, residentRateBonusPct, residentStorageExtensionHours, workerCostDiscountPct } from '../../core/s7/S7Population';
+import { S7PopulationState, createDefaultS7Population, residentRateBonusPct, residentStorageExtensionHours } from '../../core/s7/S7Population';
 import {
   offlineStorageHours, offlineRateBonusPct,
-  salvageTeamCount, researchTeamBonusPct, merchantShopSlots, coreGalleryTeamBonusPct,
-  coreGalleryPerTypeBonusPct,
+  salvageTeamCount, researchTeamBonusPct, merchantRareSlots, coreGalleryTeamBonusPct,
+  coreGalleryPerTypeBonusPct, habitatStaffCap, workerBuildDiscountPct, galleryDoubleYolkP,
+  supplyATierRateBumpPct, supplyFreeDailyPulls, supplyTenPullTicketCost, UPGRADE_DISCOUNT_PCT_PER_LEVEL,
 } from '../../core/s7/S7BuildingEffects';
 import { S7EffectBlock } from '../../core/s7/S7BattleEffectBlock';
 import { getS7UsableBand } from '../S7UiLayout';
@@ -158,7 +158,7 @@ import { DEFAULT_S7_ACTIVITY_CONFIG, S7ActivityReward, S7_ACTIVITY_ACTIONS } fro
 import { listMilestones, completionView, progressWeightFor, activityCycleConfig, settlementBackfillRewards } from '../../core/s7/S7ActivityService';
 // 阶段一 I·星核三渠道 + 星空宝库。
 import { DEFAULT_S7_CORE_SOURCE_CONFIG } from '../../core/s7/S7CoreSourceConfig';
-import { synthesizeCore, rollExpansionChoices, vaultCoreViews, vaultShipViews } from '../../core/s7/S7CoreSourceService';
+import { synthesizeCore, rollExpansionChoices, vaultCoreViews, vaultShipViews, grantRandomFlowCore } from '../../core/s7/S7CoreSourceService';
 // 阶段一 K·人口来源(主线救回)。
 import { DEFAULT_S7_POPULATION_SOURCE_CONFIG, resolveNodeRescue } from '../../core/s7/S7PopulationSourceConfig';
 // 阶段一 L·战斗伤害统计（胜负弹窗都可看·双方 top5）。
@@ -167,7 +167,7 @@ import { summarizeS7BattleLog, S7BattleLogSummaryResult, S7BattleUnitDamageSumma
 import {
   S7MailReward, claimMail, claimableMailCount, unreadMailCount, pruneExpiredMail, addMail,
 } from '../../core/s7/S7Mailbox';
-import { createDefaultS7GachaState } from '../../core/s7/S7GachaState';
+import { createDefaultS7GachaState, freePullsLeftToday, spendFreePulls } from '../../core/s7/S7GachaState';
 import { createDefaultS7Salvage } from '../../core/s7/S7SalvageState';
 import { createDefaultS7Merchant } from '../../core/s7/S7MerchantState';
 // 升阶/升星（step1 引擎已单测）：船坞升阶 + 训练舱升星 + 背包通用碎片转换 + 开槽/战力接入。
@@ -204,7 +204,7 @@ const S7_DEMO_SEED_FORMATION: { slotRef: string; shipId: string; pilotId: string
 const S7_TUTORIAL_STARTER = S7_DEMO_SEED_FORMATION[0];
 /**
  * M1 教程解锁船坞/训练舱/星港补给站的星矿花费。全程靠关1三选一发的 +50 星矿（合法关卡奖励·非白送）覆盖：
- * 50 −8(船坞) −22(升起手船 Lv1·见 upgrade_cost_param ship_lv_1_10 ÷10) −5(训练舱) = 15，
+ * 50 −8(船坞) −5(训练舱)（步5 回写后升级改花合金 50×L^1.3·不再花星矿——教程段收支对表挂教程收尾批），
  * 关3 再 −3(解锁星港补给站) = 12，关4 再 −8(解锁打捞港) = 4，关5 再 −4(解锁商人小站) = 0，
  * 全程不为负、不靠任何白送。占位值·第二块数值校准。
  */
@@ -239,10 +239,10 @@ const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | '
   { pluginId: 'plg01', quality: 'legendary' }, // 战术
   { pluginId: 'plg03', quality: 'fine' },      // 战术
 ];
-/** B 块 DEV-TEMP·开局发星核（待星核三渠道接好后删）：core01/02=通用核(测深装/宝库)。
+/** B 块 DEV-TEMP·开局发星核（待星核三渠道接好后删）：core10/11=流通核(步5 收编后真 id·测深装/宝库)。
  *  ⚠️ core07=陨星弹(过载核心) 已从种子剔除(块2真机)——它是首Boss n030 的固定大奖，不能开局白送，
  *  否则"打 n030→掉陨星弹"链路无法验证；新档只能靠打赢 n030 拿到 core07（反复验证用 hub 工具行「回档n029」DEV 键）。 */
-const S7_DEMO_SEED_CORES = ['core01', 'core02'];
+const S7_DEMO_SEED_CORES = ['core10', 'core11']; // 步5 收编：旧 core01/02 占位 id 已删
 /** 插件槽位类型中文（仅显示用）。 */
 const S7_SLOT_TAG_NAMES: Record<S7PluginSlot, string> = { weapon: '武器', skill: '技能', tactical: '战术' };
 /** 品质中文（仅显示用）。 */
@@ -279,7 +279,6 @@ export class S7DemoController extends Component {
   private session: S7RunSession | null = null;
   private playerState: S7PlayerState | null = null;
   private saveVersion = S7_CURRENT_SAVE_VERSION;
-  private upgradeCostRows: S7UpgradeCostParam[] = [];
   private growthBands: S7GrowthBandParam[] = [];
   private flagshipBaseHp = 0;
   private flagshipBaseAtk = 0;
@@ -665,7 +664,6 @@ export class S7DemoController extends Component {
     this.runtime = runtime;
     const model = S7MainlineModel.fromRuntime(runtime);
     this.model = model;
-    this.upgradeCostRows = runtime.getAll<S7UpgradeCostParam>('upgrade_cost_param');
     this.growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
     // 旗舰基础血/攻（用于状态行展示"有效血/攻随等级变大"，让升级变强一眼可见）。
     const flagshipBase = runtime
@@ -1283,14 +1281,17 @@ export class S7DemoController extends Component {
         ? `招募补给（驾驶员·每天开2类·3天一轮）\n今日开放：${names}`
         : `舰船补给（星舰·每天开2类·3天一轮）\n今日开放：${names}`;
     }
-    info += `\n阶级地板保底 ${gacha.pity[pool]}/${cfg.floorPityDraws}（满必出≥A/3★）`;
+    const supplyLvInfo = this.buildings ? getBuildingLevel(this.buildings, 'bld_supply_station') : 0;
+    const freeLeftInfo = this.playerState ? freePullsLeftToday(this.playerState.gacha, day, supplyFreeDailyPulls(supplyLvInfo)) : 0;
+    info += `\nA级保底 ${gacha.pity[pool]}/${cfg.pityDraws}（真概率·满必出 A级/3★）`;
+    if (freeLeftInfo > 0) info += `\n今日免费抽剩 ${freeLeftInfo} 次`;
     if (this.gachaInfoLabel) this.gachaInfoLabel.string = info;
 
-    // 单抽/十连：券不足该档位 → 变灰（点了没反应·见 onGachaDraw 守门）。
+    // 单抽/十连：支付力不足该档位 → 变灰（点了没反应·见 onGachaDraw 守门）。
     const avail = Math.floor(this.session?.resources.supplyTicket ?? 0);
     const grey = new Color(70, 75, 90, 255);
-    this.paintBtn(this.gachaSingleBtn, avail >= 1 ? new Color(70, 130, 200, 255) : grey);
-    this.paintBtn(this.gachaTenBtn, avail >= 10 ? new Color(80, 160, 120, 255) : grey);
+    this.paintBtn(this.gachaSingleBtn, freeLeftInfo + avail >= 1 ? new Color(70, 130, 200, 255) : grey);
+    this.paintBtn(this.gachaTenBtn, avail >= supplyTenPullTicketCost(supplyLvInfo) ? new Color(80, 160, 120, 255) : grey);
     // 赞助补给（#6）：块5 统一三态（每日1次·用尽即隐非置灰·券态「广告券×N」·新手期隐）。
     this.applyAdButton(this.gachaSponsorBtn, this.gachaSponsorLabel, 'sponsor_supply', `📺 赞助补给·看广告得补给券×${S7_SPONSOR_SUPPLY_TICKETS}`);
 
@@ -1309,35 +1310,42 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** 抽卡（count=1 单抽 / 10 十连）：消耗补给券、出货落 squad/碎片、刷新。 */
+  /** 抽卡（count=1 单抽 / 10 十连）：免费抽先花（补给站 Lv4/Lv7）→ 补给券；十连 Lv10 九折。出货落 squad/阶级/碎片、刷新。 */
   private onGachaDraw(count: number): void {
-    if (!this.playerState || !this.session) return;
+    if (!this.playerState || !this.session || !this.buildings) return;
     const avail = Math.floor(this.session.resources.supplyTicket ?? 0);
-    // 必须够该档位整额（十连要满 10·单抽要满 1）——券不足时按钮已变灰，这里再守一道（点了没反应）。
-    if (avail < count) {
-      // 提示不指向"赞助补给"当它此刻不可见（每日已用完/新手期·统一三态）——别让文案指向不存在的按钮。
+    const now = Date.now();
+    const dayIdx = gachaDayIndex(now);
+    const supplyLv = getBuildingLevel(this.buildings, 'bld_supply_station');
+    const freeLeft = freePullsLeftToday(this.playerState.gacha, dayIdx, supplyFreeDailyPulls(supplyLv));
+    const tenCost = supplyTenPullTicketCost(supplyLv);
+    // 支付力校验（十连=整额券价；单抽=免费或 1 券）——不足时按钮已变灰，这里再守一道。
+    const payable = count >= 10 ? avail >= tenCost : freeLeft + avail >= count;
+    if (!payable) {
       const sponsorVisible = this.adButtonState('sponsor_supply').kind !== 'hidden';
       if (this.gachaResultLabel) {
-        this.gachaResultLabel.string = count >= 10 ? '补给券不足 10 张，无法十连'
+        this.gachaResultLabel.string = count >= 10 ? `补给券不足 ${tenCost} 张，无法十连`
           : sponsorVisible ? '补给券不足！点「赞助补给」看广告得券' : '补给券不足（商人小站每日有售）';
       }
       return;
     }
-    const now = Date.now();
     const rng = new S7AutoBattleRng(`gacha_${this.gachaPool}_${now}_${avail}`);
     const r = drawGachaMany(
-      this.playerState.gacha, this.squad!, this.playerState.exclusiveShards, this.playerState.mailbox,
-      DEFAULT_S7_GACHA_CONFIG, rng, this.gachaPool, count, avail, gachaDayIndex(now), now,
+      this.playerState.gacha, this.squad!, this.playerState.unitTiers, this.playerState.exclusiveShards, this.playerState.mailbox,
+      DEFAULT_S7_GACHA_CONFIG, rng, this.gachaPool, count, avail, dayIdx, now,
+      { supplyLevel: supplyLv, freePulls: freeLeft },
     );
     this.session.resources.supplyTicket = avail - r.ticketsSpent; // 按实际消耗扣券
+    if (r.freePullsSpent > 0) spendFreePulls(this.playerState.gacha, dayIdx, r.freePullsSpent);
     // 出货明细。
     if (this.gachaResultLabel) {
       const lines = r.outcomes.map((o) => this.gachaOutcomeText(o));
       const head = r.outcomes.length > 1 ? `本次${r.outcomes.length}连：\n` : '';
-      this.gachaResultLabel.string = (head + lines.join('\n')) || '出货异常（配置空池？）';
+      const freeNote = r.freePullsSpent > 0 ? `（含免费抽×${r.freePullsSpent}）\n` : '';
+      this.gachaResultLabel.string = (head + freeNote + lines.join('\n')) || '出货异常（配置空池？）';
     }
     if (r.outcomes.length > 0) this.feedActivity(S7_ACTIVITY_ACTIONS.gacha, r.outcomes.length); // G：抽卡喂活动进度(每抽)
-    const hasHighlight = r.outcomes.some((o) => o.result === 'new_body' || o.result === 'floor_body' || o.isExclusive);
+    const hasHighlight = r.outcomes.some((o) => o.body !== null && (o.body.result !== 'dup' || o.body.isExclusive));
     if (r.outcomes.length > 0) this.sound.playSfx(hasHighlight ? 'gacha_highlight' : 'gacha_draw');
     this.persist();
     this.refresh();      // 顶部货币栏（券变了）
@@ -1345,23 +1353,22 @@ export class S7DemoController extends Component {
   }
 
   private gachaOutcomeText(o: S7GachaDrawOutcome): string {
-    const name = this.unitName(o.unitKind, o.unitId);
-    const tag = this.gachaTierTag(o); // 阶级/星级/专属（#1+#2）
-    const head = o.isFloor ? '[保底]' : '';
-    switch (o.result) {
-      case 'new_body': return `${head}${name}[${tag}] 新到手!`;
-      case 'floor_body': return `${head}${name}[${tag}] 新到手!`;
-      case 'dup_shards': return `${head}${name}[${tag}] 重复→碎片+${o.shardsGained}`;
-      case 'floor_shards': return `${head}${name}[${tag}] 已有→碎片+${o.shardsGained}`;
-      default: return name;
-    }
+    const shardLine = `${this.unitName(o.unitKind, o.shardUnitId)}碎片+${o.shardAmount}`;
+    if (!o.body) return shardLine;
+    const b = o.body;
+    const name = this.unitName(o.unitKind, b.unitId);
+    const tag = b.isExclusive ? `${this.gachaRankTag(o.unitKind, b.rank)}·专属` : this.gachaRankTag(o.unitKind, b.rank);
+    const head = b.viaPity ? '[保底]' : '';
+    const bodyLine = b.result === 'new' ? `${head}${name}[${tag}] 新到手!`
+      : b.result === 'upgraded' ? `${head}${name}[${tag}] 升到该阶！旧体分解→碎片+${b.foldShards}`
+        : `${head}${name}[${tag}] 已有→碎片+${b.foldShards}`;
+    return `${bodyLine}　${shardLine}`;
   }
 
-  /** 出货标签：专属舰恒「A级·专属」(§10.1·Ron 拍板)；保底=A级/3★；普通=C级/1★。 */
-  private gachaTierTag(o: S7GachaDrawOutcome): string {
-    if (o.isExclusive) return 'A级·专属';
-    if (o.unitKind === 'pilot') return o.isFloor ? '3★' : '1★';
-    return o.isFloor ? 'A级' : 'C级'; // 星舰阶级
+  /** 本体阶级标签（舰=C/B/A 级·员=1/2/3★）。 */
+  private gachaRankTag(kind: 'ship' | 'pilot', rank: 'C' | 'B' | 'A'): string {
+    if (kind === 'pilot') return rank === 'A' ? '3★' : rank === 'B' ? '2★' : '1★';
+    return `${rank}级`;
   }
 
   /** 领专属池兑换箱（一次领光·×2叠领）：发当期专属本体 / 已有则溢出折碎片。 */
@@ -1576,7 +1583,7 @@ export class S7DemoController extends Component {
 
   private onSalvageCollect(missionId: string): void {
     if (!this.playerState) return;
-    const res = collectSalvage(this.playerState.salvage, DEFAULT_S7_SALVAGE_CONFIG, missionId, Date.now(), new S7AutoBattleRng(`salvage_${missionId}_${Date.now()}`));
+    const res = collectSalvage(this.playerState.salvage, DEFAULT_S7_SALVAGE_CONFIG, missionId, Date.now(), new S7AutoBattleRng(`salvage_${missionId}_${Date.now()}`), this.buildings ? getBuildingLevel(this.buildings, 'bld_salvage_port') : 0);
     if (!res.ok) { if (this.salvageResultLabel) this.salvageResultLabel.string = res.reason === 'not_done' ? '还没打捞完' : '任务不存在'; return; }
     const texts = res.rewards.map((rw) => this.applySalvageReward(rw));
     if (this.salvageResultLabel) this.salvageResultLabel.string = `带回：${texts.filter(Boolean).join('、')}`;
@@ -1629,14 +1636,6 @@ export class S7DemoController extends Component {
         if (res[rw.resourceId] === undefined) return ''; // 非钱包键（护栏：不会有 exShard 之类）
         res[rw.resourceId] += rw.amount;
         return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
-      }
-      case 'ship_body': {
-        if (this.squad && !this.squad.ownedShips.includes(rw.shipId)) {
-          this.squad.ownedShips.push(rw.shipId);
-          return `${this.unitName('ship', rw.shipId)}[C级]`;
-        }
-        addExclusiveShards(this.playerState.exclusiveShards, rw.shipId, 15); // 已拥有→折专属碎片
-        return `${this.unitName('ship', rw.shipId)}碎片×15`;
       }
       case 'plugin': {
         if (this.pluginInventory) {
@@ -1763,6 +1762,8 @@ export class S7DemoController extends Component {
       const q = item.quality === 'fine' ? '精良' : item.quality === 'superior' ? '优秀' : '传奇';
       return `${q}插件`;
     }
+    if (item.kind === 'bundle') return `${item.name}(${item.resources.map((r) => `${this.zhRes(r.resourceId)}×${r.amount}`).join('+')})`;
+    if (item.kind === 'core') return '流通星核(随机一颗)';
     return `${this.zhRes(item.resourceId)}×${item.amount}`;
   }
 
@@ -1788,6 +1789,15 @@ export class S7DemoController extends Component {
       const res = this.session.resources as Record<string, number>;
       if (res[item.resourceId] !== undefined) res[item.resourceId] += item.amount;
       return `${this.zhRes(item.resourceId)}×${item.amount}`;
+    }
+    if (item.kind === 'bundle') {
+      const res = this.session.resources as Record<string, number>;
+      for (const r of item.resources) { if (res[r.resourceId] !== undefined) res[r.resourceId] += r.amount; }
+      return item.name;
+    }
+    if (item.kind === 'core') {
+      const coreId = grantRandomFlowCore(this.squad!, new S7AutoBattleRng(`shop_flow_core_${Date.now()}`));
+      return coreId ? `${this.coreName(coreId)}(流通核)` : '流通核(发放异常)';
     }
     // plugin：挑一个 pluginId 入库（品质来自商品）。
     if (this.pluginInventory) {
@@ -1831,7 +1841,7 @@ export class S7DemoController extends Component {
 
   private onMerchantRecycleBeacon(tier: 'common' | 'rare' | 'epic'): void {
     if (!this.session) return;
-    const r = recycleBeacon(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, tier, 1);
+    const r = recycleBeacon(this.session.resources as Record<string, number>, DEFAULT_S7_MERCHANT_CONFIG, tier, 1, this.buildings ? getBuildingLevel(this.buildings, 'bld_merchant_station') : 0);
     if (this.merchantResultLabel) this.merchantResultLabel.string = r.ok ? `回收信标→星贝+${r.starCargoGained}` : '没有该档信标';
     this.persist(); this.refresh(); this.refreshMerchant();
   }
@@ -2534,7 +2544,7 @@ export class S7DemoController extends Component {
           () => {
             this.openUnitManage('ship', ship); // 点「管理」→真实动作(遮罩吞触摸·手动复刻)
             this.showTutorialStep(
-              `这是${shipName}的管理面板。点闪烁高亮的「升级」，把它升到 Lv1（花星矿+合金、直接变强）。`,
+              `这是${shipName}的管理面板。点闪烁高亮的「升级」，把它升一级（花星舰合金、直接变强）。`,
               this.unitManageUpgradeBtn,
               () => { advanceStrongGuideStep(t); this.onUpgradeUnit('ship', ship); this.persist(); this.runTutorialStep(); },
             );
@@ -2585,7 +2595,7 @@ export class S7DemoController extends Component {
           () => {
             this.openUnitManage('pilot', pilot); // 点「管理」→真实动作(遮罩吞触摸·手动复刻)
             this.showTutorialStep(
-              `这是驾驶员「${pilotName}」的管理面板。点闪烁高亮的「升级」，把${pilotName}升到 Lv1。`,
+              `这是驾驶员「${pilotName}」的管理面板。点闪烁高亮的「升级」，把TA升一级。`,
               this.unitManageUpgradeBtn,
               () => { advanceStrongGuideStep(t); this.onUpgradeUnit('pilot', pilot); this.persist(); this.runTutorialStep(); },
             );
@@ -4768,7 +4778,7 @@ export class S7DemoController extends Component {
     this.mkPanelLabel(panel, kind === 'ship' ? '船坞 · 星舰升级' : '训练舱 · 驾驶员升级', 38, new Color(150, 210, 240), -W * 0.22, topY - 30);
     const info = this.mkPanelLabel(panel, '', 24, new Color(200, 220, 240), 0, topY - 92);
     const list = new Node('utList'); list.layer = this.node.layer; panel.addChild(list); list.setPosition(0, 0, 0);
-    const result = this.mkPanelLabel(panel, kind === 'ship' ? '选星舰升级(花星矿/合金/舰碎片·船坞等级封顶)' : '选驾驶员升级(花驾驶记录·训练舱等级封顶)', 22, new Color(180, 230, 200), 0, botY + 120);
+    const result = this.mkPanelLabel(panel, kind === 'ship' ? '选星舰升级(花星舰合金·船坞折扣生效)' : '选驾驶员升级(花驾驶记录·训练舱折扣生效)', 22, new Color(180, 230, 200), 0, botY + 120);
     const back = this.addBtn(panel, '返回星港', 240, 76, new Color(120, 90, 160, 255), -W * 0.18, botY + 44, () => { panel.active = false; }, 28);
     this.addBtn(panel, kind === 'ship' ? '升级船坞' : '升级训练舱', 260, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade(bid), 26);
     if (kind === 'ship') { this.dockNode = panel; this.dockListNode = list; this.dockInfoLabel = info; this.dockResultLabel = result; this.dockBackBtn = back.node.parent; }
@@ -4792,8 +4802,10 @@ export class S7DemoController extends Component {
     const infoLabel = kind === 'ship' ? this.dockInfoLabel : this.trainingInfoLabel;
     if (!listNode) return;
     const bLv = getBuildingLevel(this.buildings, kind === 'ship' ? 'bld_dock' : 'bld_pilot_training_bay');
-    // 取消建筑卡等级（Ron 2026-07-03）：等级上限只由阶级决定，船坞/训练舱升级暂无战斗外收益（第三块加升级成本折扣）。
-    if (infoLabel) infoLabel.string = kind === 'ship' ? `船坞 Lv.${bLv} · 升级暂无战斗外收益（第三块加成本折扣）` : `训练舱 Lv.${bLv} · 升级暂无战斗外收益（第三块加成本折扣）`;
+    // 折扣线（细案①②·步5 回写）：−1.5%/级顶 −15%，只折升级币；等级上限只由阶级决定（Ron 2026-07-03）。
+    if (infoLabel) infoLabel.string = kind === 'ship'
+      ? `船坞 Lv.${bLv} · 星舰升级合金 -${(UPGRADE_DISCOUNT_PCT_PER_LEVEL * bLv).toFixed(1)}%`
+      : `训练舱 Lv.${bLv} · 驾驶员升级记录 -${(UPGRADE_DISCOUNT_PCT_PER_LEVEL * bLv).toFixed(1)}%`;
     listNode.removeAllChildren();
     for (const key of Array.from(this.manageRowBtns.keys())) { if (key.startsWith(`${kind}:`)) this.manageRowBtns.delete(key); }
     const units = kind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
@@ -4822,15 +4834,17 @@ export class S7DemoController extends Component {
     const name = this.unitName(kind, unitId);
     if (kind === 'ship') {
       const cap = shipLevelCapForTier(getShipTier(this.playerState.unitTiers, unitId));
-      const r = upgradeShipOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, cap);
-      if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spent.starOre}星矿+${r.spent.hullAlloy}合金${r.spent.shipBlueprint ? `+${r.spent.shipBlueprint}舰碎片` : ''}`
-        : r.reason === 'cap_reached' ? `已达当前阶级上限（升阶解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '资源不够（出战/回收攒）' : '暂无成本配置';
+      const dockLv = getBuildingLevel(this.buildings, 'bld_dock');
+      const r = upgradeShipOneLevel(this.playerState.unitLevels, this.session.resources, unitId, dockLv, cap);
+      if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spent.hullAlloy}合金`
+        : r.reason === 'cap_reached' ? `已达当前阶级上限（升阶解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? `合金不够（还需 ${r.needed?.hullAlloy ?? 0}）` : '暂无成本配置';
       if (r.ok) this.sound.playSfx('upgrade_level_up');
     } else {
       const cap = pilotLevelCapForStar(getPilotStar(this.playerState.unitTiers, unitId));
-      const r = upgradePilotOneLevel(this.playerState.unitLevels, this.session.resources, this.upgradeCostRows, unitId, cap);
+      const trainLv = getBuildingLevel(this.buildings, 'bld_pilot_training_bay');
+      const r = upgradePilotOneLevel(this.playerState.unitLevels, this.session.resources, unitId, trainLv, cap);
       if (resultLabel) resultLabel.string = r.ok ? `${name} 升到 Lv.${r.toLevel}！花 ${r.spentPilotToken}驾驶记录`
-        : r.reason === 'cap_reached' ? `已达当前星级上限（升星解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? '驾驶记录不够' : '暂无成本配置';
+        : r.reason === 'cap_reached' ? `已达当前星级上限（升星解锁更高）` : r.reason === 'max_level' ? `${name} 已满级` : r.reason === 'insufficient' ? `驾驶记录不够（还需 ${r.neededPilotToken ?? 0}）` : '暂无成本配置';
       if (r.ok) this.sound.playSfx('upgrade_level_up');
     }
     this.persist();
@@ -4878,8 +4892,9 @@ export class S7DemoController extends Component {
       const lv = getBuildingLevel(this.buildings, 'bld_habitat');
       const res = this.population?.residents ?? 0;
       const wrk = this.population?.workers ?? 0;
+      const cap = habitatStaffCap(lv);
       this.habitatInfoLabel.string =
-        `居住舱 Lv.${lv}\n居民 ${res} 人　工人 ${wrk} 人\n\n离线储存上限 ${Math.round(offlineStorageHours(lv))}h（建筑）\n离线产率 +${Math.round(offlineRateBonusPct(lv))}%（建筑）\n居民加成：离线产率再 +${residentRateBonusPct(res)}% · 储存再 +${residentStorageExtensionHours(res)}h\n工人加成：建筑升级星矿 -${workerCostDiscountPct(wrk)}%`;
+        `居住舱 Lv.${lv}\n居民 ${res} 人　工人 ${wrk} 人（有效编制各 ${cap} 人·超编纯人气）\n\n离线储存上限 ${Math.round(offlineStorageHours(lv))}h（建筑）\n离线产率 +${Math.round(offlineRateBonusPct(lv))}%（建筑）\n居民加成：离线产率再 +${residentRateBonusPct(res, cap)}% · 储存再 +${residentStorageExtensionHours(res, cap)}h\n工人加成：建筑升级成本 -${workerBuildDiscountPct(lv, wrk)}%${lv < 3 ? '（居住舱 Lv3 启用）' : ''}`;
     } else if (kind === 'gallery' && this.galleryInfoLabel && this.squad) {
       const lv = getBuildingLevel(this.buildings, 'bld_rsv_core_gallery');
       const ids = Object.keys(this.squad.ownedCores);
@@ -4951,7 +4966,7 @@ export class S7DemoController extends Component {
       this.unitManageInfoLabel.string =
         `${name}\n阶级 ${shipTierName(tier)}阶（战力+${shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, tier)}%）\n` +
         `${tier < SHIP_TIER_MAX ? `升阶需 ${nextCost} 专属碎片（有 ${haveShard}）` : '已满阶 SS'}\n` +
-        `等级 Lv.${lv}/${cap}${lv >= cap ? (tier < SHIP_TIER_MAX ? '（已满级·升阶解锁更高等级）' : '（已满级·SS顶级）') : '（升级花星矿/合金）'}\n插件槽 ${shipPluginSlotCap(tier)}　星核槽 ${shipCoreSlotOpen(tier) ? '已开' : '未开(S阶解锁)'}\n战力 ${power}\n` +
+        `等级 Lv.${lv}/${cap}${lv >= cap ? (tier < SHIP_TIER_MAX ? '（已满级·升阶解锁更高等级）' : '（已满级·SS顶级）') : '（升级花星舰合金）'}\n插件槽 ${shipPluginSlotCap(tier)}　星核槽 ${shipCoreSlotOpen(tier) ? '已开' : '未开(S阶解锁)'}\n战力 ${power}\n` +
         `— 属性详情（待接入）—\n— 技能详情（待接入）—`;
     } else {
       const lv = getPilotLevel(this.playerState.unitLevels, uid);
@@ -5506,7 +5521,7 @@ export class S7DemoController extends Component {
     const res = this.session.resources as Record<string, number>;
     const gem = Math.floor(res.starGem ?? 0);
     const frag = Math.floor(res.coreFrag ?? 0);
-    if (this.vaultInfoLabel) this.vaultInfoLabel.string = `星空宝石 ${gem}　星核碎片 ${frag}\n（兑换=定向·一次性解锁；合成=碎片随机出 1 核）`;
+    if (this.vaultInfoLabel) this.vaultInfoLabel.string = `星空宝石 ${gem}　星核碎片 ${frag}\n（流通核可复购·第2份起×1.5；毕业核唯一解锁；开蛋=碎片随机出常规核）`;
     this.vaultListNode.removeAllChildren();
     let y = getS7UsableBand().usableTopY - 168;
     // 碎片随机合成行。
@@ -5514,12 +5529,12 @@ export class S7DemoController extends Component {
     if (frag >= cfg.synthesisCost) this.addBtn(synthRow, '合成', 130, 56, new Color(150, 110, 200, 255), this.viewW * 0.34, 0, () => this.onSynthesize(), 24);
     else this.mkPanelLabel(synthRow, '碎片不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
     y -= 80;
-    // 星核兑换。
-    const ownedCoreIds = Object.keys(this.squad.ownedCores).filter((id) => (this.squad!.ownedCores[id] ?? 0) > 0);
-    for (const v of vaultCoreViews(cfg, ownedCoreIds, gem)) {
-      const row = this.makeVaultRow(`${this.coreName(v.coreId)}${v.limited ? '[限定]' : ''}　${v.gemCost}宝石`, y, new Color(40, 44, 62, 255));
-      if (v.owned) this.mkPanelLabel(row, '已拥有', 22, new Color(120, 200, 140), this.viewW * 0.34, 0);
-      else if (v.affordable) this.addBtn(row, '兑换', 130, 56, new Color(90, 150, 110, 255), this.viewW * 0.34, 0, () => this.onRedeemCore(v.coreId, v.gemCost), 24);
+    // 星核兑换（流通核复购×1.5·毕业核唯一解锁）。
+    for (const v of vaultCoreViews(cfg, this.squad.ownedCores, gem)) {
+      const tag = v.graduation ? '[毕业核]' : v.ownedCopies > 0 ? `[已有×${v.ownedCopies}]` : '';
+      const row = this.makeVaultRow(`${this.coreName(v.coreId)}${tag}　${v.gemCost}宝石`, y, new Color(40, 44, 62, 255));
+      if (!v.purchasable) this.mkPanelLabel(row, '已拥有', 22, new Color(120, 200, 140), this.viewW * 0.34, 0);
+      else if (v.affordable) this.addBtn(row, v.ownedCopies > 0 ? '复购' : '兑换', 130, 56, new Color(90, 150, 110, 255), this.viewW * 0.34, 0, () => this.onRedeemCore(v.coreId, v.gemCost), 24);
       else this.mkPanelLabel(row, '宝石不足', 22, new Color(150, 158, 178), this.viewW * 0.34, 0);
       y -= 76;
     }
@@ -5536,17 +5551,20 @@ export class S7DemoController extends Component {
   private onSynthesize(): void {
     if (!this.session || !this.squad) return;
     const res = this.session.resources as Record<string, number>;
-    const r = synthesizeCore(DEFAULT_S7_CORE_SOURCE_CONFIG, Math.floor(res.coreFrag ?? 0), new S7AutoBattleRng(`synth:${Date.now()}`));
+    const ownedIds = Object.keys(this.squad.ownedCores).filter((id) => (this.squad!.ownedCores[id] ?? 0) > 0);
+    const yolkP = this.buildings ? galleryDoubleYolkP(getBuildingLevel(this.buildings, 'bld_rsv_core_gallery')) : 0;
+    const r = synthesizeCore(DEFAULT_S7_CORE_SOURCE_CONFIG, Math.floor(res.coreFrag ?? 0), new S7AutoBattleRng(`synth:${Date.now()}`), ownedIds, yolkP);
     if (!r.ok) { if (this.vaultMsgLabel) this.vaultMsgLabel.string = r.reason === 'insufficient' ? `星核碎片不够（需 ${DEFAULT_S7_CORE_SOURCE_CONFIG.synthesisCost}）` : '合成池为空'; return; }
     res.coreFrag -= r.fragSpent;
-    grantCore(this.squad, r.coreId);
-    if (this.vaultMsgLabel) this.vaultMsgLabel.string = `合成出：${this.coreName(r.coreId)}！`;
+    for (const cid of r.coreIds) grantCore(this.squad, cid);
+    if (this.vaultMsgLabel) this.vaultMsgLabel.string = r.doubleYolk ? `🥚 双黄蛋！开出：${r.coreIds.map((c) => this.coreName(c)).join(' + ')}！` : `开出：${this.coreName(r.coreIds[0])}！`;
     this.persist(); this.refresh(); this.refreshVault();
   }
 
   private onRedeemCore(coreId: string, gemCost: number): void {
     if (!this.session || !this.squad) return;
-    if ((this.squad.ownedCores[coreId] ?? 0) > 0) return; // 一次性·已拥有
+    const cfgEntry = DEFAULT_S7_CORE_SOURCE_CONFIG.vaultCores.find((e) => e.coreId === coreId);
+    if (cfgEntry?.graduation && (this.squad.ownedCores[coreId] ?? 0) > 0) return; // 毕业核唯一解锁（流通核可复购）
     const res = this.session.resources as Record<string, number>;
     if ((res.starGem ?? 0) < gemCost) { if (this.vaultMsgLabel) this.vaultMsgLabel.string = '星空宝石不够'; return; }
     res.starGem -= gemCost;
@@ -5590,7 +5608,8 @@ export class S7DemoController extends Component {
     if (!this.playerState || !this.expOpenNode) return;
     if (getChestCount(this.playerState.chests, 'expansionTreasure') < 1) return;
     const isFirstSelect = this.playerState.expansionOpenedCount <= 0;
-    const options = rollExpansionChoices(DEFAULT_S7_CORE_SOURCE_CONFIG, isFirstSelect, new S7AutoBattleRng(`exp:${Date.now()}`));
+    const ownedIdsExp = this.squad ? Object.keys(this.squad.ownedCores).filter((id) => (this.squad!.ownedCores[id] ?? 0) > 0) : [];
+    const options = rollExpansionChoices(DEFAULT_S7_CORE_SOURCE_CONFIG, isFirstSelect, new S7AutoBattleRng(`exp:${Date.now()}`), ownedIdsExp);
     if (options.length === 0) return;
     this.expOpen = { options, isFirstSelect, picked: false, consumed: false };
     const parent = this.expOpenNode.parent;
@@ -6480,10 +6499,6 @@ export class S7DemoController extends Component {
   private salvagePreviewText(rw: S7SalvageReward): string {
     switch (rw.kind) {
       case 'resource': return `${this.zhRes(rw.resourceId)}×${rw.amount}`;
-      case 'ship_body':
-        return this.squad && !this.squad.ownedShips.includes(rw.shipId)
-          ? `${this.unitName('ship', rw.shipId)}[C级]`
-          : `${this.unitName('ship', rw.shipId)}碎片×15`;
       case 'plugin': return `${rw.quality === 'fine' ? '精良' : rw.quality === 'superior' ? '优秀' : '传奇'}插件`;
       case 'chest': return `星辉货舱×${rw.amount}`;
       case 'population': return rw.pop === 'resident' ? `居民×${rw.amount}` : `工人×${rw.amount}`;
@@ -7293,7 +7308,7 @@ export class S7DemoController extends Component {
     }
   }
 
-  /** DEV-TEMP：重掷今日4张悬赏卡（换种子重抽·验品质/词缀分布与暗保底；不动更早积压；暗保底计数照常推进）。上线前删。 */
+  /** DEV-TEMP：重掷今日3张悬赏卡（换种子重抽·验词缀分布与槽位洗牌；品质=明保底日程表随 fakeKey 变化）。上线前删。 */
   private devRerollBounty(): void {
     if (!this.playerState || this.playing) return;
     const st = this.playerState.bounty;
@@ -7303,9 +7318,8 @@ export class S7DemoController extends Component {
     this.devBountySalt += 1;
     const fakeKey = st.lastGenDayKey * 1000 + this.devBountySalt; // 变种子重抽（确定性基建不动）
     const pool = (this.runtime?.getAll<{ rowId: string }>('commission_affix_param') ?? []).map((r) => r.rowId);
-    const r = generateDayCards(fakeKey, st.noGoldDays, pool);
+    const r = generateDayCards(fakeKey, pool);
     for (const c of r.cards) st.cards.push(c);
-    st.noGoldDays = r.noGoldDays;
     this.devBountyLastBatchKey = fakeKey;
     const habitatLv = this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0;
     const cap = bountyBoardCap(habitatLv);
@@ -7313,7 +7327,7 @@ export class S7DemoController extends Component {
     this.persist();
     if (this.combatHall?.isOpen) this.combatHall.refreshActive();
     const golds = r.cards.filter((c) => c.quality === 'gold').length;
-    this.hubToast(`[DEV] 重掷4张：金×${golds}·连续无金${st.noGoldDays}批（满${PITY_DAYS - 1}批后下批必金）`);
+    this.hubToast(`[DEV] 重掷3张：金×${golds}（明保底：每3发卡日1金·每日≥1银）`);
   }
 
   /** DEV-TEMP：武装/解除「下张护航打赢必遇袭」（仅内存·用掉即灭；15% 概率打几次不中很正常、没法验收）。上线前删。 */
@@ -7381,14 +7395,14 @@ export class S7DemoController extends Component {
   /** 建筑当前等级的效果一句话（显示用；原型仅居住舱→离线 真生效，余为展示）。 */
   private effectSummary(buildingId: string, level: number): string {
     switch (buildingId) {
-      case 'bld_habitat': return `离线${Math.round(offlineStorageHours(level))}h·产率+${Math.round(offlineRateBonusPct(level))}%`;
-      case 'bld_dock': return `暂无战斗外收益（升级成本折扣待第三块）`;
-      case 'bld_pilot_training_bay': return `暂无战斗外收益（升级成本折扣待第三块）`;
+      case 'bld_habitat': return `离线${Math.round(offlineStorageHours(level))}h·产率+${Math.round(offlineRateBonusPct(level))}%·编制${habitatStaffCap(level)}`;
+      case 'bld_dock': return `星舰升级合金 -${(UPGRADE_DISCOUNT_PCT_PER_LEVEL * level).toFixed(1)}%`;
+      case 'bld_pilot_training_bay': return `驾驶员升级记录 -${(UPGRADE_DISCOUNT_PCT_PER_LEVEL * level).toFixed(1)}%`;
       case 'bld_research_tower': return `全队血攻+${researchTeamBonusPct(level)}%`;
-      case 'bld_rsv_core_gallery': return `每种星核收藏+${coreGalleryPerTypeBonusPct(level).toFixed(1)}%(×收集种数·封顶10%)`;
+      case 'bld_rsv_core_gallery': return `每种星核收藏+${coreGalleryPerTypeBonusPct(level).toFixed(2)}%(×收集种数·封顶10%)`;
       case 'bld_salvage_port': return `打捞队${salvageTeamCount(level)}`;
-      case 'bld_merchant_station': return `商店槽${merchantShopSlots(level)}·升级送1次免费刷新`;
-      case 'bld_supply_station': return '抽卡出率(待接·J2)';
+      case 'bld_merchant_station': return `稀有格${merchantRareSlots(level)}·升级送1次免费刷新`;
+      case 'bld_supply_station': return `A级出率+${supplyATierRateBumpPct(level)}pp·免费抽${supplyFreeDailyPulls(level)}/日`;
       default: return '';
     }
   }

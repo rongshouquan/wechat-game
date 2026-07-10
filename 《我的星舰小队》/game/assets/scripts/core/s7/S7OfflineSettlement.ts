@@ -13,6 +13,7 @@ import { S7MainlineModel, S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BuildingState, getBuildingLevel } from './S7BuildingState';
 import { S7PopulationState } from './S7Population';
 import { residentRateBonusPct, residentStorageExtensionHours } from './S7Population';
+import { habitatStaffCap } from './S7BuildingEffects';
 import {
   computeOfflineGains,
   S7OfflineResult,
@@ -48,11 +49,13 @@ export function computeS7OfflineSettlement(
       ? (now - lastOnlineTime) / MS_PER_SEC
       : 0;
 
+  const habitatLevel = getBuildingLevel(buildings, S7_HABITAT_BUILDING_ID);
+  const staffCap = habitatStaffCap(habitatLevel); // 有效编制（细案③：超编居民纯人气不加成）
   const result = computeOfflineGains(elapsedSeconds, {
-    habitatLevel: getBuildingLevel(buildings, S7_HABITAT_BUILDING_ID),
+    habitatLevel,
     clearedStarfieldTier: model.clearedStarfieldTier(progress.clearedNodeIds),
-    extraRateBonusPct: residentRateBonusPct(population.residents),
-    extraStorageHours: residentStorageExtensionHours(population.residents),
+    extraRateBonusPct: residentRateBonusPct(population.residents, staffCap),
+    extraStorageHours: residentStorageExtensionHours(population.residents, staffCap),
   });
 
   const hasGains = (Object.keys(result.gains) as S7OfflineResourceKey[]).some((k) => result.gains[k] > 0);

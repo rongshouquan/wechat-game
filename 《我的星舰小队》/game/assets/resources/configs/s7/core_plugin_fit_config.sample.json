@@ -13,15 +13,15 @@
       "pil12"
     ],
     "coreRefs": [
-      "core01",
-      "core06"
+      "core19",
+      "core12"
     ],
     "pluginRefs": [
       "plg01",
       "plg02",
       "plg13"
     ],
-    "boundaryNote": "没有 core01 仍可用星舰破盾和插件集火"
+    "boundaryNote": "没有 core01 仍可用星舰破盾和插件集火（步5 收编：coreRefs 换真核 id·按 coverProblemTags 重配）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -37,8 +37,8 @@
       "pil10"
     ],
     "coreRefs": [
-      "core02",
-      "core05"
+      "core09",
+      "core17"
     ],
     "pluginRefs": [
       "plg03",
@@ -46,7 +46,7 @@
       "plg05",
       "plg16"
     ],
-    "boundaryNote": "没有 core02 仍可用后排舰和压制插件"
+    "boundaryNote": "没有 core02 仍可用后排舰和压制插件（步5 收编：coreRefs 换真核 id·按 coverProblemTags 重配）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -64,8 +64,8 @@
       "pil11"
     ],
     "coreRefs": [
-      "core03",
-      "core05"
+      "core11",
+      "core14"
     ],
     "pluginRefs": [
       "plg06",
@@ -74,7 +74,7 @@
       "plg11",
       "plg14"
     ],
-    "boundaryNote": "不允许广告补战力"
+    "boundaryNote": "不允许广告补战力（步5 收编：coreRefs 换真核 id·按 coverProblemTags 重配）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -90,8 +90,9 @@
       "pil10"
     ],
     "coreRefs": [
-      "core04",
-      "core06"
+      "core08",
+      "core16",
+      "core20"
     ],
     "pluginRefs": [
       "plg09",
@@ -99,7 +100,7 @@
       "plg17",
       "plg18"
     ],
-    "boundaryNote": "插件不能制造自由刷怪生态"
+    "boundaryNote": "插件不能制造自由刷怪生态（步5 收编：coreRefs 换真核 id·按 coverProblemTags 重配）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -119,10 +120,10 @@
       "pil11"
     ],
     "coreRefs": [
-      "core01",
-      "core03",
-      "core05",
-      "core06"
+      "core10",
+      "core12",
+      "core13",
+      "core15"
     ],
     "pluginRefs": [
       "plg08",
@@ -130,7 +131,7 @@
       "plg13",
       "plg14"
     ],
-    "boundaryNote": "不写 Boss 阶段时间轴"
+    "boundaryNote": "不写 Boss 阶段时间轴（步5 收编：coreRefs 换真核 id·按 coverProblemTags 重配）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -148,14 +149,14 @@
       "pil12"
     ],
     "coreRefs": [
-      "core02",
-      "core04"
+      "core08",
+      "core22"
     ],
     "pluginRefs": [
       "plg15",
       "plg16",
       "plg17"
     ],
-    "boundaryNote": "不扩展召唤生态"
+    "boundaryNote": "不扩展召唤生态（步5 收编：coreRefs 换真核 id·按 coverProblemTags 重配）"
   }
 ]

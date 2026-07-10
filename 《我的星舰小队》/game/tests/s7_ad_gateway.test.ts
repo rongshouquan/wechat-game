@@ -8,11 +8,11 @@ import {
 } from '../assets/scripts/core/s7/S7AdGateway';
 
 describe('G1 · 广告网关', () => {
-  it('点位清单齐全（S13.2 十点位·块5 补齐 10/10：+今日补给箱/三选一再选一/战败安慰双倍）', () => {
+  it('点位清单齐全（S13.2 十一点位=步5 重定基：+#11 委托失败保卡 escort_fail_guard·接线随灰盒批）', () => {
     expect([...S7_AD_POINTS].sort()).toEqual([
       'cargo_extra_pick', 'clear_reward_double', 'corridor_milestone_double', 'daily_supply_chest',
-      'defeat_consolation_double', 'merchant_refresh', 'return_report_double', 'salvage_speedup',
-      'sponsor_supply', 'triple_pick_extra',
+      'defeat_consolation_double', 'escort_fail_guard', 'merchant_refresh', 'return_report_double',
+      'salvage_speedup', 'sponsor_supply', 'triple_pick_extra',
     ]);
   });
 
