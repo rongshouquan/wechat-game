@@ -18,6 +18,8 @@ import { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService
 import { S7BattleLineupUnitInput, S7BattleLineupPluginInput } from '../assets/scripts/core/s7/S7BattleEncounterAssembler';
 import { S7EffectBlock } from '../assets/scripts/core/s7/S7BattleEffectBlock';
 import { S7PluginQuality } from '../assets/scripts/core/s7/S7PluginEffects';
+import { shipPowerV0, S7_TIER_ATTR_MULT, S7_PILOT_STAR_MULT, S7_PLAYER_CRIT_BASE } from '../assets/scripts/core/s7/S7PowerRating';
+import { S7_HARD_CONTROL_DIMINISH } from '../assets/scripts/core/s7/S7AutoBattleTypes';
 
 // 路径由壳注入（打包产物跑在临时目录·import.meta.url 不可用作锚）：S7_GAME_ROOT=game 目录绝对路径。
 const GAME_ROOT = process.env.S7_GAME_ROOT ?? process.cwd();
@@ -62,13 +64,9 @@ export function loadPressure(): number[] {
 
 // ===== ① 阵容生成器（第一段框架消费者）=====
 
-/** 战力公式 v0 常量（初值表 §3）。 */
-const TIER_BASE = { C: 100, B: 160, A: 250, S: 380, SS: 550 } as const;
+/** 战力公式 v0＝S7PowerRating 单一真源（段三躯干统一：本地复制退役）。 */
 const TIER_LV_CAP = { C: 20, B: 40, A: 60, S: 80, SS: 100 } as const;
-const TIER_ATTR_MULT = 1.26; // §12.1：升阶全属性 ×1.26/阶
-const PLUGIN_POWER = { fine: 15, superior: 35, legendary: 70 } as const;
-const CORE_POWER = 120;
-type Tier = keyof typeof TIER_BASE;
+type Tier = keyof typeof TIER_LV_CAP;
 const TIERS: Tier[] = ['C', 'B', 'A', 'S', 'SS'];
 
 /** 各阶默认插件档（槽位随阶开：C1/B2/A3；档位随进度升）。 */
@@ -93,15 +91,11 @@ export interface GrowthPlan {
   /** 单舰战力（含核·含驾驶员系数）。 */
   shipPower: number;
 }
-/** 星级系数（初值表 §3）。 */
-const STAR_MULT = [1.0, 1.0, 1.08, 1.18, 1.3, 1.45]; // 下标=星级
+/** 星级系数＝S7_PILOT_STAR_MULT（单源）。 */
 
-/** 单舰战力（战力公式 v0 完整版·初值表 §3：(基值×等级项+插件)×驾驶员系数+核）。 */
+/** 单舰战力（v0·经 S7PowerRating 单源）。 */
 function shipPowerOf(tier: Tier, level: number, plugins: S7PluginQuality[], withCore: boolean, pilotStar: number, pilotLevel: number): number {
-  const base = TIER_BASE[tier] * (1 + 0.08 * (level - 1));
-  const plug = plugins.reduce((a, q) => a + PLUGIN_POWER[q], 0);
-  const pilotMult = STAR_MULT[pilotStar] * (1 + 0.01 * pilotLevel);
-  return (base + plug) * pilotMult + (withCore ? CORE_POWER : 0);
+  return shipPowerV0({ tier: TIERS.indexOf(tier), level, pluginQualities: plugins, withCore, pilotStar, pilotLevel });
 }
 
 /** 养成刻度反解（全队同构粗放版）：阶级×等级×驾驶员星/级 使 5 舰总战力最接近目标 P。
@@ -114,7 +108,11 @@ export function solveGrowthPlan(targetTeamPower: number): GrowthPlan {
     const plugins = TIER_PLUGINS[tier];
     const withCore = tier === 'S' || tier === 'SS';
     const pilotStar = TIER_STAR[tier];
-    for (let lv = 1; lv <= TIER_LV_CAP[tier]; lv += 1) {
+    // 段三保真度：升阶保级——真实玩家满级才升阶（B 从 20 级起、SS 从 80 级起），
+    // 放开 lv=1 会解出"SS低等级"纸面高实际弱的幽灵方案（×1.15 反而输的量化悬崖实证）。
+    const tierIdx0 = TIERS.indexOf(tier);
+    const lvFloor = tierIdx0 === 0 ? 1 : TIER_LV_CAP[TIERS[tierIdx0 - 1]];
+    for (let lv = lvFloor; lv <= TIER_LV_CAP[tier]; lv += 1) {
       // 驾级=舰级同频为主轴 + ±20 级独立微调（反解量化间隙实证：n120 到达/破墙两态 14976 vs 16510
       // 曾落同一档=同队打同墙——墙窗口验证失真；驾级微调轴把档间隙填到 <1%）。
       const plvLo = Math.max(1, lv - 20);
@@ -130,31 +128,40 @@ export function solveGrowthPlan(targetTeamPower: number): GrowthPlan {
   return best!;
 }
 
-export type LineupFamily = 'median' | 'counter' | 'misfit';
+export type LineupFamily = 'median' | 'counter' | 'misfit' | 'poor';
 
 /** 族 × 问题标签 → 五舰（shipId 序=真源映射·细表§12）。克制向按工序0克制工具箱选工具。 */
 export function pickShips(family: LineupFamily, problemTag: string): string[] {
-  if (family === 'misfit') return ['shp05', 'shp06', 'shp07', 'shp13', 'shp15']; // 三坦双奶（合法错配）
-  if (family === 'median') return ['shp05', 'shp01', 'shp09', 'shp17', 'shp13']; // 磐石+极焰+烈阳+迷雾+晨曦（第一段成文）
-  switch (problemTag) { // counter：对题工具箱
-    case 'swarm': return ['shp05', 'shp10', 'shp09', 'shp12', 'shp13'];   // AoE：群蜂+烈阳+霹雳
-    case 'shield': return ['shp05', 'shp11', 'shp20', 'shp02', 'shp13'];  // 破盾：贯日+锁链+影刃
-    case 'backline': return ['shp05', 'shp02', 'shp09', 'shp04', 'shp13']; // 点后排/单体：影刃+蜂针
-    case 'burst': return ['shp05', 'shp06', 'shp01', 'shp09', 'shp13'];   // 双坦双C一奶：扛爆发窗口不牺牲输出下限（三段实测：旧双坦双奶配方扛得住但磨不死→120s 超时反输·§20.7）
-    case 'berserk': return ['shp05', 'shp02', 'shp01', 'shp09', 'shp13']; // 限时爆发：突击双核
-    case 'summon': return ['shp05', 'shp10', 'shp12', 'shp02', 'shp13'];  // 清召唤：AoE+点源
-    default: return ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];
+  if (family === 'misfit') return ['shp13', 'shp14', 'shp15', 'shp16', 'shp17']; // 五支援＝面⑤乱搭载体（真·无胜利路径：双坦版仍有磐石A反弹暗路=蜂群袋26%实证；全奶无输出=只能超时·也是真实新手误配形态）
+  if (family === 'poor') return ['shp05', 'shp06', 'shp01', 'shp13', 'shp15'];  // 双坦一C双奶＝面②差搭配载体（有胜利路径·输出饥饿≈45s）
+  // 段三载体重定（§16d 记）：迷雾（普攻致盲 40%=通用减伤王牌）从中位挪去克制件位——
+  // 旧中位含迷雾=实质"优质搭配"，六题带克制全数倒挂实证；中位第四位换哨卫（工程盒·无万能减伤）。
+  if (family === 'median') return ['shp05', 'shp01', 'shp09', 'shp11', 'shp13']; // 磐石+极焰+烈阳+贯日+晨曦——第四位=纯炮击（哨卫版实证：诱饵盒吃光敌火=砍半半血队满血通关·万能牌不当中位）
+  switch (problemTag) { // counter：中位核心+对题弹性位（玩家真实构筑法=主力队换弹性位带工具）
+    case 'swarm': return ['shp05', 'shp01', 'shp09', 'shp10', 'shp13'];   // 弹性位=群蜂（AoE 弹巢）
+    case 'shield': return ['shp05', 'shp01', 'shp09', 'shp02', 'shp13'];  // 弹性位=影刃（狙杀）+破盾件
+    case 'backline': return ['shp05', 'shp06', 'shp01', 'shp09', 'shp13']; // 弹性位=铁壁（怒吼嘲讽拉塔火·M4 嘲讽盖 backline_first=真工具——致盲只吃普攻拦不住塔大招实证）
+    case 'burst': return ['shp05', 'shp01', 'shp09', 'shp17', 'shp13'];   // 弹性位=迷雾（致盲重炮）+舰体件
+    case 'berserk': return ['shp05', 'shp01', 'shp09', 'shp02', 'shp13']; // 弹性位=影刃（限时竞速）+净化件
+    case 'summon': return ['shp05', 'shp01', 'shp09', 'shp12', 'shp13'];  // 弹性位=霹雳（连锁清群+点源）
+    default: return ['shp05', 'shp01', 'shp09', 'shp02', 'shp13'];
   }
 }
 
 const SLOTS = ['p1c2', 'p0c1', 'p1c1', 'p2c1', 'p1c0']; // 首舰=坦顶前列（中位摆位成文口径）
+/** 克制族按题带工具插件（段三：B6 手工行早已带件、全扫克制族此前只换舰=假克制——盾题不带破盾件被中位反超实证）。 */
+const TAG_PLUGINS: Record<string, string[]> = {
+  shield: ['plg02', 'plg07', 'plg03'],   // 破盾件
+  berserk: ['plg02', 'plg07', 'plg14'],  // 净化件（拖时间狂暴题）
+  burst: ['plg02', 'plg07', 'plg05'],    // 舰体件（扛爆发单发）
+  backline: ['plg02', 'plg07', 'plg05'], // 舰体件（扛点名尖峰）
+  heal: ['plg02', 'plg07', 'plg01'],
+};
 /** ⑩A1 驾驶员真配（pil01-05 占位轮配退役）：舰↔驾驶员恒等映射 shpNN↔pilNN——
  *  舰按定位分块（01-04突击/05-08护卫/09-12炮击/13-16支援/17-20工程）与驾驶员亲和组同构，
  *  五对带★专属配对全部落同下标（影02/岩05/源09/苏13/蔽17=四点已拍④"带★钉死"），
  *  巡(pil19)=哨卫(shp19·有召唤物)=任务单弹药2"巡默认钉蜂巢或哨卫"。 */
 export const pilotOfShip = (shipId: string): string => `pil${shipId.slice(3)}`;
-/** C20 折算通道（§10）：坦克(护卫组)→armor%·其余→attack%（工程"召唤物继承"未建=attack% 近似·记偏差）。 */
-const GUARD_SHIPS = new Set(['shp05', 'shp06', 'shp07', 'shp08']);
 
 /** ⑩A2 按题/按段选核（"核固定陨星弹"粗放点收口·§18.3 强度表语义·规则记 §19.5）：
  *  中位=Boss 关带超新星（毕业核=攒能 Boss 主场）·常规关带小太阳（常规最强档）；
@@ -179,35 +186,26 @@ export function genLineup(family: LineupFamily, targetTeamPower: number, problem
   const plan = solveGrowthPlan(targetTeamPower);
   const ships = pickShips(family, problemTag);
   const tierIdx = TIERS.indexOf(plan.tier);
-  const attrMult = Math.pow(TIER_ATTR_MULT, tierIdx) - 1; // 升阶全属性跳（运行时未接线=积木承载·细表§12.1）
+  // 段三躯干统一：升阶属性跳与驾驶员数值线归装配器（shipTier/pilotStar/pilotLevel 直传·shipTierBlocks/pilotNumericBlocks）；
+  // 此处只保留玩家暴击基线注入（真机三入口同源=playerCritBaseBlocks·值=S7_PLAYER_CRIT_BASE）。
   const extra: S7EffectBlock[] = [
-    { kind: 'affix', affix: 'critRate', value: 0.05, source: 'crit_base' },
-    { kind: 'affix', affix: 'critDmg', value: 0.5, source: 'crit_base' },
+    { kind: 'affix', affix: 'critRate', value: S7_PLAYER_CRIT_BASE.rate, source: 'crit_base' },
+    { kind: 'affix', affix: 'critDmg', value: S7_PLAYER_CRIT_BASE.dmg, source: 'crit_base' },
   ];
-  if (attrMult > 0) {
-    extra.push(
-      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: attrMult, source: 'tier_up' },
-      { kind: 'modifier', stat: 'attack', op: 'pct', value: attrMult, source: 'tier_up' },
-      { kind: 'modifier', stat: 'armor', op: 'pct', value: attrMult, source: 'tier_up' },
-    );
-  }
-  // 驾驶员数值线（C20 通道·与天赋机制分立防双吃）：星系数×(1+1%/级)−1 → 按定位折 attack%/armor%。
-  const pilotCombat = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel) - 1;
-  const plugins: S7BattleLineupPluginInput[] = plan.plugins.map((q, i) => ({ pluginId: SLOT_PLUGINS[i], quality: q }));
+  const pluginIds = family === 'counter' ? (TAG_PLUGINS[problemTag] ?? SLOT_PLUGINS) : SLOT_PLUGINS;
+  const plugins: S7BattleLineupPluginInput[] = plan.plugins.map((q, i) => ({ pluginId: pluginIds[i], quality: q }));
   const lineup: S7BattleLineupUnitInput[] = ships.map((shipId, i) => {
-    const shipExtra = pilotCombat > 0
-      ? [...extra, { kind: 'modifier', stat: GUARD_SHIPS.has(shipId) ? 'armor' : 'attack', op: 'pct', value: pilotCombat, source: 'pilot_scale' } as S7EffectBlock]
-      : extra;
     return {
       shipId,
       slotRef: SLOTS[i],
       pilotId: pilotOfShip(shipId),
       pilotLevel: plan.pilotLevel,
       pilotStar: plan.pilotStar,
+      shipTier: tierIdx,
       ...(plan.withCore && i === 1 ? { coreId: pickCore(family, problemTag, stage) } : {}), // ⑩A2：按题/按段选核（第二舰=主输出位）
       plugins,
       shipLevel: plan.level,
-      extraBlocks: shipExtra,
+      extraBlocks: extra,
     };
   });
   return { lineup, teamPower: plan.shipPower * 5, plan };
@@ -234,25 +232,13 @@ export function genLineupCustom(opts: CustomLineupOpts): {
   const plan = solveGrowthPlan(opts.targetTeamPower);
   const slots = opts.slots ?? SLOTS;
   const tierIdx = TIERS.indexOf(plan.tier);
-  const attrMult = Math.pow(TIER_ATTR_MULT, tierIdx) - 1;
   const extra: S7EffectBlock[] = [
-    { kind: 'affix', affix: 'critRate', value: 0.05, source: 'crit_base' },
-    { kind: 'affix', affix: 'critDmg', value: 0.5, source: 'crit_base' },
+    { kind: 'affix', affix: 'critRate', value: S7_PLAYER_CRIT_BASE.rate, source: 'crit_base' },
+    { kind: 'affix', affix: 'critDmg', value: S7_PLAYER_CRIT_BASE.dmg, source: 'crit_base' },
   ];
-  if (attrMult > 0) {
-    extra.push(
-      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: attrMult, source: 'tier_up' },
-      { kind: 'modifier', stat: 'attack', op: 'pct', value: attrMult, source: 'tier_up' },
-      { kind: 'modifier', stat: 'armor', op: 'pct', value: attrMult, source: 'tier_up' },
-    );
-  }
-  const pilotCombat = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel) - 1;
   const pluginIds = opts.slotPlugins ?? SLOT_PLUGINS;
   const plugins: S7BattleLineupPluginInput[] = plan.plugins.map((q, i) => ({ pluginId: pluginIds[i], quality: q }));
   const lineup: S7BattleLineupUnitInput[] = opts.ships.map((shipId, i) => {
-    const shipExtra = pilotCombat > 0
-      ? [...extra, { kind: 'modifier', stat: GUARD_SHIPS.has(shipId) ? 'armor' : 'attack', op: 'pct', value: pilotCombat, source: 'pilot_scale' } as S7EffectBlock]
-      : extra;
     const coreId = opts.coreMap?.[shipId];
     return {
       shipId,
@@ -260,10 +246,11 @@ export function genLineupCustom(opts: CustomLineupOpts): {
       pilotId: opts.pilotMap?.[shipId] ?? pilotOfShip(shipId),
       pilotLevel: plan.pilotLevel,
       pilotStar: plan.pilotStar,
+      shipTier: tierIdx,
       ...(coreId ? { coreId } : {}),
       plugins,
       shipLevel: plan.level,
-      extraBlocks: shipExtra,
+      extraBlocks: extra,
     };
   });
   return { lineup, teamPower: plan.shipPower * 5, plan };
@@ -271,9 +258,10 @@ export function genLineupCustom(opts: CustomLineupOpts): {
 
 // ===== ② 压力值 → 敌配属性映射 v0（规则成文=细表 §19）=====
 
-/** k 合同数字（第一段实证终值·§18）。 */
-export const K_HP = 10;
-export const K_DPS = 0.34;
+/** k 合同数字（批③段三躯干重校：玩家世界全接真〔舰阶质变+满天赋+插件+数值线〕后全局上抬——
+ *  池 10→15（正常档手感 11.8s→≈25s 靶）·火 0.34→0.44（砍半必败/错舰归零/乱搭无路的生存压强）。⑥⑩史值见 git。 */
+export const K_HP = 20;
+export const K_DPS = 0.5;
 /** 关卡类型放大（§18 实证系数）。 */
 export const STAGE_MULT = {
   normal: { pool: 1.0, dps: 1.0 },
@@ -285,13 +273,13 @@ export const STAGE_MULT = {
 export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: number; interval: number; effHpMult?: number }> = {
   // effHpMult=等效厚度（盾循环/治疗/召唤产出=第二条血）：单位落表血=池份额÷effHpMult——
   // 单类编队关权重归一化后份额不变，等效厚度必须除在单位血上（n061 僵持诊断·22 关盾敌段实证）。
-  bu_enemy_swarm: { hpW: 0.7, atkW: 0.8, armor: 5, interval: 1.1 },
+  bu_enemy_swarm: { hpW: 0.9, atkW: 0.8, armor: 5, interval: 1.1 }, // 段三：0.7→0.9 数量题咬合（单体磨群付时间·AoE 不受扰）
   bu_enemy_swarm_tough: { hpW: 1.6, atkW: 0.5, armor: 12, interval: 1.1 },
-  bu_enemy_burst_raider: { hpW: 0.8, atkW: 2.2, armor: 8, interval: 1.7 },
+  bu_enemy_burst_raider: { hpW: 0.8, atkW: 2.2, armor: 8, interval: 2.4 }, // 段三尖峰族：单发×1.41（DPS 守恒·重锤打穿脆皮/坦体扛得住）
   bu_enemy_shield_warden: { hpW: 1.2, atkW: 0.9, armor: 30, interval: 1.3, effHpMult: 1.8 },
-  bu_enemy_backline: { hpW: 0.7, atkW: 1.5, armor: 10, interval: 1.3 },
+  bu_enemy_backline: { hpW: 0.7, atkW: 0.7, armor: 10, interval: 1.4 }, // 段三尖峰族终值：射程醒后全额参战·攻权 1.1→0.85（点名带全员致死实证回拉·尖峰主载体=n102 塔型覆写 3.0s）
   bu_enemy_support: { hpW: 0.9, atkW: 0.35, armor: 15, interval: 1.4, effHpMult: 1.4 },
-  bu_enemy_charge: { hpW: 1.3, atkW: 1.6, armor: 15, interval: 1.5 },
+  bu_enemy_charge: { hpW: 1.3, atkW: 1.6, armor: 15, interval: 2.0 }, // 段三尖峰族：冲锋单发×1.33
   bu_enemy_summon_source: { hpW: 1.4, atkW: 0.4, armor: 12, interval: 1.4, effHpMult: 1.6 },
   bu_enemy_shield: { hpW: 0.9, atkW: 0.8, armor: 25, interval: 1.3, effHpMult: 2.0 },
   bu_enemy_boss_add: { hpW: 0.7, atkW: 0.8, armor: 8, interval: 1.2 },
@@ -303,24 +291,24 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
  *  没有陡度时战斗侧在贴线处必胜（手感靶设计），墙会比经济模型软=毕业节奏漂移（milestone 验收实证）。
  *  n084/n138=余势墙零等待不加陡；n102 双威胁另有 adds 火力修（护后排克制工具=M4 未接线·复调记档）。 */
 const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
-  // 生存阈值立墙（迭代2）：池墙对 ±5-8% 战力窗口太钝（TTK 只差 5%）；敌火推到"到达态被磨穿、
-  // 破墙态盾奶站得住"的临界带——生存平衡点对战力差远陡于 TTK。
-  // ⑩A0 重对（v0.7 压力表 γ 1.125/1.086·曲线变陡后墙工况全体漂移·⑥终值随 v0.6 作废）：
-  n060: { pool: 1.05, dps: 1.20 }, // v0.6 值 1.35 在新表下过深（到达态 20% 胜）·首真墙=火力检定语义不变
-  n102: { pool: 0.85, dps: 0.70 } /* 唯一二值硬墙（§20.2）·⑩二段终值：全接线世界（天赋+核+舰装备+插件真效果）三硬边界=贴线0%(77s)·×1.12 0%(84s)·×1.5 100%(55.7s)·到达态含默认工具可胜=挂 B5 五态矩阵终校·走刀史 0.60→0.70(一段)→0.85/1.10/1.00→1.05(二段·世界每强一轮墙跟一轮=四点③) */,
-  n120: { pool: 1.45, dps: 1.18 }, // ⑩二段终值：全接线世界马拉松带 106.2s（走刀史 0.98→1.45=核+装备两轮碾开后回带）
-  n150: { pool: 1.40, dps: 1.05 }, // ⑩二段终值：毕业马拉松 114.4s 险胜带（走刀史 0.96→0.86→1.40）
-  n084: { pool: 0.74, dps: 0.95 }, // 余势墙：新表 P +27% 后 0.82 偏厚（70s）·回落保"破大墙后爽段"速通感
-  n138: { pool: 0.75, dps: 0.90 }, // 余势墙：新表下 78-87s 尚可·先保持观察
+  // 批③段三重对（躯干重校后墙工况全体漂移·⑥法：到达态不过/破墙态过；余势墙=到达即爽）：
+  n060: { pool: 1.0, dps: 0.5 },  // 首真墙：旧 1.05/1.20 在新火压下=14.6s 团灭·破墙态也 0%（0.9 仍双 0%再拉）
+  n102: { pool: 0.9, dps: 0.6 },   // 二值硬墙：旧 0.85/0.70 被新世界碾成 9s 奶油泡（1.0/1.0 仍 9.4s）·恢复"无工具贴线 0%/带工具过"二值
+  n120: { pool: 1.25, dps: 0.7 },  // 马拉松：旧 1.45/1.18 破墙态仍 0%（1.3/1.0 亦然·火再回）
+  n150: { pool: 1.5, dps: 0.75 },  // 毕业马拉松：新世界下形状正确（到达 0%→破墙 100% 实测）·保持
+  n084: { pool: 0.5, dps: 0.55 }, // 余势墙：破大墙后爽段=到达即胜·旧 0.95 火在新世界杀穿（0.7/0.7=40% 不够爽）
+  n138: { pool: 0.65, dps: 0.5 },  // 余势墙：同上
 };
-
 /** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·§20.2 n102 特例）：
  *  塔×3 设计密度下守恒摊薄杀死了单塔尖峰（A0 记档）——标量 dps/pool 五轮实证分不开五态（①双护卫组合
  *  杀敌速度=错舰队一半·任何①能清的池③都能竞速）。对症=把尖峰还给每座塔：间隔 1.3→3.0s、单发×2.31
  *  （单位 DPS 守恒·总量不变）——塔回到最高攻（砺咬塔=任务单弹药1 叙事复原）、尖峰打穿脆皮/坦体扛得住，
  *  护后排工具的价值=挡尖峰（二值机理回归 v0.6 形态·密度保持设计 3 座）。 */
-const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number }>> = {
-  n102: { bu_enemy_backline: { interval: 3.0 } },
+const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number; atkW?: number }>> = {
+  // 批③段三加 atkW 轴：二值机理=塔吃走火力预算（杂兵按权重守恒自动饿死）——
+  // 无工具=塔尖峰点死后排（0%）·带嘲讽=尖峰全进铁壁、杂兵磨不死人（过）。
+  // 全局 dps 刀分不开这两态（工具组 48s 死于杂兵磨血实证）。
+  n102: { bu_enemy_backline: { interval: 3.0, atkW: 3.0 } },
 };
 /** Boss 行分成（血池/火力占比·余量归 adds）。 */
 const BOSS_SHARE = { hp: 0.65, dps: 0.3 }; // 首扫诊断：0.5 全压单点=前排瞬融·Boss=重锤节奏不是速射炮
@@ -348,9 +336,9 @@ export function strengthIndex(teamPower: number, axis: 'dps' | 'ehp' = 'dps'): n
   const plan = solveGrowthPlan(teamPower);
   const tierIdx = TIERS.indexOf(plan.tier);
   const growth = growthRatioOf(plan.level);
-  const base = Math.pow(TIER_ATTR_MULT, tierIdx) * growth;
+  const base = Math.pow(S7_TIER_ATTR_MULT, tierIdx) * growth;
   if (axis === 'ehp') return base;
-  const pilotDps = STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel);
+  const pilotDps = S7_PILOT_STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel);
   return base * pilotDps;
 }
 let GROWTH_CACHE: Array<{ from: number; to: number; pmin: number; pmax: number }> | null = null;
@@ -382,12 +370,17 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   const phiPool = pressure <= PHI_BASE
     ? pressure / PHI_BASE
     : strengthIndex(pressure, 'dps') / strengthIndex(PHI_BASE, 'dps');
-  const phiDps = pressure <= PHI_BASE
+  // 段三躯干轴修正：敌火从 EHP 轴改跟 DPS 轴——玩家续航（奶/盾）全随攻击缩放（含驾驶员系数），
+  // 敌火要打穿的是"续航"而非裸 EHP；EHP 轴时代越到后期敌火相对续航越弱（砍半 n101-150 90%>n61-100 68% 倒挂实证）。
+  // 晚段加陡 ^1.15：套件结构价值不随战力砍半（复活/免控/保底=结构件）→ 纯属性压强晚段追不上=砍半晚段 64% 实证；
+  // 指数只作用超锚段（φ>1），早中段近似不变。
+  const phiDpsBase = pressure <= PHI_BASE
     ? pressure / PHI_BASE
-    : strengthIndex(pressure, 'ehp') / strengthIndex(PHI_BASE, 'ehp');
+    : strengthIndex(pressure, 'dps') / strengthIndex(PHI_BASE, 'dps');
+  const phiDps = phiDpsBase > 1 ? Math.pow(phiDpsBase, 1.08) : phiDpsBase;
   const wall = WALL_BOOST[nodeId] ?? { pool: 1, dps: 1 };
   const pool = K_HP * PHI_BASE * phiPool * mult.pool * wall.pool;
-  const dps = K_DPS * PHI_BASE * phiDps * mult.dps * wall.dps;
+  let dps = K_DPS * PHI_BASE * phiDps * mult.dps * wall.dps;
 
   // 该关单位数量表（按 spawn 计划）：rowId → count。
   const counts = new Map<string, number>();
@@ -407,6 +400,13 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   };
   const bossRows = [...counts.keys()].filter((r) => r.startsWith('bu_boss_'));
   const normalRows = [...counts.keys()].filter((r) => !r.startsWith('bu_boss_'));
+  // 批③段三·集中度折扣 v2（全局结构规则·非点调）：纯阵把整份火力预算灌进同一种威胁型，
+  // 职业攻权在纯阵上守恒自消=无旋钮可拧（n104 纯塔阵两版工具全灭实证）。v1 对所有纯阵打折=
+  // 误伤全局（大多数普通关本就单一职业·世界火力 −30%·砍半面报废实证）——v2 只折"集中威胁型"
+  // 纯阵（点名塔/重炮=定点爆发类），糊脸型（蜂群/盾/召唤）纯阵威胁本就弥散不折。
+  const CONCENTRATED_ROLES = new Set(['bu_enemy_backline', 'bu_enemy_burst_raider']);
+  const pureRoles = new Set(normalRows.map((r) => roleKeyOf(r)));
+  if (stage !== 'boss' && pureRoles.size === 1 && CONCENTRATED_ROLES.has([...pureRoles][0])) dps *= 0.7;
 
   let poolLeft = pool;
   let dpsLeft = dps;
@@ -509,6 +509,7 @@ export async function scanMainlineAsync(opts: ScanOptions = {}): Promise<NodeRep
         progress: { currentNodeId: nodeId, clearedNodeIds: [] },
         runSeed: `scan-${family}-${i}`,
         lineup,
+        hardControlDiminish: S7_HARD_CONTROL_DIMINISH, // C14 真值（真机三入口同口径）
       });
       if (r.result.winner === 'player') wins += 1;
       if (r.result.reason === 'timeout') timeouts += 1;
@@ -558,7 +559,7 @@ export async function main(argv: string[]): Promise<number> {
     const { lineup, teamPower, plan } = genLineup(family, pressure[num] * powerRatio, enc2.problemTagRef, enc2.stageType);
     console.log(`[debug] 阵容：${plan.tier}阶 Lv${plan.level} 插件${plan.plugins.join('/')} 核=${plan.withCore} 战力=${Math.round(teamPower)}`);
     const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(b));
-    const r = new S7BattleRunService().run({ runtime, progress: { currentNodeId: debugNode, clearedNodeIds: [] }, runSeed: 'dbg', lineup });
+    const r = new S7BattleRunService().run({ runtime, progress: { currentNodeId: debugNode, clearedNodeIds: [] }, runSeed: 'dbg', lineup, hardControlDiminish: S7_HARD_CONTROL_DIMINISH });
     console.log(`[debug] winner=${r.result.winner} reason=${r.result.reason} dur=${r.result.durationSec}s`);
     for (const u of r.result.finalState.players) console.log(`[debug]   我 ${u.unitStatRef}@${u.slotRef}: ${u.hp}/${u.maxHp}${u.alive ? '' : ' ✝'}`);
     const aliveE = r.result.finalState.enemies.filter((u) => u.alive);
@@ -590,3 +591,4 @@ export async function main(argv: string[]): Promise<number> {
 // 运行件 re-export（quick 实测脚本复用面·⑥三段悬赏敌配实测起）——纯导出零逻辑。
 export { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
 export { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService';
+export { S7_HARD_CONTROL_DIMINISH } from '../assets/scripts/core/s7/S7AutoBattleTypes';

@@ -57,7 +57,7 @@ const SHIELD_BREAK_MULT = 1.5;
 const BERSERK_ATTACK_MULT = 1.25;
 const BERSERK_INTERVAL_MULT = 0.8;
 /** 护盾量 = max(maxHp*0.2, caster.attack*effectPower)。 */
-const SHIELD_HP_FRACTION = 0.2;
+const SHIELD_HP_FRACTION = 0.06; // 批③段三 C12 修订：0.2→0.06——20% 地板压过全部设计值(盾量三档形同虚设=质变铁律违例)且续航与战力脱钩(砍半队盾照旧=刻度失真病根·§16d)；改设计值(攻×系数)主导、此值只兜底
 
 const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 
@@ -2893,8 +2893,11 @@ class BattleRun {
         nextFireAt: 0, fired: false, charge: 0,
       });
     } else if (cv.ultimateEffectRef !== 'none' && stat.ultimateCdSec > 0) {
-      // 星舰自带大招 → 默认 CD 触发（开局即放：nextFireAt=0）。无大招(none) 或 CD<=0 不补。
-      triggers.push({ block: { kind: 'trigger', on: 'cd', cdSec: stat.ultimateCdSec, effectRef: cv.ultimateEffectRef }, nextFireAt: 0, fired: false });
+      // 星舰自带大招 → 默认 CD 触发。我方=开局即放（nextFireAt=0·Ron 拍定的开局齐放爽感口径）；
+      // 敌方=首放转满一轮 CD（批③段三躯干规则：敌开幕 alpha=双塔 t=0 齐点奶位秒杀、无解反设计——
+      // "见招拆招"取代"开幕即死"·全局节奏件非点调）。
+      const firstUltAt = side === 'enemy' ? this.time + stat.ultimateCdSec : 0;
+      triggers.push({ block: { kind: 'trigger', on: 'cd', cdSec: stat.ultimateCdSec, effectRef: cv.ultimateEffectRef }, nextFireAt: firstUltAt, fired: false });
     }
     // 装配层提供的额外触发（驾驶员/插件/星核内容，块3/4/5）。⑥8a：cd 型吃 initialCdSec（缺省 0=开局即放不变）。
     if (derived) {

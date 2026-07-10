@@ -43,13 +43,13 @@
     "rowId": "eff_ult_backline_strike",
     "effectKind": "ultimate",
     "effectType": "backline_strike",
-    "effectPower": 1.6,
+    "effectPower": 1.1,
     "targetingTag": "backline_first",
     "durationSec": 0,
-    "maxTargets": 3,
+    "maxTargets": 2,
     "stateTag": "none",
     "summonUnitRef": "none",
-    "note": "越前排打后排"
+    "note": "越前排打后排·批③段三：1.6×3→1.1×2——射程醒+火压轴修后点名大招=无解秒杀（全族≤13%实证）；降为\"痛但可扛\"·嘲讽/诱饵=归零工具"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -82,13 +82,13 @@
     "rowId": "eff_ult_repair_burst",
     "effectKind": "ultimate",
     "effectType": "repair_burst",
-    "effectPower": 1.4,
+    "effectPower": 2.2,
     "targetingTag": "lowest_hp_ally",
     "durationSec": 0,
     "maxTargets": 5,
     "stateTag": "none",
     "summonUnitRef": "none",
-    "note": "救急回血，允许互奶但超时仍判负"
+    "note": "救急回血，允许互奶但超时仍判负·批③段三躯干：1.4→2.2（治疗题咬合=不点奶付时间·点奶工具价值舞台）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -127,7 +127,8 @@
     "maxTargets": 1,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "护盾状态：先扣护盾再扣耐久"
+    "note": "护盾状态：先扣护盾再扣耐久·批③段三躯干：盾量走 shieldMaxHpPct 0.25（0.3 首测破盾队仍 37s=过厚回拉）（原缺省=maxHp×0.2 地板）——盾题咬合·破盾工具价值舞台",
+    "shieldMaxHpPct": 0.25
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -303,13 +304,13 @@
     "rowId": "eff_s7_normal_shieldbubble",
     "effectKind": "normal_attack",
     "effectType": "shield",
-    "effectPower": 2,
+    "effectPower": 3,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 1,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "护盾泡普攻（晨曦·量=C12 公式 20%血兜底主导）·⑩A3 回响：附净化1（M5）",
+    "note": "护盾泡普攻（晨曦·量=C12 公式 20%血兜底主导）·⑩A3 回响：附净化1（M5）·批③段三续航量纲：攻×2→攻×3（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）（5=每秒一发的持续流过强·砍半复活实证回落 3）",
     "dispelCount": 1
   },
   {
@@ -454,13 +455,13 @@
     "rowId": "eff_s7_shengdun",
     "effectKind": "ultimate",
     "effectType": "shield_bubble",
-    "effectPower": 2.5,
+    "effectPower": 6.5,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 5,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "晨曦·圣盾 全队护盾/CD12·⑩A3 回响：附净化1（M5）",
+    "note": "晨曦·圣盾 全队护盾/CD12·⑩A3 回响：附净化1（M5）·批③段三续航量纲：攻×2.5→攻×6.5（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）",
     "dispelCount": 1
   },
   {
@@ -2080,13 +2081,13 @@
     "rowId": "eff_pil_cang08_rescue_shield",
     "effectKind": "ultimate",
     "effectType": "shield",
-    "effectPower": 2.5,
+    "effectPower": 6,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 1,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "机制批③段二 沧Lv1「驰援」（顺路升级·Ron 拍定）：友军首次跌残血→沧立即获盾（攻×2.5·6s）"
+    "note": "机制批③段二 沧Lv1「驰援」（顺路升级·Ron 拍定）：友军首次跌残血→沧立即获盾（攻×2.5·6s）·批③段三续航量纲：攻×2.5→攻×6（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3329,13 +3330,13 @@
     "rowId": "eff_s7_shengdun_l60",
     "effectKind": "ultimate",
     "effectType": "shield_bubble",
-    "effectPower": 2.5,
+    "effectPower": 6.5,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 5,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "批③2b 晨曦L60：回响净化 2（圣盾侧）",
+    "note": "批③2b 晨曦L60：回响净化 2（圣盾侧）·批③段三续航量纲：攻×2.5→攻×6.5（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）",
     "dispelCount": 2
   },
   {
@@ -3343,13 +3344,13 @@
     "rowId": "eff_s7_shengdun_ss",
     "effectKind": "ultimate",
     "effectType": "shield_bubble",
-    "effectPower": 2.5,
+    "effectPower": 6.5,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 5,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "批③2b 晨曦SS：圣盾+免控 2s（并档 L60）",
+    "note": "批③2b 晨曦SS：圣盾+免控 2s（并档 L60）·批③段三续航量纲：攻×2.5→攻×6.5（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）",
     "dispelCount": 2,
     "alsoApplyStateRefs": [
       "eff_s7_shengdun_ss_immune"
@@ -3373,13 +3374,13 @@
     "rowId": "eff_s7_normal_shieldbubble_l60",
     "effectKind": "normal_attack",
     "effectType": "shield",
-    "effectPower": 2,
+    "effectPower": 3,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 1,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "批③2b 晨曦L60：回响净化 2（普盾侧）",
+    "note": "批③2b 晨曦L60：回响净化 2（普盾侧）·批③段三续航量纲：攻×2→攻×3（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）（5=每秒一发的持续流过强·砍半复活实证回落 3）",
     "dispelCount": 2
   },
   {
@@ -3387,13 +3388,13 @@
     "rowId": "eff_s7_normal_shieldbubble_l100",
     "effectKind": "normal_attack",
     "effectType": "shield",
-    "effectPower": 2,
+    "effectPower": 3,
     "targetingTag": "self_team",
     "durationSec": 2,
     "maxTargets": 1,
     "stateTag": "dmg_taken_down",
     "summonUnitRef": "none",
-    "note": "批③2b 晨曦L100：普盾附短暂减伤（框架 rider·并档净化2）",
+    "note": "批③2b 晨曦L100：普盾附短暂减伤（框架 rider·并档净化2）·批③段三续航量纲：攻×2→攻×3（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）（5=每秒一发的持续流过强·砍半复活实证回落 3）",
     "dispelCount": 2,
     "stateAmount": 0.1
   },

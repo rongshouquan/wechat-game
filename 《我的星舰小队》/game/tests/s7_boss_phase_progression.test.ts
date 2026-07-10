@@ -35,6 +35,11 @@ async function loadRuntime(bossHpOverride: number): Promise<{ runtime: S7ConfigR
   for (const r of bundle['battle_spawn_param'] as { rowId: string; unitStatRef: string }[]) {
     if (r.rowId === 'spawn_n030_adds') r.unitStatRef = 'bu_enemy_swarm';
   }
+  // 批③段三重锚：敌射程按真源改无限（99）——旧全局蜂群 range1 无移动=永久沙包（隐性前提）；
+  // 现 adds 真开火会打崩基础阵容 → 钉 attack 1 保"只验阶段切换"的隔离面。
+  for (const r of bundle['battle_unit_stat_param'] as { rowId: string; attack: number }[]) {
+    if ((r as { rowId: string }).rowId === 'bu_enemy_swarm') r.attack = 1;
+  }
   for (const r of bundle['battle_encounter_param'] as { rowId: string; enemyUnitStatRefs: string[] }[]) {
     if (r.rowId === 'enc_n030') r.enemyUnitStatRefs = ['bu_boss_n030', 'bu_enemy_swarm']; // 校验器要求 spawn ref ∈ enc refs
   }

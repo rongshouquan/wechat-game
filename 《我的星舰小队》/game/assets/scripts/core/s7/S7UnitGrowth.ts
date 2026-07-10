@@ -11,6 +11,7 @@
 import { S7GrowthBandParam } from '../../config/s7/ConfigTypesS7';
 import { S7EffectBlock } from './S7BattleEffectBlock';
 import { S7_UNIT_MIN_LEVEL, S7_UNIT_MAX_LEVEL } from './S7UnitLevelState';
+import { S7_TIER_ATTR_MULT, S7_PILOT_STAR_MULT, S7_PLAYER_CRIT_BASE } from './S7PowerRating';
 
 function clampLevel(level: number): number {
   const n = Math.floor(Number.isFinite(level) ? level : S7_UNIT_MIN_LEVEL);
@@ -60,4 +61,44 @@ export function shipGrowthBlocks(bands: S7GrowthBandParam[], level: number): S7E
  */
 export function pilotGrowthBlocks(_bands: S7GrowthBandParam[], _level: number): S7EffectBlock[] {
   return [];
+}
+
+/**
+ * 星舰升阶属性积木（机制批③段三·躯干统一）：×1.26^阶 血/攻/甲同乘（细表 §12.1）。
+ * 此前该乘区只活在模拟器手动注入里（tier_up）、真机走占位百分比表（+12..72% 血/攻）——两个世界。
+ * 现归装配器统一通道：tier 0（C 阶）返回空=既有测试字节不变。
+ */
+export function shipTierBlocks(tier: number): S7EffectBlock[] {
+  const t = Math.max(0, Math.floor(tier));
+  if (t <= 0) return [];
+  const pct = Math.pow(S7_TIER_ATTR_MULT, t) - 1;
+  return [
+    { kind: 'modifier', stat: 'maxHp', op: 'pct', value: pct, source: 'tier_up' },
+    { kind: 'modifier', stat: 'attack', op: 'pct', value: pct, source: 'tier_up' },
+    { kind: 'modifier', stat: 'armor', op: 'pct', value: pct, source: 'tier_up' },
+  ];
+}
+
+/**
+ * 驾驶员数值线积木（C20 通道·细表 §10——与天赋机制分立防双吃：天赋=机制件按星/级缩放，
+ * 本件=纯数值成长）：星系数×(1+0.01×驾级)−1，护卫组折 armor%、其余折 attack%。
+ * 1★ Lv0（缺省）= 0 = 空数组=既有测试字节不变。
+ */
+export function pilotNumericBlocks(star: number, level: number, guard: boolean): S7EffectBlock[] {
+  const s = Math.max(1, Math.min(5, Math.floor(star)));
+  const lv = Math.max(0, Math.floor(level));
+  const value = S7_PILOT_STAR_MULT[s] * (1 + 0.01 * lv) - 1;
+  if (value <= 0) return [];
+  return [{ kind: 'modifier', stat: guard ? 'armor' : 'attack', op: 'pct', value, source: 'pilot_scale' }];
+}
+
+/**
+ * 玩家侧暴击基线积木（随机带宽"窄档"现行·真机三入口与模拟器同源注入——
+ * 不进装配器缺省：既有战斗测试的 RNG 轨迹不因批③改变，注入责任在调用方）。
+ */
+export function playerCritBaseBlocks(): S7EffectBlock[] {
+  return [
+    { kind: 'affix', affix: 'critRate', value: S7_PLAYER_CRIT_BASE.rate, source: 'crit_base' },
+    { kind: 'affix', affix: 'critDmg', value: S7_PLAYER_CRIT_BASE.dmg, source: 'crit_base' },
+  ];
 }

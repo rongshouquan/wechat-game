@@ -33,6 +33,8 @@ export interface S7PlayNodeRequest {
   runSeed: string | number;
   /** 出战阵容；缺省用默认 3 舰 dry-run 阵容。 */
   lineup?: S7BattleLineupUnitInput[];
+  /** C14 硬控递减旋钮（段三真值翻开·透传 S7BattleRunService）：缺省缺席=行为不变。 */
+  hardControlDiminish?: { factor: number; windowSec: number };
 }
 
 export interface S7PlayNodeOutcome {
@@ -58,6 +60,7 @@ export function playS7Node(req: S7PlayNodeRequest): S7PlayNodeOutcome {
     progress: req.progress,
     runSeed: req.runSeed,
     lineup,
+    ...(req.hardControlDiminish ? { hardControlDiminish: req.hardControlDiminish } : {}),
   });
   const nodeId = battle.context.nodeId; // 权威节点 = 战斗上下文（= progress.currentNodeId）
   const won = battle.summary.winner === 'player';
@@ -109,13 +112,18 @@ export class S7RunSession {
    * 负 / 重复挑战(结算 ok:false)：resources 与 progress 均不变。
    * 未显式传 lineup 时用"按等级变强"的默认阵容（升过级的船在战斗里更强）。
    */
-  playCurrentNode(runSeed: string | number, lineup?: S7BattleLineupUnitInput[]): S7PlayNodeOutcome {
+  playCurrentNode(
+    runSeed: string | number,
+    lineup?: S7BattleLineupUnitInput[],
+    hardControlDiminish?: { factor: number; windowSec: number },
+  ): S7PlayNodeOutcome {
     const outcome = playS7Node({
       runtime: this.runtime,
       model: this.model,
       progress: this.progress,
       runSeed,
       lineup: lineup ?? this.defaultLeveledLineup(),
+      ...(hardControlDiminish ? { hardControlDiminish } : {}),
     });
     if (outcome.won && outcome.settlement && outcome.settlement.ok) {
       applyResourceGrants(this.resources, outcome.settlement.grants);

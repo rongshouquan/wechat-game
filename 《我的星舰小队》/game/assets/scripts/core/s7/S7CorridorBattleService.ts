@@ -33,6 +33,8 @@ export interface S7CorridorBattleRequest {
   lineup: S7BattleLineupUnitInput[];
   /** 运行种子（确定性：同层同种子逐字节一致）。 */
   runSeed: string | number;
+  /** C14 硬控递减旋钮（段三真值翻开·同 S7BattleRunService 口径）：缺省缺席=行为不变。 */
+  hardControlDiminish?: { factor: number; windowSec: number };
 }
 
 /** 上阵超上限（精锐/孤胆戏法层）——控制器捕获后提示玩家下阵多余星舰。 */
@@ -109,6 +111,7 @@ export function runCorridorBattle(req: S7CorridorBattleRequest): S7BattleRunResu
     inlineEnemyUnits,
     enemyEffectBlocks,
     timeLimitSecOverride: timeLimit,
+    ...(req.hardControlDiminish ? { hardControlDiminish: req.hardControlDiminish } : {}),
   };
   const result = new S7AutoBattleEngine(runtime).run(request);
   return { context: assembled.context, request, trace: assembled.trace, result, summary: summarizeS7BattleLog(result) };

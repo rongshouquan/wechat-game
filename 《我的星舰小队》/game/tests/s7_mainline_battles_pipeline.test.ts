@@ -14,15 +14,19 @@ describe('⑥二段① 阵容生成器', () => {
     for (const p of [600, 1500, 3072, 5000, 10216, 14776, 20000, 26028]) {
       const plan = solveGrowthPlan(p);
       const teamPower = plan.shipPower * 5;
-      expect(Math.abs(teamPower - p) / p).toBeLessThanOrEqual(0.06);
+      // 批③段三重锚 6%→9%：反解器加"升阶保级"下限（真实玩家满级才升阶·修"SS低等级"幽灵方案）后
+      // S顶→SS底纸面跳 ≈×1.55、格距最宽点 ≈8.3%（±20 驾级微调轴填不满）——真实玩家在该带=混编舰队（粗放版记档）。
+      expect(Math.abs(teamPower - p) / p).toBeLessThanOrEqual(0.09);
     }
   });
 
   it('三族五舰：中位=五型各一；克制向按问题标签换工具；乱搭=三坦双奶', () => {
-    expect(pickShips('median', 'swarm')).toEqual(['shp05', 'shp01', 'shp09', 'shp17', 'shp13']);
-    expect(pickShips('counter', 'shield')).toContain('shp11'); // 贯日=破盾工具
-    expect(pickShips('counter', 'shield')).toContain('shp20'); // 锁链
-    expect(pickShips('misfit', 'swarm')).toEqual(['shp05', 'shp06', 'shp07', 'shp13', 'shp15']);
+    // 批③段三载体重定（§16d）：中位第四位 迷雾→贯日（迷雾致盲=万能减伤牌挪去克制位）；
+    // 克制族改"中位核心+对题弹性位"（盾题=影刃+破盾件）；乱搭=五支援（真·无胜利路径·反弹暗路清除）。
+    expect(pickShips('median', 'swarm')).toEqual(['shp05', 'shp01', 'shp09', 'shp11', 'shp13']);
+    expect(pickShips('counter', 'shield')).toContain('shp02'); // 影刃（狙杀+破盾件=对题弹性位）
+    expect(pickShips('counter', 'backline')).toContain('shp06'); // 铁壁（嘲讽=M4 改向盖 backline_first）
+    expect(pickShips('misfit', 'swarm')).toEqual(['shp13', 'shp14', 'shp15', 'shp16', 'shp17']);
     const { lineup } = genLineup('median', 3072, 'swarm');
     expect(lineup).toHaveLength(5);
     expect(new Set(lineup.map((u) => u.slotRef)).size).toBe(5); // 摆位不重
@@ -109,17 +113,19 @@ describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
     expect(reports.length).toBeGreaterThanOrEqual(14);
     const normals = reports.filter((r) => r.stage === 'normal');
     const avgDur = normals.reduce((a, r) => a + r.avgDurationSec, 0) / normals.length;
-    expect(avgDur).toBeGreaterThanOrEqual(15);
-    expect(avgDur).toBeLessThanOrEqual(32); // 手感带（普通关均值）
+    // 批③段三重锚：躯干重校（正常档 25s 靶·盾带咬合加深）后该带=盾题密集带 → 均值带 [15,32]→[18,36]。
+    expect(avgDur).toBeGreaterThanOrEqual(18);
+    expect(avgDur).toBeLessThanOrEqual(36); // 手感带（普通关均值·盾带偏慢=咬合设计）
     const boss = reports.find((r) => r.nodeId === 'n060')!;
     expect(boss.winRate).toBeGreaterThanOrEqual(0.5);
     expect(boss.avgDurationSec).toBeGreaterThanOrEqual(40);
     // ⑩A0 重定基 70→75：v0.7 压力表（γ 1.125）下 n060 P 3113→3622、φ 超线性使贴线时长 68→71.6s；
     // 墙口径带=≥55s 硬仗且 <120s 可破（§20.2），本断言是"硬仗非深渊"的窗口守卫——上沿放到 75 仍紧
     // （深墙回归如 ≥80s 照抓），不是跟着数值走的放宽。
-    expect(boss.avgDurationSec).toBeLessThanOrEqual(75);
+    // 批③段三重锚 75→110：首真墙终值 {1.0,0.5}=到达态 ~80%/92s 马拉松磨仗（硬仗非深渊窗口上移·<120 可破仍守）。
+    expect(boss.avgDurationSec).toBeLessThanOrEqual(110);
     // 阵容战力贴压力值（管线自洽）
-    for (const r of reports) expect(Math.abs(r.teamPower - r.pressure) / r.pressure).toBeLessThanOrEqual(0.06);
+    for (const r of reports) expect(Math.abs(r.teamPower - r.pressure) / r.pressure).toBeLessThanOrEqual(0.09); // 同上：升阶保级格距
   }, 30000);
 
   it('克制语义抽验：n104 点名题 中位挣扎 vs 克制向速通', async () => {

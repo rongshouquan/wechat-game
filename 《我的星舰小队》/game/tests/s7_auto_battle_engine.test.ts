@@ -127,6 +127,9 @@ describe('S7AutoBattleEngine - 站位影响寻敌 (#4)', () => {
     // 夹具显式恢复 range1 前提（机制未变，变的是行默认值）。
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_vanguard'), { ultimateEffectRef: 'none', ultimateCdSec: 0, attackRangeCells: 1 });
+    // 批③段三重锚：敌射程按真源改无限（99）后，w1 敌从 t=0 就射得到后排孤舰、5s 内打死→"后排首击"消失。
+    // 夹具钉敌 attack=1 无害化（同 #5/#6 惯例），隔离"站位×射程"机制本体——机制未变。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { attack: 1 });
     const engine = await engineOf(b);
     const front = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p0c2' }] });
     const back = engine.run({ encounterRef: 'enc_n001', battleSeed: 'pos', playerUnits: [{ unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' }] });
@@ -210,9 +213,12 @@ describe('S7AutoBattleEngine - 护盾先扣盾再扣血 (#8)', () => {
     const dmgs = r.log.filter((e) => e.type === 'damage' && e.side === 'player' && (e.targetIds ?? []).some((id) => id.startsWith('enemy_')));
     expect(dmgs.length).toBeGreaterThan(2);
     // 至少存在“扣盾不掉血”的命中（amount=0 且 shieldAfter 较小于满盾），且其 hpAfter 仍为满血。
-    const absorbed = dmgs.find((e) => (e.amount ?? -1) === 0 && (e.shieldAfter ?? 0) > 0);
-    expect(absorbed).toBeDefined();
-    expect(absorbed!.hpAfter).toBe(1000); // 盾未破前 hp 不变
+    const absorbed = dmgs.filter((e) => (e.amount ?? -1) === 0 && (e.shieldAfter ?? 0) > 0);
+    expect(absorbed.length).toBeGreaterThan(0);
+    // 批③段三重锚：敌方大招首放转满一轮 CD（躯干节奏规则）→ 自盾 8s 才起、盾前 hp 已从 1000 被啃到起盾值——
+    // 旧断言"hpAfter 恒 1000"前提失效。改断"盾期血冻结"：所有吸收命中 hpAfter 相同（盾在则血不动·机制未变）。
+    const hpAtShield = absorbed[0].hpAfter;
+    expect(absorbed.every((e) => e.hpAfter === hpAtShield)).toBe(true);
   });
 });
 
@@ -221,6 +227,11 @@ describe('S7AutoBattleEngine - 治疗与超时 (#9)', () => {
     // 一艘奶(ult=repair_burst)+一艘脆皮坦受伤；面对高血 Boss 打不死→超时判敌方胜，但 heal 真实发生。
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { ultimateEffectRef: 'eff_ult_repair_burst', attack: 100, passiveEnergyPerSec: 30 });
+    // 批③段三重锚：躯干重校后 n084 落数敌火杀穿本双舰夹具（奶还没放人先没）——钉低全部 n084 敌攻，
+    // 隔离"真实奶到友方 + 超时不误判"机制本体。
+    for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
+      if (/^bu_(boss_)?n084/.test(String(u.rowId))) u.attack = 12;
+    }
     const engine = await engineOf(b);
     const lineup: S7AutoBattlePlayerUnitInput[] = [
       { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c0' }, // 奶妈放后排少挨打
@@ -325,7 +336,8 @@ describe('S7AutoBattleEngine - mark/vulnerable/shield_break 行为 (#13)', () =>
   it('shield_break：破盾期间护盾掉得更快（80→120/击）', async () => {
     const b = cloneBundle(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_shield'), { maxHp: 100000, armor: 25, attack: 1, ultimateCdSec: 0.2 }); // 块2：每 tick 自我回盾到 20000 改由短 CD(0.2=每 tick) 触发
-    Object.assign(row(b, 'battle_effect_param', 'eff_state_shield'), { durationSec: 60 });
+    // 批③段三重锚：全局盾行改 shieldMaxHpPct 0.25（盾题咬合）→ 夹具显式钉回 0.2 保"20000 盾"前提（破盾机制未变）。
+    Object.assign(row(b, 'battle_effect_param', 'eff_state_shield'), { durationSec: 60, shieldMaxHpPct: 0.2 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), { attack: 100, attackRangeCells: 7, ultimateEffectRef: 'eff_state_shield_break', passiveEnergyPerSec: 7 });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm', 'bu_enemy_shield'], spawnPlanRefs: ['spawn_n001_w1'] });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n001_w1'), { unitStatRef: 'bu_enemy_shield', count: 1, slotRefs: ['r0c0'] });
@@ -359,12 +371,19 @@ describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
   // FIVE 基础阵容打不动/活不过，机制断言会因数值漂移失真。#15/#16 只验阶段切换与召唤 cap 逻辑，
   // 敌场钉回落数前手调量纲（HEAD 旧值），机制语义零变化。
   const pinN084 = (b: Bundle): Bundle => {
+    // 批③段三重锚：波次行也钉回手调量纲（躯干重校后落数波次在 final 阶段前打死 FIVE 实证）。
+    for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
+      if (/^bu_n084_/.test(String(u.rowId))) u.attack = 30;
+    }
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n084'), { maxHp: 6000, attack: 120 });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n084_adds'), { unitStatRef: 'bu_enemy_shield' });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n084'), { enemyUnitStatRefs: ['bu_boss_n084', 'bu_enemy_shield'] });
     return b;
   };
   const pinN150 = (b: Bundle): Bundle => {
+    for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
+      if (/^bu_n150_/.test(String(u.rowId))) u.attack = 30;
+    }
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 14000, attack: 180 });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n150_adds'), { unitStatRef: 'bu_enemy_boss_add' });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n150'), { enemyUnitStatRefs: ['bu_boss_n150', 'bu_enemy_boss_add'] });
@@ -395,7 +414,8 @@ describe('S7AutoBattleEngine - 超时判负 (#17)', () => {
     expect(['timeout', 'all_players_down']).toContain(r.reason);
     // 进一步：超大血量 Boss、单奶阵容必然超时。
     const b = cloneBundle(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { ultimateEffectRef: 'eff_ult_repair_burst', maxHp: 100000, armor: 200 });
+    // 批③段三重锚：躯干重校后 n150 敌火 120s 能磨掉 10 万血——加厚到 100 万保"必然超时"前提（判负机制未变）。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_guardian'), { ultimateEffectRef: 'eff_ult_repair_burst', maxHp: 1000000, armor: 200 });
     const engine2 = await engineOf(b);
     const r2 = engine2.run({ encounterRef: 'enc_n150', battleSeed: 'to2', playerUnits: [{ unitStatRef: 'bu_ship_guardian', slotRef: 'p0c0' }] });
     expect(r2.reason).toBe('timeout');

@@ -28,7 +28,7 @@ import { S7EffectBlock } from './S7BattleEffectBlock';
 import { coreBlocks } from './S7CoreEffects';
 import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES } from './S7PluginEffects';
 import { pilotBlocks } from './S7PilotEffects';
-import { shipGrowthBlocks, pilotGrowthBlocks } from './S7UnitGrowth';
+import { shipGrowthBlocks, pilotGrowthBlocks, shipTierBlocks, pilotNumericBlocks } from './S7UnitGrowth';
 import { shipBlocks } from './S7ShipEffects';
 
 const MAX_LINEUP = 5;
@@ -58,12 +58,13 @@ export interface S7BattleLineupUnitInput {
   /** 星舰等级（C1b 升级变强）：缺省 1 级；经 S7UnitGrowth.shipGrowthBlocks 折成成长积木放大血/攻。 */
   shipLevel?: number;
   /** 机制批③段二b 星舰阶级（0-4=C/B/A/S/SS）：喂 shipBlocks 阶门（A 大质变/SS 终极质变）；
-   *  缺省 0=C 阶无质变（属性跳仍由调用方 unitAscendBlocks 折算·本处只开机制门）。 */
+   *  段三起属性跳（×1.26^阶·§12.1）也在装配器内经 shipTierBlocks 统一折算；缺省 0=C 阶（无质变无属性跳）。 */
   shipTier?: number;
   /** 驾驶员等级：⑩A1 起喂 pilotBlocks 级门（Lv1 解锁天赋·Lv20/40/60/80/100 大节点）；
    *  缺省 0=只有能力无天赋（最保守·总控回执⑤）。pilotGrowthBlocks 仍占位空（§5.2 无原始属性）。 */
   pilotLevel?: number;
-  /** ⑩A1 驾驶员星级（1-5）：3★/5★ 质变门；缺省 1=无质变。数值线（+10%/星）走 C20 通道由调用方折算、此处只开机制门。 */
+  /** ⑩A1 驾驶员星级（1-5）：3★/5★ 质变门；缺省 1=无质变。数值线（星系数×(1+1%/级)·C20 通道）
+   *  段三起在装配器内经 pilotNumericBlocks 统一折算（护卫折甲、其余折攻）；缺省 1★Lv0=零。 */
   pilotStar?: number;
   /** 全队加成积木（J 建筑剩余效果）：研究塔/星核展厅等"全队 %"由调用方算好、附在每个上阵单位上，组装时并入该舰效果积木。 */
   extraBlocks?: S7EffectBlock[];
@@ -279,6 +280,10 @@ export class S7BattleEncounterAssembler {
         // C1b 升级变强：星舰/驾驶员等级成长积木（按战力倍率放大血/攻；pilot 占位空）。
         ...shipGrowthBlocks(growthBands, item.shipLevel ?? 1),
         ...pilotGrowthBlocks(growthBands, item.pilotLevel ?? 1),
+        // 段三躯干统一：升阶属性乘（×1.26^阶·§12.1）+ 驾驶员数值线（C20·护卫折甲其余折攻）——
+        // 真机与校准世界同一条数值通道；缺省（C 阶/1★Lv0）=空=字节不变。
+        ...shipTierBlocks(item.shipTier ?? 0),
+        ...(item.pilotId ? pilotNumericBlocks(item.pilotStar ?? 1, item.pilotLevel ?? 0, matched[0].positionType === 'guard') : []),
         // 机制批③段二b：星舰大节点/升阶质变积木（级门 20-100·阶门 A/SS·缺省 Lv1/C=空=行为不变）。
         ...shipBlocks(item.shipId, item.shipLevel ?? 1, item.shipTier ?? 0),
         ...(item.coreId ? coreBlocks(item.coreId) : []),

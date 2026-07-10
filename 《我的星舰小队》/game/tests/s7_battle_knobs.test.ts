@@ -180,12 +180,14 @@ describe('⑥8a-A 词条族（精确期望值·基线80=100×100/125）', () => 
 
   it('shieldPower：盾量 200→300（大招全队盾）', async () => {
     const mk = async (blocks?: S7EffectBlock[]) => {
-      const b = knobRig({ attacker: { maxHp: 1000, attack: 50, ultimateEffectRef: 'eff_ult_shield_bubble', ultimateCdSec: 10 } });
+      // 批③段三重锚：C12 修订（盾地板 0.2→0.06 兜底·设计值主导）后 50 攻的盾=兜底 60 而非 200——
+      // 攻抬 200 让设计值公式主导：max(1000×0.06, 200×1)=200（期望 200/300 不变·词条乘区机制未变）。
+      const b = knobRig({ attacker: { maxHp: 1000, attack: 200, ultimateEffectRef: 'eff_ult_shield_bubble', ultimateCdSec: 10 } });
       const engine = await engineOf(b);
       const r = engine.run({ encounterRef: 'enc_n001', battleSeed: 'k', playerUnits: ATK(blocks) });
       return ofType(r.log, 'state_apply').find((e) => e.stateTag === 'shield' && e.targetIds?.[0] === 'player_p1c2')?.amount;
     };
-    expect(await mk()).toBe(200); // max(1000×0.2, 50×1)
+    expect(await mk()).toBe(200); // max(1000×0.06, 200×1)=200（设计值主导·C12 修订）
     expect(await mk([affix('shieldPower', 0.5)])).toBe(300);
   });
 
@@ -251,8 +253,9 @@ describe('⑥8a-B 沉默/免控/敌行基线词条', () => {
 
   it('control_immune：持有期间硬控施加落空、攻击不间断', async () => {
     const b = knobRig({ timeLimitSec: 6 });
+    // 批③段三重锚：模板盾行带 shieldMaxHpPct 0.25（盾题咬合）·免控行继承会被校验器拦（该字段只许盾行）——显式抹除。
     addRowFrom(b, 'battle_effect_param', 'eff_state_shield', 'eff_test_immune', {
-      effectKind: 'ultimate', effectType: 'control_immune', stateTag: 'control_immune', durationSec: 999, targetingTag: 'self_team', maxTargets: 1, effectPower: 0, summonUnitRef: 'none',
+      effectKind: 'ultimate', effectType: 'control_immune', stateTag: 'control_immune', durationSec: 999, targetingTag: 'self_team', maxTargets: 1, effectPower: 0, summonUnitRef: 'none', shieldMaxHpPct: undefined,
     });
     addRowFrom(b, 'battle_effect_param', 'eff_state_short_circuit', 'eff_test_sc_hit', {
       effectKind: 'normal_attack', effectType: 'short_circuit', stateTag: 'short_circuit', durationSec: 999, targetingTag: 'single_target', maxTargets: 1, effectPower: 0, summonUnitRef: 'none',
@@ -350,8 +353,10 @@ describe('⑥8a-C 触发扩展（initialCd/cd_refund/once/护盾破/普攻命中
       dummy: { attack: 300 },
       timeLimitSec: 6,
     });
+    // 批③段三重锚：全局盾行新增 shieldMaxHpPct 0.25（盾题咬合）会被派生行继承（250 盾要两击才破→触发点漂到 1.2s）——
+    // 显式钉 0 走设计值公式 max(1000×0.06, 100×1)=100（一击即破·触发时点 0.2 前提复原·机制未变）。
     addRowFrom(b, 'battle_effect_param', 'eff_state_shield', 'eff_test_selfshield', {
-      effectKind: 'ultimate', effectType: 'shield', stateTag: 'shield', durationSec: 10, targetingTag: 'self_team', maxTargets: 1, effectPower: 1, summonUnitRef: 'none',
+      effectKind: 'ultimate', effectType: 'shield', stateTag: 'shield', durationSec: 10, targetingTag: 'self_team', maxTargets: 1, effectPower: 1, summonUnitRef: 'none', shieldMaxHpPct: undefined,
     });
     const engine = await engineOf(b);
     const blocks: S7EffectBlock[] = [

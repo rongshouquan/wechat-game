@@ -188,8 +188,10 @@ describe('块4b-2 破盾值 shieldBreak', () => {
         ? { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2', effectBlocks: blocks }
         : { unitStatRef: 'bu_ship_gunner', slotRef: 'p0c2' }],
     });
-    const d = r.log.find((e) => e.type === 'damage' && e.actorId === 'player_p0c2');
-    if (!d) throw new Error('无伤害日志');
+    // 批③段三重锚：敌自盾首放转满 CD → 我方首发落在无盾窗口（hpDmg=990）。取第一发"全吸收"命中
+    // （amount=0 且盾仍在）做同发对比——"破盾系数啃盾更多"语义与机制均未变。
+    const d = r.log.find((e) => e.type === 'damage' && e.actorId === 'player_p0c2' && (e.amount ?? -1) === 0 && (e.shieldAfter ?? 0) > 0);
+    if (!d) throw new Error('无全吸收命中日志');
     return { shieldAfter: d.shieldAfter as number, hpDmg: d.amount as number };
   }
   it('装 shieldBreak → 同一发啃掉更多护盾（shieldAfter 更低），未装=基线', async () => {

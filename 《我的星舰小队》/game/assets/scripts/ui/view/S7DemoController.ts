@@ -24,7 +24,7 @@ import { S7MainlineModel, createDefaultS7MainlineProgress } from '../../core/s7/
 import { S7RunSession, S7PlayNodeOutcome } from '../../core/s7/S7RunSession';
 import { getShipLevel, getPilotLevel } from '../../core/s7/S7UnitLevelState';
 import { upgradeShipOneLevel, upgradePilotOneLevel } from '../../core/s7/S7UnitUpgradeService';
-import { unitPowerAtLevel } from '../../core/s7/S7UnitGrowth';
+import { unitPowerAtLevel, playerCritBaseBlocks } from '../../core/s7/S7UnitGrowth';
 import { buildS7BattlePlayback, S7BattlePlayback, S7PlaybackFrame } from '../../core/s7/S7BattlePlayback';
 import {
   buildS7ReturnReport,
@@ -176,7 +176,9 @@ import {
   shipPluginSlotCap, shipCoreSlotOpen, SHIP_TIER_MAX, PILOT_STAR_MAX,
   shipLevelCapForTier, pilotLevelCapForStar,
 } from '../../core/s7/S7UnitTierState';
-import { DEFAULT_S7_ASCEND_CONFIG, shipTierPowerPct, pilotStarPowerPct } from '../../core/s7/S7AscendConfig';
+import { DEFAULT_S7_ASCEND_CONFIG } from '../../core/s7/S7AscendConfig';
+import { S7_HARD_CONTROL_DIMINISH } from '../../core/s7/S7AutoBattleTypes';
+import { S7_TIER_ATTR_MULT, S7_PILOT_STAR_MULT } from '../../core/s7/S7PowerRating';
 import { ascendShip, starupPilot, convertUniversalToExclusive } from '../../core/s7/S7AscendService';
 // E 商人小站（step1 引擎已单测）：主界面「商人小站」进商店。
 import { DEFAULT_S7_MERCHANT_CONFIG, S7ShopItem } from '../../core/s7/S7MerchantConfig';
@@ -3714,13 +3716,13 @@ export class S7DemoController extends Component {
     const team = this.teamBonusBlocks();
     const battleLineup = (lineup && lineup.ok)
       ? lineup.lineup.map((u) => {
-        const extra = [...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId)];
+        const extra = [...(u.extraBlocks ?? []), ...team, ...playerCritBaseBlocks()];
         return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
       })
       : undefined;
     let outcome: S7PlayNodeOutcome;
     try {
-      outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED, battleLineup);
+      outcome = this.session.playCurrentNode(S7_DEMO_RUN_SEED, battleLineup, S7_HARD_CONTROL_DIMINISH);
     } catch (err) {
       // 无遭遇节点（你已通到内容缺口·如 n008+）：不静默弹回基地——留在备战界面给明确提示，引导点「选择关卡」挑可玩关。
       console.warn('[S7DemoController] 该节点暂无战斗遭遇', nodeId, err);
@@ -3739,20 +3741,6 @@ export class S7DemoController extends Component {
     this.pendingWon = outcome.won;
     this.pendingResult = this.composeResultText(nodeId, outcome);
     this.startPlayback(buildS7BattlePlayback(outcome.battle.result));
-  }
-
-  /** J 升阶升星：某上阵舰的"阶级+驾驶员星级"加成 → 该舰 maxHp/attack 的 pct 块（让升阶升星真进战斗）。 */
-  private unitAscendBlocks(shipId: string, pilotId?: string): S7EffectBlock[] {
-    if (!this.playerState) return [];
-    const t = this.playerState.unitTiers;
-    const pct = shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, getShipTier(t, shipId))
-      + (pilotId ? pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, getPilotStar(t, pilotId)) : 0);
-    if (pct <= 0) return [];
-    const frac = pct / 100;
-    return [
-      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: frac, source: 'unit_ascend' },
-      { kind: 'modifier', stat: 'attack', op: 'pct', value: frac, source: 'unit_ascend' },
-    ];
   }
 
   /** J：建筑全队加成（研究塔伤害 + 星核展厅收藏加成）→ 战斗积木(maxHp+attack 各一条 pct)。无加成→空。 */
@@ -4964,7 +4952,7 @@ export class S7DemoController extends Component {
       const nextCost = tier < SHIP_TIER_MAX ? DEFAULT_S7_ASCEND_CONFIG.shipTierStepCost[tier].exclusiveShards : 0;
       const power = this.shipPower(uid);
       this.unitManageInfoLabel.string =
-        `${name}\n阶级 ${shipTierName(tier)}阶（战力+${shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, tier)}%）\n` +
+        `${name}\n阶级 ${shipTierName(tier)}阶（全属性 ×${Math.pow(S7_TIER_ATTR_MULT, tier).toFixed(2)}）\n` +
         `${tier < SHIP_TIER_MAX ? `升阶需 ${nextCost} 专属碎片（有 ${haveShard}）` : '已满阶 SS'}\n` +
         `等级 Lv.${lv}/${cap}${lv >= cap ? (tier < SHIP_TIER_MAX ? '（已满级·升阶解锁更高等级）' : '（已满级·SS顶级）') : '（升级花星舰合金）'}\n插件槽 ${shipPluginSlotCap(tier)}　星核槽 ${shipCoreSlotOpen(tier) ? '已开' : '未开(S阶解锁)'}\n战力 ${power}\n` +
         `— 属性详情（待接入）—\n— 技能详情（待接入）—`;
@@ -4975,7 +4963,7 @@ export class S7DemoController extends Component {
       const haveShard = getExclusiveShardCount(this.playerState.exclusiveShards, uid);
       const nextCost = star < PILOT_STAR_MAX ? DEFAULT_S7_ASCEND_CONFIG.pilotStarStepCost[star - 1].exclusiveShards : 0;
       this.unitManageInfoLabel.string =
-        `${name}\n星级 ${star}★（战力+${pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, star)}%）\n` +
+        `${name}\n星级 ${star}★（数值线 ×${S7_PILOT_STAR_MULT[star].toFixed(2)}）\n` +
         `${star < PILOT_STAR_MAX ? `升星需 ${nextCost} 专属碎片（有 ${haveShard}）` : '已满星 5★'}\n` +
         `等级 Lv.${lv}/${cap}${lv >= cap ? (star < PILOT_STAR_MAX ? '（已满级·升星解锁更高等级）' : '（已满级·5★顶级）') : '（升级花驾驶记录）'}\n` +
         `— 驾驶能力详情（待接入）—\n— 驾驶天赋详情（待接入）—`;
@@ -6760,14 +6748,14 @@ export class S7DemoController extends Component {
       const pt = this.bountyShipPositionType(u.shipId);
       const affixBlocks = pt ? commissionAffixBlocks(defs, card.affixIds, pt, lineupSize) : [];
       const extra = [
-        ...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId), ...affixBlocks,
+        ...(u.extraBlocks ?? []), ...team, ...playerCritBaseBlocks(), ...affixBlocks,
         ...(card.theme === 'escort' && i === 0 ? escortTransportBlocks() : []), // 护航：旗舰位开场召唤运输船
       ];
       return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
     });
     try {
       const progress = { currentNodeId: nodeId, clearedNodeIds: [] as string[] };
-      return this.battleRunService.run({ runtime: this.runtime, progress, runSeed: bountyRunSeed(card, Date.now()), lineup });
+      return this.battleRunService.run({ runtime: this.runtime, progress, runSeed: bountyRunSeed(card, Date.now()), lineup, hardControlDiminish: S7_HARD_CONTROL_DIMINISH });
     } catch (err) {
       console.warn('[S7DemoController] 悬赏战斗启动失败', nodeId, err);
       this.bountyBattleError('悬赏敌阵暂不可用（原型内容缺口）');
@@ -7167,12 +7155,12 @@ export class S7DemoController extends Component {
     const plan = this.corridorPlanFor(layer);
     const team = this.teamBonusBlocks();
     const lineup = built.lineup.map((u) => {
-      const extra = [...(u.extraBlocks ?? []), ...team, ...this.unitAscendBlocks(u.shipId, u.pilotId)];
+      const extra = [...(u.extraBlocks ?? []), ...team, ...playerCritBaseBlocks()];
       return extra.length > 0 ? { ...u, extraBlocks: extra } : u;
     });
     let out: ReturnType<typeof runCorridorBattle>;
     try {
-      out = runCorridorBattle({ runtime: this.runtime, plan, lineup, runSeed: `corridor_${layer}` });
+      out = runCorridorBattle({ runtime: this.runtime, plan, lineup, runSeed: `corridor_${layer}`, hardControlDiminish: S7_HARD_CONTROL_DIMINISH });
     } catch (err) {
       if (err instanceof S7CorridorLineupCapError) { this.corridorBattleError(`本层限上阵 ${err.cap} 舰——请下阵多余星舰再出战`); return; }
       console.warn('[S7DemoController] 回廊战斗启动失败', layer, err);

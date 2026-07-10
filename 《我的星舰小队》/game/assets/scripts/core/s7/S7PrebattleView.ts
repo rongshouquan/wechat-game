@@ -4,7 +4,8 @@
 //   ① 敌情预览：当前节点遭遇的敌人列表（unitStatRef + 站位 slotRef + 是否Boss），如实读 encounter→spawn 配置，不脑补。
 //   ② 推荐战力：取该节点的压力值（v1.0 §8 以 pressure 衡量难度；boss 取 recommend，普通/精英取 min/max 中值）。
 //   ③ 我方战力：编队各舰按等级折算的成长战力之和。
-//   ⚠️ 战力为【占位·待 B 块统一战力模型】：v1.0 §6 要"四层折成战力值"，精确模型留 B；此处用成长战力(growth_band 冻结数据)粗算、明确标占位、不发明新公式。
+//   ③ 我方战力＝战力公式 v0（S7PowerRating 单一真源·机制批③段三躯干重校）：与压力表/经济尺同量纲——
+//     "我方 vs 推荐"从此可直读（此前占位公式与压力表跨量纲·§16d 三段病根记档）。
 //
 // 边界：core 层只读 runtime 配置 + 同族 S7*；不跑战斗、不改状态、不 import cc/save；确定可复算、可单测。
 
@@ -18,51 +19,39 @@ import {
 import { S7MainlineProgressState } from './S7MainlineProgress';
 import { S7BattleEntry } from './S7BattleEntry';
 import { S7SquadState } from './S7Squad';
-import { S7UnitLevelState, getShipLevel } from './S7UnitLevelState';
-import { unitPowerAtLevel } from './S7UnitGrowth';
+import { S7UnitLevelState, getShipLevel, getPilotLevel } from './S7UnitLevelState';
 import { S7PluginInventoryState, findOwnedPlugin } from './S7PluginInventory';
 import { S7PluginQuality } from './S7PluginEffects';
 import { S7UnitTierState, getShipTier, getPilotStar } from './S7UnitTierState';
-import { DEFAULT_S7_ASCEND_CONFIG, shipTierPowerPct, pilotStarPowerPct } from './S7AscendConfig';
-
-// 装配对战力的贡献（占位·方向值·精确公式留第二块）。Ron 2026-06-20 拍板：插件「与」星核「与」驾驶员都计入战力
-//（星核计入=有意覆盖 v1.0 §6"质变不计战力"——见进度日志/记忆）。星舰 1 级成长战力≈120，故此处量级取得可感知。
-const PLUGIN_POWER_BY_QUALITY: Record<S7PluginQuality, number> = { fine: 50, superior: 80, legendary: 110 };
-const CORE_POWER = 150;
-// 驾驶员战力占位：现无升星系统（留后），先给配上驾驶员的船一档固定加成；升星后改为按星级缩放（第二块）。
-const PILOT_POWER = 100;
+import { shipPowerV0 } from './S7PowerRating';
 
 /**
- * 单舰战力（占位·精确公式留第二块）：成长战力(按等级) + 装配战力(驾驶员 + 星核 + 插件按品质)。
- * 备战总战力按编队逐舰求和、上阵界面按此排序/显示——单一口径，避免重复。
+ * 单舰战力（战力公式 v0·S7PowerRating 单一真源）：(阶基值×等级项+插件)×驾驶员系数+核。
+ * 备战总战力按编队逐舰求和、上阵界面按此排序/显示——单一口径；与压力表同量纲。
+ * 插件与星核都计入战力（Ron 2026-06-20 拍板·有意覆盖 v1.0 §6"质变不计战力"）。
  */
 export function shipPowerOf(
-  growthBands: S7GrowthBandParam[],
+  _growthBands: S7GrowthBandParam[],
   squad: S7SquadState,
   shipId: string,
   unitLevels?: S7UnitLevelState,
   inventory?: S7PluginInventoryState,
   tierState?: S7UnitTierState,
 ): number {
-  const lv = unitLevels ? getShipLevel(unitLevels, shipId) : 1;
-  // 升阶升星块：星舰阶级抬成长战力、驾驶员星级抬驾驶员战力（占位·tierState 给了才计）。
-  const tierMul = tierState ? 1 + shipTierPowerPct(DEFAULT_S7_ASCEND_CONFIG, getShipTier(tierState, shipId)) / 100 : 1;
-  let p = unitPowerAtLevel(growthBands, 'ship', lv) * tierMul;
+  const level = unitLevels ? getShipLevel(unitLevels, shipId) : 1;
+  const tier = tierState ? getShipTier(tierState, shipId) : 0;
   const lo = squad.shipLoadouts[shipId];
-  if (lo) {
-    if (lo.pilotId) {
-      const starMul = tierState ? 1 + pilotStarPowerPct(DEFAULT_S7_ASCEND_CONFIG, getPilotStar(tierState, lo.pilotId)) / 100 : 1;
-      p += PILOT_POWER * starMul;
-    }
-    if (lo.coreId) p += CORE_POWER;
-    if (inventory) {
-      for (const id of lo.pluginInstanceIds) {
-        const inst = findOwnedPlugin(inventory, id);
-        if (inst) p += PLUGIN_POWER_BY_QUALITY[inst.quality] ?? 0;
-      }
+  const pluginQualities: S7PluginQuality[] = [];
+  if (lo && inventory) {
+    for (const id of lo.pluginInstanceIds) {
+      const inst = findOwnedPlugin(inventory, id);
+      if (inst) pluginQualities.push(inst.quality);
     }
   }
-  return Math.round(p);
+  const pilotStar = lo?.pilotId ? (tierState ? getPilotStar(tierState, lo.pilotId) : 1) : 0;
+  // 配了驾驶员至少 Lv1（×1.01·与刻度反解同口径）——"配驾驶员就计入战力"语义在 v0 下仍成立。
+  const pilotLevel = lo?.pilotId ? (unitLevels ? getPilotLevel(unitLevels, lo.pilotId) : 1) : 0;
+  return Math.round(shipPowerV0({ tier, level, pluginQualities, withCore: !!lo?.coreId, pilotStar, pilotLevel }));
 }
 
 /** 敌情预览里的一个敌人：战斗属性行 + 站位 + 是否 Boss。 */

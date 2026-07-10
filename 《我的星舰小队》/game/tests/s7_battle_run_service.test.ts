@@ -65,6 +65,13 @@ describe('S7BattleRunService - n001/n084/n150 完整跑到 summary', () => {
   for (const [node, seed] of NODES) {
     it(`${node} dry-run 产出 context/request/trace/result/summary`, async () => {
       const { service, runtime } = await serviceAndRuntime();
+      // 批③段三重锚：躯干重校后 n150 落数敌火 t=0 秒杀 TRIO（duration 0）——本测=四层链路形状烟测，
+      // 内存钉低 n150 敌攻保"跑完一整场"前提（链路机制未变）。
+      for (const t of ['battle_unit_stat_param'] as const) {
+        for (const r of runtime.getAll<Record<string, unknown>>(t)) {
+          if (/^bu_(boss_)?n150/.test(String(r.rowId))) (r as { attack: number }).attack = 40;
+        }
+      }
       const out = service.run({ runtime, progress: progressAt(node), runSeed: seed, lineup: TRIO });
 
       // context：来自 S7BattleEntry 的当前节点战斗上下文。

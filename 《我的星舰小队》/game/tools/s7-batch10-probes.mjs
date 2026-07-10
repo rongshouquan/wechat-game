@@ -39,7 +39,7 @@ async function runSet(mod, base, nodeId, lineup, samples, seedTag, probeFn) {
   const runtime = await mod.S7ConfigRuntime.load(mod.createInMemoryS7TableReader(base));
   let wins = 0; let dur = 0; let timeouts = 0; const probes = [];
   for (let i = 0; i < samples; i += 1) {
-    const r = service.run({ runtime, progress: { currentNodeId: nodeId, clearedNodeIds: [] }, runSeed: `${seedTag}-${i}`, lineup });
+    const r = service.run({ runtime, progress: { currentNodeId: nodeId, clearedNodeIds: [] }, runSeed: `${seedTag}-${i}`, lineup, hardControlDiminish: mod.S7_HARD_CONTROL_DIMINISH }); // C14 真值（真机三入口同口径）
     if (r.result.winner === 'player') wins += 1;
     if (r.result.reason === 'timeout') timeouts += 1;
     dur += r.result.durationSec;

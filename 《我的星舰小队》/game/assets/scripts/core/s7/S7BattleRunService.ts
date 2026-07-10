@@ -39,6 +39,9 @@ export interface S7BattleRunRequest {
   runSeed: string | number;
   /** 玩家出战阵容（稳定 shipId + 玩家 3x3 锚点格）。 */
   lineup: S7BattleLineupUnitInput[];
+  /** C14 硬控递减旋钮（机制批③段三真值翻开）：真机三入口与模拟器统一传 S7_HARD_CONTROL_DIMINISH；
+   *  缺省缺席=引擎行为不变（既有测试零重定基·旋钮通道铁律）。 */
+  hardControlDiminish?: { factor: number; windowSec: number };
 }
 
 /**
@@ -71,6 +74,7 @@ export class S7BattleRunService {
     const entry = S7BattleEntry.fromRuntime(runtime);
     const assembler = new S7BattleEncounterAssembler(runtime, entry);
     const assembled = assembler.assemble({ progress, runSeed, lineup });
+    if (request.hardControlDiminish) assembled.request.hardControlDiminish = request.hardControlDiminish;
 
     // 3：用 S7AutoBattleEngine 跑出结果（battleSeed 已由组装器按 nodeId + runSeed 固定，可复现）。
     const result = new S7AutoBattleEngine(runtime).run(assembled.request);
