@@ -54,10 +54,12 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   仅 n120/n138/n150 的阶段召唤真引用；n030/n060/n084/n102 四孤行（encounter/spawn/phase 零引用）
     //   由"只造被引用行"的入库版脚本自然清除（旧值≡死数据，删除不改任何战斗行为）→ 41+192=233。
     // ⑩A4：+2 全局真源载体行（污染体/磁暴塔=敌人真源§3/§4 在册敌人补配置行）·n138 阶段召唤 add→pollution（节点行数不变）。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(235); // 43 基础 + 192 节点敌行
+    // 机制批③段一：+1 全息镜分身占位行（bu_s7_hologram·三围由 copyCasterStatsPct 施法者快照覆盖·结构基线）→ 44 基础。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(236); // 44 基础 + 192 节点敌行
     // ⑩A1：+50 驾驶员效果行（eff_pil_*·细表§13）；⑩A2：+8 星核效果行（eff_core_*·小太阳/星鲸/时光糖/护罩/战鼓/贪吃星/烟花·§15）→ 42+50+8+15=115。
     // ⑩A3：+18 舰装备行（张盾/怒吼/冲锋号/催进/微风/致盲领域/侵蚀/联防/普攻变体…）+14 插件行（cdr×5/净化/免疫/援护×4/自愈×3）；⑩A4：+5（污染体两件/污染潮/磁暴场/终Boss全屏）。
-    expect(readTable('battle_effect_param')).toHaveLength(152); // 42+50+8+18+14+5 全局 + 15 节点召唤行
+    // 机制批③段一：+5（曲率星门 rank_swap/彩虹棱镜弹跳普攻/全息镜召唤/群蜂饱和打击/影刃分裂普攻·6 深坑核+同族挂牌件接线）。
+    expect(readTable('battle_effect_param')).toHaveLength(157); // 42+50+8+18+14+5+5 全局 + 15 节点召唤行
     expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
     expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）
     expect(readTable('battle_boss_phase_param')).toHaveLength(21); // 7个Boss x 3阶段（+n030 首Boss 三阶段）

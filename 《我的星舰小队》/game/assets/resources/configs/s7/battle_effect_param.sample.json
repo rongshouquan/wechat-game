@@ -440,11 +440,12 @@
     "effectPower": 1.2,
     "targetingTag": "single_target",
     "durationSec": 1.5,
-    "maxTargets": 4,
+    "maxTargets": 1,
     "stateTag": "short_circuit",
     "summonUnitRef": "none",
     "stateChance": 0.3,
-    "note": "霹雳·连锁闪电 4目标×1.2·30%短路1.5s（弹跳衰减归M7）"
+    "note": "机制批③ 霹雳·连锁闪电=真弹跳链：4 目标（首发+逐跳弹最近未命中敌）×1.2 无衰减·每目标 30% 短路 1.5s（旧=4 目标同时·弹跳衰减族接真；L20 5 目标=大节点档挂§12）",
+    "bounceTargets": 4
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1396,7 +1397,9 @@
     "maxTargets": 1,
     "stateTag": "none",
     "summonUnitRef": "none",
-    "note": "⑩A2 银河烟花：击杀连锁补一发（第一拍=无上限无递增≈·上限≤5/递增+10% 挂 M7 计数复释=机制批③）"
+    "note": "机制批③ 银河烟花：击杀连锁补普攻级伤害·多米诺≤5发·链内每多一发+10%（100/110/120/130/140%）·补发未击杀即断（真源全语义·⑩第一拍\"无上限无递增\"升级）",
+    "chainOnKillMax": 5,
+    "chainRampPct": 0.1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1924,6 +1927,79 @@
     "summonUnitRef": "none",
     "rowId": "eff_s7_cataclysm",
     "note": "⑩A4 星能污染核心·阶段3 狂暴全屏：全屏 ×1.2（真源§5 终Boss·阶段入场一发·与 berserk 并列）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_core_stargate",
+    "effectKind": "core",
+    "effectType": "rank_swap",
+    "effectPower": 0,
+    "targetingTag": "self_team",
+    "durationSec": 0,
+    "maxTargets": 1,
+    "stateTag": "none",
+    "summonUnitRef": "none",
+    "note": "机制批③ 曲率星门：开局一次性整排对调（敌方最前/最后有人列逐行互换·只动1×1·Boss多格行跳过·全场只结算一次·真源\"开局例外\"口径）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_core_prism",
+    "effectKind": "normal_attack",
+    "effectType": "basic_damage",
+    "effectPower": 1,
+    "targetingTag": "nearest_random_tie",
+    "durationSec": 0,
+    "maxTargets": 1,
+    "stateTag": "none",
+    "summonUnitRef": "none",
+    "bounceTargets": 3,
+    "bounceDecayPct": 0.25,
+    "note": "机制批③ 彩虹棱镜：普攻改写为彩虹弹跳弹 ×1.0·弹跳 3 目标·每跳−25pp（100/75/50%）·同链不重复目标（§15·普攻改写=陨星弹先例）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_core_hologram",
+    "effectKind": "core",
+    "effectType": "summon",
+    "effectPower": 0,
+    "targetingTag": "self_team",
+    "durationSec": 12,
+    "maxTargets": 1,
+    "stateTag": "none",
+    "summonUnitRef": "bu_s7_hologram",
+    "summonExpireSec": 12,
+    "despawnWithSource": true,
+    "summonSourceCap": 1,
+    "copyCasterStatsPct": 0.6,
+    "note": "机制批③ 全息镜：召唤本舰分身（三围=施法者快照×60%·普攻/攻速/选目标同本舰·限时12s·同源上限1·CD22 开局即放=数值域定稿§16d）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_s7_saturation",
+    "effectKind": "ultimate",
+    "effectType": "clear_barrage",
+    "effectPower": 1.8,
+    "targetingTag": "all_enemies",
+    "durationSec": 0,
+    "maxTargets": 16,
+    "stateTag": "none",
+    "summonUnitRef": "none",
+    "note": "机制批③ 群蜂·饱和打击：导弹雨全体 ×1.8（§12·击杀攒5层满放=单位行 ultimateChargeKills 蓄力模型·L20 4层/S 3层=大节点档挂§12）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_s7_normal_shadow",
+    "effectKind": "normal_attack",
+    "effectType": "basic_damage",
+    "effectPower": 1,
+    "targetingTag": "nearest_random_tie",
+    "durationSec": 0,
+    "maxTargets": 1,
+    "stateTag": "none",
+    "summonUnitRef": "none",
+    "splitEveryN": 3,
+    "splitTargets": 2,
+    "note": "机制批③ 影刃·残影：普攻 ×1.0·每 3 次出手后下一发分裂 2 目标各全额（§12·L60 每2次/L100 3目标=大节点档挂§12·目标按本舰 targetingTag=backline_first 由驾驶员覆盖）"
   },
   {
     "schemaVersion": "s7-0.1.0",

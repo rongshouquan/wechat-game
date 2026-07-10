@@ -54,7 +54,16 @@ export interface S7AutoBattleRunRequest {
   enemyEffectBlocks?: readonly S7EffectBlock[];
   /** 限时覆盖秒数（>0 覆盖 encounter.timeLimitSec；闪电战=40）。缺省/≤0 → 用 encounter 的限时（零行为变化）。 */
   timeLimitSecOverride?: number;
+  /**
+   * 机制批③ C14 硬控递减旋钮（《数值细表真源》§1 C14·真源载体=本批）：同一施加者对同一目标重复施加硬控
+   * （短路/晕眩/沉默）时，时长 ×factor^n（n=窗口内已施加次数；距上次施加超过 windowSec 则计数归零）。
+   * 缺省缺席=不递减（既有行为逐字节不变）；真机三入口（主线/悬赏/回廊）传 S7_HARD_CONTROL_DIMINISH 常量=规则开。
+   */
+  hardControlDiminish?: { factor: number; windowSec: number };
 }
+
+/** C14 硬控递减真值（数值细表真源 §1：同源重复 ×0.6^n·30s 窗口重置）——真机战斗入口统一传此常量。 */
+export const S7_HARD_CONTROL_DIMINISH: { factor: number; windowSec: number } = { factor: 0.6, windowSec: 30 };
 
 export type S7AutoBattleWinner = 'player' | 'enemy';
 export type S7AutoBattleReason = 'all_enemies_down' | 'all_players_down' | 'timeout';
@@ -74,7 +83,9 @@ export type S7AutoBattleLogType =
   | 'state_dispel'
   | 'unit_down'
   | 'boss_phase'
-  | 'battle_end';
+  | 'battle_end'
+  | 'rank_swap' // 机制批③ 曲率星门：开局整排对调（targetIds=被移动单位·note=对调的两列）——演出层开场星门动画锚点
+  | 'core_gacha'; // 机制批③ 幸运扭蛋：本次放技能随机到的强化（note=crit/area/echo/lifesteal/cd）——演出层扭蛋弹出锚点
 
 /**
  * 单条事件日志。

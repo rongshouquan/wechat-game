@@ -677,6 +677,10 @@ export interface S7BattleUnitStatParam {
   ultimateEffectRef: string;
   /** 大招触发冷却秒数（块2 用，与普攻间隔 attackIntervalSec 同类）。无大招(ultimateEffectRef=none)写 0。占位值，精确值第二块定。 */
   ultimateCdSec: number;
+  /** 机制批③ 可选（蓄力攒层族·群蜂「饱和打击」）：>0 时本舰大招改"击杀攒层"模型——每击杀 1 敌+1 层、
+   *  攒满本值立即释放并清零重攒（溢出层随清零丢弃·真源"释放后层数清零"）；此时 ultimateCdSec 允许为 0。
+   *  蓄力不可被打断，仅沉默能阻止其释放（真源口径表）。缺省缺席=CD 触发模型=逐字节不变。 */
+  ultimateChargeKills?: number;
   coreEffectRef: string;
   note: string;
 }
@@ -693,7 +697,8 @@ export type S7BattleEffectType =
   | 'silence' | 'control_immune' | 'cd_refund'
   | 'apply_state'
   | 'purify' // ⑨机制批② M5：纯净化/驱散（无伤无治·按目标阵营移除减益/增益·dispelCount 条）
-  | 'accumulate_attack'; // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 触发·本场永久 +effectPower×基础攻·无上限）
+  | 'accumulate_attack' // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 触发·本场永久 +effectPower×基础攻·无上限）
+  | 'rank_swap'; // 机制批③ 曲率星门：开局一次性把对方"最前有人排↔最后有人排"逐行对调（只动 1×1 单位·多格 Boss 所在行跳过·全场只结算一次）
 // ⑦机制批① M1 限时属性修正状态（幅度=效果行 stateAmount·时长=durationSec·全配置驱动；
 // 方向编码在 tag 里，stateAmount 一律填正数）：
 //   atk_up/atk_down=加攻/虚弱 · atk_speed_up/atk_speed_down=加攻速/减速 · armor_down=破防
@@ -714,7 +719,9 @@ export type S7BattleStateTag =
   | 'guard' // ⑨机制批② M4：守护替挡（守护者持此态·敌打其保护的后排友军时伤害转守护者·CD 门控·岩「光盾守护」）
   | 'share' // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者·援护链邻格互摊/山岳SS/沧3★）
   | 'aura' // ⑨机制批② M6：光环（源持态·消费点动态求和·在场即生效退场撤销·磐石力场/号角催进/哨卫联防/沧坚壁/空5★）
-  | 'blind'; // ⑨机制批② M8：致盲（减益·持有者普攻按 blindChance 概率落空·迷雾普攻/致盲领域/SS）
+  | 'blind' // ⑨机制批② M8：致盲（减益·持有者普攻按 blindChance 概率落空·迷雾普攻/致盲领域/SS）
+  | 'area_up' // 机制批③ 幸运扭蛋"范围+1"：持有期间技能作用范围升一档（单体→十字→3×3·消费点=castLogged 选区）
+  | 'lifesteal_up'; // 机制批③ 幸运扭蛋"吸血"：限时吸血加成（M1 框架态·stateAmount 驱动·与嗜血词条相加）
 
 /** 普攻 / 大招 / 星核 / 状态的效果模板（首版参数最小集；允许治疗与互奶）。 */
 export interface S7BattleEffectParam {
@@ -796,6 +803,26 @@ export interface S7BattleEffectParam {
   splashPct?: number;
   /** ⑨机制批② M8 可选（仅 stateTag='blind'·致盲）：持有者普攻落空概率 (0,1]（§11 迷雾 40%）；缺省无=不落空=逐字节不变。 */
   blindChance?: number;
+  /** 机制批③ 可选（弹跳衰减族·彩虹棱镜/霹雳连锁闪电）：弹跳链总目标数（≥2 启用）——首目标按常规选定后，
+   *  逐跳弹向"距当前目标最近的未命中敌人"（曼哈顿距·unitId 平局稳定序·不消耗 RNG）；同链不重复目标、无新目标即断链。
+   *  要求 maxTargets=1（首目标即链头）。缺省缺席=常规多目标路径=逐字节不变。 */
+  bounceTargets?: number;
+  /** 机制批③ 可选（需 bounceTargets）：每跳伤害递减（加法百分点）——第 n 跳伤害 = 原伤 ×max(0, 1−n×本值)；
+   *  棱镜 0.25=100%/75%/50%。缺省 0=弹跳不衰减（霹雳口径·真源只写"每跳概率短路"无衰减句）。 */
+  bounceDecayPct?: number;
+  /** 机制批③ 可选（计数复释族·影刃「残影」）：每打满 splitEveryN 次普攻后，下一次普攻分裂为 splitTargets 发
+   *  打不同目标（各全额·按本舰 targetingTag 选目标）。计数按"出手"算（被致盲落空的出手也计）。两字段须成对。
+   *  缺省缺席=普攻单发=逐字节不变。 */
+  splitEveryN?: number;
+  splitTargets?: number;
+  /** 机制批③ 可选（计数复释族·银河烟花）：on_kill 补发的"多米诺连锁"上限（含首发·真源 ≤5 发）——补发若击杀则
+   *  立即再补（同 tick 同步结算），链内第 k 发（k 从 1 计）伤害 ×(1+chainRampPct×(k−1))；未击杀或到上限即断。
+   *  缺省缺席=只补一发（⑩A2 第一拍行为）。 */
+  chainOnKillMax?: number;
+  chainRampPct?: number;
+  /** 机制批③ 可选（全息镜·仅召唤行）：分身三围=施法者当时快照×本系数（maxHp/attack/armor；攻速/射程/普攻/
+   *  targetingTag 同施法者·不继承词条/技能/星核）。缺省缺席=用 summonUnitRef 行自身三围（星鲸口径·逐字节不变）。 */
+  copyCasterStatsPct?: number;
   note: string;
 }
 

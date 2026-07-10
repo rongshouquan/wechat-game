@@ -37,11 +37,11 @@
     "sizeRows": 1,
     "sizeCols": 1,
     "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
+    "normalEffectRef": "eff_s7_normal_shadow",
     "ultimateEffectRef": "eff_s7_jusha",
     "ultimateCdSec": 7,
     "coreEffectRef": "none",
-    "note": "影刃号·细表§12真值(⑥第一段)·突击·狙杀(专属绑影)"
+    "note": "影刃号·细表§12真值(⑥第一段)·突击·狙杀(专属绑影)·机制批③残影接真(普攻→eff_s7_normal_shadow 每3出手分裂2目标)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -237,10 +237,11 @@
     "sizeCols": 1,
     "targetingTag": "cross_area",
     "normalEffectRef": "eff_s7_normal_swarm",
-    "ultimateEffectRef": "none",
+    "ultimateEffectRef": "eff_s7_saturation",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "群蜂号·细表§12真值(⑥第一段)·炮击·普攻小范围×0.8·饱和打击待M3"
+    "note": "群蜂号·细表§12真值(⑥第一段)·炮击·普攻小范围×0.8·饱和打击待M3·机制批③饱和打击接真(击杀攒5层满放全体×1.8·蓄力模型)",
+    "ultimateChargeKills": 5
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -940,6 +941,27 @@
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
     "note": "星鲸召唤体（星核·细表§15）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_s7_hologram",
+    "targetType": "prop",
+    "unitRef": "none",
+    "roleTag": "summon_unit",
+    "maxHp": 100,
+    "attack": 10,
+    "armor": 5,
+    "attackIntervalSec": 1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 0,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "机制批③ 全息镜分身占位行：三围/普攻/攻速/选目标由召唤时施法者快照×0.6 覆盖（copyCasterStatsPct）·本行只提供结构基线（占格1×1/无技能/无核）"
   },
   {
     "schemaVersion": "s7-0.1.0",

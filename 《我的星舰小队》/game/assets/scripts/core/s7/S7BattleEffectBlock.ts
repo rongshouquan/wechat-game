@@ -47,7 +47,15 @@ export type S7AffixKey =
   | 'skillDmgPct'
   | 'effectAmp'
   | 'durationPct'
-  | 'summonCapBonus';
+  | 'summonCapBonus'
+  // 机制批③ 星核词条（全部"缺省 0=引擎行为逐字节不变"）：
+  //   skillHitCurHpPct=引力阱（技能命中追加 目标当前生命×系数）/ skillHitCapAtkMult=引力阱追伤上限（本舰攻×系数）
+  //   dmgSplitFattestPct=共鸣音叉（本舰直接伤害的一部分同时打向全场最高血敌）
+  //   luckyOnCast=幸运扭蛋（>0 时每次放技能随机一种强化·路由在引擎）
+  | 'skillHitCurHpPct'
+  | 'skillHitCapAtkMult'
+  | 'dmgSplitFattestPct'
+  | 'luckyOnCast';
 
 /** 动作落在哪个槽（普攻 / 大招 / 星核）。星核质变可覆盖 normal 槽（如过载核心把普攻换原子炮）。 */
 export type S7ActionSlot = 'normal' | 'ultimate' | 'core';
@@ -78,8 +86,9 @@ export interface S7AffixBlock {
  *  ⑦机制批① 新增：on='skill_cast'（本单位放出一次 ultimate 类效果·战鼓；core 类不算——真源"放技能"口径）。 */
 export interface S7TriggerBlock {
   kind: 'trigger';
+  /** 机制批③：'on_kill_charge'=蓄力攒层（击杀攒 threshold 层满放·引擎按单位行 ultimateChargeKills 内部合成，配置不直接写）。 */
   on: 'battle_start' | 'cd' | 'on_kill' | 'hp_below' | 'on_hit' | 'ally_down' | 'passive'
-    | 'shield_broken' | 'attack_landed' | 'skill_cast';
+    | 'shield_broken' | 'attack_landed' | 'skill_cast' | 'on_kill_charge';
   /** on='cd' 时的冷却秒数。 */
   cdSec?: number;
   /** on='cd' 时的首发延迟秒数；缺省 0=开局即放（既有语义）。 */

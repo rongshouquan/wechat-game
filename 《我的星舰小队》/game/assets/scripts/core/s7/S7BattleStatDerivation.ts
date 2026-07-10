@@ -64,6 +64,8 @@ const AFFIX_KEYS: S7AffixKey[] = [
   'dmgVsLowHp', 'dmgVsHighHp', 'dmgVsFortified', 'armorPen', 'lifesteal', 'dodgeRate',
   'dmgTakenPct', 'healTakenPct', 'shieldPower', 'healVsLowHp', 'skillDmgPct', 'effectAmp',
   'durationPct', 'summonCapBonus',
+  // 机制批③ 星核词条（缺省 0=行为不变）：引力阱追伤两键/共鸣音叉分流/幸运扭蛋路由开关
+  'skillHitCurHpPct', 'skillHitCapAtkMult', 'dmgSplitFattestPct', 'luckyOnCast',
 ];
 
 function round6(x: number): number {

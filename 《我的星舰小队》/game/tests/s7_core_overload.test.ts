@@ -35,10 +35,13 @@ async function engineOf(b: Bundle): Promise<S7AutoBattleEngine> {
   return new S7AutoBattleEngine(await S7ConfigRuntime.load(createInMemoryS7TableReader(b)));
 }
 // 隔离用：去掉枪手自带大招/星核钩子，使其唯一主动行为就是普攻，便于纯测「普攻质变」。
+// 机制批③段一重定基（旧→新→为什么对）：影刃真配普攻已接残影分裂行（eff_s7_normal_shadow·每 3 出手分裂 2 目标），
+// 本试验台要"裸普攻"对照前提 → 夹具改回中性 eff_basic_attack（同 ⑩A3"引擎守卫要裸行"中性化先例）。
 function makeBundle(): Bundle {
   const b = clone(loadBundle());
   Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
     ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none', attackRangeCells: 7, maxHp: 1000000, armor: 500,
+    normalEffectRef: 'eff_basic_attack',
   });
   Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { maxHp: 1000000, attack: 1 }); // 高血存活，便于观察 10s 间隔
   Object.assign(row(b, 'battle_encounter_param', 'enc_n001'), { enemyUnitStatRefs: ['bu_enemy_swarm'], spawnPlanRefs: ['spawn_n001_w1'] });

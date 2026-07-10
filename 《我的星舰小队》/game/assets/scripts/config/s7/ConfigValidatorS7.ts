@@ -100,11 +100,15 @@ const S7_BATTLE_EFFECT_TYPES = [
   'apply_state', // ⑦机制批①：通用状态施加
   'purify', // ⑨机制批② M5：纯净化/驱散（无伤无治·dispelCount 移除减益/增益）
   'accumulate_attack', // ⑨机制批② M9：运行时属性累积（贪吃星·on_kill 永久 +攻）
+  'rank_swap', // 机制批③：曲率星门开局整排对调（只动 1×1·Boss 多格行跳过·全场一次）
 ];
+/** 伤害行 effectType 集（splashPct/bounceTargets/chainOnKillMax 等"仅伤害行"字段门共用·与引擎 DAMAGE_TYPES 对齐）。 */
+const S7_DAMAGE_EFFECT_TYPES = ['basic_damage', 'clear_barrage', 'line_pierce', 'backline_strike', 'burst_nuke'];
 // ⑦机制批① M1 限时修正状态 tag（stateAmount 必填的框架 tag 集）。
 const S7_MOD_STATE_TAGS = [
   'atk_up', 'atk_down', 'atk_speed_up', 'atk_speed_down', 'armor_down',
   'dmg_up', 'dmg_taken_up', 'dmg_taken_down', 'crit_rate_up', 'crit_dmg_up', 'skill_haste_up',
+  'lifesteal_up', // 机制批③：限时吸血加成（扭蛋路由·M1 框架 tag）
 ];
 // ⑦机制批① M2 周期结算状态 tag（stateTick* 三通道至少配一个 >0）。
 const S7_PERIODIC_STATE_TAGS = ['burn', 'regen'];
@@ -118,6 +122,7 @@ const S7_BATTLE_STATE_TAGS = [
   'share', // ⑨机制批② M4：分摊（受方受击时把 sharePct 转给承接者）
   'aura', // ⑨机制批② M6：光环（源持态·消费点动态求和）
   'blind', // ⑨机制批② M8：致盲（持有者普攻按 blindChance 概率落空）
+  'area_up', // 机制批③：扭蛋"范围+1"（技能作用范围升一档·引擎合成行为主·白名单登记防拼错）
   ...S7_MOD_STATE_TAGS,
   ...S7_PERIODIC_STATE_TAGS,
 ];
@@ -1328,6 +1333,12 @@ function validateBattle(
     }
     const ucd = num(row.ultimateCdSec);
     if (ucd === null || ucd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'ultimateCdSec 必须 >= 0（无大招写 0；块2 大招触发冷却）' });
+    // 机制批③ 可选（蓄力攒层·群蜂饱和打击）：>0 时大招改"击杀攒层满放"模型（此时 ultimateCdSec 允许 0）。
+    if (row.ultimateChargeKills !== undefined) {
+      const uck = num(row.ultimateChargeKills);
+      if (uck === null || !Number.isInteger(uck) || uck < 1) errors.push({ table: 'battle_unit_stat_param', id, message: 'ultimateChargeKills（可选）必须为 ≥1 的整数' });
+      else if (row.ultimateEffectRef === 'none') errors.push({ table: 'battle_unit_stat_param', id, message: 'ultimateChargeKills 要求 ultimateEffectRef ≠ none（蓄力模型得有大招可放）' });
+    }
     // ⑥8a 可选字段（缺席=不校·存在则查范围）：敌/Boss 行基线词条注入。
     if (row.controlResist !== undefined) {
       const cr = num(row.controlResist);
@@ -1576,6 +1587,46 @@ function validateBattle(
     }
     if (stTag === 'blind' && (num(row.blindChance) === null || (num(row.blindChance) as number) <= 0)) {
       errors.push({ table: 'battle_effect_param', id, message: 'blind 状态要求 blindChance ∈ (0,1]' });
+    }
+    // ---- 机制批③ 可选字段门（弹跳/计数复释/烟花连锁/全息镜）----
+    if (row.bounceTargets !== undefined) {
+      const bt = num(row.bounceTargets);
+      if (bt === null || !Number.isInteger(bt) || bt < 2) errors.push({ table: 'battle_effect_param', id, message: 'bounceTargets（可选）必须为 ≥2 的整数' });
+      else if (!S7_DAMAGE_EFFECT_TYPES.includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'bounceTargets（可选）仅允许配给伤害行' });
+      else if (num(row.maxTargets) !== 1) errors.push({ table: 'battle_effect_param', id, message: 'bounceTargets 行要求 maxTargets=1（首目标即链头）' });
+      else if (row.splashPct !== undefined) errors.push({ table: 'battle_effect_param', id, message: 'bounceTargets 与 splashPct 互斥（弹跳链自带衰减轴）' });
+    }
+    if (row.bounceDecayPct !== undefined) {
+      const bd = num(row.bounceDecayPct);
+      if (bd === null || bd < 0 || bd >= 1) errors.push({ table: 'battle_effect_param', id, message: 'bounceDecayPct（可选）必须在 [0,1)' });
+      else if (row.bounceTargets === undefined) errors.push({ table: 'battle_effect_param', id, message: 'bounceDecayPct 需要 bounceTargets 同时在场' });
+    }
+    if ((row.splitEveryN !== undefined) !== (row.splitTargets !== undefined)) {
+      errors.push({ table: 'battle_effect_param', id, message: 'splitEveryN/splitTargets 必须成对出现（影刃残影）' });
+    } else if (row.splitEveryN !== undefined) {
+      const se = num(row.splitEveryN);
+      const st = num(row.splitTargets);
+      if (se === null || !Number.isInteger(se) || se < 1) errors.push({ table: 'battle_effect_param', id, message: 'splitEveryN（可选）必须为 ≥1 的整数' });
+      if (st === null || !Number.isInteger(st) || st < 2) errors.push({ table: 'battle_effect_param', id, message: 'splitTargets（可选）必须为 ≥2 的整数' });
+      if (row.effectKind !== 'normal_attack') errors.push({ table: 'battle_effect_param', id, message: 'splitEveryN/splitTargets 仅允许配给普攻行（effectKind=normal_attack）' });
+    }
+    if (row.chainOnKillMax !== undefined) {
+      const cm = num(row.chainOnKillMax);
+      if (cm === null || !Number.isInteger(cm) || cm < 2) errors.push({ table: 'battle_effect_param', id, message: 'chainOnKillMax（可选）必须为 ≥2 的整数' });
+      else if (!S7_DAMAGE_EFFECT_TYPES.includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'chainOnKillMax（可选）仅允许配给伤害行' });
+    }
+    if (row.chainRampPct !== undefined) {
+      const cr = num(row.chainRampPct);
+      if (cr === null || cr < 0) errors.push({ table: 'battle_effect_param', id, message: 'chainRampPct（可选）必须 ≥0' });
+      else if (row.chainOnKillMax === undefined) errors.push({ table: 'battle_effect_param', id, message: 'chainRampPct 需要 chainOnKillMax 同时在场' });
+    }
+    if (row.copyCasterStatsPct !== undefined) {
+      const cp = num(row.copyCasterStatsPct);
+      if (cp === null || cp <= 0 || cp > 1) errors.push({ table: 'battle_effect_param', id, message: 'copyCasterStatsPct（可选）必须在 (0,1]' });
+      else if (!['summon', 'summon_drone'].includes(String(row.effectType))) errors.push({ table: 'battle_effect_param', id, message: 'copyCasterStatsPct（可选）仅允许配给召唤行' });
+    }
+    if (row.effectType === 'rank_swap' && row.effectKind !== 'core') {
+      errors.push({ table: 'battle_effect_param', id, message: 'rank_swap（曲率星门）仅允许 effectKind=core（星核质变专属）' });
     }
   }
 
