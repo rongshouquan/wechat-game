@@ -455,6 +455,9 @@ interface SummonMeta {
 interface RtSpawnPlan {
   row: S7BattleSpawnParam;
   processed: boolean;
+  /** 段二 C3 增援通道运行态（row.repeatEverySec>0 才用）：下次重复出怪时刻/已重复次数。缺省=旧行为。 */
+  nextRepeatAt?: number;
+  repeatCount?: number;
 }
 
 interface RtPhase {
@@ -510,6 +513,11 @@ class BattleRun {
   private enemySeq = 0;
   /** 块2b：各方累计阵亡数（ally_down 条件触发用）。 */
   private readonly deadCount: Record<S7AutoBattleSide, number> = { player: 0, enemy: 0 };
+  // ===== 段二 C3 三通道运行态（无配置=全部缺省值=旧行为逐字节不变）=====
+  /** 斩首点名单位行 id（victoryRule='kill_target' 时非 null）。 */
+  private victoryTargetRef: string | null = null;
+  /** 复活波次余额（reviveWaves 配置·每触发一次 −1）。 */
+  private reviveRemaining = 0;
 
   constructor(
     private readonly runtime: S7ConfigRuntime,
@@ -528,9 +536,15 @@ class BattleRun {
     this.timeLimitSec = typeof tOverride === 'number' && tOverride > 0 ? tOverride : enc.timeLimitSec;
 
     this.placePlayerUnits();
+    // 段二 C3 通道装载（无配置=缺省值=旧行为）：斩首点名 / 复活波次（夹 1-3）。
+    this.victoryTargetRef = enc.victoryRule === 'kill_target' && typeof enc.victoryTargetUnitRef === 'string' && enc.victoryTargetUnitRef.length > 0
+      ? enc.victoryTargetUnitRef : null;
+    this.reviveRemaining = typeof enc.reviveWaves === 'number' && enc.reviveWaves > 0 ? Math.min(3, Math.floor(enc.reviveWaves)) : 0;
     // 【回廊受控扩展】内联敌阵：给了则用它一次性铺敌、忽略 encounter 出怪批次；否则走原 spawnPlans 路径（零行为变化）。
+    // 段二 C3 镜像通道：mirrorLineup=true 时敌方=玩家出战阵容读档生成（优先级：回廊内联 > 镜像 > 出怪计划）。
     const inline = this.request.inlineEnemyUnits;
     if (inline && inline.length > 0) this.placeInlineEnemies(inline);
+    else if (enc.mirrorLineup === true) this.placeMirrorEnemies();
     else this.loadSpawnPlans(enc);
     this.loadPhases(enc);
 
@@ -641,19 +655,40 @@ class BattleRun {
 
   // ===== 单步处理（固定顺序）=====
 
-  /** 1：处理到点的出怪批次。 */
+  /** 1：处理到点的出怪批次（段二 C3：repeatEverySec>0 的批次首出后按周期重复·递增强化）。 */
   private stepSpawnWaves(): void {
     for (const plan of this.spawnPlans) {
-      if (plan.processed) continue;
-      if (this.time + 1e-9 < plan.row.spawnDelaySec) continue;
-      plan.processed = true;
-      this.processSpawnPlan(plan.row);
+      if (!plan.processed) {
+        if (this.time + 1e-9 < plan.row.spawnDelaySec) continue;
+        plan.processed = true;
+        this.processSpawnPlan(plan.row);
+        if (typeof plan.row.repeatEverySec === 'number' && plan.row.repeatEverySec > 0) {
+          plan.nextRepeatAt = plan.row.spawnDelaySec + plan.row.repeatEverySec;
+          plan.repeatCount = 0;
+        }
+        continue;
+      }
+      // 增援通道（无 repeatEverySec 配置=永不进此分支=旧行为逐字节不变）。
+      while (plan.nextRepeatAt !== undefined && plan.nextRepeatAt <= this.time + 1e-9) {
+        plan.repeatCount = (plan.repeatCount ?? 0) + 1;
+        const esc = typeof plan.row.repeatEscalatePct === 'number' && plan.row.repeatEscalatePct > 0
+          ? Math.pow(1 + plan.row.repeatEscalatePct, plan.repeatCount) - 1 : 0;
+        this.processSpawnPlan(plan.row, esc, `reinforce_${plan.repeatCount}`);
+        plan.nextRepeatAt += plan.row.repeatEverySec as number;
+      }
     }
   }
 
-  private processSpawnPlan(plan: S7BattleSpawnParam): void {
+  /** escalatePct>0＝增援强化（血/攻 ×(1+pct)·经 deriveUnit 装配通道=与回廊缩放同款）；noteSuffix＝日志标记。 */
+  private processSpawnPlan(plan: S7BattleSpawnParam, escalatePct = 0, noteSuffix = ''): void {
     const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', plan.unitStatRef);
     if (!stat) throw new S7AutoBattleError('unknown_unit_stat', `battle_unit_stat_param 缺少 ${plan.unitStatRef}`);
+    const derived = escalatePct > 0
+      ? deriveUnit(baseStatOf(stat), [
+        { kind: 'modifier', stat: 'maxHp', op: 'pct', value: escalatePct, source: 'reinforce_escalate' },
+        { kind: 'modifier', stat: 'attack', op: 'pct', value: escalatePct, source: 'reinforce_escalate' },
+      ])
+      : null;
     const created: RtUnit[] = [];
     for (const slot of plan.slotRefs) {
       if (this.countAliveEnemies() >= plan.maxConcurrentOnField) break; // 同屏上限
@@ -662,15 +697,43 @@ class BattleRun {
         throw new S7AutoBattleError('bad_spawn_slot', `非法出怪格 "${slot}"（仅 r0c0..r${ENEMY_ROWS - 1}c${ENEMY_COLS - 1}）`);
       }
       if (!this.canPlace('enemy', parsed.row, parsed.col, stat.sizeRows, stat.sizeCols)) continue; // 占用/越界则跳过该格
-      created.push(this.spawnUnit(stat, 'enemy', parsed.row, parsed.col, slot));
+      created.push(this.spawnUnit(stat, 'enemy', parsed.row, parsed.col, slot, derived));
     }
     if (created.length > 0) {
       this.pushLog('spawn_wave', {
         side: 'enemy',
         waveIndex: plan.waveIndex,
         targetIds: created.map((u) => u.unitId),
-        note: plan.rowId,
+        note: noteSuffix ? `${plan.rowId}·${noteSuffix}` : plan.rowId,
       });
+    }
+  }
+
+  /** 段二 C3 镜像通道：敌方=玩家出战阵容读档生成（同 unitStatRef+同四层装配积木·p{r}c{c}→r{r}c{c} 前三列对位）。 */
+  private placeMirrorEnemies(): void {
+    const created: RtUnit[] = [];
+    for (const input of this.request.playerUnits) {
+      const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', input.unitStatRef);
+      if (!stat) throw new S7AutoBattleError('unknown_unit_stat', `battle_unit_stat_param 缺少 ${String(input.unitStatRef)}`);
+      const row = Number(input.slotRef[1]);
+      const col = Number(input.slotRef[3]);
+      const slot = `r${row}c${col}`;
+      if (!this.canPlace('enemy', row, col, stat.sizeRows, stat.sizeCols)) continue;
+      const blocks = input.effectBlocks ?? [];
+      const derived = blocks.length > 0 ? deriveUnit(baseStatOf(stat), blocks) : null;
+      created.push(this.spawnUnit(stat, 'enemy', row, col, slot, derived));
+    }
+    if (created.length > 0) {
+      this.pushLog('spawn_wave', { side: 'enemy', waveIndex: 1, targetIds: created.map((u) => u.unitId), note: 'mirror_lineup' });
+    }
+  }
+
+  /** 段二 C3 复活波次：按原出怪计划全体满血重出一遍（Boss 阶段/已触发状态不重置＝配置纪律上复活关不配 Boss）。 */
+  private reviveEnemies(): void {
+    const wave = this.reviveRemaining;
+    this.reviveRemaining -= 1;
+    for (const plan of this.spawnPlans) {
+      this.processSpawnPlan(plan.row, 0, `revive_wave_${wave}`);
     }
   }
 
@@ -1101,14 +1164,27 @@ class BattleRun {
     });
   }
 
-  /** 9：检查胜负或 timeout。 */
+  /** 9：检查胜负或 timeout（段二 C3：斩首点名胜利 / 复活波次拦截清场胜利·无配置=旧行为逐分支不变）。 */
   private checkOutcome(): { winner: S7AutoBattleWinner; reason: S7AutoBattleReason } | null {
+    // 斩首通道（只在有配置时参与判定）：点名单位已出场且全灭 → 立即胜（其余敌人在场也胜；
+    // "越快杀掉奖励越高"走结算层用时。判定序=最前：同 tick 斩杀+我方团灭沿"双方清空玩家胜"既有精神）。
+    if (this.victoryTargetRef !== null) {
+      const targets = this.units.filter((u) => u.side === 'enemy' && u.unitStatRef === this.victoryTargetRef);
+      if (targets.length > 0 && targets.every((u) => !u.alive)) return { winner: 'player', reason: 'target_down' };
+    }
     const enemiesAlive = this.units.some((u) => u.side === 'enemy' && u.alive);
     const playersAlive = this.units.some((u) => u.side === 'player' && u.alive);
     // RT-04-fix#4：仍有未处理出怪批次时，场上暂时无敌人不算清场（防延迟首波/两波间清场提前胜利）。
     const pendingSpawns = this.spawnPlans.some((p) => !p.processed);
-    // 敌人全灭且无待出怪才判玩家胜（同 tick 双方清空也算清场成功）。
-    if (!enemiesAlive && !pendingSpawns) return { winner: 'player', reason: 'all_enemies_down' };
+    // 敌人全灭且无待出怪才判玩家胜（同 tick 双方清空也算清场成功——判序与旧版一字不动）。
+    if (!enemiesAlive && !pendingSpawns) {
+      // 复活波次通道：拦下本该到手的清场胜利，全体满血再打一遍（余额用尽才放行；无配置=永不进此分支）。
+      if (this.reviveRemaining > 0) {
+        this.reviveEnemies();
+        return null;
+      }
+      return { winner: 'player', reason: 'all_enemies_down' };
+    }
     if (!playersAlive) return { winner: 'enemy', reason: 'all_players_down' };
     return null;
   }

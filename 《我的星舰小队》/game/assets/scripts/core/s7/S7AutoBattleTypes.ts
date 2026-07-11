@@ -66,7 +66,8 @@ export interface S7AutoBattleRunRequest {
 export const S7_HARD_CONTROL_DIMINISH: { factor: number; windowSec: number } = { factor: 0.6, windowSec: 30 };
 
 export type S7AutoBattleWinner = 'player' | 'enemy';
-export type S7AutoBattleReason = 'all_enemies_down' | 'all_players_down' | 'timeout';
+/** target_down＝段二 C3 斩首通道（victoryRule='kill_target'·点名单位全灭即胜）；无配置节点永不出现。 */
+export type S7AutoBattleReason = 'all_enemies_down' | 'all_players_down' | 'timeout' | 'target_down';
 
 /** 事件触发日志的事件类型（不每 tick spam）。 */
 export type S7AutoBattleLogType =

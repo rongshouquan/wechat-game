@@ -46,7 +46,8 @@ export interface S7BattleUnitDamageSummary {
 
 export interface S7BattleLogSummaryResult {
   winner: 'player' | 'enemy';
-  reason: 'all_enemies_down' | 'all_players_down' | 'timeout';
+  /** 与引擎 S7AutoBattleReason 同域（段二 C3 起含 target_down=斩首胜利·无配置节点不出现）。 */
+  reason: S7AutoBattleResult['reason'];
   durationSec: number;
   hintCode: S7BattleOutcomeHintCode;
   playerDamage: S7BattleUnitDamageSummary[];
@@ -174,7 +175,9 @@ function accumulateDamage(result: S7AutoBattleResult): Map<string, DamageAcc> {
 
 /** 轻量胜负提示码（固定优先级见任务包 §8）。 */
 function computeHintCode(result: S7AutoBattleResult): S7BattleOutcomeHintCode {
-  if (result.winner === 'player' && result.reason === 'all_enemies_down') {
+  // 段二 C3：斩首胜利（target_down）沿用玩家胜提示码（提示码枚举不扩=UI 零波及；
+  // 斩首关专用文案若要区分，走灰盒批接 UI 时按 reason 细分——接口清单在案）。
+  if (result.winner === 'player' && (result.reason === 'all_enemies_down' || result.reason === 'target_down')) {
     return 'player_win_all_enemies_down';
   }
 

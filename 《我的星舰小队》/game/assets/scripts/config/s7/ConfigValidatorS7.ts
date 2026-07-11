@@ -1691,8 +1691,10 @@ function validateBattle(
     if (typeof row.problemTagRef !== 'string' || !S7_PROBLEM_TAGS.includes(row.problemTagRef)) errors.push({ table: 'battle_encounter_param', id, message: 'problemTagRef 非法' });
     if (typeof row.secondaryPressureTag !== 'string' || !S7_SECONDARY_PRESSURE_TAGS.includes(row.secondaryPressureTag)) errors.push({ table: 'battle_encounter_param', id, message: 'secondaryPressureTag 非法' });
     if (typeof row.pressureRef !== 'string' || !pressureIds.has(row.pressureRef)) errors.push({ table: 'battle_encounter_param', id, message: `pressureRef "${String(row.pressureRef)}" 不存在于 pressure_param` });
-    battleArrayRefs(errors, 'battle_encounter_param', id, 'enemyUnitStatRefs', row.enemyUnitStatRefs, unitIds, true);
-    battleArrayRefs(errors, 'battle_encounter_param', id, 'spawnPlanRefs', row.spawnPlanRefs, spawnIds, true);
+    // 段二 C3 镜像关例外：敌阵=玩家阵容读档生成，enemyUnitStatRefs/spawnPlanRefs 允许为空（下方镜像块强制 spawn 空）。
+    const isMirror = row.mirrorLineup === true;
+    battleArrayRefs(errors, 'battle_encounter_param', id, 'enemyUnitStatRefs', row.enemyUnitStatRefs, unitIds, !isMirror);
+    battleArrayRefs(errors, 'battle_encounter_param', id, 'spawnPlanRefs', row.spawnPlanRefs, spawnIds, !isMirror);
     battleArrayRefs(errors, 'battle_encounter_param', id, 'bossPhaseRefs', row.bossPhaseRefs, phaseIds, false);
     if (row.playerSlotPolicy !== 'five_ship_3x3_default') errors.push({ table: 'battle_encounter_param', id, message: 'playerSlotPolicy 首版必须为 five_ship_3x3_default' });
     const tl = num(row.timeLimitSec);
@@ -1717,6 +1719,26 @@ function validateBattle(
         const ph = typeof pref === 'string' ? phaseById.get(pref) : undefined;
         if (ph && String(ph.bossNodeId) !== String(row.nodeRef)) errors.push({ table: 'battle_encounter_param', id, message: `bossPhaseRefs 引用的 "${String(pref)}" 不属于 boss 节点 ${String(row.nodeRef)}（双向闭合失败）` });
       }
+    }
+    // ---- 段二 C3 可选通道字段（缺席=合法·带了就严校）----
+    if (row.victoryRule !== undefined) {
+      if (row.victoryRule !== 'kill_target') errors.push({ table: 'battle_encounter_param', id, message: `victoryRule 仅支持 'kill_target'（实际 "${String(row.victoryRule)}"）` });
+      const vt = row.victoryTargetUnitRef;
+      if (typeof vt !== 'string' || !unitIds.has(vt)) errors.push({ table: 'battle_encounter_param', id, message: `victoryRule='kill_target' 必须配有效 victoryTargetUnitRef（实际 "${String(vt)}"）` });
+      else if (Array.isArray(row.enemyUnitStatRefs) && !row.enemyUnitStatRefs.includes(vt)) errors.push({ table: 'battle_encounter_param', id, message: `victoryTargetUnitRef "${vt}" 不在本 encounter 的 enemyUnitStatRefs 内` });
+    } else if (row.victoryTargetUnitRef !== undefined) {
+      errors.push({ table: 'battle_encounter_param', id, message: 'victoryTargetUnitRef 只能与 victoryRule 一起出现' });
+    }
+    if (row.reviveWaves !== undefined) {
+      const rv = num(row.reviveWaves);
+      if (rv === null || !Number.isInteger(rv) || rv < 1 || rv > 3) errors.push({ table: 'battle_encounter_param', id, message: 'reviveWaves 必须为 1-3 的整数' });
+      if (Array.isArray(row.bossPhaseRefs) && row.bossPhaseRefs.length > 0) errors.push({ table: 'battle_encounter_param', id, message: '复活波次关不配 Boss 阶段（阶段不随复活重置·配置纪律）' });
+    }
+    if (row.mirrorLineup !== undefined && row.mirrorLineup !== true) {
+      errors.push({ table: 'battle_encounter_param', id, message: 'mirrorLineup 只允许 true 或缺席' });
+    }
+    if (row.mirrorLineup === true && Array.isArray(row.spawnPlanRefs) && row.spawnPlanRefs.length > 0) {
+      errors.push({ table: 'battle_encounter_param', id, message: '镜像关的 spawnPlanRefs 必须为空数组（敌阵=玩家阵容读档生成）' });
     }
   }
 
@@ -1743,6 +1765,16 @@ function validateBattle(
     }
     const sd = num(row.spawnDelaySec);
     if (sd === null || sd < 0) errors.push({ table: 'battle_spawn_param', id, message: 'spawnDelaySec 必须 >= 0' });
+    // 段二 C3 增援通道可选字段（缺席=合法·带了就严校）。
+    if (row.repeatEverySec !== undefined) {
+      const re = num(row.repeatEverySec);
+      if (re === null || re <= 0) errors.push({ table: 'battle_spawn_param', id, message: 'repeatEverySec 带了必须 > 0' });
+    }
+    if (row.repeatEscalatePct !== undefined) {
+      const pe = num(row.repeatEscalatePct);
+      if (pe === null || pe < 0) errors.push({ table: 'battle_spawn_param', id, message: 'repeatEscalatePct 带了必须 >= 0' });
+      if (row.repeatEverySec === undefined) errors.push({ table: 'battle_spawn_param', id, message: 'repeatEscalatePct 只能与 repeatEverySec 一起出现' });
+    }
     const mc = num(row.maxConcurrentOnField);
     const gridCells = S7_ENEMY_ROWS * S7_ENEMY_COLS;
     if (mc === null || !Number.isInteger(mc) || mc < 1 || mc > gridCells) errors.push({ table: 'battle_spawn_param', id, message: `maxConcurrentOnField 必须为 1-${gridCells} 的整数` });

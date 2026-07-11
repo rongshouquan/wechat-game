@@ -881,6 +881,15 @@ export interface S7BattleEncounterParam {
   timeLimitSec: number;
   /** 首版固定 node_id_plus_run_seed。 */
   battleSeedPolicy: string;
+  // ===== 段二 C3 三个新引擎通道（可选通道范式：缺省缺席=逐字节不变·变异探针=s7_battle_channels 测试）=====
+  /** 斩首胜利条件（精英花样①限时斩首）：'kill_target'=点名单位全灭即胜（其余敌人在场也胜·奖励按用时=结算层）。缺席=清场胜利照旧。 */
+  victoryRule?: 'kill_target';
+  /** 斩首点名单位（battle_unit_stat_param.rowId·victoryRule='kill_target' 时必填；配置纪律=点名单位排首波 delay 0）。 */
+  victoryTargetUnitRef?: string;
+  /** 复活波次（精英花样③满血复活连战）：敌全灭后按原出怪计划全体满血复活再打的次数（1-3·Boss 阶段不重置）。缺席=0。 */
+  reviveWaves?: number;
+  /** 镜像关（精英花样②）：true=敌方阵容由玩家当前出战阵容读档生成（含四层装配积木·忽略本行出怪计划）。缺席=正常出怪。 */
+  mirrorLineup?: boolean;
   note: string;
 }
 
@@ -902,6 +911,11 @@ export interface S7BattleSpawnParam {
   spawnDelaySec: number;
   /** 同屏上限 1-21。 */
   maxConcurrentOnField: number;
+  // ===== 段二 C3 斩首关"不断增援强化"通道（可选：缺省缺席=逐字节不变）=====
+  /** 周期重复出怪间隔秒（>0 生效）：本批次在首次出怪后每隔该秒数重出一遍（同槽位·受同屏上限约束）。 */
+  repeatEverySec?: number;
+  /** 每次重复的属性递增幅度（≥0·第 k 次重复=血/攻 ×(1+pct)^k）——"拖久必输"的增援强化压力。 */
+  repeatEscalatePct?: number;
   note: string;
 }
 
