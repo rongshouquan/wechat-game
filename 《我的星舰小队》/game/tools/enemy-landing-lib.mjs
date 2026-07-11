@@ -44,6 +44,17 @@ export function writeTables(dir, tables, onlyNames = LANDING_TABLES) {
 export const NODE_UNIT_RE = /^bu_n\d+_(.+)$/;
 export const NODE_EFFECT_RE = /^eff_n\d+_summon$/;
 
+/**
+ * Boss 周期召唤规则（段二 H1·真源 f8c6ae75：失控母舰阶段1"周期召唤【无人机】·复用母舰单元召唤物"）。
+ * 生产规则侧落法（防 apply 幂等冲回·星盗队长改名先例）：落数时给 Boss 行挂 cd 型召唤大招
+ * （ultimateEffectRef=eff_<node>_summon 生命周期包·召唤单位=bu_<node>_sadd 无人机·SADD 份额），
+ * 清土时把 Boss 大招指针回退到 cleanUltimate（保证"只清不落"的净土仍然引用闭合·validator 绿）。
+ * ultimateCdSec=12 对齐母舰单元先例（真源"周期召唤"未给数·数值域定报备·2b 复测可调）。
+ */
+export const BOSS_PERIODIC_SUMMON = {
+  n084: { ultimateCdSec: 12, cleanUltimate: { ref: 'eff_ult_burst_nuke', cdSec: 10 } },
+};
+
 /** 节点行 → 全局职业行（roleKeyOf 同款反解·§20.1）：add/sadd 归 boss_add，其余按后缀。 */
 export function globalRowOf(rowId) {
   const m = rowId.match(NODE_UNIT_RE);
@@ -73,6 +84,14 @@ export function cleanBundle(tables) {
   tables.battle_unit_stat_param = kept;
   for (const r of kept) {
     if (/^bu_boss_n\d+$/.test(r.rowId) && typeof r.note === 'string') r.note = stripLandingNote(r.note);
+  }
+  // Boss 周期召唤规则回退（段二 H1）：净土态 Boss 大招指回全局效果（eff_<node>_summon 已被清，防悬空引用）。
+  for (const [nodeId, rule] of Object.entries(BOSS_PERIODIC_SUMMON)) {
+    const boss = kept.find((r) => r.rowId === `bu_boss_${nodeId}`);
+    if (boss) {
+      boss.ultimateEffectRef = rule.cleanUltimate.ref;
+      boss.ultimateCdSec = rule.cleanUltimate.cdSec;
+    }
   }
   const effects = tables.battle_effect_param;
   const keptEff = effects.filter((r) => !NODE_EFFECT_RE.test(r.rowId));

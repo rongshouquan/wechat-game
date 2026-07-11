@@ -366,8 +366,8 @@
     "sizeCols": 2,
     "targetingTag": "backline_first",
     "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_ult_burst_nuke",
-    "ultimateCdSec": 10,
+    "ultimateEffectRef": "eff_n084_summon",
+    "ultimateCdSec": 12,
     "coreEffectRef": "none",
     "note": "SF01 护盾 Boss，占 2x2 大格，首版基线属性·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=3508·§19映射)"
   },
@@ -2733,6 +2733,27 @@
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
     "note": "n084 shield·⑩落数(P=3508·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n084_sadd",
+    "targetType": "enemy",
+    "unitRef": "enemy_boss_add",
+    "roleTag": "boss_add",
+    "maxHp": 1666,
+    "attack": 68,
+    "armor": 8,
+    "attackIntervalSec": 1.2,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 4,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n084 母舰产出·⑩落数(池2.5%/火5%)"
   },
   {
     "schemaVersion": "s7-0.1.0",

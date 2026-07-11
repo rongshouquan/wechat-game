@@ -20,7 +20,7 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES } from './enemy-landing-lib.mjs';
+import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON } from './enemy-landing-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -181,6 +181,29 @@ function landBundle(tables, mod) {
       });
       blockById.get(summonRowId).ultimateEffectRef = effId;
       stat.effects += 1;
+    }
+    // ④ Boss 周期召唤（段二 H1·真源 f8c6ae75）：失控母舰类 Boss 本体挂 cd 型召唤大招——
+    //    召唤单位=本节点 sadd（复用母舰单元召唤物·无人机语义行）+生命周期包；大招指针/CD 由规则拥有
+    //    （cleanBundle 对称回退·防"只清不落"悬空引用）。旧 10s 爆发 nuke 让位（真源阶段1 无此项；
+    //    残血爆发窗口仍由 phase_final effectRefs 承担）。
+    const bossRule = BOSS_PERIODIC_SUMMON[nodeId];
+    if (bossRule) {
+      const bossRow = unitById.get(`bu_boss_${nodeId}`);
+      if (!bossRow) throw new Error(`BOSS_PERIODIC_SUMMON 找不到 Boss 行：bu_boss_${nodeId}`);
+      const saddId = ensureSpecialtyRow('sadd', SADD_SHARE);
+      const effId = `eff_${nodeId}_summon`;
+      if (!nodeEffects.some((e) => e.rowId === effId)) {
+        nodeEffects.push({
+          ...globalSummonEff,
+          rowId: effId,
+          summonUnitRef: saddId,
+          note: `${nodeId} Boss周期召唤无人机·段二H1落数（真源f8c6ae75阶段1·复用母舰单元召唤物·生命周期包=真源§0：限时20s/随源消亡/同源上限3）`,
+          ...SUMMON_LIFECYCLE,
+        });
+        stat.effects += 1;
+      }
+      bossRow.ultimateEffectRef = effId;
+      bossRow.ultimateCdSec = bossRule.ultimateCdSec;
     }
     nodeUnitBlocks.push(...block);
   }

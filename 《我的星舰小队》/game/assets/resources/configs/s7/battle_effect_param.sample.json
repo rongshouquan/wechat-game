@@ -4152,6 +4152,22 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_n084_summon",
+    "effectKind": "state",
+    "effectType": "summon",
+    "effectPower": 0,
+    "targetingTag": "self_team",
+    "durationSec": 10,
+    "maxTargets": 1,
+    "stateTag": "summon",
+    "summonUnitRef": "bu_n084_sadd",
+    "note": "n084 Boss周期召唤无人机·段二H1落数（真源f8c6ae75阶段1·复用母舰单元召唤物·生命周期包=真源§0：限时20s/随源消亡/同源上限3）",
+    "summonExpireSec": 20,
+    "despawnWithSource": true,
+    "summonSourceCap": 3
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "eff_n103_summon",
     "effectKind": "state",
     "effectType": "summon",

@@ -116,11 +116,9 @@
       "eff_state_shield_break",
       "eff_state_vulnerable"
     ],
-    "summonUnitRefs": [
-      "bu_n084_shield"
-    ],
-    "summonCountCap": 3,
-    "note": "中段破盾窗口 + 少量护盾附属"
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段破盾窗口（真源f8c6ae75阶段2=破盾后狂暴·段二H1：旧盾仔阶段召唤×3退役——召唤改由Boss本体周期大招承担·开局盾仔adds波=池结构件保留）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -134,7 +132,7 @@
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "开场开盾"
+    "note": "开场开盾（真源阶段1=护盾+周期召唤无人机+点名后排：周期召唤=Boss本体eff_n084_summon cd12·点名后排=Boss行targetingTag backline_first·段二H1对齐）"
   },
   {
     "schemaVersion": "s7-0.1.0",
