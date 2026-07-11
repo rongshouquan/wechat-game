@@ -1,0 +1,8256 @@
+{
+ "meta": {
+  "name": "最优解玩家 60 天成长剧本 v0",
+  "kind": "设计靶（F2 手绘线）",
+  "date": "2026-07-12",
+  "caliber": "无限时间/全渠道拉满/运气平均/推进线=单把5%/黑市不做30连看（刷新+计数购物照用）/故意失败族入主口径（#9×3+#11×1+#12×1）",
+  "world": {
+   "N": 400,
+   "regions": [
+    {
+     "sf": "sf01",
+     "from": 1,
+     "to": 72,
+     "theme": "群怪（星盗）",
+     "midBoss": 34,
+     "note": "开局直道 55-60 关零墙+缓坡"
+    },
+    {
+     "sf": "sf02",
+     "from": 73,
+     "to": 140,
+     "theme": "护盾（无人舰）",
+     "midBoss": 106,
+     "note": "爽段大区"
+    },
+    {
+     "sf": "sf03",
+     "from": 141,
+     "to": 204,
+     "theme": "点名后排（无人舰/污染混编）",
+     "midBoss": 172,
+     "note": "加密段①"
+    },
+    {
+     "sf": "sf04",
+     "from": 205,
+     "to": 264,
+     "theme": "召唤（机械/母舰）",
+     "midBoss": 234,
+     "note": "加密段②"
+    },
+    {
+     "sf": "sf05",
+     "from": 265,
+     "to": 328,
+     "theme": "爆发（污染）",
+     "midBoss": 296,
+     "note": "爽段"
+    },
+    {
+     "sf": "sf06",
+     "from": 329,
+     "to": 400,
+     "theme": "狂暴综合（终域）",
+     "midBoss": 364,
+     "note": "加密段③·终域"
+    }
+   ],
+   "bosses": [
+    {
+     "node": 34,
+     "kind": "climax",
+     "name": "首Boss·星盗大副（新世界位）",
+     "wallType": null,
+     "joy": "强引导收尾高潮·掉陨星弹·解锁深空回廊（初见≈10%·磨几把能过）"
+    },
+    {
+     "node": 72,
+     "kind": "wall",
+     "idx": 1,
+     "wallType": "战力墙",
+     "keyTeach": "教\"攒一晚再来\"",
+     "joy": "破墙爽法=新解锁绑定（黑市开门）+暴推走廊",
+     "matrix": {
+      "肝": 0.5,
+      "重": 1,
+      "普": 1,
+      "轻": 1.5
+     }
+    },
+    {
+     "node": 106,
+     "kind": "climax",
+     "name": "高潮②·盾域旗舰仗",
+     "wallType": null,
+     "joy": "爽段中点大仗（不卡天·演出向）"
+    },
+    {
+     "node": 140,
+     "kind": "wall",
+     "idx": 2,
+     "wallType": "机制墙",
+     "keyTeach": "破盾节奏（星鲸/削盾件）",
+     "joy": "新星域开门（sf03）",
+     "matrix": {
+      "肝": 1,
+      "重": 1,
+      "普": 1.5,
+      "轻": 2
+     }
+    },
+    {
+     "node": 172,
+     "kind": "wall",
+     "idx": 3,
+     "wallType": "解题墙",
+     "keyTeach": "护后排双钥匙（岩×磐石+砺×铁壁精神续作）",
+     "joy": "暴推走廊",
+     "matrix": {
+      "肝": 1,
+      "重": 1.5,
+      "普": 2,
+      "轻": 2.5
+     }
+    },
+    {
+     "node": 204,
+     "kind": "wall",
+     "idx": 4,
+     "wallType": "战力墙",
+     "keyTeach": "S 阶冲刺",
+     "joy": "新星域开门（sf04）+大节点齐至",
+     "matrix": {
+      "肝": 1,
+      "重": 2,
+      "普": 2.5,
+      "轻": 3
+     }
+    },
+    {
+     "node": 234,
+     "kind": "wall",
+     "idx": 5,
+     "wallType": "连战墙",
+     "keyTeach": "满血复活连战（新引擎通道上岗·耐力配队）",
+     "joy": "暴推走廊",
+     "matrix": {
+      "肝": 1.5,
+      "重": 2,
+      "普": 3,
+      "轻": 3.5
+     }
+    },
+    {
+     "node": 264,
+     "kind": "wall",
+     "idx": 6,
+     "wallType": "机制墙",
+     "keyTeach": "反召唤优先级+护后排",
+     "joy": "新星域开门（sf05=爽段）",
+     "matrix": {
+      "肝": 2,
+      "重": 2.5,
+      "普": 3,
+      "轻": 4
+     }
+    },
+    {
+     "node": 296,
+     "kind": "climax",
+     "name": "高潮③·污染巨兽前哨仗",
+     "wallType": null,
+     "joy": "阵容成型后的碾轧演出仗"
+    },
+    {
+     "node": 328,
+     "kind": "wall",
+     "idx": 7,
+     "wallType": "解题墙",
+     "keyTeach": "净化+护罩双钥（爆发域）",
+     "joy": "暴推走廊",
+     "matrix": {
+      "肝": 2,
+      "重": 3,
+      "普": 4,
+      "轻": 5
+     }
+    },
+    {
+     "node": 364,
+     "kind": "wall",
+     "idx": 8,
+     "wallType": "战力墙",
+     "keyTeach": "SS③ 冲刺（毕业前最后大坎）",
+     "joy": "暴推走廊",
+     "matrix": {
+      "肝": 2.5,
+      "重": 3,
+      "普": 4,
+      "轻": 5.5
+     }
+    },
+    {
+     "node": 400,
+     "kind": "wall",
+     "idx": 9,
+     "wallType": "连战墙（综合终墙）",
+     "keyTeach": "三阶段综合考·全套工具箱",
+     "joy": "毕业！长线循环开门",
+     "matrix": {
+      "肝": 3,
+      "重": 4,
+      "普": 5,
+      "轻": 6
+     }
+    }
+   ],
+   "elites": [
+    {
+     "node": 7,
+     "kind": "词缀点名",
+     "note": "D1 微阻滞①（B4）"
+    },
+    {
+     "node": 18,
+     "kind": "奇阵·贴脸",
+     "note": "D1 微阻滞②"
+    },
+    {
+     "node": 29,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 44,
+     "kind": "奇阵·包围"
+    },
+    {
+     "node": 55,
+     "kind": "福利·合金"
+    },
+    {
+     "node": 66,
+     "kind": "词缀点名",
+     "note": "墙①前哨"
+    },
+    {
+     "node": 82,
+     "kind": "奇阵·龟缩"
+    },
+    {
+     "node": 94,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 100,
+     "kind": "奇阵·龟缩"
+    },
+    {
+     "node": 112,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 118,
+     "kind": "福利·驾驶记录"
+    },
+    {
+     "node": 124,
+     "kind": "奇阵·贴脸"
+    },
+    {
+     "node": 130,
+     "kind": "词缀点名",
+     "note": "墙②前哨"
+    },
+    {
+     "node": 152,
+     "kind": "限时斩首",
+     "note": "新花样首秀（引擎通道①）"
+    },
+    {
+     "node": 158,
+     "kind": "福利·合金"
+    },
+    {
+     "node": 163,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 176,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 184,
+     "kind": "奇阵·贴脸"
+    },
+    {
+     "node": 196,
+     "kind": "限时斩首",
+     "note": "墙④前哨"
+    },
+    {
+     "node": 216,
+     "kind": "镜像关",
+     "note": "新花样②首秀（阵容小成后最有嚼头·前轻后重）"
+    },
+    {
+     "node": 226,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 240,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 246,
+     "kind": "限时斩首·参数升档"
+    },
+    {
+     "node": 256,
+     "kind": "奇阵·包围·参数升档"
+    },
+    {
+     "node": 276,
+     "kind": "福利·星贝"
+    },
+    {
+     "node": 288,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 300,
+     "kind": "奇阵·包围"
+    },
+    {
+     "node": 308,
+     "kind": "镜像关·参数升档"
+    },
+    {
+     "node": 318,
+     "kind": "限时斩首"
+    },
+    {
+     "node": 336,
+     "kind": "满血复活连战",
+     "note": "新花样③精英版（墙⑤教过·此处独立成关）"
+    },
+    {
+     "node": 344,
+     "kind": "福利·合金",
+     "note": "D36-60 垫关惊喜①"
+    },
+    {
+     "node": 352,
+     "kind": "词缀点名"
+    },
+    {
+     "node": 358,
+     "kind": "镜像关"
+    },
+    {
+     "node": 370,
+     "kind": "福利·驾驶记录",
+     "note": "垫关惊喜②"
+    },
+    {
+     "node": 376,
+     "kind": "满血复活连战·参数升档"
+    },
+    {
+     "node": 382,
+     "kind": "限时斩首·参数升档"
+    },
+    {
+     "node": 388,
+     "kind": "福利·星贝",
+     "note": "垫关惊喜③"
+    },
+    {
+     "node": 394,
+     "kind": "词缀点名",
+     "note": "终墙前哨"
+    }
+   ]
+  },
+  "walletKeys": [
+   "starOre",
+   "hullAlloy",
+   "pilotToken",
+   "shipBlueprint",
+   "pilotShardUniversal",
+   "coreFrag",
+   "fullCore",
+   "starGem",
+   "supplyTicket",
+   "beaconCommon",
+   "beaconRare",
+   "beaconEpic",
+   "starCargo",
+   "adTicket"
+  ],
+  "graduationDay": 38,
+  "wallDaysTotal": 13.5
+ },
+ "days": [
+  {
+   "day": 1,
+   "phase": "A",
+   "progress": {
+    "cleared": 58,
+    "newToday": 58,
+    "state": "推进",
+    "initWinBand": "普通关 85-95%（直道碾）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1500,
+     "spend": 1200,
+     "balance": 300
+    },
+    "hullAlloy": {
+     "income": 1800,
+     "spend": 1500,
+     "balance": 300
+    },
+    "pilotToken": {
+     "income": 1200,
+     "spend": 1000,
+     "balance": 200
+    },
+    "shipBlueprint": {
+     "income": 40,
+     "spend": 38,
+     "balance": 2
+    },
+    "pilotShardUniversal": {
+     "income": 40,
+     "spend": 38,
+     "balance": 2
+    },
+    "coreFrag": {
+     "income": 12,
+     "spend": 0,
+     "balance": 12
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 0
+    },
+    "starGem": {
+     "income": 4,
+     "spend": 0,
+     "balance": 4
+    },
+    "supplyTicket": {
+     "income": 70,
+     "spend": 66,
+     "balance": 4
+    },
+    "beaconCommon": {
+     "income": 6,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 2,
+     "spend": 1,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 0,
+     "spend": 0,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 500,
+     "spend": 420,
+     "balance": 80
+    },
+    "adTicket": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 0,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 0
+   },
+   "decisions": "三选一全选主力1 专属碎片·星贝全买补给券（日限）·抽卡船人对半·不留存量（D1 全花=最优）",
+   "growth": "满编 5 舰·主力1 上 B 阶·L10 签名开火×3（大节点①）",
+   "joy": "开局直道 58 关一路碾（新手零墙纯爽推）+满编成军+首抽十连",
+   "pinch": "—",
+   "unlock": "船坞/训练舱(关1)·补给站(关3)·打捞(关4)·商人+悬赏板(关5)·居住舱(关8)·货舱(关9)·满编(关11)·星核入口(关13-14)·展厅提示(关15)·保护期收口(n018/19)",
+   "side": {
+    "corridor": 0,
+    "bounty": 3,
+    "puzzle": 0,
+    "drill": 3,
+    "salvage": 3
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 0,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 0,
+     "黑市手动刷新": 0
+    },
+    "counterToday": 15,
+    "natural": 11,
+    "deliberate": 4
+   },
+   "collect": {
+    "cores": 0,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 80,
+   "hook": "明天：首Boss 决战（S 阶差一步·陨星弹在望）",
+   "checkpoint": "⬥检查点：D1 直道 58 关（普通档参照 50-60·B4/B6 锚）"
+  },
+  {
+   "day": 2,
+   "phase": "B",
+   "progress": {
+    "cleared": 71,
+    "newToday": 13,
+    "state": "卡墙①第1天",
+    "initWinBand": "墙① 0-5%（D2 中段撞墙=正爽时卡住）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1400,
+     "spend": 1300,
+     "balance": 400
+    },
+    "hullAlloy": {
+     "income": 2200,
+     "spend": 2100,
+     "balance": 400
+    },
+    "pilotToken": {
+     "income": 1500,
+     "spend": 1400,
+     "balance": 300
+    },
+    "shipBlueprint": {
+     "income": 26,
+     "spend": 24,
+     "balance": 4
+    },
+    "pilotShardUniversal": {
+     "income": 26,
+     "spend": 24,
+     "balance": 4
+    },
+    "coreFrag": {
+     "income": 14,
+     "spend": 0,
+     "balance": 26
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 1
+    },
+    "starGem": {
+     "income": 10,
+     "spend": 0,
+     "balance": 14
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 54,
+     "balance": 6
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 3,
+     "spend": 3,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 420,
+     "spend": 400,
+     "balance": 100
+    },
+    "adTicket": {
+     "income": 4,
+     "spend": 4,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力1 专属 ≈260（教学投放+三选一定向）",
+    "plugins": {
+     "cores": 1,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 1
+   },
+   "decisions": "合金全喂主力1 冲 A→S 备料（首Boss 前 S 阶=GDD-M 铁律）·首败故意送头×3 起账（#9 翻倍照领）",
+   "growth": "主力1 A 阶（首Boss 前 S 阶备料）·L10 签名开火全队",
+   "joy": "首Boss 高潮仗（磨三把 10%→过=第一次\"研究出解\"）+陨星弹到手·普攻变原子炮（首个质变对比）",
+   "pinch": "合金（升阶梯 50/100/300 三连·离墙①差一晚积累）",
+   "unlock": "深空回廊（首Boss n034 首杀）·陨星弹装核",
+   "side": {
+    "corridor": 9,
+    "bounty": 3,
+    "puzzle": 0,
+    "drill": 4,
+    "salvage": 3
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 0,
+     "黑市手动刷新": 0
+    },
+    "counterToday": 16,
+    "natural": 12,
+    "deliberate": 4
+   },
+   "collect": {
+    "cores": 1,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 58,
+   "hook": "明天：破墙①+黑市开门（攒了一晚的合金兑现）",
+   "checkpoint": "⬥墙①（n72·战力墙）：矩阵 肝0.5/重1/普1/轻1.5 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 3,
+   "phase": "B",
+   "progress": {
+    "cleared": 90,
+    "newToday": 19,
+    "state": "破墙①",
+    "initWinBand": "破墙日 10-20%→暴推走廊 90%+"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1400,
+     "spend": 1300,
+     "balance": 500
+    },
+    "hullAlloy": {
+     "income": 2200,
+     "spend": 2100,
+     "balance": 500
+    },
+    "pilotToken": {
+     "income": 1500,
+     "spend": 1400,
+     "balance": 400
+    },
+    "shipBlueprint": {
+     "income": 26,
+     "spend": 24,
+     "balance": 6
+    },
+    "pilotShardUniversal": {
+     "income": 26,
+     "spend": 24,
+     "balance": 6
+    },
+    "coreFrag": {
+     "income": 14,
+     "spend": 0,
+     "balance": 40
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 1
+    },
+    "starGem": {
+     "income": 10,
+     "spend": 0,
+     "balance": 24
+    },
+    "supplyTicket": {
+     "income": 70,
+     "spend": 68,
+     "balance": 8
+    },
+    "beaconCommon": {
+     "income": 9,
+     "spend": 9,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 3,
+     "spend": 3,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 420,
+     "spend": 400,
+     "balance": 120
+    },
+    "adTicket": {
+     "income": 4,
+     "spend": 4,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 1,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 1
+   },
+   "decisions": "黑市开门首刷：小件坑 4+手动再刷×2 全扫·宝箱 10 计数必买（期望>价）·大件页设存钱目标=舰包 128",
+   "growth": "主力1 S 阶=装陨星弹（质变：普攻变原子炮）",
+   "joy": "破墙①+黑市开门（新解锁绑定爽法）+暴推 19 关",
+   "pinch": "—",
+   "unlock": "黑市（墙① n072 首通=第一堵真墙 Boss 后·语义保持）",
+   "side": {
+    "corridor": 10,
+    "bounty": 3,
+    "puzzle": 0,
+    "drill": 4,
+    "salvage": 3
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 0,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 17,
+    "natural": 13,
+    "deliberate": 4
+   },
+   "collect": {
+    "cores": 1,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 45,
+   "hook": "明天：逼近 n106 高潮仗",
+   "checkpoint": "—"
+  },
+  {
+   "day": 4,
+   "phase": "B",
+   "progress": {
+    "cleared": 104,
+    "newToday": 14,
+    "state": "推进",
+    "initWinBand": "普通 80-90%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1400,
+     "spend": 1300,
+     "balance": 600
+    },
+    "hullAlloy": {
+     "income": 2200,
+     "spend": 2100,
+     "balance": 600
+    },
+    "pilotToken": {
+     "income": 1500,
+     "spend": 1400,
+     "balance": 500
+    },
+    "shipBlueprint": {
+     "income": 26,
+     "spend": 24,
+     "balance": 8
+    },
+    "pilotShardUniversal": {
+     "income": 26,
+     "spend": 24,
+     "balance": 8
+    },
+    "coreFrag": {
+     "income": 14,
+     "spend": 0,
+     "balance": 54
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 1
+    },
+    "starGem": {
+     "income": 10,
+     "spend": 0,
+     "balance": 34
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 54,
+     "balance": 10
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 3,
+     "spend": 3,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 420,
+     "spend": 400,
+     "balance": 140
+    },
+    "adTicket": {
+     "income": 4,
+     "spend": 4,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 1,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 1
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力2 A 阶·L20 技能强化 I（主力1）",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "每日推演（n044 首通=首Boss+10）",
+   "side": {
+    "corridor": 12,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 5,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 0,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 17,
+    "natural": 13,
+    "deliberate": 4
+   },
+   "collect": {
+    "cores": 1,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 41,
+   "hook": "明天：逼近 n106 高潮仗",
+   "checkpoint": "—"
+  },
+  {
+   "day": 5,
+   "phase": "B",
+   "progress": {
+    "cleared": 116,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 80-90%（高潮② n106 初见 35% 磨两把过）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1400,
+     "spend": 1300,
+     "balance": 700
+    },
+    "hullAlloy": {
+     "income": 2200,
+     "spend": 2100,
+     "balance": 700
+    },
+    "pilotToken": {
+     "income": 1500,
+     "spend": 1400,
+     "balance": 600
+    },
+    "shipBlueprint": {
+     "income": 26,
+     "spend": 24,
+     "balance": 10
+    },
+    "pilotShardUniversal": {
+     "income": 26,
+     "spend": 24,
+     "balance": 10
+    },
+    "coreFrag": {
+     "income": 14,
+     "spend": 60,
+     "balance": 8
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 2
+    },
+    "starGem": {
+     "income": 10,
+     "spend": 0,
+     "balance": 44
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 54,
+     "balance": 12
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 3,
+     "spend": 3,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 420,
+     "spend": 400,
+     "balance": 160
+    },
+    "adTicket": {
+     "income": 4,
+     "spend": 4,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 2,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 2
+   },
+   "decisions": "开蛋①（60 碎攒够即开·前 5 颗保底互异）·广告券 4 张买满（星贝→广告转换器·边际为正）",
+   "growth": "主力3 A 阶",
+   "joy": "高潮②旗舰仗（不卡天演出仗）",
+   "pinch": "—",
+   "unlock": "研究塔（D4-5 档）",
+   "side": {
+    "corridor": 13,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 5,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 2,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n140 墙②",
+   "checkpoint": "—"
+  },
+  {
+   "day": 6,
+   "phase": "B",
+   "progress": {
+    "cleared": 128,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 78-88%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1400,
+     "spend": 1300,
+     "balance": 800
+    },
+    "hullAlloy": {
+     "income": 2200,
+     "spend": 2100,
+     "balance": 800
+    },
+    "pilotToken": {
+     "income": 1500,
+     "spend": 1400,
+     "balance": 700
+    },
+    "shipBlueprint": {
+     "income": 26,
+     "spend": 24,
+     "balance": 12
+    },
+    "pilotShardUniversal": {
+     "income": 26,
+     "spend": 24,
+     "balance": 12
+    },
+    "coreFrag": {
+     "income": 14,
+     "spend": 0,
+     "balance": 22
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 2
+    },
+    "starGem": {
+     "income": 10,
+     "spend": 0,
+     "balance": 54
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 54,
+     "balance": 14
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 3,
+     "spend": 3,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 420,
+     "spend": 400,
+     "balance": 180
+    },
+    "adTicket": {
+     "income": 4,
+     "spend": 4,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 2,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 2
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力2 S 阶",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 14,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 6,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 2,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n140 墙②",
+   "checkpoint": "—"
+  },
+  {
+   "day": 7,
+   "phase": "B",
+   "progress": {
+    "cleared": 139,
+    "newToday": 11,
+    "state": "卡墙②第1天",
+    "initWinBand": "墙② 0-5%（首周收在墙下=悬念收尾）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 1400,
+     "spend": 1300,
+     "balance": 900
+    },
+    "hullAlloy": {
+     "income": 2200,
+     "spend": 2100,
+     "balance": 900
+    },
+    "pilotToken": {
+     "income": 1500,
+     "spend": 1400,
+     "balance": 800
+    },
+    "shipBlueprint": {
+     "income": 26,
+     "spend": 24,
+     "balance": 14
+    },
+    "pilotShardUniversal": {
+     "income": 26,
+     "spend": 24,
+     "balance": 14
+    },
+    "coreFrag": {
+     "income": 20,
+     "spend": 0,
+     "balance": 42
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 3
+    },
+    "starGem": {
+     "income": 10,
+     "spend": 0,
+     "balance": 64
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 54,
+     "balance": 16
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 3,
+     "spend": 3,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 420,
+     "spend": 400,
+     "balance": 200
+    },
+    "adTicket": {
+     "income": 4,
+     "spend": 4,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 3,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 3
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力1 L30 舰载趣闻（大节点③）·员1 3★（大质变）",
+   "joy": "员1 3★ 大质变（能力线首跳）",
+   "pinch": "专属碎片（主力2 S 阶差 40 片=墙②挤压）",
+   "unlock": "—",
+   "side": {
+    "corridor": 16,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 6,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 3,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 56,
+   "hook": "明天：破墙②（S 阶双主力成型·首周收官战）",
+   "checkpoint": "⬥检查点：首周 139 关（矩阵上界·普通档参照 80-90/肝 120）"
+  },
+  {
+   "day": 8,
+   "phase": "C",
+   "progress": {
+    "cleared": 150,
+    "newToday": 11,
+    "state": "破墙②",
+    "initWinBand": "破墙 12%→走廊 88%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 1100
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 1100
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 900
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 15
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 15
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 60
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 3
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 80
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 18
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 230
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 3,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 3
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力3 S 阶",
+   "joy": "破墙②暴推（一晚积蓄一口气兑现）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 17,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 7,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 3,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 38,
+   "hook": "明天：逼近 n172 墙③",
+   "checkpoint": "—"
+  },
+  {
+   "day": 9,
+   "phase": "C",
+   "progress": {
+    "cleared": 164,
+    "newToday": 14,
+    "state": "推进",
+    "initWinBand": "普通 78-88%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 1300
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 1300
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1000
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 16
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 16
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 18
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 4
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 96
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 20
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 260
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 4,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 4
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员2 3★",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 19,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 7,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 4,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 41,
+   "hook": "明天：逼近 n172 墙③",
+   "checkpoint": "—"
+  },
+  {
+   "day": 10,
+   "phase": "C",
+   "progress": {
+    "cleared": 171,
+    "newToday": 7,
+    "state": "卡墙③第1天",
+    "initWinBand": "墙③ 解题墙：无钥 0%·有钥 60%（钥匙差一件）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 1500
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 1500
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1100
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 17
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 17
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 36
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 4
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 112
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 22
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 290
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 4,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 4
+   },
+   "decisions": "钥匙赛跑：黑市 shardSmall 小包×1+专属池兑换并行（墙③=解题墙·攒工具天数就是卡墙天数）",
+   "growth": "主力4 A 阶",
+   "joy": "—",
+   "pinch": "钥匙件（墙③差 1 件克制工具·抽卡/黑市小件赛跑）",
+   "unlock": "—",
+   "side": {
+    "corridor": 20,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 8,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 4,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 52,
+   "hook": "明天：钥匙齐=墙③一把过（专属池兑换今晚到）",
+   "checkpoint": "⬥墙③（n172·解题墙）：矩阵 肝1/重1.5/普2/轻2.5 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 11,
+   "phase": "C",
+   "progress": {
+    "cleared": 186,
+    "newToday": 15,
+    "state": "破墙③",
+    "initWinBand": "钥匙齐→93% 一把过·走廊"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 1700
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 1700
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1200
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 18
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 18
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 54
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 4
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 128
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 24
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 320
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 4,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 4
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "护后排双钥匙齐（岩系+磐石系当量）=墙③钥",
+   "joy": "钥匙齐·墙③一把 93% 过（研究回报兑现=D3\"认真搭配值多少个百分点\"的体感版）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 21,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 8,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 4,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 42,
+   "hook": "明天：逼近 n204 墙④",
+   "checkpoint": "—"
+  },
+  {
+   "day": 12,
+   "phase": "C",
+   "progress": {
+    "cleared": 199,
+    "newToday": 13,
+    "state": "推进",
+    "initWinBand": "普通 75-85%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 1900
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 1900
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1300
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 19
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 19
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 12
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 5
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 144
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 26
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 350
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 5,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 5
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力4 S 阶·首个宝库心愿单立项",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 23,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 8,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 5,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 40,
+   "hook": "明天：逼近 n204 墙④",
+   "checkpoint": "—"
+  },
+  {
+   "day": 13,
+   "phase": "C",
+   "progress": {
+    "cleared": 203,
+    "newToday": 4,
+    "state": "卡墙④第1天",
+    "initWinBand": "墙④ 3-6%（S 阶差半步）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 2100
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 2100
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1400
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 20
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 20
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 30
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 5
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 160
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 28
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 380
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 5,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 5
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员3 3★",
+   "joy": "—",
+   "pinch": "合金+专属碎片（S 阶双线冲刺）",
+   "unlock": "—",
+   "side": {
+    "corridor": 24,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 9,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 5,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 50,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "⬥墙④（n204·战力墙）：矩阵 肝1/重2/普2.5/轻3 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 14,
+   "phase": "C",
+   "progress": {
+    "cleared": 217,
+    "newToday": 14,
+    "state": "破墙④",
+    "initWinBand": "破墙 15%→走廊 88%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 2300
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 2300
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1500
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 21
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 21
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 54
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 6
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 176
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 30
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 410
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 6,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 6
+   },
+   "decisions": "宝石 120 兑流通核①（宝库首兑·先流通后毕业=毕业核留 D40+）",
+   "growth": "主力5 A 阶·流通核① 到手",
+   "joy": "破墙④暴推（一晚积蓄一口气兑现）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 26,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 9,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 6,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 41,
+   "hook": "明天：逼近 n234 墙⑤",
+   "checkpoint": "—"
+  },
+  {
+   "day": 15,
+   "phase": "C",
+   "progress": {
+    "cleared": 229,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 75-85%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 2500
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 2500
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1600
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 22
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 22
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 72
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 6
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 192
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 32
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 440
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 6,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 6
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力1 L40 技能强化 II",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 27,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 10,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 6,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：SS① 终极质变（1000 碎就差一口）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 16,
+   "phase": "C",
+   "progress": {
+    "cleared": 233,
+    "newToday": 4,
+    "state": "卡墙⑤第1天",
+    "initWinBand": "墙⑤ 连战墙 4%（第二遍血线崩）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 2200,
+     "spend": 2000,
+     "balance": 2700
+    },
+    "hullAlloy": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 2700
+    },
+    "pilotToken": {
+     "income": 2400,
+     "spend": 2300,
+     "balance": 1700
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 29,
+     "balance": 23
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 29,
+     "balance": 23
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 30
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 7
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 208
+    },
+    "supplyTicket": {
+     "income": 60,
+     "spend": 58,
+     "balance": 34
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 1,
+     "spend": 1,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 520,
+     "spend": 490,
+     "balance": 470
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力1 专属清空→SS①（-1000）",
+    "plugins": {
+     "cores": 7,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 7
+   },
+   "decisions": "SS① 冲刺：通碎 1:1 全转主力1+黑市 uniPack·1000 碎大关",
+   "growth": "★SS①（主力1 终极质变·全队跳变）",
+   "joy": "SS① 终极质变（回打旧墙提速对比=质变体感≥描述）",
+   "pinch": "专属碎片 1000（SS① 门槛=最大单笔）",
+   "unlock": "—",
+   "side": {
+    "corridor": 28,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 10,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 7,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 50,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "⬥墙⑤（n234·连战墙）：矩阵 肝1.5/重2/普3/轻3.5 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 17,
+   "phase": "D",
+   "progress": {
+    "cleared": 247,
+    "newToday": 14,
+    "state": "破墙⑤",
+    "initWinBand": "SS① 到手→破墙 18%→走廊 90%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 2900
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 2900
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 1900
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 24
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 24
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 52
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 7
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 228
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 36
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 510
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 7,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 7
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员1 4★",
+   "joy": "破墙⑤暴推（一晚积蓄一口气兑现）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 30,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 11,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 7,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 41,
+   "hook": "明天：员1 5★（首个满星）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 18,
+   "phase": "D",
+   "progress": {
+    "cleared": 259,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 75-85%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 3100
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 3100
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 2100
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 25
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 25
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 74
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 8
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 120,
+     "balance": 128
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 38
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 550
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 8,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 8
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★员1 5★（能力终极质变）",
+   "joy": "员1 5★ 终极质变",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 31,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 11,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 8,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n264 墙⑥",
+   "checkpoint": "—"
+  },
+  {
+   "day": 19,
+   "phase": "D",
+   "progress": {
+    "cleared": 263,
+    "newToday": 4,
+    "state": "卡墙⑥第1天",
+    "initWinBand": "墙⑥ 0-4%（召唤海淹后排）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 3300
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 3300
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 2300
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 26
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 26
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 96
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 8
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 148
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 40
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 590
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 8,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 8
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力5 S 阶",
+   "joy": "—",
+   "pinch": "工程舰专属碎片（反召唤钥培养）",
+   "unlock": "—",
+   "side": {
+    "corridor": 33,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 12,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 8,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 50,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "⬥墙⑥（n264·机制墙）：矩阵 肝2/重2.5/普3/轻4 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 20,
+   "phase": "D",
+   "progress": {
+    "cleared": 263,
+    "newToday": 0,
+    "state": "卡墙⑥第2天",
+    "initWinBand": "偷鸡 6-9%（差反召唤钥匙）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 3500
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 3500
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 2500
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 27
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 27
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 118
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 8
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 168
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 42
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 630
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 8,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 8
+   },
+   "decisions": "工程舰现培养（钥匙现培养 1-2 天=n102 三层②层的自证）·星贝改囤（大件 128 差口）",
+   "growth": "反召唤钥匙（工程舰培养 1-2 天=n102 三层第②层节奏）",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 34,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 12,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 8,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 46,
+   "hook": "明天：破墙⑥+sf05 爽段开门",
+   "checkpoint": "—"
+  },
+  {
+   "day": 21,
+   "phase": "D",
+   "progress": {
+    "cleared": 276,
+    "newToday": 13,
+    "state": "破墙⑥",
+    "initWinBand": "破墙 14%→sf05 开门爽段"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 3700
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 3700
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 2700
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 28
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 28
+    },
+    "coreFrag": {
+     "income": 28,
+     "spend": 0,
+     "balance": 146
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 9
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 188
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 44
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 670
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力2 专属清空→SS②",
+    "plugins": {
+     "cores": 9,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 9
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★SS②（主力2）",
+   "joy": "SS②+sf05 爽段开门",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 35,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 12,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 9,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 40,
+   "hook": "明天：逼近 n296 高潮仗",
+   "checkpoint": "—"
+  },
+  {
+   "day": 22,
+   "phase": "D",
+   "progress": {
+    "cleared": 288,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "爽段 82-92%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 3900
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 3900
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 2900
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 29
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 29
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 168
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 9
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 208
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 46
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 710
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 9,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 9
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员2 4★",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 37,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 13,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 9,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n296 高潮仗",
+   "checkpoint": "—"
+  },
+  {
+   "day": 23,
+   "phase": "D",
+   "progress": {
+    "cleared": 300,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "爽段 82-92%（高潮③ n296 碾轧演出 45% 两把过）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 4100
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 4100
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 3100
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 30
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 30
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 190
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 9
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 228
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 48
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 750
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 9,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 9
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员3 4★",
+   "joy": "高潮③碾轧演出（阵容成型的舞台）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 38,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 13,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 9,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 24,
+   "phase": "D",
+   "progress": {
+    "cleared": 312,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "爽段 80-90%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 4300
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 4300
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 3300
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 31
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 31
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 60,
+     "balance": 152
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 10
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 248
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 50
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 790
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 10,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 10
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "主力1 L50 王牌徽记（大节点⑤·满级仪式）",
+   "joy": "L50 王牌徽记（首个满级仪式）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 40,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 14,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 10,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n328 墙⑦",
+   "checkpoint": "—"
+  },
+  {
+   "day": 25,
+   "phase": "D",
+   "progress": {
+    "cleared": 324,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 75-85%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 4500
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 4500
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 3500
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 32
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 32
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 174
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 10
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 268
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 52
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 830
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 10,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 10
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员2 5★",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 41,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 14,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 10,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n328 墙⑦",
+   "checkpoint": "—"
+  },
+  {
+   "day": 26,
+   "phase": "D",
+   "progress": {
+    "cleared": 327,
+    "newToday": 3,
+    "state": "卡墙⑦第1天",
+    "initWinBand": "墙⑦ 解题墙：无双钥 0%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 4700
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 4700
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 3700
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 33
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 33
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 0,
+     "balance": 196
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 11
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 120,
+     "balance": 168
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 54
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 870
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 11,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 11
+   },
+   "decisions": "合成开赌：传奇×2 同槽 40% 塔·首赌不锁（锁价 180 留给身份件）·失败→#12 返还副槽",
+   "growth": "插件合成开赌（传奇→+ 首试）",
+   "joy": "—",
+   "pinch": "双钥匙（墙⑦·合成材料凑第二钥）",
+   "unlock": "—",
+   "side": {
+    "corridor": 42,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 15,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 11,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 49,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "⬥墙⑦（n328·解题墙）：矩阵 肝2/重3/普4/轻5 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 27,
+   "phase": "D",
+   "progress": {
+    "cleared": 327,
+    "newToday": 0,
+    "state": "卡墙⑦第2天",
+    "initWinBand": "一钥在手 3-6%（第二钥合成中）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 4900
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 4900
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 3900
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 34
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 34
+    },
+    "coreFrag": {
+     "income": 22,
+     "spend": 60,
+     "balance": 158
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 12
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 188
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 56
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 910
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 12,
+     "legendPlus": 0,
+     "legendPP": 0
+    },
+    "coresOwned": 12
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "净化+护罩双钥合成（30 碎合成通道当量）",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 44,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 15,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 12,
+    "legendPlus": 0,
+    "legendPP": 0
+   },
+   "minutes": 46,
+   "hook": "明天：双钥齐破墙⑦+首件传奇+ 在望",
+   "checkpoint": "—"
+  },
+  {
+   "day": 28,
+   "phase": "D",
+   "progress": {
+    "cleared": 340,
+    "newToday": 13,
+    "state": "破墙⑦",
+    "initWinBand": "双钥齐 90% 过·走廊"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3200,
+     "spend": 3000,
+     "balance": 5100
+    },
+    "hullAlloy": {
+     "income": 5200,
+     "spend": 5000,
+     "balance": 5100
+    },
+    "pilotToken": {
+     "income": 3500,
+     "spend": 3300,
+     "balance": 4100
+    },
+    "shipBlueprint": {
+     "income": 34,
+     "spend": 33,
+     "balance": 35
+    },
+    "pilotShardUniversal": {
+     "income": 34,
+     "spend": 33,
+     "balance": 35
+    },
+    "coreFrag": {
+     "income": 28,
+     "spend": 0,
+     "balance": 186
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 13
+    },
+    "starGem": {
+     "income": 20,
+     "spend": 0,
+     "balance": 208
+    },
+    "supplyTicket": {
+     "income": 62,
+     "spend": 60,
+     "balance": 58
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 600,
+     "spend": 560,
+     "balance": 950
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 13,
+     "legendPlus": 1,
+     "legendPP": 0
+    },
+    "coresOwned": 13
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "首件传奇+ 到手（合成研究开门）",
+   "joy": "首件传奇+（合成赌局首爆）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 45,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 16,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 13,
+    "legendPlus": 1,
+    "legendPP": 0
+   },
+   "minutes": 40,
+   "hook": "明天：逼近 n364 墙⑧",
+   "checkpoint": "—"
+  },
+  {
+   "day": 29,
+   "phase": "E",
+   "progress": {
+    "cleared": 352,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 72-82%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 5500
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 5400
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 4300
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 36
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 36
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 210
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 13
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 230
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 60
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 990
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 13,
+     "legendPlus": 1,
+     "legendPP": 0
+    },
+    "coresOwned": 13
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 47,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 16,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 13,
+    "legendPlus": 1,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n364 墙⑧",
+   "checkpoint": "—"
+  },
+  {
+   "day": 30,
+   "phase": "E",
+   "progress": {
+    "cleared": 363,
+    "newToday": 11,
+    "state": "卡墙⑧第1天",
+    "initWinBand": "墙⑧ 2-5%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 5900
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 5700
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 4500
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 37
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 37
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 234
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 14
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 180,
+     "balance": 72
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 62
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1030
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 14,
+     "legendPlus": 1,
+     "legendPP": 0
+    },
+    "coresOwned": 14
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "流通核复购 ×1.5（宝库）",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 48,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 17,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 14,
+    "legendPlus": 1,
+    "legendPP": 0
+   },
+   "minutes": 56,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "⬥墙⑧（n364·战力墙）：矩阵 肝2.5/重3/普4/轻5.5 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 31,
+   "phase": "E",
+   "progress": {
+    "cleared": 363,
+    "newToday": 0,
+    "state": "卡墙⑧第2天",
+    "initWinBand": "卡墙 3-6%（SS③ 碎片冲刺）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 6300
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 6000
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 4700
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 38
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 38
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 258
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 14
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 94
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 64
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1070
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力3 专属 ≈700/1000（黑市舰包+专属池并轨冲刺）",
+    "plugins": {
+     "cores": 14,
+     "legendPlus": 2,
+     "legendPP": 0
+    },
+    "coresOwned": 14
+   },
+   "decisions": "黑市大件·舰包 128 计数拍下（SS③ 冲刺主引擎）·星贝锁定合成×1（180 星贝锁主槽身份）",
+   "growth": "SS③ 碎片冲刺（黑市小件包+专属池兑换）",
+   "joy": "—",
+   "pinch": "SS③ 专属碎片 1000（黑市小件包+专属池兑换双管）",
+   "unlock": "—",
+   "side": {
+    "corridor": 49,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 17,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 14,
+    "legendPlus": 2,
+    "legendPP": 0
+   },
+   "minutes": 46,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 32,
+   "phase": "E",
+   "progress": {
+    "cleared": 363,
+    "newToday": 0,
+    "state": "卡墙⑧第2.5天",
+    "initWinBand": "偷鸡 8%（半天）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 6700
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 6300
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 4900
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 39
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 39
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 282
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 14
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 116
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 66
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1110
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 14,
+     "legendPlus": 2,
+     "legendPP": 0
+    },
+    "coresOwned": 14
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 51,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 17,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 14,
+    "legendPlus": 2,
+    "legendPP": 0
+   },
+   "minutes": 46,
+   "hook": "明天：SS③ 到手=毕业队形成",
+   "checkpoint": "—"
+  },
+  {
+   "day": 33,
+   "phase": "E",
+   "progress": {
+    "cleared": 376,
+    "newToday": 13,
+    "state": "破墙⑧",
+    "initWinBand": "SS③ 到手→破墙 16%→走廊 88%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 7100
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 6600
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 5100
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 40
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 40
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 60,
+     "balance": 246
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 15
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 138
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 68
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1150
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力3 清空→SS③",
+    "plugins": {
+     "cores": 15,
+     "legendPlus": 2,
+     "legendPP": 0
+    },
+    "coresOwned": 15
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★SS③（毕业队形 3SS 成）",
+   "joy": "SS③=毕业队形成",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 52,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 18,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 15,
+    "legendPlus": 2,
+    "legendPP": 0
+   },
+   "minutes": 40,
+   "hook": "明天：逼近 n400 墙⑨",
+   "checkpoint": "—"
+  },
+  {
+   "day": 34,
+   "phase": "E",
+   "progress": {
+    "cleared": 388,
+    "newToday": 12,
+    "state": "推进",
+    "initWinBand": "普通 70-80%"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 7500
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 6900
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 5300
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 41
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 41
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 270
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 15
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 160
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 70
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1190
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 15,
+     "legendPlus": 2,
+     "legendPP": 0
+    },
+    "coresOwned": 15
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员4 4★",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 54,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 18,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 15,
+    "legendPlus": 2,
+    "legendPP": 0
+   },
+   "minutes": 39,
+   "hook": "明天：逼近 n400 墙⑨",
+   "checkpoint": "—"
+  },
+  {
+   "day": 35,
+   "phase": "E",
+   "progress": {
+    "cleared": 399,
+    "newToday": 11,
+    "state": "卡墙⑨第1天",
+    "initWinBand": "终墙 0-3%（三阶段综合）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 7900
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 7200
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 5500
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 42
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 42
+    },
+    "coreFrag": {
+     "income": 30,
+     "spend": 0,
+     "balance": 300
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 16
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 182
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 72
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1230
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 16,
+     "legendPlus": 2,
+     "legendPP": 0
+    },
+    "coresOwned": 16
+   },
+   "decisions": "终墙研究夜：四层瀑布逐层对比（换核/换附加条/换站位）·星贝锁定三连赌",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "全维（终墙=全队终装配·星贝锁定合成三连赌）",
+   "unlock": "—",
+   "side": {
+    "corridor": 55,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 19,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 16,
+    "legendPlus": 2,
+    "legendPP": 0
+   },
+   "minutes": 56,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "⬥墙⑨（n400·连战墙（综合终墙））：矩阵 肝3/重4/普5/轻6 天·全档 ≤7 硬顶"
+  },
+  {
+   "day": 36,
+   "phase": "E",
+   "progress": {
+    "cleared": 399,
+    "newToday": 0,
+    "state": "卡墙⑨第2天",
+    "initWinBand": "卡墙 4-7%（全队终装配研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 8300
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 7500
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 5700
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 43
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 43
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 60,
+     "balance": 264
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 17
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 204
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 74
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1270
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 17,
+     "legendPlus": 3,
+     "legendPP": 0
+    },
+    "coresOwned": 17
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "全队 L50 上下·终装配研究",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 56,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 19,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 17,
+    "legendPlus": 3,
+    "legendPP": 0
+   },
+   "minutes": 46,
+   "hook": "明天：继续攒破墙资本（差距在缩小）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 37,
+   "phase": "E",
+   "progress": {
+    "cleared": 399,
+    "newToday": 0,
+    "state": "卡墙⑨第2.5天",
+    "initWinBand": "偷鸡 9%（差一口爆发）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 8700
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 7800
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 5900
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 44
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 44
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 288
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 17
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 226
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 76
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1310
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 17,
+     "legendPlus": 3,
+     "legendPP": 0
+    },
+    "coresOwned": 17
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "毕业阵容定稿（3SS+2S/2×5★+3×4★=A2 毕业态）",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 58,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 17,
+    "legendPlus": 3,
+    "legendPP": 0
+   },
+   "minutes": 46,
+   "hook": "明天：毕业决战（全队终装配完毕）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 38,
+   "phase": "E",
+   "progress": {
+    "cleared": 400,
+    "newToday": 1,
+    "state": "破墙⑨",
+    "initWinBand": "毕业战 13% 磨四把过——通关！"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 9100
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 8100
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 6100
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 45
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 45
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 312
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 17
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 248
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 78
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 4,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 1080,
+     "spend": 640,
+     "balance": 1750
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 17,
+     "legendPlus": 3,
+     "legendPP": 0
+    },
+    "coresOwned": 17
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★毕业！n400 首通",
+   "joy": "毕业！终墙三阶段决战磨四把过（60 天世界最大爽点）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 59,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 17,
+    "legendPlus": 3,
+    "legendPP": 0
+   },
+   "minutes": 29,
+   "hook": "明天起：长线期开门（毕业核/专属舰/传奇++/图鉴冲顶排队上桌）",
+   "checkpoint": "⬥检查点：毕业 D38 ∈ 肝≈40 上界 ✓（毕业日矩阵 40/48/60/73 的天花板线）"
+  },
+  {
+   "day": 39,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 9300
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 8400
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 6300
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 47
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 47
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 330
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 17
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 270
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 82
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 1800
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 17,
+     "legendPlus": 3,
+     "legendPP": 0
+    },
+    "coresOwned": 17
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 61,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 17,
+    "legendPlus": 3,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 40,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 9500
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 8700
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 6500
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 49
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 49
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 348
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 18
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 200,
+     "balance": 92
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 86
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 1850
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 18,
+     "legendPlus": 3,
+     "legendPP": 0
+    },
+    "coresOwned": 18
+   },
+   "decisions": "毕业核①+专属舰①（宝库 200×2 档期错开）",
+   "growth": "专属舰①（宝库 200）",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 62,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 18,
+    "legendPlus": 3,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 41,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 9700
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 9000
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 6700
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 51
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 51
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 366
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 18
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 114
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 90
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 1900
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 18,
+     "legendPlus": 4,
+     "legendPP": 0
+    },
+    "coresOwned": 18
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 63,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 18,
+    "legendPlus": 4,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 42,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 9900
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 9300
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 6900
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 53
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 53
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 390
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 19
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 136
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 94
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 1950
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 19,
+     "legendPlus": 4,
+     "legendPP": 0
+    },
+    "coresOwned": 19
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "传奇+ 第 3 件",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 65,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 19,
+    "legendPlus": 4,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 43,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 10100
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 9600
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 7100
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 55
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 55
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 408
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 19
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 158
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 98
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2000
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 19,
+     "legendPlus": 4,
+     "legendPP": 0
+    },
+    "coresOwned": 19
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 66,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 19,
+    "legendPlus": 4,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 44,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 10300
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 9900
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 7300
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 57
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 57
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 366
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 20
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 180
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 102
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2050
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "SS④ 同径",
+    "plugins": {
+     "cores": 20,
+     "legendPlus": 4,
+     "legendPP": 0
+    },
+    "coresOwned": 20
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★SS④（第 4 只·冲顶里程碑）",
+   "joy": "SS④（冲顶）",
+   "pinch": "SS④ 碎片（冲顶节奏挤压）",
+   "unlock": "—",
+   "side": {
+    "corridor": 68,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 20,
+    "legendPlus": 4,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 45,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 10500
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 10200
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 7500
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 59
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 59
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 384
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 20
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 202
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 106
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2100
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 20,
+     "legendPlus": 4,
+     "legendPP": 0
+    },
+    "coresOwned": 20
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 69,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 20,
+    "legendPlus": 4,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：养成节点（员5 5★? 不——全员…）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 46,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 10700
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 10500
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 7700
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 61
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 61
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 402
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 20
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 224
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 110
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2150
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 20,
+     "legendPlus": 5,
+     "legendPP": 0
+    },
+    "coresOwned": 20
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "员5 5★? 不——全员 5★ 冲刺中",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 70,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 20,
+    "legendPlus": 5,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 47,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 10900
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 10800
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 7900
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 63
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 63
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 420
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 20
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 246
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 114
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2200
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 20,
+     "legendPlus": 5,
+     "legendPP": 0
+    },
+    "coresOwned": 20
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 72,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 20,
+    "legendPlus": 5,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 48,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 11100
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 11100
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 8100
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 65
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 65
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 378
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 21
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 268
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 118
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2250
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 21,
+     "legendPlus": 5,
+     "legendPP": 0
+    },
+    "coresOwned": 21
+   },
+   "decisions": "++ 赌局：先合满意的 +（锁 2 条）再升 ++（只赌第 3 条）=分层锁定研究路径",
+   "growth": "传奇++ 首件（20% 塔首爆·极品组合研究起步）",
+   "joy": "传奇++ 首爆（20% 塔·极品组合研究开门）",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 73,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 21,
+    "legendPlus": 5,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 49,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 11300
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 11400
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 8300
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 67
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 67
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 402
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 22
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 290
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 122
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2300
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 22,
+     "legendPlus": 5,
+     "legendPP": 0
+    },
+    "coresOwned": 22
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 75,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 22,
+    "legendPlus": 5,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 50,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 11500
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 11700
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 8500
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 69
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 69
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 420
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 23
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 200,
+     "balance": 112
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 126
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2350
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 23,
+     "legendPlus": 5,
+     "legendPP": 0
+    },
+    "coresOwned": 23
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "专属舰②",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 76,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 23,
+    "legendPlus": 5,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 51,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 11700
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 12000
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 8700
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 71
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 71
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 438
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 23
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 134
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 130
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2400
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 23,
+     "legendPlus": 6,
+     "legendPP": 0
+    },
+    "coresOwned": 23
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 77,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 23,
+    "legendPlus": 6,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 52,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 11900
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 12300
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 8900
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 73
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 73
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 396
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 24
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 156
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 134
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2450
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "SS⑤ 同径",
+    "plugins": {
+     "cores": 24,
+     "legendPlus": 6,
+     "legendPP": 0
+    },
+    "coresOwned": 24
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★SS⑤（第 5 只）",
+   "joy": "SS⑤",
+   "pinch": "SS⑤ 碎片（图鉴冲顶）",
+   "unlock": "—",
+   "side": {
+    "corridor": 79,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 24,
+    "legendPlus": 6,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 53,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 12100
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 12600
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 9100
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 75
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 75
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 414
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 24
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 178
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 138
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2500
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 24,
+     "legendPlus": 6,
+     "legendPP": 0
+    },
+    "coresOwned": 24
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 80,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 24,
+    "legendPlus": 6,
+    "legendPP": 0
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 54,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 12300
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 12900
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 9300
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 77
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 77
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 432
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 24
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 200
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 142
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2550
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 24,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 24
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 82,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 24,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 55,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 12500
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 13200
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 9500
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 79
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 79
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 390
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 25
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 222
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 146
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2600
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 25,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 25
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★全员 5★",
+   "joy": "全员 5★",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 83,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 25,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "明天：新星核到手",
+   "checkpoint": "—"
+  },
+  {
+   "day": 56,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 12700
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 13500
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 9700
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 81
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 81
+    },
+    "coreFrag": {
+     "income": 24,
+     "spend": 0,
+     "balance": 414
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 26
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 244
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 150
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2650
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 26,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 26
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 84,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 26,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 57,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 12900
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 13800
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 9900
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 83
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 83
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 432
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 26
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 266
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 154
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2700
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 26,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 26
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 86,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 26,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "明天：第 16 颗核=图鉴集齐仪式",
+   "checkpoint": "—"
+  },
+  {
+   "day": 58,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 13100
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 14100
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 10100
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 85
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 85
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 60,
+     "balance": 390
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 27
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 288
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 158
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2750
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 27,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 27
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "★第 16 颗星核=图鉴集齐（收集毕业）",
+   "joy": "第 16 核=图鉴集齐",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 87,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 27,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "明天：暴推段继续（走廊没走完）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 59,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 13300
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 14400
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 10300
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 87
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 87
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 408
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 27
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 310
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 162
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2800
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 27,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 27
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "—",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 89,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 27,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "明天：养成节点（长线稳态：传奇++ 组合…）",
+   "checkpoint": "—"
+  },
+  {
+   "day": 60,
+   "phase": "F",
+   "progress": {
+    "cleared": 400,
+    "newToday": 0,
+    "state": "推进",
+    "initWinBand": "毕业后长线期（回廊/悬赏/黑市/合成研究）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 3600,
+     "spend": 3400,
+     "balance": 13500
+    },
+    "hullAlloy": {
+     "income": 5600,
+     "spend": 5300,
+     "balance": 14700
+    },
+    "pilotToken": {
+     "income": 3800,
+     "spend": 3600,
+     "balance": 10500
+    },
+    "shipBlueprint": {
+     "income": 30,
+     "spend": 28,
+     "balance": 89
+    },
+    "pilotShardUniversal": {
+     "income": 30,
+     "spend": 28,
+     "balance": 89
+    },
+    "coreFrag": {
+     "income": 18,
+     "spend": 0,
+     "balance": 426
+    },
+    "fullCore": {
+     "income": 0,
+     "spend": 0,
+     "balance": 27
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 332
+    },
+    "supplyTicket": {
+     "income": 56,
+     "spend": 52,
+     "balance": 166
+    },
+    "beaconCommon": {
+     "income": 7,
+     "spend": 7,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 4,
+     "spend": 4,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 2,
+     "spend": 2,
+     "balance": 2
+    },
+    "starCargo": {
+     "income": 700,
+     "spend": 650,
+     "balance": 2850
+    },
+    "adTicket": {
+     "income": 5,
+     "spend": 5,
+     "balance": 0
+    }
+   },
+   "outsideWallet": {
+    "exclusiveShardsNote": "主力线平稳积攒（沉淀池滚存）",
+    "plugins": {
+     "cores": 27,
+     "legendPlus": 6,
+     "legendPP": 1
+    },
+    "coresOwned": 27
+   },
+   "decisions": "常规最优序：通碎→当前瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎够 60 即开蛋",
+   "growth": "长线稳态：传奇++ 组合研究/黑市周期大件/回廊冲层",
+   "joy": "—",
+   "pinch": "—",
+   "unlock": "—",
+   "side": {
+    "corridor": 90,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 20,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1
+    },
+    "counterToday": 16,
+    "natural": 11,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 27,
+    "legendPlus": 6,
+    "legendPP": 1
+   },
+   "minutes": 28,
+   "hook": "长线稳态循环确立（每 2-3 天一个账面大事件持续）",
+   "checkpoint": "⬥检查点：零广告可毕业/跨期追赶=另跑口径（2b 四档线复验·本表=天花板单线）"
+  }
+ ]
+}
