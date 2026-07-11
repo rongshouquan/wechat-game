@@ -65,7 +65,9 @@ export function loadPressure(): number[] {
 // ===== ① 阵容生成器（第一段框架消费者）=====
 
 /** 战力公式 v0＝S7PowerRating 单一真源（段三躯干统一：本地复制退役）。 */
-const TIER_LV_CAP = { C: 20, B: 40, A: 60, S: 80, SS: 100 } as const;
+// 段二 A3：等级上限 100→50（C10/B20/A30/S40/SS50·与 S7UnitTierState/TRUTHS 同改）——
+// 旧百级表喂给已截断的 shipPowerV0 会让 L51+ 全夹到 LF(50)＝反解搜索静默失真，必须同步。
+const TIER_LV_CAP = { C: 10, B: 20, A: 30, S: 40, SS: 50 } as const;
 type Tier = keyof typeof TIER_LV_CAP;
 const TIERS: Tier[] = ['C', 'B', 'A', 'S', 'SS'];
 
@@ -108,7 +110,7 @@ export function solveGrowthPlan(targetTeamPower: number): GrowthPlan {
     const plugins = TIER_PLUGINS[tier];
     const withCore = tier === 'S' || tier === 'SS';
     const pilotStar = TIER_STAR[tier];
-    // 段三保真度：升阶保级——真实玩家满级才升阶（B 从 20 级起、SS 从 80 级起），
+    // 段三保真度：升阶保级——真实玩家满级才升阶（L50 世界：B 从 10 级起、SS 从 40 级起），
     // 放开 lv=1 会解出"SS低等级"纸面高实际弱的幽灵方案（×1.15 反而输的量化悬崖实证）。
     const tierIdx0 = TIERS.indexOf(tier);
     const lvFloor = tierIdx0 === 0 ? 1 : TIER_LV_CAP[TIERS[tierIdx0 - 1]];

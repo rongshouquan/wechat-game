@@ -7,14 +7,14 @@
 /** 单位等级下界（任何单位至少 1 级）。 */
 export const S7_UNIT_MIN_LEVEL = 1;
 /**
- * 单位等级绝对上界（Ron 2026-07-03「取消建筑卡等级」拍板：上限只由阶级/星级决定，SS/5★=100 为全局天花板）。
- * 每个单位的实际上限由阶级算（S7UnitTierState.shipLevelCapForTier / pilotLevelCapForStar：C20/B40/A60/S80/SS100）；
- * 这里的 100 只是"任何单位都不可能超过"的绝对红线（存档规范化 / setLevel 夹紧 / 成长曲线共用它防越界）。
- * ⚠️ 遗留（第三块数值校准）：upgrade_cost_param 与 growth_band_param 目前只铺到 40 级，41-100 段成本/曲线待补。
+ * 单位等级绝对上界（段二 A3·Ron 2026-07-11 晚拍板：上限 100→50 舰/员两线同改·SS/5★=50 为全局天花板）。
+ * 每个单位的实际上限由阶级算（S7UnitTierState.shipLevelCapForTier / pilotLevelCapForStar：C10/B20/A30/S40/SS50）；
+ * 这里的 50 只是"任何单位都不可能超过"的绝对红线（存档规范化 / setLevel 夹紧 / 成长曲线共用它防越界）。
+ * 51-100 段＝封存未来版本（growth_band/成本表/大节点 L60-100 内容数据保留不删，上限钳死即不可达）。
  */
-export const S7_UNIT_MAX_LEVEL = 100;
+export const S7_UNIT_MAX_LEVEL = 50;
 
-/** 单位等级状态：星舰 / 驾驶员各一本"id→等级(1..100)"账本。不在表内 = 默认 1 级。 */
+/** 单位等级状态：星舰 / 驾驶员各一本"id→等级(1..50)"账本。不在表内 = 默认 1 级。 */
 export interface S7UnitLevelState {
   shipLevels: Record<string, number>;
   pilotLevels: Record<string, number>;

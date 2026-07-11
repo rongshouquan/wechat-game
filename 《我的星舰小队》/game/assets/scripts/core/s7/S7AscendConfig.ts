@@ -1,8 +1,11 @@
 // 升阶/升星配置（纯 TS，不依赖 cc）：v1.0 §6 升阶(星舰)/升星(驾驶员) 的成本与战力涨幅。
 //
-// ⚠️ 全表 v0.1 占位（第二块「碎片经济 + 战力曲线」校准）：
-//   - 升阶/升星**只扣专属碎片**（Ron 2026-06-21）；通用碎片不直接抵扣，需在背包手动转成指定单位的专属碎片(见 convertUniversalToExclusive)。
-//   - 星舰 5 阶 C→B→A→S→SS：专属碎片量 C→B=20/B→A=40（设计给定 A级=60）·A→S/S→SS=占位；战力涨幅=占位。
+// 成本梯＝真源对齐（段二 2a·总控批发现①·2026-07-12）：50/100/300/1000 两线同梯——
+//   真源=GDD-附录D-星舰/驾驶员真源 §0＋细表 §6 支出侧＋机器真源 TRUTHS.shipAscendCost/pilotStarupCost
+//   （守卫=s7_power_rating_sync 对表测试）；旧 20/40/80/120·10/15/25/40=v0.1 占位从未过真源（git 可溯）。
+//   升阶/升星**只扣专属碎片**（Ron 2026-06-21）；通用碎片不直接抵扣，需在背包手动转成指定单位的专属碎片(见 convertUniversalToExclusive)。
+//   30 碎合成本体（获取通道·非升阶成本）＝挂工程灰盒批实装，与本表无关。
+// ⚠️ shipTierPowerPct/pilotStarPowerPct 仍为 v0.1 占位遗留字段（无运行时消费·战力走 S7PowerRating 刻度 v1），留待清理批。
 
 /** 星舰每阶升阶成本（index 0=C→B … 3=S→SS）：只扣专属碎片(该舰)。 */
 export interface S7ShipAscendCost { exclusiveShards: number; }
@@ -19,19 +22,19 @@ export interface S7AscendConfig {
 }
 
 export const DEFAULT_S7_ASCEND_CONFIG: S7AscendConfig = {
-  // 专属碎片：C→B=20、B→A=40（设计给定 A级总 60）；A→S/S→SS 占位递增。
+  // 专属碎片（真源梯·两线同值）：50/100/300/1000。
   shipTierStepCost: [
-    { exclusiveShards: 20 },  // C→B
-    { exclusiveShards: 40 },  // B→A
-    { exclusiveShards: 80 },  // A→S（占位）
-    { exclusiveShards: 120 }, // S→SS（占位）
+    { exclusiveShards: 50 },   // C→B
+    { exclusiveShards: 100 },  // B→A
+    { exclusiveShards: 300 },  // A→S
+    { exclusiveShards: 1000 }, // S→SS
   ],
-  // 驾驶员升星专属碎片（占位·递增）。
+  // 驾驶员升星专属碎片（与星舰同梯·真源 §0）。
   pilotStarStepCost: [
-    { exclusiveShards: 10 }, // 1★→2★
-    { exclusiveShards: 15 }, // 2★→3★
-    { exclusiveShards: 25 }, // 3★→4★
-    { exclusiveShards: 40 }, // 4★→5★
+    { exclusiveShards: 50 },   // 1★→2★
+    { exclusiveShards: 100 },  // 2★→3★
+    { exclusiveShards: 300 },  // 3★→4★
+    { exclusiveShards: 1000 }, // 4★→5★
   ],
   shipTierPowerPct: [0, 12, 28, 48, 72],  // C/B/A/S/SS
   pilotStarPowerPct: [0, 6, 14, 24, 36],  // 1★..5★

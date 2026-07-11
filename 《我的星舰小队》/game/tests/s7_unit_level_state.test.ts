@@ -14,8 +14,9 @@ import {
 describe('C1b 升级变强 步1 单位等级 S7UnitLevelState', () => {
   it('等级上下界常量；默认空账本', () => {
     expect(S7_UNIT_MIN_LEVEL).toBe(1);
-    // 取消建筑卡等级（Ron 2026-07-03）：绝对上限抬到 100（=SS/5★ 天花板；每单位实际上限由阶级算）。
-    expect(S7_UNIT_MAX_LEVEL).toBe(100);
+    // 段二 A3 重定基（旧→新→为什么对）：Ron 2026-07-11 晚拍板上限 100→50（51-100 段封存未来版本），
+    // 绝对天花板=SS/5★=50；每单位实际上限仍由阶级/星级算（C10..SS50）。
+    expect(S7_UNIT_MAX_LEVEL).toBe(50);
     expect(createDefaultS7UnitLevelState()).toEqual({ shipLevels: {}, pilotLevels: {} });
   });
 
@@ -27,12 +28,12 @@ describe('C1b 升级变强 步1 单位等级 S7UnitLevelState', () => {
     expect(getShipLevel(st, 'shp01')).toBe(7);
   });
 
-  it('set 夹紧到 [1,100] 并向下取整', () => {
+  it('set 夹紧到 [1,50] 并向下取整', () => {
     const st = createDefaultS7UnitLevelState();
     setShipLevel(st, 'shp01', 5);
     expect(getShipLevel(st, 'shp01')).toBe(5);
-    setShipLevel(st, 'shp01', 999); // 超上限 → 100
-    expect(getShipLevel(st, 'shp01')).toBe(100);
+    setShipLevel(st, 'shp01', 999); // 超上限 → 50（段二 A3·旧 100）
+    expect(getShipLevel(st, 'shp01')).toBe(50);
     setShipLevel(st, 'shp02', 0); // 低于下限 → 1
     expect(getShipLevel(st, 'shp02')).toBe(1);
     setShipLevel(st, 'shp03', 3.9); // 取整 → 3
@@ -43,13 +44,15 @@ describe('C1b 升级变强 步1 单位等级 S7UnitLevelState', () => {
     expect(getPilotLevel(st, 'pil01')).toBe(12);
   });
 
-  it('normalize：只留 [1,100] 整数；越界/非整数/脏键丢弃；两本账本独立', () => {
+  it('normalize：只留 [1,50] 整数；越界/非整数/脏键丢弃；两本账本独立', () => {
+    // 段二 A3 重定基：上限边界样例 100→50；51+ 越界丢弃（旧百级档在"上线全新档"口径下无生产迁移问题，
+    // 开发档越界值按脏数据丢弃回退=与既有 normalize 语义一致）。
     const out = normalizeS7UnitLevelState({
-      shipLevels: { shp01: 10, shp02: 0, shp03: 101, shp04: 2.5, shp05: 'x', '': 3 },
-      pilotLevels: { pil01: 100, pil02: 1 }, // 100=新上限边界，保留
+      shipLevels: { shp01: 10, shp02: 0, shp03: 51, shp04: 2.5, shp05: 'x', '': 3 },
+      pilotLevels: { pil01: 50, pil02: 1 }, // 50=新上限边界，保留
     });
-    expect(out.shipLevels).toEqual({ shp01: 10 }); // 0/101(越界)/2.5/'x'/空键 全丢
-    expect(out.pilotLevels).toEqual({ pil01: 100, pil02: 1 });
+    expect(out.shipLevels).toEqual({ shp01: 10 }); // 0/51(越界)/2.5/'x'/空键 全丢
+    expect(out.pilotLevels).toEqual({ pil01: 50, pil02: 1 });
   });
 
   it('normalize：容错非对象 / 缺字段 → 空账本', () => {

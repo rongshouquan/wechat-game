@@ -35,9 +35,11 @@ export const S7_PILOT_STAR_MULT = [1.0, 1.0, 1.08, 1.18, 1.3, 1.45] as const;
 export const S7_PILOT_STAR_POWER_MULT = [1.0, 1.0, 1.09, 1.27, 1.3, 1.65] as const;
 /** 【刻度定价专用·战斗侧禁用】驾驶员等级刻度系数（旧 0.01=纸面 2 倍虚标·实测单轴数值线折团队强度≈半）。 */
 export const S7_PILOT_LEVEL_POWER_COEF = 0.0036;
-/** 【刻度定价专用·战斗侧禁用】舰等级刻度因子表（下标 = 级−1·1..100）：
- *  ＝growth_band 每轴倍数 g(L)（与真机升级同源·v2 前陡形状）× 技能大节点门（L20 ×1.100 / L40 ×1.166·
- *  实测中位队五舰均值；L60/80/100 门实测≈0 收益→不加价保诚实）。同步守卫：tests 从 growth_band 重算比对。 */
+/** 【刻度定价专用·战斗侧禁用】舰等级刻度因子表（下标 = 级−1·1..50·段二 A3 截断——51-100 段封存未来版本，
+ *  旧 100 项全表见 git 历史）：＝growth_band 每轴倍数 g(L)（与真机升级同源·v2 前陡形状）× 技能大节点门
+ *  （L20 ×1.100 / L40 ×1.166·实测中位队五舰均值·两门在 L10-50 新节点带内原位保留；段二 A4 新增的
+ *  L10/L30/L50 三节点＝机制/演出型零强度→不加价保诚实=强度总预算守恒的机器体现）。
+ *  同步守卫：tests 从 growth_band 重算比对（1..50）。 */
 export const S7_LEVEL_GATE_POWER: Readonly<Record<number, number>> = { 20: 1.1, 40: 1.166 };
 export const S7_SHIP_LEVEL_POWER_FACTOR = [
   1, 1.0704, 1.1407, 1.2111, 1.2815, 1.3519, 1.4222, 1.4926, 1.563, 1.6333,
@@ -45,11 +47,6 @@ export const S7_SHIP_LEVEL_POWER_FACTOR = [
   2.2, 2.2224, 2.2448, 2.2672, 2.2897, 2.3121, 2.3344, 2.3569, 2.3793, 2.4016,
   2.42, 2.4424, 2.4648, 2.4872, 2.5097, 2.5321, 2.5544, 2.5769, 2.5993, 3.0568,
   3.0782, 3.1021, 3.1261, 3.1499, 3.1739, 3.1978, 3.2218, 3.2456, 3.2696, 3.2935,
-  3.3173, 3.3413, 3.3652, 3.3891, 3.413, 3.437, 3.4608, 3.4847, 3.5087, 3.5325,
-  3.5565, 3.5804, 3.6044, 3.6282, 3.6522, 3.6761, 3.6999, 3.7239, 3.7478, 3.7717,
-  3.7956, 3.8196, 3.8434, 3.8674, 3.8913, 3.9151, 3.9391, 3.963, 3.987, 4.0108,
-  4.0348, 4.0587, 4.0826, 4.1065, 4.1304, 4.1543, 4.1782, 4.2022, 4.226, 4.25,
-  4.2739, 4.2977, 4.3217, 4.3456, 4.3696, 4.3934, 4.4174, 4.4413, 4.4652, 4.4891,
 ] as const;
 /** 插件战力（品质档·本批未动）。 */
 export const S7_PLUGIN_POWER: Record<S7PluginQuality, number> = { fine: 15, superior: 35, legendary: 70 };
@@ -85,7 +82,8 @@ export interface S7ShipPowerInput {
  *  形状与 v0 同（插件在星乘区内、核在外）；三处换新：阶基值表 / 等级因子表 / 星刻度表＋驾级系数。 */
 export function shipPowerV0(input: S7ShipPowerInput): number {
   const tier = Math.max(0, Math.min(S7_TIER_POWER_BASE.length - 1, Math.floor(input.tier)));
-  const level = Math.max(1, Math.min(100, Math.floor(input.level)));
+  // 段二 A3：等级夹紧 100→50（=S7_UNIT_MAX_LEVEL·LF 表 51-100 段随封存截断）。
+  const level = Math.max(1, Math.min(S7_SHIP_LEVEL_POWER_FACTOR.length, Math.floor(input.level)));
   const base = S7_TIER_POWER_BASE[tier] * S7_SHIP_LEVEL_POWER_FACTOR[level - 1];
   const plug = input.pluginQualities.reduce((a, q) => a + (S7_PLUGIN_POWER[q] ?? 0), 0);
   const star = Math.max(0, Math.min(5, Math.floor(input.pilotStar)));

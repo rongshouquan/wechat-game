@@ -70,14 +70,16 @@ export function shipTierName(tier: number): string {
 }
 
 // ===== 等级上限（Ron 2026-07-03「取消建筑卡等级」拍板：等级上限只由阶级/星级决定，不再受船坞/训练舱楼级约束）=====
-/** 每阶/每星抬升的等级上限步长：C/1★=20、B/2★=40 … SS/5★=100（每级阶 +20）。 */
-export const UNIT_LEVEL_CAP_PER_RANK = 20;
-/** 星舰等级上限（按阶级）：C20 / B40 / A60 / S80 / SS100 =（tier+1）×20。 */
+// 段二 A3（Ron 2026-07-11 晚拍板）：等级上限 100→50 舰/员两线同改——51-100 段整体封存未来版本防膨胀
+// （growth_band/大节点 L60-100 内容原样保留在数据与代码里=封存态，上限钳死即不可达；解封=未来版本改回步长）。
+/** 每阶/每星抬升的等级上限步长：C/1★=10、B/2★=20 … SS/5★=50（每级阶 +10·旧 20=百级世界已封存）。 */
+export const UNIT_LEVEL_CAP_PER_RANK = 10;
+/** 星舰等级上限（按阶级）：C10 / B20 / A30 / S40 / SS50 =（tier+1）×10。 */
 export function shipLevelCapForTier(tier: number): number {
   const t = Math.max(SHIP_TIER_MIN, Math.min(SHIP_TIER_MAX, Math.floor(Number.isFinite(tier) ? tier : SHIP_TIER_MIN)));
   return (t + 1) * UNIT_LEVEL_CAP_PER_RANK;
 }
-/** 驾驶员等级上限（按星级·与星舰对称）：1★20 / 2★40 / 3★60 / 4★80 / 5★100 = star×20。 */
+/** 驾驶员等级上限（按星级·与星舰对称）：1★10 / 2★20 / 3★30 / 4★40 / 5★50 = star×10。 */
 export function pilotLevelCapForStar(star: number): number {
   const s = Math.max(PILOT_STAR_MIN, Math.min(PILOT_STAR_MAX, Math.floor(Number.isFinite(star) ? star : PILOT_STAR_MIN)));
   return s * UNIT_LEVEL_CAP_PER_RANK;
