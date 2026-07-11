@@ -15,7 +15,7 @@ import { S7AutoBattleResult } from '../assets/scripts/core/s7/S7AutoBattleTypes'
 import { createS7DefaultDryRunLineup } from '../assets/scripts/core/s7/S7DefaultBattleLineup';
 import { corridorTrickEffect } from '../assets/scripts/core/s7/S7CorridorTricks';
 import {
-  corridorLayerPlan, corridorBossNodeIds, S7CorridorEnemyPaletteEntry,
+  corridorLayerPlan, corridorBossNodeIds, corridorPaletteFrom, S7CorridorEnemyPaletteEntry,
 } from '../assets/scripts/core/s7/S7DeepCorridor';
 import {
   runCorridorBattle, corridorInlineEnemies, bossNodeInlineEnemies,
@@ -34,11 +34,11 @@ function loadBundle(): Bundle {
 async function runtimeOf(): Promise<S7ConfigRuntime> {
   return S7ConfigRuntime.load(createInMemoryS7TableReader(loadBundle()));
 }
-/** 回廊调色板（1x1 常规敌人·排除 2x2 头目单位）。 */
+/** 回廊调色板（对锚批：改走单源过滤器 corridorPaletteFrom——只收 bu_enemy_ 基础行+带三围）。 */
 function paletteOf(runtime: S7ConfigRuntime): S7CorridorEnemyPaletteEntry[] {
-  return runtime.getAll<{ targetType: string; rowId: string; roleTag: string; sizeRows: number; sizeCols: number }>('battle_unit_stat_param')
-    .filter((r) => r.targetType === 'enemy' && r.sizeRows === 1 && r.sizeCols === 1)
-    .map((r) => ({ unitStatRef: r.rowId, roleTag: r.roleTag }));
+  return corridorPaletteFrom(
+    runtime.getAll<{ targetType: string; rowId: string; roleTag: string; sizeRows: number; sizeCols: number; maxHp: number; attack: number; attackIntervalSec: number }>('battle_unit_stat_param'),
+  );
 }
 function bossIdsOf(runtime: S7ConfigRuntime): string[] {
   return corridorBossNodeIds(runtime.getAll<{ nodeId: string; nodeTypeTag: string }>('mainline_node_config'));

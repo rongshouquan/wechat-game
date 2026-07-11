@@ -545,8 +545,8 @@
     "targetType": "boss",
     "unitRef": "n060",
     "roleTag": "boss_swarm",
-    "maxHp": 47065,
-    "attack": 318,
+    "maxHp": 61509,
+    "attack": 519,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -558,7 +558,7 @@
     "ultimateEffectRef": "eff_ult_clear_barrage",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "n060 星盗大王（SF01群怪Boss，复用星盗系机制放大），占2x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=3622·§19映射)"
+    "note": "n060 星盗大王（SF01群怪Boss，复用星盗系机制放大），占2x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=3912·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -587,8 +587,8 @@
     "targetType": "boss",
     "unitRef": "n102",
     "roleTag": "boss_backline",
-    "maxHp": 73052,
-    "attack": 688,
+    "maxHp": 78413,
+    "attack": 742,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -600,7 +600,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "n102 废铁泰坦（SF03打后排Boss），占3x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=10804·§19映射)"
+    "note": "n102 废铁泰坦（SF03打后排Boss），占3x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=11668·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -608,8 +608,8 @@
     "targetType": "boss",
     "unitRef": "n120",
     "roleTag": "boss_summon",
-    "maxHp": 126183,
-    "attack": 1015,
+    "maxHp": 166561,
+    "attack": 1378,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -621,7 +621,7 @@
     "ultimateEffectRef": "eff_state_summon",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "n120 母舰指挥官（SF04召唤Boss，复用无人舰系机制放大），占2x3·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=16460·§19映射)"
+    "note": "n120 母舰指挥官（SF04召唤Boss，复用无人舰系机制放大），占2x3·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=16954·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2194,8 +2194,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 4224,
-    "attack": 68,
+    "maxHp": 5520,
+    "attack": 111,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2207,7 +2207,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n060 swarm·⑩落数(P=3622·§19映射·基=bu_enemy_swarm)"
+    "note": "n060 swarm·⑩落数(P=3912·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3286,8 +3286,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 13112,
-    "attack": 802,
+    "maxHp": 14074,
+    "attack": 866,
     "armor": 10,
     "attackIntervalSec": 3,
     "attackRangeCells": 99,
@@ -3299,7 +3299,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n102 backline·⑩落数(P=10804·§19映射·基=bu_enemy_backline)"
+    "note": "n102 backline·⑩落数(P=11668·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4210,8 +4210,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 21233,
-    "attack": 829,
+    "maxHp": 28027,
+    "attack": 1125,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4223,7 +4223,7 @@
     "ultimateEffectRef": "eff_n120_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n120 summon_source·⑩落数(P=16460·§19映射·基=bu_enemy_summon_source)"
+    "note": "n120 summon_source·⑩落数(P=16954·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4231,8 +4231,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 5824,
-    "attack": 122,
+    "maxHp": 7687,
+    "attack": 165,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4252,8 +4252,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 4853,
-    "attack": 102,
+    "maxHp": 6406,
+    "attack": 138,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,

@@ -136,6 +136,10 @@ export function corridorTrickEffect(trickId: S7CorridorTrickId): S7CorridorTrick
       break;
     case 'blitz':
       eff.timeLimitSec = BLITZ_TIME_LIMIT_SEC;
+      // 对锚批修锚：限时 40s（默认 120s 的 1/3）配血池 ×1/3——闪电战=同强度的"杀得快"DPS 检定，
+      // 不是三倍难度墙（批③报备2"L30 闪电战 32k 不可破"实证：满血池+40s=前沿队数学不可过，
+      // 回廊逐层强制通过制下它会卡死整条塔）。爆发流搭配仍显著更快=戏法识别度保留。
+      eff.enemyBlocks = [{ kind: 'modifier', stat: 'maxHp', op: 'pct', value: BLITZ_TIME_LIMIT_SEC / 120 - 1, source: src }];
       break;
     case 'iron_tide':
       eff.enemyBlocks = [{ kind: 'modifier', stat: 'armor', op: 'pct', value: IRON_TIDE_ARMOR_PCT, source: src }];

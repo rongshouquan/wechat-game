@@ -22,8 +22,15 @@ export const S7_PLUGIN_POWER: Record<S7PluginQuality, number> = { fine: 15, supe
 /** 星核战力（装了就计·质变强度不折算）。 */
 export const S7_CORE_POWER = 120;
 
-/** 玩家侧暴击基线（随机带宽"窄档"现行值·细表 §16c M8——真机/模拟同源，带宽换档改这一处）。 */
-export const S7_PLAYER_CRIT_BASE = { rate: 0.05, dmg: 0.5 } as const;
+/**
+ * 随机带宽基线（真机/模拟同源·带宽换档改这一处）。
+ * 中档转正（对锚与阶梯批·2026-07-10 Ron 拍板）：旧窄档 我方5%/×1.5+敌0 → 中档 我方15%/×1.75+敌10%/×1.5。
+ * 如实记：⑩§20.13 探针当时敌方只设 rate 未设 dmg（暴伤×1.0=空转），本批按拍板语义落真值——
+ * 敌伤期望比当时实测组 +5%，随段一墙循环重校一并吸收。
+ */
+export const S7_PLAYER_CRIT_BASE = { rate: 0.15, dmg: 0.75 } as const;
+/** 敌方全体暴击基线（含 Boss/敌方召唤物；玩家侧召唤物不吃——注入点按 side 判）。 */
+export const S7_ENEMY_CRIT_BASE = { rate: 0.1, dmg: 0.5 } as const;
 
 export interface S7ShipPowerInput {
   /** 阶级下标 0=C … 4=SS。 */

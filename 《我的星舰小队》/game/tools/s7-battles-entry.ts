@@ -256,6 +256,51 @@ export function genLineupCustom(opts: CustomLineupOpts): {
   return { lineup, teamPower: plan.shipPower * 5, plan };
 }
 
+/** 对锚与阶梯批 · 按经济尺真实养成态组队（爬坡矩阵消噪版）：
+ *  mains=经济尺 dailyMains/milestones 快照（[阶字母, 舰级, 驾星, 驾级] ×5·主力1 在首位），
+ *  逐舰用各自的阶/级/星组装（不做战力反解=没有相邻战力点跳组合的形状噪声）；
+ *  插件按各舰阶默认三档、核给首个 S+ 阶舰（经济尺"主力1 先冲 S 装核"口径）。 */
+export function genLineupFromMains(opts: {
+  ships: string[];
+  /** 阶位=经济尺原生数字下标（0=C..4=SS）或字母，两种都收。 */
+  mains: Array<[string | number, number, number, number]>;
+  coreId?: string;
+  slots?: string[];
+  slotPlugins?: string[];
+}): { lineup: S7BattleLineupUnitInput[]; teamPower: number } {
+  const slots = opts.slots ?? SLOTS;
+  const extra: S7EffectBlock[] = [
+    { kind: 'affix', affix: 'critRate', value: S7_PLAYER_CRIT_BASE.rate, source: 'crit_base' },
+    { kind: 'affix', affix: 'critDmg', value: S7_PLAYER_CRIT_BASE.dmg, source: 'crit_base' },
+  ];
+  const pluginIds = opts.slotPlugins ?? SLOT_PLUGINS;
+  const tierOf = (t: string | number): Tier =>
+    typeof t === 'number' ? TIERS[Math.max(0, Math.min(TIERS.length - 1, Math.floor(t)))] : (TIERS.includes(t as Tier) ? (t as Tier) : 'C');
+  const coreIdx = opts.mains.findIndex(([t]) => { const tt = tierOf(t); return tt === 'S' || tt === 'SS'; });
+  let teamPower = 0;
+  const lineup: S7BattleLineupUnitInput[] = opts.ships.map((shipId, i) => {
+    const [tierRaw, level, star, plevel] = opts.mains[i] ?? opts.mains[opts.mains.length - 1];
+    const tier = tierOf(tierRaw);
+    const tierIdx = TIERS.indexOf(tier);
+    const quals = TIER_PLUGINS[tier];
+    const withCore = i === coreIdx && !!opts.coreId;
+    teamPower += shipPowerOf(tier, level, quals, withCore, star, plevel);
+    return {
+      shipId,
+      slotRef: slots[i],
+      pilotId: pilotOfShip(shipId),
+      pilotLevel: plevel,
+      pilotStar: star,
+      shipTier: tierIdx,
+      ...(withCore ? { coreId: opts.coreId } : {}),
+      plugins: quals.map((q, j) => ({ pluginId: pluginIds[j], quality: q })),
+      shipLevel: level,
+      extraBlocks: extra,
+    };
+  });
+  return { lineup, teamPower };
+}
+
 // ===== ② 压力值 → 敌配属性映射 v0（规则成文=细表 §19）=====
 
 /** k 合同数字（批③段三躯干重校：玩家世界全接真〔舰阶质变+满天赋+插件+数值线〕后全局上抬——
@@ -292,10 +337,10 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
  *  n084/n138=余势墙零等待不加陡；n102 双威胁另有 adds 火力修（护后排克制工具=M4 未接线·复调记档）。 */
 const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
   // 批③段三重对（躯干重校后墙工况全体漂移·⑥法：到达态不过/破墙态过；余势墙=到达即爽）：
-  n060: { pool: 1.0, dps: 0.5 },  // 首真墙：旧 1.05/1.20 在新火压下=14.6s 团灭·破墙态也 0%（0.9 仍双 0%再拉）
+  n060: { pool: 1.41, dps: 0.885 }, // 对锚批爬坡重锚（初值表刷新后重收敛·φ台阶3622→3912反降7.3%记档）·偷鸡/+1越带=日步长12%>悬崖宽（结构性豁免）
   n102: { pool: 0.9, dps: 0.6 },   // 二值硬墙：旧 0.85/0.70 被新世界碾成 9s 奶油泡（1.0/1.0 仍 9.4s）·恢复"无工具贴线 0%/带工具过"二值
-  n120: { pool: 1.25, dps: 0.7 },  // 马拉松：旧 1.45/1.18 破墙态仍 0%（1.3/1.0 亦然·火再回）
-  n150: { pool: 1.5, dps: 0.75 },  // 毕业马拉松：新世界下形状正确（到达 0%→破墙 100% 实测）·保持
+  n120: { pool: 1.65, dps: 0.95 }, // 对锚批爬坡重锚：卡墙3.3%✓·破墙高样本8.3%贴带底→微松（终值实测见§16e）·+1=破墙爆发跳档越带（结构性）
+  n150: { pool: 1.5, dps: 0.75 }, // 毕业马拉松（批③段三终值·对锚批挂起重定档：真实养成态 2×SS/5★ 在任何数值倍率下 100%——v0 定价在 SS/5★ 段失真·方案候 Ron 拍·爬坡矩阵如实呈现两世界）
   n084: { pool: 0.5, dps: 0.55 }, // 余势墙：破大墙后爽段=到达即胜·旧 0.95 火在新世界杀穿（0.7/0.7=40% 不够爽）
   n138: { pool: 0.65, dps: 0.5 },  // 余势墙：同上
 };
@@ -308,7 +353,7 @@ const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number; at
   // 批③段三加 atkW 轴：二值机理=塔吃走火力预算（杂兵按权重守恒自动饿死）——
   // 无工具=塔尖峰点死后排（0%）·带嘲讽=尖峰全进铁壁、杂兵磨不死人（过）。
   // 全局 dps 刀分不开这两态（工具组 48s 死于杂兵磨血实证）。
-  n102: { bu_enemy_backline: { interval: 3.0, atkW: 3.0 } },
+  n102: { bu_enemy_backline: { interval: 3.0, atkW: 3.0 } }, // 对锚批钞门重校·int 2.2 试点=切奶节奏工具组8%坏案记档
 };
 /** Boss 行分成（血池/火力占比·余量归 adds）。 */
 const BOSS_SHARE = { hp: 0.65, dps: 0.3 }; // 首扫诊断：0.5 全压单点=前排瞬融·Boss=重锤节奏不是速射炮

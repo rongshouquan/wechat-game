@@ -84,6 +84,10 @@ function mechRig(opts: {
     addRowFrom(b, 'battle_unit_stat_param', 'bu_enemy_swarm', e.rowId, {
       maxHp: 100000, attack: 1, armor: 25, attackIntervalSec: 1, attackRangeCells: 9,
       targetingTag: 'nearest_random_tie',
+      // 对锚与阶梯批重定基（旧→新→为什么对）：敌方暴击基线转正（10%/×1.5·S7_ENEMY_CRIT_BASE）后，
+      // 手推精确期望值需要确定性敌伤——试验台按设计口子显式关基线（行字段=覆盖语义·0=关）。
+      // 基线本体的正向守卫=s7_battle_bandwidth.test.ts（专测·含变异探针面）。
+      baseCritRate: 0, baseCritDmg: 0,
       ...(e.overrides ?? {}),
     });
     enemyRefs.add(e.rowId);

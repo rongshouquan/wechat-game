@@ -41,8 +41,11 @@ describe('s7 battle entry - current node context', () => {
     expect(c.boss).toBeNull();
     expect(c.pressure.scope).toBe('normal');
     expect(c.pressure.pressureRefKey).toBe('sf01');
-    expect(c.pressure.min).toBe(45);   // 步5 重定基：显示带=v0.7 快照 sf01 普通段（旧占位带 200-1200 作废）
-    expect(c.pressure.max).toBe(2973);
+    // 对锚与阶梯批重定基（旧→新→为什么对）：Ron 拍板⑦"显示推荐=真实需求"——普通/精英改吃
+    // 逐节点行（min=max=校准压力真值·v0.8），星域带 45-2973 降级为回退路径。n001 真需求=45，
+    // 旧口径战前显示 (45+2973)/2=1509=早段虚标本体，本行钉死修正后的真值。
+    expect(c.pressure.min).toBe(45);
+    expect(c.pressure.max).toBe(45);
     expect(c.pressure.recommend).toBeNull();
     expect(c.pressure.secondaryPressureCap).toBe(1);
     expect(typeof c.pressure.templateModifier).toBe('number'); // 非 boss 有参考系数
@@ -60,8 +63,9 @@ describe('s7 battle entry - current node context', () => {
     expect(c.stageType).toBe('elite');
     expect(c.pressure.scope).toBe('elite');
     expect(c.pressure.pressureRefKey).toBe('sf01');
-    expect(c.pressure.min).toBe(91);   // 步5 重定基：sf01 精英带=v0.7（n006/n059）
-    expect(c.pressure.max).toBe(2973);
+    // 对锚与阶梯批重定基（同上·拍板⑦）：n006 精英逐节点行 min=max=91（v0.8 压力真值）。
+    expect(c.pressure.min).toBe(91);
+    expect(c.pressure.max).toBe(91);
     expect(c.pressure.recommend).toBeNull();
     expect(c.pressure.secondaryPressureCap).toBe(1);
   });

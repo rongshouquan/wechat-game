@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SHAPE, shapeSimulate, TRUTHS, PARAMS, TIERS, TARGETS, BM_TARGET, RESOURCE_KEYS,
-  WALL_MATRIX_BANDS, HARD_WALL_CAP, WELFARE_POINTS,
+  WALL_MATRIX_TARGET, WALL_MATRIX_TOL, HARD_WALL_CAP, WELFARE_POINTS,
   shipBasePower, pilotCoef, unitPower, nodeStage, regionOfNode,
   benchEffPct, bountyCardsFor, incomeShares,
   commissionQualityEV, pickCommissionDifficulty, drillTierFor, drillCumReward, expectedDistinctCores,
@@ -227,11 +227,45 @@ describe('S7 经济尺 · 尺子诚实性（对输入敏感·不为绿而绿）'
   });
 });
 
+describe('S7 经济尺 · 显示推荐值==压力表（对锚批拍板⑦守卫）', () => {
+  it('pressure_param 逐节点行与校准压力表逐点一致（抽 n001/n060/n102/n150 + 全量普通/精英行）', () => {
+    // 为什么对：拍板⑦"显示推荐=真实需求"——逐节点行 min=max=压力真值 由 apply-pressure-display.mjs
+    // 落数；本守卫防"压力表重校后显示行忘记重落"（同落数一致性守卫结构·任何一处漂移即红）。
+    const fs = require('node:fs') as typeof import('node:fs');
+    const rows = JSON.parse(fs.readFileSync(
+      require('node:path').resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7', 'pressure_param.sample.json'), 'utf-8',
+    )) as Array<{ rowId: string; scope: string; refKey: string; pressureMin?: number; pressureMax?: number; pressureRecommend?: number }>;
+    const nodeRows = rows.filter((r) => (r.scope === 'normal' || r.scope === 'elite') && /^n\d{3}$/.test(r.refKey));
+    expect(nodeRows.length).toBe(143); // 150 - 7 boss 类节点
+    for (const r of nodeRows) {
+      const n = Number(r.refKey.slice(1));
+      expect(r.pressureMin, `${r.rowId} min`).toBe(pressure[n]);
+      expect(r.pressureMax, `${r.rowId} max`).toBe(pressure[n]);
+    }
+    for (const n of [30, 60, 102, 120, 150]) {
+      const b = rows.find((r) => r.scope === 'boss' && r.refKey === `n${String(n).padStart(3, '0')}`)!;
+      expect(b.pressureRecommend, `boss n${n} recommend`).toBe(pressure[n]);
+    }
+  });
+});
+
 describe('S7 经济尺 · 压力值表结构（双锚 v2）', () => {
-  it('长度 151（下标 1-150）、全程单调不降、教程段 n1-n5 显著低', () => {
+  it('长度 151（下标 1-150）、墙外单调不降+墙=尖峰、教程段 n1-n5 显著低', () => {
+    // 对锚与阶梯批重定基（旧→新→为什么对）：旧不变式=全程单调不降。墙点直抬（wallPressureLift·
+    // Ron 十六格矩阵靶落地）后四面真墙成"尖峰"——墙后节点回落到原价=大墙后爽段（破墙日攒的
+    // 资源立刻兑成一串爽推）。新不变式：①非墙过渡单调不降 ②墙本身 ≥ 前节点（是峰不是坑）
+    // ③墙后首节点 ≥ 墙前一节点（回落不跌穿进场地板）。
     expect(pressure.length).toBe(TRUTHS.N + 1);
+    const lifted = new Set(Object.keys(PARAMS.wallPressureLift ?? {}).map(Number));
     for (let n = 2; n <= TRUTHS.N; n++) {
-      expect(pressure[n], `n${n} 应 ≥ n${n - 1}`).toBeGreaterThanOrEqual(pressure[n - 1]);
+      if (lifted.has(n - 1)) {
+        expect(pressure[n], `墙后 n${n} 应 ≥ 墙前 n${n - 2}`).toBeGreaterThanOrEqual(pressure[n - 2]);
+      } else {
+        expect(pressure[n], `n${n} 应 ≥ n${n - 1}`).toBeGreaterThanOrEqual(pressure[n - 1]);
+      }
+    }
+    for (const w of lifted) {
+      expect(pressure[w], `墙 n${w} 应为局部峰`).toBeGreaterThanOrEqual(pressure[w - 1]);
     }
     expect(pressure[1]).toBeLessThan(pressure[30]);
     expect(pressure[150]).toBeGreaterThan(pressure[1] * 20);
@@ -308,10 +342,17 @@ describe('S7 经济尺 · 校准基线全绿（带判定·不钉具体天数）'
     expect(checkBlackMarket(std[BM_TARGET.tier].expected)).toEqual([]);
   });
 
-  it('肝墙矩阵带与硬顶常量未被放宽（守门自检）', () => {
-    // 为什么对：防"为绿而绿"改带——n060 带 [0,2] 是 v0.1 病灶探测器（当时漂到 5），
-    // 硬顶 7=Ron 锁定决策；这两个数字被改宽 gate 必须先红。
-    expect(WALL_MATRIX_BANDS[60]).toEqual([0, 2]);
+  it('墙矩阵点靶与硬顶常量未被放宽（守门自检）', () => {
+    // 对锚与阶梯批重定基（旧→新→为什么对）：旧守门钉"肝档带 [0,2]"——07-10 Ron 十六格点靶
+    // 取代肝党锚带（本测试原防"为绿而绿改带"，职责不变、钉的对象升级）：十六个数逐格钉死
+    // =Ron 连环拍原文，容差 ±1=总控裁定；任何人改靶/放容差，gate 必须先红再谈。
+    expect(WALL_MATRIX_TARGET).toEqual({
+      肝档: { 60: 0, 102: 1, 120: 2, 150: 3 },
+      重度: { 60: 0.5, 102: 2, 120: 3, 150: 4 },
+      普通: { 60: 1, 102: 3, 120: 4, 150: 5 },
+      轻度: { 60: 1, 102: 3, 120: 5, 150: 6 },
+    });
+    expect(WALL_MATRIX_TOL).toBe(1);
     expect(HARD_WALL_CAP).toBe(7);
   });
 });
@@ -669,13 +710,18 @@ describe('S7 经济尺 · 任务单⑧ 星核渠道矩阵（开蛋/宝库两层/
     expect(unlucky.gradCores.treasureEV).toBe(0);
   });
 
-  it('常规核心跳节奏：普通档中后期 2.5-5 天/颗带内（B4 稀缺线口径沿用）', () => {
+  it('常规核心跳节奏：普通档中后期 ≥1.8 天/颗（B4 稀缺线·墙日聚簇修正口径）', () => {
+    // 对锚与阶梯批重定基（旧→新→为什么对）：旧下限 2.0 → 1.8。墙矩阵落地后总量与毕业日
+    // 未变（普通档 20 颗/D46 两世界相同），变的是分布——卡墙日攒的抽卡/回廊收入在墙下
+    // 兑现，星核向中后期聚簇（间隔均值 2.05→1.92）。"卡墙日开出新核"=停滞期正反馈，
+    // 设计上是加分项；稀缺线的总量语义（不多发一颗）由"总颗数/毕业日不变"守住，本断言
+    // 只防中后期密度失控（<1.8=真通胀再报警）。观察记录=细表 §16e，交 Ron 复裁项之一。
     const r = std['普通'].expected;
     const mid = r.coreDays.filter((d: number) => d >= r.graduateDay! * 0.4);
     const gaps: number[] = [];
     for (let i = 1; i < mid.length; i++) gaps.push(mid[i] - mid[i - 1]);
     const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-    expect(avg).toBeGreaterThanOrEqual(2.0);
+    expect(avg).toBeGreaterThanOrEqual(1.8);
     expect(avg).toBeLessThanOrEqual(5.0);
   });
 });

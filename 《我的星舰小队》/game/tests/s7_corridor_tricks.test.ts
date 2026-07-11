@@ -136,11 +136,16 @@ describe('S7CorridorTricks - 敌阵形状 / 战斗规则类', () => {
     expect(LONE_LINEUP_CAP).toBe(1);
   });
 
-  it('闪电战：限时覆盖 40s（不碰敌方/我方积木）', () => {
+  it('闪电战：限时 40s + 血池 ×1/3（时长公平化·对锚批重锚）', () => {
+    // 对锚批重定基（旧→新→为什么对）：旧口径"只覆盖限时不碰积木"——满血池+40s=前沿队数学不可过
+    // （批③报备2"L30 闪电战 32k 不可破"实证），回廊逐层强制通过会卡死整条塔。
+    // 新口径：40/120 时限比例同步砍血池（×1/3）=同强度"杀得快"DPS 检定；爆发流更快=识别度保留。
     const e = corridorTrickEffect('blitz');
     expect(e.timeLimitSec).toBe(BLITZ_TIME_LIMIT_SEC);
     expect(BLITZ_TIME_LIMIT_SEC).toBe(40);
-    expect(e.enemyBlocks).toEqual([]);
+    expect(e.enemyBlocks).toEqual([
+      { kind: 'modifier', stat: 'maxHp', op: 'pct', value: BLITZ_TIME_LIMIT_SEC / 120 - 1, source: 'corridor_trick:blitz' },
+    ]);
     expect(e.playerBlocks).toEqual([]);
   });
 

@@ -65,7 +65,7 @@ import {
 import { runDailyPuzzleBattle, S7DailyPuzzleSelectionEntry } from '../../core/s7/S7DailyPuzzleBattleService';
 import { S7DailyPuzzleParam } from '../../config/s7/ConfigTypesS7';
 import {
-  corridorLayerPlan, corridorBossNodeIds, nextCorridorLayer, clearCorridorLayer,
+  corridorLayerPlan, corridorBossNodeIds, corridorPaletteFrom, nextCorridorLayer, clearCorridorLayer,
   corridorLayerReward, corridorMilestoneReward, doubleCorridorReward,
   availableCorridorMilestones, claimCorridorMilestone, canClaimCorridorMilestone, corridorUnlocked,
   isEchoBossLayer, isMilestoneLayer, pickCorridorTrick,
@@ -7064,19 +7064,28 @@ export class S7DemoController extends Component {
     return corridorUnlocked(this.session.progress.clearedNodeIds, firstBossNodeId(allNodes));
   }
 
-  /** 回廊敌阵调色板（1x1 常规敌人·排除 2x2 头目；灰盒占位·星舰内容块随真源统一校准）。 */
+  /** 回廊敌阵调色板（对锚批：单源过滤器=只收 bu_enemy_ 全局基础行——落数节点行混入曾致层强度非单调）。 */
   private corridorPalette(): S7CorridorEnemyPaletteEntry[] {
-    return (this.runtime?.getAll<{ targetType: string; rowId: string; roleTag: string; sizeRows: number; sizeCols: number }>('battle_unit_stat_param') ?? [])
-      .filter((r) => r.targetType === 'enemy' && r.sizeRows === 1 && r.sizeCols === 1)
-      .map((r) => ({ unitStatRef: r.rowId, roleTag: r.roleTag }));
+    return corridorPaletteFrom(
+      this.runtime?.getAll<{ targetType: string; rowId: string; roleTag: string; sizeRows: number; sizeCols: number; maxHp: number; attack: number; attackIntervalSec: number }>('battle_unit_stat_param') ?? [],
+    );
   }
 
   private corridorBosses(): string[] {
     return corridorBossNodeIds(this.runtime?.getAll<{ nodeId: string; nodeTypeTag: string }>('mainline_node_config') ?? []);
   }
 
+  /** 回响层倍率锚（对锚批）：Boss 节点压力表（bp_nXXX.pressureRecommend）——req(L)×尖峰 ÷ 节点压力。 */
+  private corridorBossPressures(): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const r of this.runtime?.getAll<{ scope: string; refKey: string; pressureRecommend?: number }>('pressure_param') ?? []) {
+      if (r.scope === 'boss' && typeof r.pressureRecommend === 'number') out[r.refKey] = r.pressureRecommend;
+    }
+    return out;
+  }
+
   private corridorPlanFor(layer: number): S7CorridorLayerPlan {
-    return corridorLayerPlan(layer, this.corridorPalette(), this.corridorBosses());
+    return corridorLayerPlan(layer, this.corridorPalette(), this.corridorBosses(), this.corridorBossPressures());
   }
 
   /** 某层展示卡（塔页大卡/剪影用）。 */

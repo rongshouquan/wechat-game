@@ -140,8 +140,12 @@ export interface S7EconTierProfile {
 export declare const TIERS: Record<string, S7EconTierProfile>;
 export declare const TARGETS: Record<string, number>;
 export declare const BM_TARGET: { tier: string; min: number; max: number };
-export declare const WALL_MATRIX_BANDS: Record<string, [number, number]>;
-export declare const WALL_MATRIX_BANDS_DRIFT: Record<string, [number, number]>;
+// 对锚与阶梯批：旧 WALL_MATRIX_BANDS/_DRIFT（肝党锚带）退役 → 十六格点靶 + 双轴单调守卫。
+export declare const WALL_MATRIX_TARGET: Record<string, Record<string, number>>;
+export declare const WALL_MATRIX_TOL: number;
+export declare const WALL_MATRIX_DRIFT_TOL: number;
+export declare const WALL_MONO_EXCEPTIONS: Set<string>;
+export declare function checkWallMatrix(std: unknown, tol: number, opts?: { mono?: boolean }): string[];
 export declare const WELFARE_POINTS: Set<string>;
 export declare const HARD_WALL_CAP: number;
 export declare const HARD_WALL_CAP_DRIFT_LIGHT: number;
@@ -237,6 +241,10 @@ export interface S7EconResult {
   milestones: { node: number; day: number; power: number; mains: number[][]; plugins: { fine: number; superior: number; legendary: number }; cores: number }[];
   dailyCleared: number[];
   dailyPower: number[];
+  // 对锚批观察口：当日开打战力 + 当日养成态（[阶下标,舰级,驾星,驾级]×5·爬坡矩阵工具口径）+ 日终回廊层
+  dailyOpenPower: number[];
+  dailyMains: [number, number, number, number][][];
+  dailyCorridor: number[];
   // 节奏观察口（专属碎片逐日流·建筑细案批免费抽接线测试用）
   dailyMainShards: ({ shipMain: number; shipOff: number; pilotMain: number; pilotOff: number } | undefined)[];
   ledger: { income: Record<string, Record<string, number>>; spend: Record<string, Record<string, number>> };

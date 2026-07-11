@@ -117,30 +117,35 @@ describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
     expect(avgDur).toBeGreaterThanOrEqual(18);
     expect(avgDur).toBeLessThanOrEqual(36); // 手感带（普通关均值·盾带偏慢=咬合设计）
     const boss = reports.find((r) => r.nodeId === 'n060')!;
-    expect(boss.winRate).toBeGreaterThanOrEqual(0.5);
-    expect(boss.avgDurationSec).toBeGreaterThanOrEqual(40);
     // ⑩A0 重定基 70→75：v0.7 压力表（γ 1.125）下 n060 P 3113→3622、φ 超线性使贴线时长 68→71.6s；
-    // 墙口径带=≥55s 硬仗且 <120s 可破（§20.2），本断言是"硬仗非深渊"的窗口守卫——上沿放到 75 仍紧
-    // （深墙回归如 ≥80s 照抓），不是跟着数值走的放宽。
-    // 批③段三重锚 75→110：首真墙终值 {1.0,0.5}=到达态 ~80%/92s 马拉松磨仗（硬仗非深渊窗口上移·<120 可破仍守）。
-    expect(boss.avgDurationSec).toBeLessThanOrEqual(110);
+    // 批③段三重锚 75→110：首真墙终值 {1.0,0.5}=到达态 ~80%/92s 马拉松磨仗。
+    // 对锚与阶梯批重定基（旧→新→为什么对）：Ron 07-10 破墙爬坡曲线把墙从"贴线硬仗能打"（旧断言
+    // 胜率 ≥0.5·40-110s）改成"破墙日单把 10-20%、靠重试过"——n060 boost {1.0,0.5}→{1.31,0.81}
+    // 重锚后，反解器贴线构成（无 S 阶套件）读 0-20%=墙对未成型构成必须是真墙（新断言 ≤0.2）；
+    // 真实养成态（经济尺 mains·含 S 阶）破墙日 16% 进 10-20 带=爬坡矩阵工具实测（细表 §16e）。
+    // 时长窗随语义退役（败局时长≠硬仗窗口）。
+    expect(boss.winRate).toBeLessThanOrEqual(0.2);
     // 阵容战力贴压力值（管线自洽）
     for (const r of reports) expect(Math.abs(r.teamPower - r.pressure) / r.pressure).toBeLessThanOrEqual(0.09); // 同上：升阶保级格距
   }, 30000);
 
-  it('克制语义抽验：n104 点名题 中位挣扎 vs 克制向速通', async () => {
-    const med = await scanMainlineAsync({ family: 'median', samples: 3, fromNode: 104, toNode: 104 });
-    const ctr = await scanMainlineAsync({ family: 'counter', samples: 3, fromNode: 104, toNode: 104 });
+  it('克制语义抽验：n104 点名题 中位会翻车 vs 克制向稳赢', async () => {
+    const med = await scanMainlineAsync({ family: 'median', samples: 5, fromNode: 104, toNode: 104 });
+    const ctr = await scanMainlineAsync({ family: 'counter', samples: 5, fromNode: 104, toNode: 104 });
     // ⑥三段落数重定基：落数量纲下中位阵容能磨过 n104（66s=2.6× 普通关均值=真"挣扎"），
     // 胜率差失去区分度；"换搭配破题"的管线级证据改用时长差（实测 66.3s vs 26.4s=2.5×·余量断 ×0.6）。
     // ⑩A1 重定基 ×0.6→×0.75：驾驶员真天赋上场抬高中位队地板（源锁定/苏回光/蔽集火——66.3→32.9s），
     // 克制差收窄到 ≈1.55×（21.2s vs 32.9s）——"带对工具显著更快"语义原样成立（>25% 提速+绝对时长<35s
     // 双断言保留）·阈值按新地板收口；克制差全维度定量=B6 克制工具箱 11/11 实测正主。
-    expect(ctr[0].winRate).toBe(1);
     // 机制批③段二b重定基（旧→新→为什么对）：舰侧 L 节点入战再抬中位地板（烈阳重火力/极焰装填档=中位主力）→
-    // 克制差进一步收窄（15.2 vs 16.0≈0.95）——比值阈值失去校准意义；克制"分离度"的定量校准=段三躯干重校
-    // 验收面⑤/⑦ 正主（差搭配 45s 靶=重新拉开谱系）。本冒烟退守语义底线：克制向必胜 + 不慢于中位 + 绝对 <35s。
-    expect(ctr[0].avgDurationSec).toBeLessThanOrEqual(med[0].avgDurationSec); // 克制向显著更快=破题
+    // 克制差进一步收窄（15.2 vs 16.0≈0.95）——比值阈值失去校准意义；冒烟曾退守"必胜+不慢于中位+<35s"。
+    // 对锚与阶梯批重定基（旧→新→为什么对）：随机带宽中档转正（我暴击15%/×1.75+敌10%/×1.5）后，
+    // 时长轴彻底失去区分度（s8 实测 中位 26.0s vs 克制 27.6s），但敌暴击尖峰让中位队后排会被暴死——
+    // 可靠性轴接管语义（s8 实测 中位胜率 87.5% vs 克制 100%）：点名题工具的真价值=消灭暴死风险。
+    // 冒烟底线改为：克制向必胜 + 可靠性不输中位 + 绝对时长 <35s（非退化）；"不慢于中位"时长断言退役
+    // （26 vs 27.6 属带宽噪声级）。定量正主=n102 B5 五态矩阵（本批段一 n102 专档复验）。
+    expect(ctr[0].winRate).toBe(1);
+    expect(ctr[0].winRate).toBeGreaterThanOrEqual(med[0].winRate);
     expect(ctr[0].avgDurationSec).toBeLessThan(35);
-  }, 30000);
+  }, 45000);
 });

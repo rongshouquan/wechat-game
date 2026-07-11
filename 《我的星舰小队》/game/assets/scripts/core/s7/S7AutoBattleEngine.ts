@@ -24,6 +24,7 @@ import {
 } from '../../config/s7/ConfigTypesS7';
 import { S7ConfigRuntime } from '../../config/s7/S7ConfigRuntime';
 import { S7AutoBattleRng } from './S7AutoBattleRng';
+import { S7_ENEMY_CRIT_BASE } from './S7PowerRating';
 import {
   S7AutoBattleSide,
   S7AutoBattleRunRequest,
@@ -2922,15 +2923,18 @@ class BattleRun {
         trackedTargetId: null,
       });
     }
-    // ⑥8a：敌/Boss 属性行的基线词条可选字段（controlResist/baseCritRate/baseCritDmg）——
-    // 无装配时注入；字段全缺省则沿用冻结共享 ZERO_AFFIXES（零新对象·零行为变化）。
+    // ⑥8a：敌/Boss 属性行的基线词条可选字段（controlResist/baseCritRate/baseCritDmg）——无装配时注入。
+    // 对锚与阶梯批（带宽中档转正·授权全战斗行为变更）：敌方全体带暴击基线 S7_ENEMY_CRIT_BASE；
+    // 行字段语义升级为"覆盖基线"（显式 0=关，供机制测试与特调行用）；玩家侧召唤物（side!=='enemy'）
+    // 不吃基线，行字段全缺省时仍走冻结共享 ZERO_AFFIXES 零新对象。
     let affixes: Readonly<Record<S7AffixKey, number>> = derived ? derived.affixes : ZERO_AFFIXES;
-    if (!derived && ((stat.controlResist ?? 0) !== 0 || (stat.baseCritRate ?? 0) !== 0 || (stat.baseCritDmg ?? 0) !== 0)) {
+    const critBase = side === 'enemy' ? S7_ENEMY_CRIT_BASE : null;
+    if (!derived && (critBase !== null || (stat.controlResist ?? 0) !== 0 || (stat.baseCritRate ?? 0) !== 0 || (stat.baseCritDmg ?? 0) !== 0)) {
       affixes = Object.freeze({
         ...ZERO_AFFIXES,
         controlResist: stat.controlResist ?? 0,
-        critRate: stat.baseCritRate ?? 0,
-        critDmg: stat.baseCritDmg ?? 0,
+        critRate: stat.baseCritRate ?? critBase?.rate ?? 0,
+        critDmg: stat.baseCritDmg ?? critBase?.dmg ?? 0,
       });
     }
     const unit: RtUnit = {

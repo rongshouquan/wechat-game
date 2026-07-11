@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isEchoBossLayer, isTrickLayer, isMilestoneLayer,
   corridorEnemyCount, corridorEnemyScaleBlocks, corridorFormation,
-  corridorBossNodeIds, corridorEchoBoss,
+  corridorBossNodeIds, corridorEchoBoss, corridorLayerReq, CORRIDOR_K_HP, CORRIDOR_PHI_BASE,
   pickCorridorTrick, corridorLayerPlan,
   corridorLayerReward, corridorMilestoneReward, doubleCorridorReward,
   createDefaultS7Corridor, normalizeS7Corridor,
@@ -17,13 +17,15 @@ import {
   S7CorridorEnemyPaletteEntry,
 } from '../assets/scripts/core/s7/S7DeepCorridor';
 import { corridorTrickEffect, neutralCorridorEffect, ATTRITION_EXTRA_HEALERS } from '../assets/scripts/core/s7/S7CorridorTricks';
+import { corridorPhi } from '../assets/scripts/core/s7/S7CorridorScaleTable';
 
+// 对锚批：调色板带基础三围（层缩放=K 合同预算按实际阵容归一化·值抄自 battle_unit_stat_param 基础行）
 const PALETTE: S7CorridorEnemyPaletteEntry[] = [
-  { unitStatRef: 'bu_enemy_swarm', roleTag: 'minion' },
-  { unitStatRef: 'bu_enemy_shield', roleTag: 'frontline' },
-  { unitStatRef: 'bu_enemy_backline', roleTag: 'backline' },
-  { unitStatRef: 'bu_enemy_charge', roleTag: 'assault' },
-  { unitStatRef: 'bu_enemy_support', roleTag: 'backline_support' }, // 治疗型
+  { unitStatRef: 'bu_enemy_swarm', roleTag: 'minion', maxHp: 120, attack: 30, attackIntervalSec: 1.1 },
+  { unitStatRef: 'bu_enemy_shield', roleTag: 'frontline', maxHp: 400, attack: 40, attackIntervalSec: 1.3 },
+  { unitStatRef: 'bu_enemy_backline', roleTag: 'backline', maxHp: 400, attack: 55, attackIntervalSec: 1.3 },
+  { unitStatRef: 'bu_enemy_charge', roleTag: 'assault', maxHp: 760, attack: 185, attackIntervalSec: 1.5 },
+  { unitStatRef: 'bu_enemy_support', roleTag: 'backline_support', maxHp: 420, attack: 35, attackIntervalSec: 1.4 }, // 治疗型
 ];
 const BOSSES = ['n030', 'n060', 'n084', 'n102', 'n120', 'n138', 'n150'];
 
@@ -68,12 +70,17 @@ describe('S7DeepCorridor - 敌阵生成（确定性 + 缩放）', () => {
     expect(a).not.toEqual(c);
   });
 
-  it('随层爬升：深层敌方血/攻缩放 pct 更大', () => {
-    const s10 = corridorEnemyScaleBlocks(10);
-    const s50 = corridorEnemyScaleBlocks(50);
+  it('随层爬升：同阵容下深层缩放更大，且血预算=K合同×φ(req)（对锚批重锚）', () => {
+    // 对锚批重定基（旧→新→为什么对）：旧断言"pct>0 且线性爬升"——层强度改走主线 K 合同+φ 换算
+    // （req(L)=420×1.075^(L-1)·浅层 pct 可为负=基础行整体缩弱，前 20 层新手友好是设计不是 bug）。
+    // 新守卫：①同阵容单调（深层必更强）②血预算恒等式=Σ基础血×(1+hpPct) ≈ K_HP×500×φ(req)。
+    const s10 = corridorEnemyScaleBlocks(10, 1, PALETTE);
+    const s50 = corridorEnemyScaleBlocks(50, 1, PALETTE);
     expect(pctOf(s50, 'maxHp')).toBeGreaterThan(pctOf(s10, 'maxHp'));
     expect(pctOf(s50, 'attack')).toBeGreaterThan(pctOf(s10, 'attack'));
-    expect(pctOf(s10, 'maxHp')).toBeGreaterThan(0);
+    const hpSum = PALETTE.reduce((a, e) => a + e.maxHp, 0);
+    const budget10 = hpSum * (1 + pctOf(s10, 'maxHp'));
+    expect(budget10).toBeCloseTo(CORRIDOR_K_HP * CORRIDOR_PHI_BASE * corridorPhi(corridorLayerReq(10)), 0);
   });
 
   it('数量随层缓增且封顶；调色板空→空敌阵（只带缩放·不崩）', () => {
@@ -81,7 +88,8 @@ describe('S7DeepCorridor - 敌阵生成（确定性 + 缩放）', () => {
     expect(corridorEnemyCount(9999)).toBeLessThanOrEqual(12);
     const empty = corridorFormation(5, [], neutralCorridorEffect());
     expect(empty.units).toEqual([]);
-    expect(empty.enemyBlocks.length).toBeGreaterThan(0);
+    // 对锚批重定基：缩放按"实际抽到的阵容"预算归一化——空阵容无预算对象，缩放积木=空（防崩语义不变）。
+    expect(empty.enemyBlocks).toEqual([]);
   });
 
   it('常规敌阵不含治疗型（使"持久战·治疗单位多"成为可辨戏法）', () => {
@@ -104,8 +112,8 @@ describe('S7DeepCorridor - 戏法真正作用到敌阵（反例守卫）', () =>
     const f = corridorFormation(10, PALETTE, corridorTrickEffect('iron_tide'));
     const armor = f.enemyBlocks.find((b: any) => b.kind === 'modifier' && b.stat === 'armor');
     expect(armor).toBeDefined();
-    // 缩放积木也在（层缩放 + 戏法修正并存）
-    expect(pctOf(f.enemyBlocks, 'maxHp')).toBeGreaterThan(0);
+    // 对锚批重定基：层缩放积木也在（source=corridor_scale·浅层 pct 可为负，只验存在不验符号）
+    expect(f.enemyBlocks.some((b: any) => b.source === 'corridor_scale' && b.stat === 'maxHp')).toBe(true);
   });
 
   it('蜂群：敌数量约翻倍 + 削弱积木进敌阵', () => {
@@ -137,13 +145,18 @@ describe('S7DeepCorridor - 回响Boss（每25层·7 Boss 轮换）', () => {
     expect(corridorEchoBoss(175, BOSSES)).toMatchObject({ bossNodeId: 'n150', bossOrder: 7, cycle: 0 });
   });
 
-  it('轮完7个后循环加倍率：层200 回到 n030 但 cycle=1、倍率更高', () => {
-    const first = corridorEchoBoss(25, BOSSES)!; // n030 cycle0
-    const second = corridorEchoBoss(200, BOSSES)!; // n030 cycle1
+  it('轮完7个后循环强度更高：层200 回到 n030 但 cycle=1、φ域倍率随层增长（对锚批重锚）', () => {
+    // 对锚批重定基（旧→新→为什么对）：旧"0.8+0.5/轮"加法占位作废——回响倍率=φ(req(L)×1.25)÷φ(节点压力)
+    // （复用主线换算链·浅轮回响曾弱于同层普通阵=批③报备2 实证由此根治）。压力表入参=bp_nXXX 推荐值口径。
+    const bossP = { n030: 657 };
+    const first = corridorEchoBoss(25, BOSSES, bossP)!; // n030 cycle0
+    const second = corridorEchoBoss(200, BOSSES, bossP)!; // n030 cycle1
     expect(second.bossNodeId).toBe('n030');
     expect(second.cycle).toBe(1);
-    expect(second.mult).toBeGreaterThan(first.mult); // 循环加倍率
+    expect(second.mult).toBeGreaterThan(first.mult); // 深层回响必须更强（φ 域）
     expect(second.enemyBlocks.length).toBeGreaterThan(0);
+    // 未提供压力表（旧调用面）→ 中性不缩放（mult=1·不做错误缩放）
+    expect(corridorEchoBoss(25, BOSSES)!.mult).toBe(1);
   });
 
   it('非25倍数层 / 无Boss配置 → null', () => {

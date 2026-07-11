@@ -16,6 +16,7 @@
 import { S7EffectBlock } from './S7BattleEffectBlock';
 import { S7_ENEMY_ROWS, S7_ENEMY_COLS } from './S7BattleGrid';
 import { S7AutoBattleRng } from './S7AutoBattleRng';
+import { corridorPhi } from './S7CorridorScaleTable';
 import {
   S7CorridorTrickId, S7CorridorTrickEffect, S7_CORRIDOR_TRICKS,
   corridorTrickEffect, neutralCorridorEffect,
@@ -36,12 +37,41 @@ export const CORRIDOR_DEEP_TRICK_LAYER = 100;
 export const CORRIDOR_BASE_ENEMY_COUNT = 5;
 export const CORRIDOR_LAYERS_PER_EXTRA_ENEMY = 8;
 export const CORRIDOR_MAX_ENEMY_COUNT = 12;
-/** 随层缩放：敌全体 血/攻 每层 +pct（占位·layer×此值）。 */
-export const CORRIDOR_HP_PCT_PER_LAYER = 0.08;
-export const CORRIDOR_ATK_PCT_PER_LAYER = 0.06;
-/** 回响Boss强化：基础额外加成 pct + 每轮（7 个 Boss 一圈）递增步长（占位·叠在层缩放之上）。 */
-export const ECHO_BOSS_BASE_BONUS_PCT = 0.8;
-export const ECHO_BOSS_CYCLE_STEP = 0.5;
+/**
+ * 层强度曲线（对锚与阶梯批重锚·2026-07-10）：对齐经济尺指数锚 req(L)=420×1.075^(L-1)。
+ * 旧"线性 layer×pct"作废——它与尺子曲线不同族（批③报备2 实测：L1 前沿 8k/层间非单调/
+ * L30 闪电战 32k 不可破，三病同源=线性缩放 × 调色板混入落数节点行）。
+ * 同步纪律：REQ_BASE/REQ_GROWTH/ECHO_SPIKE 与 simulate-s7-economy.mjs PARAMS.corridor
+ * 是同一组数（尺子=机器真源），改任一侧必须同步另一侧（经济测试有对表守卫）。
+ */
+export const CORRIDOR_REQ_BASE = 420;
+export const CORRIDOR_REQ_GROWTH = 0.075;
+/** 回响Boss尖峰=×1.25（对齐尺子 echoSpike·取代旧"0.8+0.5/轮"占位）。 */
+export const CORRIDOR_ECHO_SPIKE = 1.25;
+/**
+ * 基础敌阵世界战力 P0：全局基础行（bu_enemy_*）标准敌阵在缩放 ×1 下的"中位队可破"战力
+ * （栅格工具 tools/s7-corridor-grid.mjs 实测·换调色板或改基础行后须重测）。
+ * mult(L)=req(L)/P0：血 ×mult、攻 ×mult^1.08（敌火轴超线性·同 §19 K 合同口径）。
+ */
+/**
+ * 主线预算合同镜像（K 合同+φ 换算·同 tools/s7-battles-entry.ts——改任一侧必须同步，
+ * 奇偶校验测试守着）：层 L 的敌阵预算走主线同一条换算链
+ *   pool = K_HP×500×φ(req)   ·   dps = K_DPS×500×φdps(req)（φdps=φ>1 时 ^1.08 超锚加陡）
+ * φ=生成表 S7CorridorScaleTable（strengthIndex 采样·反解器不进运行时）。
+ * 按每层实际抽到的阵容归一化（Σ基础行血/Σ基础行DPS 除出双倍率）——成分方差不进难度。
+ * 选型记档（§16e）：①线性 P0 单点版=攻重血轻配比放大 L60 团灭；②倍率 ^1.08 版=指数误用；
+ * ③线性 K×req 版=漏 φ 压缩 L20 起全灭——三版均废，φ 全链版定稿。
+ */
+export const CORRIDOR_K_HP = 20;
+export const CORRIDOR_K_DPS = 0.5;
+export const CORRIDOR_DPS_EXPONENT = 1.08;
+export const CORRIDOR_PHI_BASE = 500;
+
+/** φdps（超锚加陡·镜像 entry phiDps 规则）。 */
+function corridorPhiDps(power: number): number {
+  const phi = corridorPhi(power);
+  return phi > 1 ? Math.pow(phi, CORRIDOR_DPS_EXPONENT) : phi;
+}
 /**
  * 每层首通小奖（合金/驾驶记录/星贝碎屑·自动入账·占位）。
  * 经济口径（Ron 2026-07-04）：每层小奖=从里程碑预算里拆分、总量不变——**§3 经济循环体检表不动**；
@@ -87,10 +117,14 @@ export function isMilestoneLayer(layer: number): boolean {
 
 // ===== 敌阵（层生成器·确定性·种子=层号）=====
 
-/** 敌阵调色板一项（调用方从 battle_unit_stat_param 的 enemy 行注入·保持本层纯·假设 1x1 敌人）。 */
+/** 敌阵调色板一项（调用方从 battle_unit_stat_param 的 enemy 行注入·保持本层纯·假设 1x1 敌人）。
+ *  对锚批：带基础三围（血/攻/间隔）——层缩放按实际抽到的阵容做预算归一化（K 合同）。 */
 export interface S7CorridorEnemyPaletteEntry {
   unitStatRef: string; // battle_unit_stat_param.rowId
   roleTag: string;     // minion / backline_support / ...（治疗型靠 roleTag 区分）
+  maxHp: number;
+  attack: number;
+  attackIntervalSec: number;
 }
 
 /** 一个敌方单位的落点（供步2 喂引擎 spawnUnit）。 */
@@ -135,17 +169,51 @@ export function corridorEnemyCount(layer: number): number {
   return Math.min(n, CORRIDOR_MAX_ENEMY_COUNT);
 }
 
+/** 层 L 的目标战力需求（=经济尺 req 曲线·回响层在调用侧乘尖峰）。 */
+export function corridorLayerReq(layer: number): number {
+  return CORRIDOR_REQ_BASE * Math.pow(1 + CORRIDOR_REQ_GROWTH, Math.max(1, layer) - 1);
+}
+
 /**
- * 随层缩放积木（施加到全体敌人）：血/攻各按 layer×每层pct 放大（pct 叠加·deriveUnit 走 1+Σpct）。
- * bonusPct = 回响Boss等额外加成（叠在层缩放之上）。占位数值第三块校准。
+ * 随层缩放积木（对锚批·主线预算合同版·施加到全体敌人）：
+ *   multHp = K_HP×req(L)×spike ÷ Σ(阵容基础血)；multAtk = K_DPS×(req(L)×spike)^1.08 ÷ Σ(基础攻/间隔)。
+ * 按实际阵容归一化=难度只由 req(L) 决定、不随抽到的行漂移；spikeMult=回响等乘性尖峰。
+ * units 缺省空=零积木（旧调用面兼容·formation 路径必传）。
  */
-export function corridorEnemyScaleBlocks(layer: number, bonusPct = 0): S7EffectBlock[] {
-  const hp = Math.max(0, layer) * CORRIDOR_HP_PCT_PER_LAYER + bonusPct;
-  const atk = Math.max(0, layer) * CORRIDOR_ATK_PCT_PER_LAYER + bonusPct;
-  const out: S7EffectBlock[] = [];
-  if (hp > 0) out.push({ kind: 'modifier', stat: 'maxHp', op: 'pct', value: hp, source: 'corridor_scale' });
-  if (atk > 0) out.push({ kind: 'modifier', stat: 'attack', op: 'pct', value: atk, source: 'corridor_scale' });
-  return out;
+export function corridorEnemyScaleBlocks(
+  layer: number,
+  spikeMult = 1,
+  units: ReadonlyArray<Pick<S7CorridorEnemyPaletteEntry, 'maxHp' | 'attack' | 'attackIntervalSec'>> = [],
+): S7EffectBlock[] {
+  if (units.length === 0) return [];
+  const req = corridorLayerReq(layer) * Math.max(1, spikeMult);
+  let hpSum = 0;
+  let dpsSum = 0;
+  for (const u of units) {
+    hpSum += u.maxHp;
+    dpsSum += u.attack / Math.max(0.2, u.attackIntervalSec);
+  }
+  const poolBudget = CORRIDOR_K_HP * CORRIDOR_PHI_BASE * corridorPhi(req);
+  const dpsBudget = CORRIDOR_K_DPS * CORRIDOR_PHI_BASE * corridorPhiDps(req);
+  const hpPct = poolBudget / Math.max(1, hpSum) - 1;
+  const atkPct = dpsBudget / Math.max(1, dpsSum) - 1;
+  return [
+    { kind: 'modifier', stat: 'maxHp', op: 'pct', value: hpPct, source: 'corridor_scale' },
+    { kind: 'modifier', stat: 'attack', op: 'pct', value: atkPct, source: 'corridor_scale' },
+  ];
+}
+
+/**
+ * 回廊调色板单源过滤器（对锚批新增·控制器与测试共用）：只收**全局基础敌行**（bu_enemy_ 前缀·
+ * 1×1）。落数节点行（bu_nXXX_*·压力从 45 铺到 32000）混进调色板=层强度被"抽到哪关的行"
+ * 主宰——批③报备2"层间非单调 L8<L12"的真凶，随对锚批修锚一并根治。
+ */
+export function corridorPaletteFrom(
+  rows: ReadonlyArray<{ rowId: string; targetType: string; roleTag: string; sizeRows: number; sizeCols: number; maxHp: number; attack: number; attackIntervalSec: number }>,
+): S7CorridorEnemyPaletteEntry[] {
+  return rows
+    .filter((r) => r.targetType === 'enemy' && r.sizeRows === 1 && r.sizeCols === 1 && /^bu_enemy_/.test(r.rowId))
+    .map((r) => ({ unitStatRef: r.rowId, roleTag: r.roleTag, maxHp: r.maxHp, attack: r.attack, attackIntervalSec: r.attackIntervalSec }));
 }
 
 /**
@@ -164,9 +232,8 @@ export function corridorFormation(
   const normalPool = palette.filter((e) => e.roleTag !== HEALER_ROLE);
   const pickPool = normalPool.length > 0 ? normalPool : palette.slice();
   const cells = directives.enemyPlacement === 'back' ? backCells() : defaultCells();
-  const enemyBlocks = [...corridorEnemyScaleBlocks(layer), ...directives.enemyBlocks];
 
-  if (pickPool.length === 0) return { units: [], enemyBlocks };
+  if (pickPool.length === 0) return { units: [], enemyBlocks: [...directives.enemyBlocks] };
 
   const normalCount = Math.max(1, Math.round(corridorEnemyCount(layer) * directives.enemyCountMult));
   const healerCount = healerPool.length > 0 ? Math.max(0, Math.floor(directives.extraHealers)) : 0;
@@ -175,12 +242,19 @@ export function corridorFormation(
   const nHealer = total - nNormal;
 
   const units: S7CorridorEnemyUnit[] = [];
+  const drawn: S7CorridorEnemyPaletteEntry[] = [];
   for (let i = 0; i < nNormal; i += 1) {
-    units.push({ unitStatRef: pickPool[rng.nextInt(pickPool.length)].unitStatRef, slotRef: cells[i] });
+    const e = pickPool[rng.nextInt(pickPool.length)];
+    drawn.push(e);
+    units.push({ unitStatRef: e.unitStatRef, slotRef: cells[i] });
   }
   for (let j = 0; j < nHealer; j += 1) {
-    units.push({ unitStatRef: healerPool[rng.nextInt(healerPool.length)].unitStatRef, slotRef: cells[nNormal + j] });
+    const e = healerPool[rng.nextInt(healerPool.length)];
+    drawn.push(e);
+    units.push({ unitStatRef: e.unitStatRef, slotRef: cells[nNormal + j] });
   }
+  // 层缩放按"实际抽到的阵容"做 K 合同预算归一化（对锚批）——先抽后算，成分方差不进难度。
+  const enemyBlocks = [...corridorEnemyScaleBlocks(layer, 1, drawn), ...directives.enemyBlocks];
   return { units, enemyBlocks };
 }
 
@@ -214,19 +288,38 @@ export interface S7CorridorEchoBoss {
  * 某层的回响Boss（纯函数·确定性）：非 25 倍数层 / 无 Boss 配置 → null。
  * 轮换：seq=layer/25-1，按 bossNodeIds 顺序取模轮换；每轮完一圈 cycle+1、额外加成递增（"轮完循环加倍率"）。
  */
-export function corridorEchoBoss(layer: number, bossNodeIds: readonly string[]): S7CorridorEchoBoss | null {
+export function corridorEchoBoss(
+  layer: number,
+  bossNodeIds: readonly string[],
+  bossPressureByNode?: Readonly<Record<string, number>>,
+): S7CorridorEchoBoss | null {
   if (!isEchoBossLayer(layer) || bossNodeIds.length === 0) return null;
   const seq = layer / CORRIDOR_ECHO_BOSS_INTERVAL - 1;
   const idx = ((seq % bossNodeIds.length) + bossNodeIds.length) % bossNodeIds.length;
   const cycle = Math.floor(seq / bossNodeIds.length);
-  const bonus = ECHO_BOSS_BASE_BONUS_PCT * (1 + cycle * ECHO_BOSS_CYCLE_STEP);
+  const bossNodeId = bossNodeIds[idx];
+  // 对锚批重锚：回响层复用主线 Boss 落数行（自带该节点绝对数值）——倍率锚=req(L)×回响尖峰 ÷
+  // 该 Boss 节点压力（pressure_param bp_nXXX·调用侧从 runtime 喂入）。旧"0.8+0.5/轮"加法占位
+  // 作废（它把浅轮回响调得弱于同层普通阵=批③报备2"L25 回响弱于 L16"实证）。
+  // 兜底：未提供压力表（旧调用面）→ 原生 Boss 数值不缩放（mult=1·中性诚实，不做错误缩放）。
+  const nodeP = bossPressureByNode?.[bossNodeId];
+  // φ 域缩放：Boss 落数行=φ(P_node) 世界的产物 → 目标=φ(req×尖峰) 世界，血/攻各按 φ 比缩放
+  // （攻走 φdps 比=镜像主线敌火轴）。未提供压力表（旧调用面）→ 原生数值不缩放（mult=1 中性诚实）。
+  const targetReq = corridorLayerReq(layer) * CORRIDOR_ECHO_SPIKE;
+  const hpMult = nodeP && nodeP > 0 ? corridorPhi(targetReq) / corridorPhi(nodeP) : 1;
+  const atkMult = nodeP && nodeP > 0 ? corridorPhiDps(targetReq) / corridorPhiDps(nodeP) : 1;
+  const mult = hpMult;
+  const enemyBlocks: S7EffectBlock[] = hpMult === 1 && atkMult === 1 ? [] : [
+    { kind: 'modifier', stat: 'maxHp', op: 'pct', value: hpMult - 1, source: 'corridor_scale' },
+    { kind: 'modifier', stat: 'attack', op: 'pct', value: atkMult - 1, source: 'corridor_scale' },
+  ];
   return {
-    bossNodeId: bossNodeIds[idx],
+    bossNodeId,
     sequence: seq,
     bossOrder: idx + 1,
     cycle,
-    mult: 1 + bonus,
-    enemyBlocks: corridorEnemyScaleBlocks(layer, bonus),
+    mult: Math.round(mult * 100) / 100,
+    enemyBlocks,
   };
 }
 
@@ -275,8 +368,9 @@ export function corridorLayerPlan(
   layer: number,
   palette: readonly S7CorridorEnemyPaletteEntry[],
   bossNodeIds: readonly string[],
+  bossPressureByNode?: Readonly<Record<string, number>>,
 ): S7CorridorLayerPlan {
-  const echoBoss = corridorEchoBoss(layer, bossNodeIds);
+  const echoBoss = corridorEchoBoss(layer, bossNodeIds, bossPressureByNode);
   const trickId = pickCorridorTrick(layer); // Boss 层 isTrickLayer=false → null
   // 戏法层取该戏法作用清单，否则取中性清单（只读作用字段·不读 trickId，故用 Omit 收两个分支）。
   const effect: Omit<S7CorridorTrickEffect, 'trickId'> = trickId

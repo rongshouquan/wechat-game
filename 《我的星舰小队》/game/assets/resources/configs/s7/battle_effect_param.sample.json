@@ -2081,13 +2081,13 @@
     "rowId": "eff_pil_cang08_rescue_shield",
     "effectKind": "ultimate",
     "effectType": "shield",
-    "effectPower": 6,
+    "effectPower": 4,
     "targetingTag": "self_team",
     "durationSec": 6,
     "maxTargets": 1,
     "stateTag": "shield",
     "summonUnitRef": "none",
-    "note": "机制批③段二 沧Lv1「驰援」（顺路升级·Ron 拍定）：友军首次跌残血→沧立即获盾（攻×2.5·6s）·批③段三续航量纲：攻×2.5→攻×6（C12 修订后地板只兜底·设计值按\"盾≈同期脆皮血15-20%/次\"重定）"
+    "note": "机制批③段二 沧Lv1「驰援」（顺路升级·Ron 拍定）：友军首次跌残血→沧立即获盾（6s）·批③段三续航量纲 攻×2.5→×6 → 对锚与阶梯批 攻×6→×4（2026-07-10 Ron 亲拍下调·一次闩+嘲讽4s 保留·复测胜率见细表§16e）"
   },
   {
     "schemaVersion": "s7-0.1.0",

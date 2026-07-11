@@ -227,7 +227,13 @@ export class S7BattleEntry {
     if (stageType === 'boss') {
       return this.pressures.find((r) => r.scope === 'boss' && r.refKey === node.nodeId);
     }
-    return this.pressures.find((r) => r.scope === stageType && r.refKey === node.starfieldId);
+    // 对锚与阶梯批（Ron 07-10 拍板⑦"显示推荐值=真实需求"）：普通/精英优先取逐节点行
+    // （refKey=nXXX·min=max=校准压力值→视图取中公式自然吐出真值），无节点行回退星域带
+    // （旧口径·早段一带跨 45-2973 显示中值 1509 的虚标由此修正）。缺省缺席=行为逐字节不变。
+    return (
+      this.pressures.find((r) => r.scope === stageType && r.refKey === node.nodeId) ??
+      this.pressures.find((r) => r.scope === stageType && r.refKey === node.starfieldId)
+    );
   }
 }
 

@@ -180,10 +180,12 @@ async function bw(mod) {
   const base = mod.loadBundle();
   const pressure = mod.loadPressure();
   const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13']; // 段三载体重定：迷雾→贯日（同 entry 中位口径）
-  // 两档旋钮：窄=现行（暴击5%/×1.5·敌0%）；中=暴击15%/×1.75+敌暴击10%/×1.5（随机源=弹药5 点名四旋钮的实测组合）
+  // 两档旋钮：窄=旧默认（暴击5%/×1.5·敌0%）；中=现行默认（对锚与阶梯批 07-10 转正·S7PowerRating 单点）。
+  // 注意：本探针敌方只设 baseCritRate 未设 baseCritDmg（引擎暴伤=×(1+critDmg)）→ 当时"中档"敌暴击
+  // 实为空转；转正后引擎默认已带真值 10%/×1.5，此处 enemyCrit 覆写仅保留做历史对照复跑。
   const KNOBS = [
-    ['窄档(现行)', { crit: 0.05, critDmg: 0.5, enemyCrit: 0 }],
-    ['中档(候选)', { crit: 0.15, critDmg: 0.75, enemyCrit: 0.10 }],
+    ['窄档(旧默认)', { crit: 0.05, critDmg: 0.5, enemyCrit: 0 }],
+    ['中档(现行)', { crit: 0.15, critDmg: 0.75, enemyCrit: 0.10 }],
   ];
   const CLIFFS = [['n060', [0.40, 0.45, 0.5, 0.525, 0.55, 0.575, 0.6, 0.65, 0.7]], ['n120', [0.70, 0.75, 0.775, 0.8, 0.825, 0.85, 0.9]], ['n097', [0.45, 0.6, 0.8, 1.0]]];
   for (const [tag, k] of KNOBS) {
