@@ -40,8 +40,10 @@ const run = async (b: Bundle, encounterRef = 'enc_n001', seed = 'ch') =>
   (await engineOf(b)).run({ encounterRef, battleSeed: seed, playerUnits: FIVE });
 
 describe('可选通道范式 · 不咬面（缺省缺席=旧行为不变）', () => {
-  it('无通道字段的节点：通道代码在场 vs 配置缺席——同 seed 结果与日志逐条相等（探针不咬）', async () => {
-    // 两次独立构建 runtime（同一磁盘配置·无通道字段）双跑：任何"通道缺省仍改行为"的实现错误都会破相等。
+  it('无通道字段的节点：同 seed 双跑逐条相等+通道痕迹零出现（探针不咬面）', async () => {
+    // 诚实说明证明力：双跑相等证"确定性未破"；"缺省=旧行为逐字节不变"的主证据=全量既有测试
+    // （引擎 30 测/手感靶/带宽/管线冒烟等 1246 条基线）在通道代码入场后原样全绿——本测试补的是
+    // 痕迹面（无配置世界永不出现通道专属 reason/日志标记）。
     const a = await run(loadBundle());
     const b = await run(loadBundle());
     expect(a.winner).toBe(b.winner);
