@@ -165,11 +165,25 @@ export const TRUTHS = {
   storyBossNode: 30,
   eliteNodes: [6, 59, 83, 101, 119, 137, 149],
 
-  // 战力公式 v0.1 骨架（B1 §1 + S5.5 驾驶加成计入 + 星核插件计入战力拍板）
-  tierBase: [100, 160, 250, 380, 550],
-  shipLevelPowerPct: 0.08,
-  pilotStarCoef: [1.0, 1.08, 1.18, 1.30, 1.45],
-  pilotLevelPct: 0.01,
+  // 战力刻度 v1（定价重锚专项批 2026-07-11·镜像 S7PowerRating.ts——改必两处同改，守卫=对表测试）：
+  // 阶基值邻比/星表/驾级系数/LF 表全部按实测重标（tools/s7-power-recalib.mjs·同刻度≈同强度 RMSE 2%），
+  // 插件/核加法项本批未动。旧 v0.1 骨架（[100,160,250,380,550]·+8%/级·星表挪用战斗值）已退役。
+  tierBase: [100, 108, 132, 180, 323],
+  // 舰等级刻度因子（下标=级−1·= growth_band 每轴倍数 × 技能节点门 L20×1.100/L40×1.166）
+  shipLevelFactor: [
+    1, 1.0704, 1.1407, 1.2111, 1.2815, 1.3519, 1.4222, 1.4926, 1.563, 1.6333,
+    1.6917, 1.7241, 1.7565, 1.7889, 1.8213, 1.8537, 1.8861, 1.9185, 1.9509, 2.1816,
+    2.2, 2.2224, 2.2448, 2.2672, 2.2897, 2.3121, 2.3344, 2.3569, 2.3793, 2.4016,
+    2.42, 2.4424, 2.4648, 2.4872, 2.5097, 2.5321, 2.5544, 2.5769, 2.5993, 3.0568,
+    3.0782, 3.1021, 3.1261, 3.1499, 3.1739, 3.1978, 3.2218, 3.2456, 3.2696, 3.2935,
+    3.3173, 3.3413, 3.3652, 3.3891, 3.413, 3.437, 3.4608, 3.4847, 3.5087, 3.5325,
+    3.5565, 3.5804, 3.6044, 3.6282, 3.6522, 3.6761, 3.6999, 3.7239, 3.7478, 3.7717,
+    3.7956, 3.8196, 3.8434, 3.8674, 3.8913, 3.9151, 3.9391, 3.963, 3.987, 4.0108,
+    4.0348, 4.0587, 4.0826, 4.1065, 4.1304, 4.1543, 4.1782, 4.2022, 4.226, 4.25,
+    4.2739, 4.2977, 4.3217, 4.3456, 4.3696, 4.3934, 4.4174, 4.4413, 4.4652, 4.4891,
+  ],
+  pilotStarCoef: [1.0, 1.09, 1.27, 1.30, 1.65],
+  pilotLevelPct: 0.0036,
   pluginPower: { fine: 15, superior: 35, legendary: 70 },
   corePower: 120,
   pluginSlotsByTier: [1, 2, 3, 3, 3],
@@ -296,8 +310,12 @@ export const PARAMS = {
   // 结构修正（第6轮记档）：18 档→20 档——18 档时顶部档距 30%、战力 2.2-2.9 万整段
   // 零跨档，全档终局记录收入平掉（普通/轻度 n150 贴顶 7、黑市党 D26 差 1 天的共同根因）。
   drill: {
-    dps: 0.40, windowSec: 60,
-    thresholdBase: 8000, thresholdGrowth: 1.2510, tiers: 20, // 顶档=战力≈23.5k 全档毕业段真实可达（1.2577 时 26k 仍无人摸到=白档二犯·§18 教训③）
+    // 定价重锚 v1·估算器诚实换算（旧→新→为什么对）：旧 dmg=paper×0.40×60 锚在 v0 纸面；
+    // v1 纸面与 v0 非等比缩放（基线 500 不变·毕业段 ~23.5k→~10.8k），单乘数物理上不能两端都对
+    // → 加幂形 dmg=paper^1.2529×0.0829×60，把 基线档位 与 毕业顶档（=旧战力 23.5k 摸顶档20）
+    // 同时钉回旧轨迹＝玩家真实木桩行为不变（运行时阈值表=伤害量纲·零改动），只换算刻度。
+    dps: 0.0829, dpsPow: 1.2529, windowSec: 60,
+    thresholdBase: 8000, thresholdGrowth: 1.2510, tiers: 20, // 顶档=旧战力≈23.5k 全档毕业段真实可达（1.2577 时 26k 仍无人摸到=白档二犯·§18 教训③）
     rewardBase: 90, rewardGrowth: 1.165,
     minutes: 2, // 打到可达档的强制日常耗时（自愿实验时长不计=1c 口径）
   },
@@ -476,8 +494,11 @@ export const PARAMS = {
   },
 
   // 深空回廊（参与度分层主渠道：肝爬得深爬得勤 → 层奖+里程碑显著多）
+  // 定价重锚 v1：reqGrowth 0.075→0.055（req=战力量纲·秤缩后层轨迹塌到毕业 L46——按"真实行为
+  // 不变"重锚：扫参恢复 毕业全档 L74 精确 + D5→肝30/重24/普24（老口径 28/24/24·肝差2层=粒度）；
+  // reqBase 420 不动）。运行时镜像=S7DeepCorridor CORRIDOR_REQ_GROWTH（对表守卫）。
   corridor: {
-    reqBase: 420, reqGrowth: 0.075, echoSpike: 1.25, minutesPerLayer: 1.0,
+    reqBase: 420, reqGrowth: 0.055, echoSpike: 1.25, minutesPerLayer: 1.0,
     layerAlloy: { base: 22, per: 5.5 }, layerToken: { base: 15, per: 3.6 }, layerCargo: { base: 4, per: 1.0 },
     msOre: { base: 100, per: 60 }, msCargo: { base: 50, per: 25 }, msUniversal: { base: 4, per: 1.6 },
     msBeacon: 2, rareBeaconLayer: 25, epicBeaconLayer: 50,
@@ -598,7 +619,21 @@ export const PARAMS = {
   // 终值=U4（第七轮装配扫参收敛·§16e 全过程）：普通列 1/2/4/5（n102 差 1=解题墙尺子代理·
   // 已知缺口交 Ron）·n150 四档全中 3/4/5/6·毕业 32/38/46/55 全带内·唯一轴违例=肝 n060 先卡
   // （原理性例外·见 WALL_MONO_EXCEPTIONS）。
-  wallPressureLift: { 60: 1.08, 102: 1.08, 120: 1.03, 150: 1.0 },
+  // 定价重锚 v1 重收敛·第 5 轮停手态（调参纪律：≤5 轮不收敛停手升级——本表=最优可达停车位）：
+  // 过程：R1-R3 在"回廊 req 未重锚"的错误收入世界收敛到 16/16（回廊层塌→收入短 4 成·作废）；
+  // R4 撤 n138:0.95（<1 降压破坏压力表单调=显示推荐值倒挂·余势零墙改走 reliefNodeGateMult 经济闸折减）；
+  // R5 回廊收入复原后重扫（n60×n102×n120×n150 共 22 组合）不收敛——停手报总控。
+  // 停车态（16 格 13 中 3 缺·缺格全部同根=事件锁定）：重n120=1/普n102=1/轻n120=3 各差 −2
+  // （新纸面阶内平+阶跳大→破墙日被"主力升阶/升星事件日"锁定；压力旋钮只能挪到达日、挪不动事件日；
+  // 事件日=碎片投放轨迹=投放红线不可动）＋档轴单调 3 条（同根连带）＋轻毕业 53（对老落地 55=−2 贴线）。
+  // 候总控三选：A 按新世界纹理重钉十六格靶（自然落点=停车态）/ B 逐格例外追认 /
+  // C 挂段二阶梯重铸重钉（§8a 初见口径落地=段二本就重铸阶梯）。
+  wallPressureLift: { 60: 1.06, 102: 1.00, 120: 1.03, 150: 1.04 },
+  // 余势关经济闸折减（定价重锚 v1 第 4 轮·角色拆分）：压力表一表两用（显示推荐值+推进闸），
+  // 显示必须单调不降、余势关必须零墙——新纸面曲线下两者在 n138 冲突（星5 波前平台 6.9-7.1k vs
+  // 单调地板 7.3k）。拆法：显示表保持单调原值；推进闸在余势关按本表折减——镜像战斗侧 WALL_BOOST
+  // 余势减压已拍现实（n138=0.65/0.5：贴线下真实战斗轻松能过，模型闸如实反映）。n084 现无墙不加（不做防御性加料）。
+  reliefNodeGateMult: { 138: 0.95 },
 };
 
 // ---------------------------------------------------------------------------
@@ -721,7 +756,8 @@ export function nodeStage(n, T = TRUTHS) {
 }
 
 export function shipBasePower(tier, level, T = TRUTHS) {
-  return T.tierBase[tier] * (1 + T.shipLevelPowerPct * Math.max(0, level - 1));
+  const lv = Math.max(1, Math.min(100, Math.floor(level)));
+  return T.tierBase[tier] * T.shipLevelFactor[lv - 1];
 }
 
 export function pilotCoef(star, level, T = TRUTHS) {
@@ -863,10 +899,11 @@ export function pickCommissionDifficulty(tier, power, pressure, P = PARAMS) {
   return out;
 }
 
-/** 木桩档位（任务单⑧·纯函数）：60 秒总伤 = 战力×d×60×压榨系数，打到阈值表最高可达档。 */
+/** 木桩档位（任务单⑧·纯函数）：60 秒总伤 = 战力^dpsPow×d×60×压榨系数，打到阈值表最高可达档
+ *（幂形=v1 刻度换算·见 PARAMS.drill 注）。 */
 export function drillTierFor(power, skill, P = PARAMS) {
   const D = P.drill;
-  const dmg = power * D.dps * D.windowSec * (skill ?? 1);
+  const dmg = Math.pow(Math.max(0, power), D.dpsPow ?? 1) * D.dps * D.windowSec * (skill ?? 1);
   let k = 0;
   for (let i = 1; i <= D.tiers; i++) {
     if (dmg >= D.thresholdBase * Math.pow(D.thresholdGrowth, i - 1)) k = i; else break;
@@ -951,6 +988,7 @@ function newState() {
     dailyIncomeBySource: [], dailySpendBySource: [], dailyMainShards: [], dailyPlugins: [], curDay: 0,
     negativeViolations: [],
     dailyCleared: [], dailyPower: [], dailyStuck: [], dailyOpenPower: [], dailyMains: [], dailyCorridor: [],
+    dailyGachaPulls: [], dailySupplyLv: [], gachaPullsToday: 0,
     graduateDay: null,
     adsUsedTotal: 0, adPointUses: {}, chestsOpened: 0,
     // 黑市计数独立账本（不进 14 键钱包——运行时钱包键有 gate 测试钉死且本子步零回写）；
@@ -1680,6 +1718,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
           doGachaPulls(st, 'ship', pulls / 2, env, P, T);
           doGachaPulls(st, 'pilot', pulls / 2, env, P, T);
         }
+        st.gachaPullsToday = pulls; // 观察口（定价重锚批 D 件·双钥匙蒙特卡洛取数）
       }
       doAscends(st, T);
       doLevelUps(st, debit, T);
@@ -1709,12 +1748,17 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     // （反解在相邻战力点会跳组合=阵容形状噪声，§20.2 同款病，n150 爬坡首测 85%→42% 实证）。
     st.dailyOpenPower.push(Math.round(power));
     st.dailyMains.push(st.mains.map((m) => [m.ship.tier, Math.round(m.ship.level), m.pilot.star, Math.round(m.pilot.level)]));
+    // 观察口（定价重锚批 D 件）：当日抽数+补给站等级（双钥匙蒙特卡洛按真实节奏取数）
+    st.dailyGachaPulls.push(Math.round((st.gachaPullsToday ?? 0) * 10) / 10);
+    st.dailySupplyLv.push(st.buildings.supply);
     // 长墙试错累积：用"截至昨日的连续零推进天数"取值（当日推进态未知·与 prevWall 同口径）
     const stallEff = Math.min(P.stallTinker?.cap ?? 0, (P.stallTinker?.perDay ?? 0) * (st.stuckStreak ?? 0));
     const eff = 1 + (tier.tinkerBonus ?? 0) + benchEffPct(benchPool(st, T), P) + stallEff;
+    // 推进闸需求（角色拆分·见 PARAMS.reliefNodeGateMult）：余势关闸=显示压力×折减（战斗侧真实好打）。
+    const gateReq = (n) => Math.round(pressure[n] * (P.reliefNodeGateMult?.[n] ?? 1));
     if (!paused && st.cleared < T.N) {
       let nodeBudget = Math.floor(Math.max(0, minutes) / P.mainline.minutesPerNode);
-      while (st.cleared < T.N && nodeBudget > 0 && power * eff >= pressure[st.cleared + 1]) {
+      while (st.cleared < T.N && nodeBudget > 0 && power * eff >= gateReq(st.cleared + 1)) {
         const n = st.cleared + 1;
         // 逐关养成态快照（任务单⑧交付 8·⑥第三段接口）：打这关时点的开盘养成态
         st.milestones.push({
@@ -1747,7 +1791,7 @@ export function simulateEconomyTier(tierName, pressure, opts = {}, P = PARAMS, T
     //     为止），沿用给 回廊 stallCorridorMult / 安慰包（既有校准态行为，任务单⑤不动）；
     //   wallDay = 整天零推进的真墙日（与 dailyStuck/墙矩阵同口径）——悬赏恶补预算只在
     //     真墙日放大（"卡关那几天回来清板"），否则 stall 放大天天触发=分层被抹平。
-    const stuckToday = !paused && st.cleared < T.N && power * eff < pressure[st.cleared + 1];
+    const stuckToday = !paused && st.cleared < T.N && power * eff < gateReq(st.cleared + 1);
     const wallDay = stuckToday && clearedToday === 0;
     // 发卡=「每登录日 +4」（S10.8 原文）——停玩天不发卡（任务单⑤真源对齐修正：此前模型
     // 停玩也累积，停玩变相成"攒卡银行"，恶补分层下会虚增停玩后回补收入）
@@ -1939,6 +1983,8 @@ function summarize(tierName, st, opts, P, T) {
     dailyOpenPower: st.dailyOpenPower,
     dailyMains: st.dailyMains,
     dailyCorridor: st.dailyCorridor,
+    dailyGachaPulls: st.dailyGachaPulls,
+    dailySupplyLv: st.dailySupplyLv,
     ledger: st.ledger,
     dailyIncomeBySource: st.dailyIncomeBySource,
     dailySpendBySource: st.dailySpendBySource,
@@ -2551,7 +2597,7 @@ if (isMain) {
     const path = process.env.S7_ECON_JSON ?? 'tools/s7-economy-report.json';
     const strip = (r) => ({ ...r, ledger: undefined, dailyPower: undefined, dailyCleared: undefined, dailyOpenPower: undefined, dailyMains: undefined, dailyCorridor: undefined });
     const payload = {
-      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.8(对锚与阶梯批·墙矩阵16格点靶+墙点直抬+带宽中档)',
+      generatedBy: 'simulate-s7-economy.mjs', version: 'v0.9(定价重锚·刻度v1实测重标+φ恒等+墙循环重收敛)',
       targets: TARGETS, bmTarget: BM_TARGET, gammas, anchors,
       wallMatrixTarget: WALL_MATRIX_TARGET, wallMatrixTol: WALL_MATRIX_TOL, hardWallCap: HARD_WALL_CAP,
       params: { ...PARAMS }, tiers: TIERS,

@@ -372,8 +372,11 @@ describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
   // 敌场钉回落数前手调量纲（HEAD 旧值），机制语义零变化。
   const pinN084 = (b: Bundle): Bundle => {
     // 批③段三重锚：波次行也钉回手调量纲（躯干重校后落数波次在 final 阶段前打死 FIVE 实证）。
+    // 定价重锚 v1 补钉：血量也钉——阶段召唤物走落地节点行（bu_n084_shield 等），只钉攻不钉血=
+    // 血随压力表重落漂移（新落地 2102 血把 FIVE 的输出全吸走·89s 团灭在 final 前=侥幸绿转真红）。
+    // 本测只验阶段时序，召唤面钉小血量=机制语义零变化。
     for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
-      if (/^bu_n084_/.test(String(u.rowId))) u.attack = 30;
+      if (/^bu_n084_/.test(String(u.rowId))) { u.attack = 30; u.maxHp = 400; }
     }
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n084'), { maxHp: 6000, attack: 120 });
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n084_adds'), { unitStatRef: 'bu_enemy_shield' });

@@ -165,12 +165,15 @@ import { genLineupFromMains } from '../tools/s7-battles-entry';
 import { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService';
 import { S7_HARD_CONTROL_DIMINISH } from '../assets/scripts/core/s7/S7AutoBattleTypes';
 
-describe('对锚与阶梯批 · 墙爬坡带守卫（普通档冻结态）', () => {
+describe('定价重锚批 · 墙爬坡带守卫（普通档冻结态·v0.9）', () => {
   const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13'];
-  // 经济尺 v0.8 校准态快照（普通档·mains=[阶,舰级,驾星,驾级]×5·主力序）
-  const D9 = [[3, 12, 3, 13], [2, 12, 3, 13], [2, 12, 2, 12], [2, 12, 2, 12], [1, 11, 2, 12]];
-  const D28 = [[3, 30, 4, 33], [3, 29, 4, 33], [3, 29, 4, 33], [3, 29, 4, 33], [3, 29, 4, 33]];
-  const D31 = [[3, 32, 4, 36], [3, 32, 4, 36], [3, 32, 4, 36], [3, 32, 4, 36], [3, 31, 4, 35]];
+  // 经济尺 v0.9 校准态快照（普通档·mains=[阶,舰级,驾星,驾级]×5·主力序）。
+  // 重定基（旧→新→为什么对）：v0.8 快照=旧刻度经济轨迹（D9 舰级 12/驾 13 等）——定价重锚 v1 后
+  // 压力表/敌配/到达轨迹全体重落，冻结态按新世界重采（tools/s7-wall-climb.mjs 复算口径不变）。
+  const D9 = [[3, 12, 3, 12], [2, 12, 3, 12], [2, 12, 2, 12], [1, 11, 2, 12], [1, 11, 2, 12]];
+  const D10 = [[3, 13, 3, 14], [2, 13, 3, 13], [2, 13, 3, 13], [2, 13, 2, 13], [1, 12, 2, 13]];
+  const D31 = [[3, 32, 4, 35], [3, 32, 4, 35], [3, 31, 4, 35], [3, 31, 4, 34], [3, 31, 4, 34]];
+  const D33 = [[4, 33, 4, 37], [3, 33, 4, 36], [3, 33, 4, 36], [3, 33, 4, 36], [3, 33, 4, 36]];
   const arrange = (m: number[][]) => [m[1], m[0], m[2], m[3], m[4]] as Array<[number, number, number, number]>;
 
   async function winRate(nodeId: string, mains: number[][], samples = 20): Promise<number> {
@@ -188,24 +191,25 @@ describe('对锚与阶梯批 · 墙爬坡带守卫（普通档冻结态）', () 
     return (wins / samples) * 100;
   }
 
-  // 带宽定标记录（对锚批·多种子族合并）：n060 破墙 ≈29%（26.7/34.4 两族·带上浮如实报）·
-  // n120 卡墙 1.7%·n120 破墙 11.7%。守卫带=点估±采样方差余量（n=32 时 p̂≈30% 的 95% 波动约 ±16pp）
-  // ——守"墙还在（不为零）且没塌成白给（不过半）"，精确点位=tools/s7-wall-climb.mjs 的职责
-  // （早期 n=20 同族种子曾把 30% 读成 15%=教训记 §16e）。
-  it('n060 破墙日（普D9 真实态）：单把胜率落 [2,45]（靶 10-20·实测≈29 带上浮·攻坚日语义在）', async () => {
-    const w = await winRate('n060', D9, 32);
-    expect(w).toBeGreaterThanOrEqual(2);
-    expect(w).toBeLessThanOrEqual(45);
+  // 带宽定标记录（定价重锚批·n=40 定版）：n060 破墙 5%/+1日 30%/+2日 88%；n120=升阶事件
+  // 二值墙（卡墙全 0 → 主力1 升 SS 日 93%——§16e 肝/重同款"破墙=升阶事件"新世界全档化）。
+  // 守卫哲学不变：守"墙还在+形状在"，精确点位=tools/s7-wall-climb.mjs 的职责；
+  // 带=点估±采样方差余量（n=32 时 95% 波动约 ±8-16pp·早期同族种子教训记 §16e）。
+  it('n060 破墙日（普D9 真实态）：破墙日不白给 ≤30 且 +1日进爬坡带 [8,65]（形状双点守卫）', async () => {
+    const wBrk = await winRate('n060', D9, 32);
+    expect(wBrk).toBeLessThanOrEqual(30); // 实测 5%：破墙日=硬仗（旧值 0%=墙焊死·白给>30=墙塌）
+    const wNext = await winRate('n060', D10, 32);
+    expect(wNext).toBeGreaterThanOrEqual(8); // 实测 30%：次日能磨过=墙不是焊死的
+    expect(wNext).toBeLessThanOrEqual(65);
   }, 90000);
 
-  it('n120 卡墙日（普D28 真实态）：单把胜率 ≤12（推不动才叫卡墙）', async () => {
-    const w = await winRate('n120', D28, 32);
-    expect(w).toBeLessThanOrEqual(12);
+  it('n120 卡墙日（普D31 真实态）：单把胜率 ≤12（推不动才叫卡墙）', async () => {
+    const w = await winRate('n120', D31, 32);
+    expect(w).toBeLessThanOrEqual(12); // 实测 0%（二值墙卡墙侧）
   }, 90000);
 
-  it('n120 破墙日（普D31 真实态）：单把胜率落 [2,30]（靶 10-20）', async () => {
-    const wBrk = await winRate('n120', D31, 32);
-    expect(wBrk).toBeGreaterThanOrEqual(2);
-    expect(wBrk).toBeLessThanOrEqual(30);
+  it('n120 破墙日（普D33 真实态=主力1 升 SS 日）：单把胜率 ≥50（升阶事件必须破得开）', async () => {
+    const wBrk = await winRate('n120', D33, 32);
+    expect(wBrk).toBeGreaterThanOrEqual(50); // 实测 93%：二值事件墙的"开门"侧——SS 日破不开=质变体感破坏
   }, 90000);
 });

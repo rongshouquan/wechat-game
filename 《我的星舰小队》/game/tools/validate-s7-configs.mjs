@@ -223,8 +223,9 @@ for (const row of tables.pressure_param) {
   } else {
     const lo = num(row.pressureMin), hi = num(row.pressureMax);
     if (lo === null || hi === null || lo > hi) fail('pressure_param', row.rowId, 'pressureMin<=pressureMax 不成立');
-    // 步5 对表守卫：n150 推荐战力钉 v0.7 快照精确值（32094）——压力表重校（json 再生）时此处红=提醒重落显示带（同敌配绊线哲学）。
-    if (s === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 32094) fail('pressure_param', row.rowId, 'N150 推荐战力必须==v0.7 快照 32094（重校后同步重落）');
+    // 对表守卫：n150 推荐战力钉快照精确值——压力表重校（json 再生）时此处红=提醒重落显示带（同敌配绊线哲学）。
+    // 重定基（定价重锚 v1）：32094（v0.7 快照·旧刻度）→ 12080（v0.9 快照·刻度实测重标后诚实读数·与 ConfigValidatorS7 同步）。
+    if (s === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 12080) fail('pressure_param', row.rowId, 'N150 推荐战力必须==v0.9 快照 12080（重校后同步重落）');
   }
 }
 for (const row of tables.reward_param) {

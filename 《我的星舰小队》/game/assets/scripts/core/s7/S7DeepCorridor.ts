@@ -38,14 +38,15 @@ export const CORRIDOR_BASE_ENEMY_COUNT = 5;
 export const CORRIDOR_LAYERS_PER_EXTRA_ENEMY = 8;
 export const CORRIDOR_MAX_ENEMY_COUNT = 12;
 /**
- * 层强度曲线（对锚与阶梯批重锚·2026-07-10）：对齐经济尺指数锚 req(L)=420×1.075^(L-1)。
- * 旧"线性 layer×pct"作废——它与尺子曲线不同族（批③报备2 实测：L1 前沿 8k/层间非单调/
- * L30 闪电战 32k 不可破，三病同源=线性缩放 × 调色板混入落数节点行）。
+ * 层强度曲线（对锚与阶梯批立曲线·定价重锚 v1 重锚增速）：req(L)=420×1.055^(L-1)。
+ * req=战力刻度量纲——刻度 v1 实测重标（整体缩水）后按"层轨迹不变"重锚：growth 0.075→0.055
+ * （扫参恢复 毕业全档 L74 精确＋D5→肝30/重24/普24·老口径 28/24/24 肝差 2 层=层粒度）；base 420 不动。
+ * 旧"线性 layer×pct"作废史（批③报备2 三病同源）见 git。
  * 同步纪律：REQ_BASE/REQ_GROWTH/ECHO_SPIKE 与 simulate-s7-economy.mjs PARAMS.corridor
  * 是同一组数（尺子=机器真源），改任一侧必须同步另一侧（经济测试有对表守卫）。
  */
 export const CORRIDOR_REQ_BASE = 420;
-export const CORRIDOR_REQ_GROWTH = 0.075;
+export const CORRIDOR_REQ_GROWTH = 0.055;
 /** 回响Boss尖峰=×1.25（对齐尺子 echoSpike·取代旧"0.8+0.5/轮"占位）。 */
 export const CORRIDOR_ECHO_SPIKE = 1.25;
 /**

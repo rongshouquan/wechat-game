@@ -52,7 +52,7 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(r.view.stageType).toBe('boss');
     expect(r.view.hasBoss).toBe(true);
     expect(r.view.enemies.some((e) => e.unitStatRef === 'bu_boss_n084' && e.isBoss)).toBe(true);
-    expect(r.view.recommendedPower).toBe(6113); // 步5 重定基：bp_n084 recommend=v0.7 快照真值
+    expect(r.view.recommendedPower).toBe(3508); // 定价重锚 v1 重定基：6113（v0.7 旧刻度）→3508（v0.9 快照·实测重标后诚实读数）
   });
 
   it('n008 现在已有遭遇（2c批量生产覆盖）：hasEncounter=true、敌情如实读出', () => {
@@ -101,15 +101,19 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(equipped.view.playerPower).toBeGreaterThan(bare.view.playerPower); // 装了插件+核 → 战力更高
   });
 
-  it('驾驶员单独也计入战力（同船同级·只差驾驶员·占位）', () => {
+  it('驾驶员单独也计入战力（同船同级·只差驾驶员·驾级 30 显出增量）', () => {
+    // 定价重锚 v1 重定基：驾级刻度系数 0.01→0.0036（实测重标·纸面 2 倍虚标修正）——
+    // 1★ Lv1 驾驶员对 100 纸面的增量 +0.36% 被取整吞掉（老系数 +1% 恰好探出 1 点=侥幸绿）。
+    // 语义不变（配驾驶员→战力更高），fixture 驾级抬到 30 让增量稳过取整（100→110.8）。
     const noPilot = createDefaultS7Squad();
     grantShip(noPilot, 'shp01');
     noPilot.formation = [{ slotRef: 'p0c2', shipId: 'shp01' }]; // 无 loadout = 无驾驶员
     const withPilot = createDefaultS7Squad();
     grantShip(withPilot, 'shp01'); grantPilot(withPilot, 'pil01');
     assignSlot(withPilot, 'p0c2', 'shp01', 'pil01');
-    const a = buildPrebattleView(runtime, at('n006'), noPilot);
-    const b = buildPrebattleView(runtime, at('n006'), withPilot);
+    const lv = { shipLevels: {}, pilotLevels: { pil01: 30 } };
+    const a = buildPrebattleView(runtime, at('n006'), noPilot, lv);
+    const b = buildPrebattleView(runtime, at('n006'), withPilot, lv);
     expect(a.ok && b.ok).toBe(true);
     if (a.ok && b.ok) expect(b.view.playerPower).toBeGreaterThan(a.view.playerPower); // 配了驾驶员 → 战力更高
   });

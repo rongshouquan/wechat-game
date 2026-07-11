@@ -13,7 +13,7 @@
 import { Node, Label, Color, Graphics, UITransform } from 'cc';
 import { getS7UsableBand } from '../S7UiLayout';
 import {
-  S7BountyState, S7BountyCard, bountyBoardCap, bountyCardRewards,
+  S7BountyState, S7BountyCard, S7BountyDifficulty, bountyBoardCap, bountyCardRewards,
 } from '../../core/s7/S7StarportBounty';
 import { S7CommissionAffixDef } from '../../core/s7/S7CommissionAffix';
 
@@ -24,6 +24,8 @@ export interface S7BountyHost {
   affixDefs(): readonly S7CommissionAffixDef[];
   /** 已通关最高星域档（产出预览/难度缩放）。 */
   starfieldTier(): number;
+  /** 当前悬赏难度（定价重锚批：产出预览与结算同档——过渡期自动选档·难度弹窗归灰盒批）。 */
+  bountyDifficulty(): S7BountyDifficulty;
   habitatLevel(): number;
   /** 复用控制器的"货币表→短文案"。 */
   gainsText(rewards: Record<string, number>): string;
@@ -155,7 +157,7 @@ export class S7BountyBoardView {
       .map((id) => defs.find((d) => d.rowId === id)?.effectText ?? id)
       .map((t) => `· ${t}`)
       .join('\n');
-    const rewards = bountyCardRewards(card, tier, false, goldIndex);
+    const rewards = bountyCardRewards(card, tier, false, goldIndex, this.host.bountyDifficulty());
     const perfectHint = card.theme === 'escort' ? '｜满血护航+25%' : '';
     const midX = -rowW / 2 + 150;
     const midW = rowW - 327; // = (rowW/2-177) - midX：右侧给出战键(左缘 rowW/2-171)留 6

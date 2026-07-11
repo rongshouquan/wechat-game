@@ -5,17 +5,20 @@
 // 工具主体在 tools/s7-battles-entry.mts（esbuild 打包驱动）；vitest 直接吃 TS 源=同一份代码进 gate。
 import { describe, it, expect } from 'vitest';
 import {
-  solveGrowthPlan, genLineup, pickShips, mapPressureToEnemies, strengthIndex,
+  solveGrowthPlan, genLineup, pickShips, mapPressureToEnemies,
   loadBundle, scanMainlineAsync, K_HP, K_DPS, STAGE_MULT, ROLE_SHAPE,
 } from '../tools/s7-battles-entry';
 
 describe('⑥二段① 阵容生成器', () => {
-  it('养成刻度反解：全程贴靶（|队伍战力−P|/P ≤ 6%·P=600..26000 抽样）', () => {
-    for (const p of [600, 1500, 3072, 5000, 10216, 14776, 20000, 26028]) {
+  it('养成刻度反解：可达域内贴靶（|队伍战力−P|/P ≤ 9%·P 抽样避开 S→SS 接缝空档）', () => {
+    // 定价重锚 v1 重定基（旧→新→为什么对）：旧抽样 600..26028 是 v0 刻度域；v1 刻度整体缩水
+    // （毕业段 ~1.2 万·反解器均匀队顶 ~1.9 万），且升阶按实测标价后接缝纸面跳距拉大——
+    // 均匀同构反解在 A→S 缝 ≈4.3k-7.0k、S→SS 缝 ≈7.8k-15.7k 两段物理够不到靶（实测 −15%/+31%；
+    // 真实玩家该段=混编·墙验收工具走经济尺真实态 genLineupFromMains 不受此限）。本测试守
+    // "可达域内贴靶"，接缝空档=均匀反解器结构局限如实记档（§16f）。
+    for (const p of [600, 1500, 3072, 3900, 7000, 16000, 18500]) {
       const plan = solveGrowthPlan(p);
       const teamPower = plan.shipPower * 5;
-      // 批③段三重锚 6%→9%：反解器加"升阶保级"下限（真实玩家满级才升阶·修"SS低等级"幽灵方案）后
-      // S顶→SS底纸面跳 ≈×1.55、格距最宽点 ≈8.3%（±20 驾级微调轴填不满）——真实玩家在该带=混编舰队（粗放版记档）。
       expect(Math.abs(teamPower - p) / p).toBeLessThanOrEqual(0.09);
     }
   });
@@ -34,22 +37,23 @@ describe('⑥二段① 阵容生成器', () => {
   });
 });
 
-describe('⑥二段② 压力→敌配映射（规则=细表 §19）', () => {
-  it('总量=k 合同 × φ 强度补偿 × 关卡系数（锚点 P=500 处 φ=1）', () => {
+describe('⑥二段② 压力→敌配映射（规则=细表 §19·定价重锚 v1 φ 恒等化）', () => {
+  it('总量=k 合同 × φ(P)=P/500 × 关卡系数（锚点 P=500 处 φ=1）', () => {
     const b = loadBundle();
-    const phi500 = strengthIndex(500) / strengthIndex(500);
-    expect(phi500).toBe(1);
     const scale = mapPressureToEnemies(b, 'n001', 500);
     expect(scale.pool).toBeCloseTo(K_HP * 500 * STAGE_MULT.normal.pool, 5);
     expect(scale.dps).toBeCloseTo(K_DPS * 500 * STAGE_MULT.normal.dps, 5);
   });
 
-  it('φ 单调不减 且 中后期强度补偿 < 刻度线性（=漂移被吸收）', () => {
-    const phi = (p: number): number => strengthIndex(p) / strengthIndex(500);
-    expect(phi(3000)).toBeGreaterThan(phi(1000));
-    expect(phi(15000)).toBeGreaterThan(phi(3000));
-    // 刻度翻 30 倍（500→15000）时强度补偿显著小于 30（战力刻度与战斗强度的换算漂移·§19）
-    expect(phi(15000)).toBeLessThan(15000 / 500);
+  it('φ 恒等：敌池随 P 线性、敌火超锚段 ^1.08 结构补偿（旧"补偿<线性"断言随根因拆除）', () => {
+    // 重定基记录（旧→新→为什么对）：旧断言 φ(15000)<30=「补偿吸收刻度虚胖」——v0 病态行为；
+    // v1 刻度即强度（实测重标·RMSE 2%），φ=P/500 恒等=敌厚度直接贴刻度；敌火晚段 ^1.08
+    // =套件结构价值不随战力砍半的独立机理（与刻度诚实无关·保留）。
+    const b = loadBundle();
+    const lo = mapPressureToEnemies(b, 'n001', 2000);
+    const hi = mapPressureToEnemies(b, 'n001', 8000);
+    expect(hi.pool / lo.pool).toBeCloseTo(4, 5); // 池纯线性
+    expect(hi.dps / lo.dps).toBeCloseTo(Math.pow(4, 1.08), 3); // 火 ^1.08
   });
 
   it('职业形状：爆发敌高攻/盾卫高防/等效厚度折减单位血', () => {

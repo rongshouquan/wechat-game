@@ -114,11 +114,12 @@ describe('s7 tier b economy params', () => {
     expect(Number(floor.fullCore)).toBeLessThanOrEqual(Number(exp.fullCore));
   });
 
-  it('pins N150（终Boss）pressure to v0.7 snapshot and keeps min<=max', () => {
-    // 步5 重定基：旧'≤14500'=B1 时代旧刻度护栏；新=钉 v0.7 快照精确值 32094（压力表重校→红=提醒重落显示带·同敌配绊线哲学）。
+  it('pins N150（终Boss）pressure to v0.9 snapshot and keeps min<=max', () => {
+    // 步5 重定基：旧'≤14500'=B1 旧刻度护栏 → v0.7 快照 32094；定价重锚 v1 再重定基：32094=旧刻度
+    // 读数 → 12080=刻度实测重标后同一到达期望的诚实读数（绊线哲学不变：压力表重校→红=提醒重落显示带）。
     const rows = readSample<Array<{ rowId: string; scope: string; refKey: string; pressureMax: number; pressureRecommend?: number; appliesToBoss?: boolean }>>('pressure_param');
     const finalBoss = rows.find((r) => r.rowId === 'bp_n150')!;
-    expect(finalBoss.pressureRecommend).toBe(32094);
+    expect(finalBoss.pressureRecommend).toBe(12080);
     for (const r of rows.filter((x) => x.scope === 'template_modifier')) expect(r.appliesToBoss).toBe(false);
   });
 

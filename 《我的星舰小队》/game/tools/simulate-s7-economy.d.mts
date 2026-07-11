@@ -19,7 +19,7 @@ export declare const TRUTHS: {
   storyBossNode: number;
   eliteNodes: number[];
   tierBase: number[];
-  shipLevelPowerPct: number;
+  shipLevelFactor: number[];
   pilotStarCoef: number[];
   pilotLevelPct: number;
   pluginPower: { fine: number; superior: number; legendary: number };
@@ -97,7 +97,7 @@ export declare const PARAMS: {
     perfectRate: number; ambushWinRate: number; minutesPerCard: number; stallBudgetMult: number;
   };
   drill: {
-    dps: number; windowSec: number;
+    dps: number; dpsPow: number; windowSec: number;
     thresholdBase: number; thresholdGrowth: number; tiers: number;
     rewardBase: number; rewardGrowth: number; minutes: number;
   };
@@ -245,6 +245,8 @@ export interface S7EconResult {
   dailyOpenPower: number[];
   dailyMains: [number, number, number, number][][];
   dailyCorridor: number[];
+  dailyGachaPulls: number[];
+  dailySupplyLv: number[];
   // 节奏观察口（专属碎片逐日流·建筑细案批免费抽接线测试用）
   dailyMainShards: ({ shipMain: number; shipOff: number; pilotMain: number; pilotOff: number } | undefined)[];
   ledger: { income: Record<string, Record<string, number>>; spend: Record<string, Record<string, number>> };

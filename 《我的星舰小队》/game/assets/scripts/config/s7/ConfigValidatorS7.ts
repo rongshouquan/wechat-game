@@ -696,9 +696,11 @@ function validateTierB(
     } else {
       const lo = num(row.pressureMin); const hi = num(row.pressureMax);
       if (lo === null || hi === null || lo > hi) errors.push({ table: 'pressure_param', id, message: 'pressureMin <= pressureMax 不成立' });
-      // 步5 对表守卫：n150 推荐战力钉 v0.7 快照精确值（32094）——压力表重校时此处红=提醒重落显示带。
-      if (scope === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 32094) {
-        errors.push({ table: 'pressure_param', id, message: 'N150 推荐战力必须==v0.7 快照 32094（重校后同步重落）' });
+      // 对表守卫：n150 推荐战力钉快照精确值——压力表重校时此处红=提醒重落显示带。
+      // 重定基（定价重锚 v1）：32094（v0.7 快照·旧刻度）→ 12080（v0.9 快照·刻度实测重标后
+      // 毕业墙压力=真实毕业构成的诚实纸面·apply-pressure-display 已重落·与 validate-s7-configs.mjs 同步）。
+      if (scope === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 12080) {
+        errors.push({ table: 'pressure_param', id, message: 'N150 推荐战力必须==v0.9 快照 12080（重校后同步重落）' });
       }
     }
   }

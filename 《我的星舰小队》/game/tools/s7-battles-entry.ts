@@ -18,7 +18,7 @@ import { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService
 import { S7BattleLineupUnitInput, S7BattleLineupPluginInput } from '../assets/scripts/core/s7/S7BattleEncounterAssembler';
 import { S7EffectBlock } from '../assets/scripts/core/s7/S7BattleEffectBlock';
 import { S7PluginQuality } from '../assets/scripts/core/s7/S7PluginEffects';
-import { shipPowerV0, S7_TIER_ATTR_MULT, S7_PILOT_STAR_MULT, S7_PLAYER_CRIT_BASE } from '../assets/scripts/core/s7/S7PowerRating';
+import { shipPowerV0, S7_PLAYER_CRIT_BASE } from '../assets/scripts/core/s7/S7PowerRating';
 import { S7_HARD_CONTROL_DIMINISH } from '../assets/scripts/core/s7/S7AutoBattleTypes';
 
 // 路径由壳注入（打包产物跑在临时目录·import.meta.url 不可用作锚）：S7_GAME_ROOT=game 目录绝对路径。
@@ -91,7 +91,7 @@ export interface GrowthPlan {
   /** 单舰战力（含核·含驾驶员系数）。 */
   shipPower: number;
 }
-/** 星级系数＝S7_PILOT_STAR_MULT（单源）。 */
+/** 星级刻度系数＝S7_PILOT_STAR_POWER_MULT（shipPowerV0 内部单源·v1 拆分后战斗表不再进刻度）。 */
 
 /** 单舰战力（v0·经 S7PowerRating 单源）。 */
 function shipPowerOf(tier: Tier, level: number, plugins: S7PluginQuality[], withCore: boolean, pilotStar: number, pilotLevel: number): number {
@@ -336,12 +336,14 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
  *  没有陡度时战斗侧在贴线处必胜（手感靶设计），墙会比经济模型软=毕业节奏漂移（milestone 验收实证）。
  *  n084/n138=余势墙零等待不加陡；n102 双威胁另有 adds 火力修（护后排克制工具=M4 未接线·复调记档）。 */
 const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
-  // 批③段三重对（躯干重校后墙工况全体漂移·⑥法：到达态不过/破墙态过；余势墙=到达即爽）：
-  n060: { pool: 1.41, dps: 0.885 }, // 对锚批爬坡重锚（初值表刷新后重收敛·φ台阶3622→3912反降7.3%记档）·偷鸡/+1越带=日步长12%>悬崖宽（结构性豁免）
-  n102: { pool: 0.9, dps: 0.6 },   // 二值硬墙：旧 0.85/0.70 被新世界碾成 9s 奶油泡（1.0/1.0 仍 9.4s）·恢复"无工具贴线 0%/带工具过"二值
-  n120: { pool: 1.65, dps: 0.95 }, // 对锚批爬坡重锚：卡墙3.3%✓·破墙高样本8.3%贴带底→微松（终值实测见§16e）·+1=破墙爆发跳档越带（结构性）
-  n150: { pool: 1.5, dps: 0.75 }, // 毕业马拉松（批③段三终值·对锚批挂起重定档：真实养成态 2×SS/5★ 在任何数值倍率下 100%——v0 定价在 SS/5★ 段失真·方案候 Ron 拍·爬坡矩阵如实呈现两世界）
-  n084: { pool: 0.5, dps: 0.55 }, // 余势墙：破大墙后爽段=到达即胜·旧 0.95 火在新世界杀穿（0.7/0.7=40% 不够爽）
+  // 定价重锚 v1 复收敛（刻度实测重标+φ 恒等后墙工况全体重对·扫参工具=s7-wall-boost-scan.mjs·
+  // 阵容=经济尺当日真实养成态）。新世界共性：经济闸靠 eff（板凳+试错 ≈1.25×）在裸纸面 65-80% 放行
+  // → 旧 boost 全体偏厚（破墙日 0%）；n150 反向（混编集中红利=同纸面强 1.3-1.45× → 旧 boost 墙虚设 87%+）。
+  n060: { pool: 0.8, dps: 0.7 },  // 首真墙=火力检定：破墙日 13%（带心）/+1 33%/+2 93%·偷鸡 0=日步长>悬崖宽（结构性越带·对锚批同款记档）
+  n102: { pool: 0.9, dps: 0.6 },  // 解题墙特例不套五段带（§8a）：中位默认队全程贴 0=预期形态·真验收=B5 五态+钞门（本批 C 件）
+  n120: { pool: 1.2, dps: 0.8 },  // 升阶事件二值墙：破墙=主力1 升 SS 日 0→100 跳变（§16e 肝/重同款"正中质变体感"记档·五段带不适用）·卡墙全 0 ✓
+  n150: { pool: 2.0, dps: 1.0 },  // 毕业墙恢复卡得住：旧值下卡墙日 87-100%=墙虚设→新值 卡墙 20-25%/破墙 35%/后续 40%+（纸面破墙后近平台+混编噪声=悬崖式五段带无标量解·精确形状候拍·报总控包）
+  n084: { pool: 0.5, dps: 0.55 }, // 余势墙：破大墙后爽段=到达即胜（经济闸侧同口径=reliefNodeGateMult）
   n138: { pool: 0.65, dps: 0.5 },  // 余势墙：同上
 };
 /** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·§20.2 n102 特例）：
@@ -369,38 +371,12 @@ export interface NodeScale {
 }
 
 /** 压力值 P × 该关职业组合（spawn 计划）→ 各敌行属性（总量守恒：Σ血=pool·Σ原始DPS=dps）。 */
-/** 战斗强度指数（DPS 单轴）：阶级属性乘 × 升级 growth 比——战力刻度与强度的换算函数 φ 的分子。
- *  k 合同（k_hp/k_dps）在 C·Lv0 锚点（P=500）校准；全程敌量 = k×500×stage × φ(P)，
- *  φ(P)=strengthIndex(plan(P))/strengthIndex(plan(500))——压力值=养成态指针，敌厚度贴真实强度曲线，
- *  手感靶 25s 全程成立且墙语义保留（敌按 P 的强度、玩家按自身 W 的强度）。规则成文=细表 §19。 */
-/** 强度双轴（对称性完备形式·§19）：
- *  - DPS 轴（敌池跟它走·TTK 恒定）= 阶乘×升级×驾驶员攻乘区；
- *  - EHP 轴（敌火跟它走·生存恒定）= 阶乘×升级（驾驶员不加血）。
- *  单轴版曾两头翻车：不含 pilot→中后期池薄（毕业墙软）；全含→敌火超队伍生存（全线被杀穿）。 */
-export function strengthIndex(teamPower: number, axis: 'dps' | 'ehp' = 'dps'): number {
-  const plan = solveGrowthPlan(teamPower);
-  const tierIdx = TIERS.indexOf(plan.tier);
-  const growth = growthRatioOf(plan.level);
-  const base = Math.pow(S7_TIER_ATTR_MULT, tierIdx) * growth;
-  if (axis === 'ehp') return base;
-  const pilotDps = S7_PILOT_STAR_MULT[plan.pilotStar] * (1 + 0.01 * plan.pilotLevel);
-  return base * pilotDps;
-}
-let GROWTH_CACHE: Array<{ from: number; to: number; pmin: number; pmax: number }> | null = null;
-function growthRatioOf(level: number): number {
-  if (!GROWTH_CACHE) {
-    const rows = JSON.parse(readFileSync(path.join(S7_DIR, 'growth_band_param.sample.json'), 'utf-8')) as Row[];
-    GROWTH_CACHE = rows.filter((r) => r.targetType === 'ship' && r.curveType === 'band_linear')
-      .map((r) => ({ from: r.interpFromIndex as number, to: r.toIndex as number, pmin: r.powerMin as number, pmax: r.powerMax as number }))
-      .sort((a, b) => a.from - b.from);
-  }
-  const lv = Math.max(1, Math.min(100, Math.floor(level)));
-  let band = GROWTH_CACHE.find((b) => lv >= b.from && lv <= b.to);
-  if (!band) band = lv < GROWTH_CACHE[0].from ? GROWTH_CACHE[0] : GROWTH_CACHE[GROWTH_CACHE.length - 1];
-  const t = band.to === band.from ? 0 : Math.max(0, Math.min(1, (lv - band.from) / (band.to - band.from)));
-  const power = band.pmin + (band.pmax - band.pmin) * t;
-  return power / 120;
-}
+/** φ 换算恒等化（定价重锚 v1·2026-07-11）：旧 φ=strengthIndex(plan(P))/strengthIndex(plan(500))
+ *  （反解器+阶乘+growth 带的分析近似）是给"刻度≠强度"打的补丁——v0 刻度纸面涨速与真机强度脱钩，
+ *  φ 负责吸漂移，代价=φ 台阶局部非单调（3622→3912 反降 7.3% 实测）+ ≈28k 饱和（反解器顶）。
+ *  v1 刻度按实测重标后"刻度即强度"（tools/s7-power-recalib.mjs·同刻度≈同强度 RMSE 2%），
+ *  φ(P)=P/500 恒等——补丁失去存在理由，随根因一并拆除（strengthIndex/growthRatioOf 已删）。
+ *  敌火晚段 ^1.08 结构补偿保留（套件结构价值不随战力砍半·与刻度诚实无关的独立机理）。 */
 const PHI_BASE = 500; // k 合同锚点
 
 export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: number): NodeScale {
@@ -410,19 +386,11 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   if (!enc) throw new Error(`无 encounter：${nodeId}`);
   const stage = enc.stageType as NodeScale['stage'];
   const mult = STAGE_MULT[stage];
-  // 刻度→强度换算 φ（§19）：P≤锚点走线性原始合同（教学段 P<起手战力=碾压语义·不被锚点抬难）；
-  // P>锚点按"应有养成态"的战斗强度补偿（吸收战力刻度与强度的换算漂移）。
-  const phiPool = pressure <= PHI_BASE
-    ? pressure / PHI_BASE
-    : strengthIndex(pressure, 'dps') / strengthIndex(PHI_BASE, 'dps');
-  // 段三躯干轴修正：敌火从 EHP 轴改跟 DPS 轴——玩家续航（奶/盾）全随攻击缩放（含驾驶员系数），
-  // 敌火要打穿的是"续航"而非裸 EHP；EHP 轴时代越到后期敌火相对续航越弱（砍半 n101-150 90%>n61-100 68% 倒挂实证）。
-  // 晚段加陡 ^1.15：套件结构价值不随战力砍半（复活/免控/保底=结构件）→ 纯属性压强晚段追不上=砍半晚段 64% 实证；
-  // 指数只作用超锚段（φ>1），早中段近似不变。
-  const phiDpsBase = pressure <= PHI_BASE
-    ? pressure / PHI_BASE
-    : strengthIndex(pressure, 'dps') / strengthIndex(PHI_BASE, 'dps');
-  const phiDps = phiDpsBase > 1 ? Math.pow(phiDpsBase, 1.08) : phiDpsBase;
+  // φ 恒等（v1 刻度即强度·见上方注释）；教学段 P<起手战力=碾压语义天然保留（线性全程一条式）。
+  const phiPool = pressure / PHI_BASE;
+  // 敌火晚段 ^1.08 结构补偿保留（φ>1 才作用）：套件结构价值（复活/免控/保底）不随战力砍半，
+  // 纯属性压强晚段追不上=砍半晚段 64% 实证——这是"结构件不缩放"的独立机理，不随刻度诚实化消失。
+  const phiDps = phiPool > 1 ? Math.pow(phiPool, 1.08) : phiPool;
   const wall = WALL_BOOST[nodeId] ?? { pool: 1, dps: 1 };
   const pool = K_HP * PHI_BASE * phiPool * mult.pool * wall.pool;
   let dps = K_DPS * PHI_BASE * phiDps * mult.dps * wall.dps;

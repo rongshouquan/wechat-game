@@ -81,6 +81,8 @@ import {
   findBountyCard,
   settleBountyCard,
   bountyBattleNodeId,
+  bountyAutoDifficulty,
+  S7BountyDifficulty,
   bountyRunSeed,
   bountyAmbushTriggered,
   claimBountyAmbushBonus,
@@ -3836,12 +3838,12 @@ export class S7DemoController extends Component {
   private refreshPrebattle(): void {
     if (!this.session || !this.squad || !this.prebattleGfx || !this.prebattleInfoLabel || !this.runtime) return;
     const perfT0 = Date.now(); // DEV-TEMP：[PERF] 探针（复验批·编队点击链延迟证据·上线前随 DEV 清单删）
-    // 块2：悬赏模式下敌情预览用悬赏敌阵节点（已通关最高星域首个节点），不显示主线当前关。
+    // 悬赏模式下敌情预览用悬赏敌阵节点（定价重锚批：recNodes 锚点法·过渡期自动选档），不显示主线当前关。
     // 块3：回廊模式用 n001 为载体建玩家侧战力/9格（敌情另按回廊敌阵单画·见下）。
     const viewProgress = this.corridorPrepLayer !== null
       ? { currentNodeId: 'n001', clearedNodeIds: [] as string[] }
       : this.bountyPrepCardId && this.model
-        ? { currentNodeId: bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds) ?? this.session.progress.currentNodeId, clearedNodeIds: [] }
+        ? { currentNodeId: bountyBattleNodeId(this.bountyDifficultyNow()), clearedNodeIds: [] }
         : this.session.progress;
     const r = buildPrebattleView(this.runtime, viewProgress, this.squad, this.playerState?.unitLevels, this.pluginInventory ?? undefined, this.playerState?.unitTiers);
     const g = this.prebattleGfx;
@@ -6659,6 +6661,7 @@ export class S7DemoController extends Component {
       bountyState: () => this.playerState!.bounty,
       affixDefs: () => this.runtime?.getAll<S7CommissionAffixDef>('commission_affix_param') ?? [],
       starfieldTier: () => this.bountyTier(),
+      bountyDifficulty: () => this.bountyDifficultyNow(),
       habitatLevel: () => (this.buildings ? getBuildingLevel(this.buildings, 'bld_habitat') : 0),
       gainsText: (r) => this.gainsText(r),
       playCard: (id) => this.onBountyPlayCard(id),
@@ -6705,6 +6708,12 @@ export class S7DemoController extends Component {
     return this.model.clearedStarfieldTier(this.session.progress.clearedNodeIds);
   }
 
+  /** 悬赏当前难度（过渡期自动选档=已通关锚点最高档；难度弹窗归灰盒批·上线后由玩家选择取代）。
+   *  战斗敌阵/结算倍率/产出预览三处共用同一读数（配对纪律：打哪档敌人拿哪档倍率）。 */
+  private bountyDifficultyNow(): S7BountyDifficulty {
+    return bountyAutoDifficulty(this.session?.progress.clearedNodeIds ?? []);
+  }
+
   /** 点卡「出战」：进主线同款备战（悬赏模式·出战改打该卡）；备战信息行挂本场词缀。 */
   private onBountyPlayCard(cardId: string): void {
     if (!this.playerState || this.playing) return;
@@ -6734,11 +6743,11 @@ export class S7DemoController extends Component {
     return lines.length > 0 ? `\n${lines.join('\n')}` : '';
   }
 
-  /** 跑一场悬赏战斗（不推主线）：敌阵=已通关最高星域首个节点；按卡词缀给对应定位型注积木；护航附运输船。 */
+  /** 跑一场悬赏战斗（不推主线）：敌阵=当前难度的 recNodes 锚点节点（定价重锚批·拍板5）；
+   *  按卡词缀给对应定位型注积木；护航附运输船。 */
   private runBountyBattle(card: S7BountyCard): S7BattleRunResult | null {
     if (!this.playerState || !this.session || !this.model || !this.runtime || !this.squad) return null;
-    const nodeId = bountyBattleNodeId(this.model, this.session.progress.clearedNodeIds);
-    if (!nodeId) { this.bountyBattleError('暂无可用悬赏敌阵'); return null; }
+    const nodeId = bountyBattleNodeId(this.bountyDifficultyNow());
     const built = buildSquadLineup(this.squad, this.playerState.unitLevels, this.pluginInventory ?? undefined, this.playerState.unitTiers); // ⑩A1：驾驶员级/星入战（回执⑤）
     if (!built.ok) { this.bountyBattleError('有星舰缺驾驶员或没上阵——把阵容配好再出战'); return null; }
     const defs = this.runtime.getAll<S7CommissionAffixDef>('commission_affix_param');
@@ -6786,7 +6795,8 @@ export class S7DemoController extends Component {
     let text: string;
     if (won) {
       const perfect = card.theme === 'escort' && isPerfectEscort(out.result);
-      const settled = settleBountyCard(this.playerState.bounty, cardId, this.bountyTier(), perfect);
+      // 难度倍率与敌阵同档（配对纪律：打哪档敌人拿哪档倍率——runBountyBattle 同一读数）。
+      const settled = settleBountyCard(this.playerState.bounty, cardId, this.bountyTier(), perfect, this.bountyDifficultyNow());
       if (settled) this.creditGains(settled.rewards);
       // DEV-TEMP「必遇袭」：武装后下张护航打赢必触发（15% 小概率真机没法验收）·用掉即灭。上线前删。
       const ambush = card.theme === 'escort' && (this.devBountyForceAmbush || bountyAmbushTriggered(card));

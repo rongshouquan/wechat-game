@@ -94,11 +94,11 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     expect(n150.pressureRef).toBe('bp_n150');
   });
 
-  it('pins n150 boss pressure to v0.7 snapshot (步5 重定基：旧 14500=B1 旧刻度·新=推荐 32094/带 28885-35303)', () => {
+  it('pins n150 boss pressure to v0.9 snapshot (定价重锚 v1 重定基：32094/带 28885-35303=旧刻度读数 → 12080/带 10872-13288=实测重标后诚实读数)', () => {
     const p = (readTable<Record<string, unknown>>('pressure_param')).find((r) => r.rowId === 'bp_n150') as unknown as { pressureRecommend: number; pressureMin: number; pressureMax: number };
-    expect(p.pressureRecommend).toBe(32094);
-    expect(p.pressureMin).toBe(28885);
-    expect(p.pressureMax).toBe(35303);
+    expect(p.pressureRecommend).toBe(12080);
+    expect(p.pressureMin).toBe(10872);
+    expect(p.pressureMax).toBe(13288);
   });
 
   it('keeps n150 boss summon at most 10 per phase, n084/n150 at most 3 unique phases', () => {

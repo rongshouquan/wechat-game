@@ -11,12 +11,13 @@
 // - 产出：单张合金 495·星贝 20 ×星域系数^0.6 ×品质倍率(1/1.6/3) ×难度倍率 ×完美1.25；
 //   星域系数取 ^0.6=难度爬档已是显式进度倍率、全系数会双重计 progression（机器真源 coefPow）。
 //   金卡附赠实物(信标/通用碎片/补给券轮换·确定性)；星矿不入（守 S9 星矿四来源）。
-// - 难度四档自选（总修订案 1a·数值面先落·选择 UI 归工程灰盒批）：新手0.7/普通1.0/困难1.5/噩梦2.2；
-//   推荐战力=压力表定点 n10/n55/n98/n130（v0.7 快照值内嵌常量·对表测试钉与 json 一致）。
+// - 难度四档自选（总修订案 1a·选择 UI 归工程灰盒批）：新手0.7/普通1.0/困难1.5/噩梦2.2；
+//   推荐战力=压力表定点 n10/n55/n98/n130（v0.9 快照值内嵌常量·对表测试钉与 json 一致）。
+// - 敌阵基底=recNodes 固定锚点法（定价重锚批·拍板5）：难度→锚点节点敌阵（随压力表重校自动重校）；
+//   旧灰盒"已通关最高星域首个战斗节点"退役（滞后内容×2.2 倍率=D2 白拿印钞·§16e 发现3）。
 // - 遇袭（护航专属·15%·按卡确定性）：追加一场星盗遭遇战，赢=额外小包、输=折损本单入账 30%。
 // - 词缀=本场对我方指定定位型的 buff+debuff（S7CommissionAffix 应用·配置表 commission_affix_param 驱动）。
 
-import { S7MainlineModel } from './S7MainlineProgress';
 import { starfieldCoefficient } from './S7OfflineProduction';
 import { bountyBoardCap } from './S7BuildingEffects';
 import { s7DayKey } from './S7AdDailyCounter';
@@ -51,13 +52,19 @@ export const BOUNTY_COEF_POW = 0.6;
 /** 老档折算铜卡上限（迁移用·取基础容量 6）。 */
 export const LEGACY_MIGRATION_CAP = 6;
 
-/** 难度四档（总修订案 1a）：倍率 + 推荐战力（=v0.7 压力表 n10/n55/n98/n130 快照值·对表测试钉 json 一致）。 */
+/** 难度四档（总修订案 1a）：倍率 + 推荐战力（=v0.9 压力表 n10/n55/n98/n130 快照值·对表测试钉 json 一致·
+ *  重定基：v0.7 快照 {140,2972,8443,17319}=旧刻度读数 → 定价重锚 v1 后同四锚点的诚实新读数）。 */
 export type S7BountyDifficulty = 'novice' | 'normal' | 'hard' | 'nightmare';
+export const S7_BOUNTY_DIFFICULTIES: readonly S7BountyDifficulty[] = Object.freeze(['novice', 'normal', 'hard', 'nightmare']);
 export const BOUNTY_DIFFICULTY_MULTS: Readonly<Record<S7BountyDifficulty, number>> = Object.freeze({
   novice: 0.7, normal: 1.0, hard: 1.5, nightmare: 2.2,
 });
 export const BOUNTY_DIFFICULTY_REC_POWER: Readonly<Record<S7BountyDifficulty, number>> = Object.freeze({
-  novice: 140, normal: 2972, hard: 8443, nightmare: 17319,
+  novice: 136, normal: 1952, hard: 4500, nightmare: 6639,
+});
+/** 难度→敌阵锚点节点（=经济尺 PARAMS.bounty.difficulty.recNodes 镜像·改任一侧必须同步·对表测试钉）。 */
+export const BOUNTY_DIFFICULTY_ANCHOR_NODES: Readonly<Record<S7BountyDifficulty, string>> = Object.freeze({
+  novice: 'n010', normal: 'n055', hard: 'n098', nightmare: 'n130',
 });
 
 /** 基础产出/张（护航=合金+星贝·v0.7 终值 495/20；drill 行=老开发档积压消化用量·新卡不再生成演习）。 */
@@ -358,23 +365,30 @@ export function bountyRunSeed(card: S7BountyCard, now: number): string {
   return `bounty_run_${card.id}_${s7DayKey(now)}`;
 }
 
-// ===== 灰盒敌阵 / 护航运输船（沿用块2 口径）=====
-
-const BATTLE_NODE_TAGS = new Set(['tutorial_battle', 'normal', 'elite', 'boss']);
+// ===== 悬赏敌阵 / 护航运输船 =====
 
 /**
- * 悬赏敌阵节点（灰盒）：已通关最高星域的首个战斗节点（旧内容·随星域自动升档）；档 0 → 全线路首个战斗节点（n001）。
- * 找不到（理论不可能）返回 null，调用方兜底提示。真实悬赏敌阵/涂装/靶机变体留数值校准+演出阶段。
+ * 悬赏敌阵节点（定价重锚批·拍板5 锚点法）：难度 → 经济尺 recNodes 固定锚点敌阵（挂压力表·随重锚自动重校）。
+ * 旧→新→为什么对：旧灰盒"已通关最高星域首个战斗节点"拿旧内容当基底、滞后当期战力 1-2 星域——
+ * 悬赏时间线实测全档 D2 即碾噩梦×2.2（100%/6.5s）=倍率换奖励的对价故事不成立（§16e 发现3）；
+ * 新=四档各锚一个固定压力点（与经济尺 pickCommissionDifficulty 同一组锚），难度真实存在、倍率=对价。
+ * 难度选择弹窗归工程灰盒批；弹窗落地前由 bountyAutoDifficulty 缺省选档。
  */
-export function bountyBattleNodeId(model: S7MainlineModel, clearedNodeIds: string[]): string | null {
-  const tier = model.clearedStarfieldTier(clearedNodeIds);
-  const wantSf = tier > 0 ? `sf${String(tier).padStart(2, '0')}` : null;
-  for (const nodeId of model.defaultRoute) {
-    const view = model.nodeView(nodeId);
-    if (!view || !BATTLE_NODE_TAGS.has(view.nodeTypeTag)) continue;
-    if (wantSf === null || view.starfieldId === wantSf) return nodeId;
+export function bountyBattleNodeId(difficulty: S7BountyDifficulty = 'normal'): string {
+  return BOUNTY_DIFFICULTY_ANCHOR_NODES[difficulty] ?? BOUNTY_DIFFICULTY_ANCHOR_NODES.normal;
+}
+
+/**
+ * 过渡期自动选档（难度弹窗归灰盒批·落地前的缺省策略）：取"已通关锚点节点"的最高档——主线打穿过
+ * 该压力点=证明碾得动（经济尺 crushRatio 稳档的通关代理）；一个没通=新手档。弹窗上线后由玩家选择取代。
+ */
+export function bountyAutoDifficulty(clearedNodeIds: readonly string[]): S7BountyDifficulty {
+  const cleared = new Set(clearedNodeIds);
+  let out: S7BountyDifficulty = 'novice';
+  for (const d of S7_BOUNTY_DIFFICULTIES) {
+    if (cleared.has(BOUNTY_DIFFICULTY_ANCHOR_NODES[d])) out = d;
   }
-  return null;
+  return out;
 }
 
 /** 护航专用：旗舰开场召唤运输船的触发积木（附到首个上阵单位 extraBlocks）。 */

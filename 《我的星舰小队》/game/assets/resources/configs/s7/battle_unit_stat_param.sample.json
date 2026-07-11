@@ -356,8 +356,8 @@
     "targetType": "boss",
     "unitRef": "n084",
     "roleTag": "boss_shield",
-    "maxHp": 27760,
-    "attack": 418,
+    "maxHp": 43324,
+    "attack": 676,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -369,7 +369,7 @@
     "ultimateEffectRef": "eff_ult_burst_nuke",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "SF01 护盾 Boss，占 2x2 大格，首版基线属性·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=6113·§19映射)"
+    "note": "SF01 护盾 Boss，占 2x2 大格，首版基线属性·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=3508·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -377,8 +377,8 @@
     "targetType": "boss",
     "unitRef": "n150",
     "roleTag": "boss_berserk",
-    "maxHp": 253239,
-    "attack": 1896,
+    "maxHp": 596752,
+    "attack": 4676,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -390,7 +390,7 @@
     "ultimateEffectRef": "eff_ult_burst_nuke",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "SF04 狂暴终 Boss，占 3x3 大格，首版基线属性，未做 pressure 自动换算·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=32094·§19映射)"
+    "note": "SF04 狂暴终 Boss，占 3x3 大格，首版基线属性，未做 pressure 自动换算·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=12080·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -545,8 +545,8 @@
     "targetType": "boss",
     "unitRef": "n060",
     "roleTag": "boss_swarm",
-    "maxHp": 61509,
-    "attack": 519,
+    "maxHp": 47898,
+    "attack": 578,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -558,7 +558,7 @@
     "ultimateEffectRef": "eff_ult_clear_barrage",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "n060 星盗大王（SF01群怪Boss，复用星盗系机制放大），占2x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=3912·§19映射)"
+    "note": "n060 星盗大王（SF01群怪Boss，复用星盗系机制放大），占2x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=2424·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -566,8 +566,8 @@
     "targetType": "boss",
     "unitRef": "n030",
     "roleTag": "boss_swarm",
-    "maxHp": 14004,
-    "attack": 172,
+    "maxHp": 10621,
+    "attack": 129,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -579,7 +579,7 @@
     "ultimateEffectRef": "eff_ult_clear_barrage",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n030 星盗大副（第5章章末剧情首Boss·复用星盗队长蓄力机制放大·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=657·§19映射)"
+    "note": "n030 星盗大副（第5章章末剧情首Boss·复用星盗队长蓄力机制放大·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=430·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -587,8 +587,8 @@
     "targetType": "boss",
     "unitRef": "n102",
     "roleTag": "boss_backline",
-    "maxHp": 78413,
-    "attack": 742,
+    "maxHp": 122265,
+    "attack": 1199,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -600,7 +600,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "n102 废铁泰坦（SF03打后排Boss），占3x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=11668·§19映射)"
+    "note": "n102 废铁泰坦（SF03打后排Boss），占3x2·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=5500·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -608,8 +608,8 @@
     "targetType": "boss",
     "unitRef": "n120",
     "roleTag": "boss_summon",
-    "maxHp": 166561,
-    "attack": 1378,
+    "maxHp": 198766,
+    "attack": 1981,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -621,7 +621,7 @@
     "ultimateEffectRef": "eff_state_summon",
     "ultimateCdSec": 10,
     "coreEffectRef": "none",
-    "note": "n120 母舰指挥官（SF04召唤Boss，复用无人舰系机制放大），占2x3·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=16954·§19映射)"
+    "note": "n120 母舰指挥官（SF04召唤Boss，复用无人舰系机制放大），占2x3·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=6706·§19映射)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -629,8 +629,8 @@
     "targetType": "boss",
     "unitRef": "n138",
     "roleTag": "boss_burst",
-    "maxHp": 79697,
-    "attack": 895,
+    "maxHp": 120541,
+    "attack": 1399,
     "armor": 35,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -642,7 +642,7 @@
     "ultimateEffectRef": "eff_ult_burst_nuke",
     "ultimateCdSec": 9,
     "coreEffectRef": "none",
-    "note": "n138 污染巨兽（SF05爆发Boss），占3x3·⑩A4 爆发窗口接线：污染潮 cd12（全屏×0.8+全队燃烧）+随时间狂暴+2%攻/s（真源§5）·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=19308·§19映射)",
+    "note": "n138 污染巨兽（SF05爆发Boss），占3x3·⑩A4 爆发窗口接线：污染潮 cd12（全屏×0.8+全队燃烧）+随时间狂暴+2%攻/s（真源§5）·批③段三：射程按敌人真源改无限（99）——旧值=违真源占位·射程1近战敌无移动系统=永久沙包实证（§16d 病根）·⑩落数(P=7508·§19映射)",
     "stackRules": [
       {
         "ruleId": "n138_rage",
@@ -1144,7 +1144,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1157,7 +1157,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n009 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n009 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1165,7 +1165,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1178,7 +1178,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n010 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n010 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1186,7 +1186,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1199,7 +1199,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n011 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n011 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1207,7 +1207,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1220,7 +1220,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n012 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n012 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1228,7 +1228,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1241,7 +1241,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n013 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n013 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1249,7 +1249,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1262,7 +1262,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n014 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n014 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1270,7 +1270,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1283,7 +1283,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n015 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n015 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1291,7 +1291,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1304,7 +1304,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n016 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n016 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1312,7 +1312,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1325,7 +1325,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n017 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n017 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1333,7 +1333,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1346,7 +1346,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n020 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n020 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1354,7 +1354,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1367,7 +1367,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n021 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n021 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1375,7 +1375,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1388,7 +1388,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n022 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n022 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1396,7 +1396,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1409,7 +1409,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n023 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n023 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1417,7 +1417,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 400,
+    "maxHp": 389,
     "attack": 11,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1430,7 +1430,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n024 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n024 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1438,7 +1438,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 233,
+    "maxHp": 227,
     "attack": 6,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -1451,7 +1451,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n025 swarm·⑩落数(P=140·§19映射·基=bu_enemy_swarm)"
+    "note": "n025 swarm·⑩落数(P=136·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1459,8 +1459,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1620,
-    "attack": 45,
+    "maxHp": 1229,
+    "attack": 34,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1472,7 +1472,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n026 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n026 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1480,8 +1480,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 945,
-    "attack": 26,
+    "maxHp": 717,
+    "attack": 20,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1493,7 +1493,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n027 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n027 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1501,8 +1501,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1620,
-    "attack": 45,
+    "maxHp": 1229,
+    "attack": 34,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1514,7 +1514,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n028 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n028 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1522,8 +1522,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 945,
-    "attack": 26,
+    "maxHp": 717,
+    "attack": 20,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1535,7 +1535,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n029 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n029 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1543,8 +1543,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1885,
-    "attack": 55,
+    "maxHp": 1430,
+    "attack": 41,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1556,7 +1556,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n030 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n030 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1564,8 +1564,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 945,
-    "attack": 26,
+    "maxHp": 717,
+    "attack": 20,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1577,7 +1577,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n031 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n031 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1585,8 +1585,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1620,
-    "attack": 45,
+    "maxHp": 1229,
+    "attack": 34,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1598,7 +1598,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n032 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n032 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1606,8 +1606,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 945,
-    "attack": 26,
+    "maxHp": 717,
+    "attack": 20,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1619,7 +1619,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n033 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n033 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1627,8 +1627,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1620,
-    "attack": 45,
+    "maxHp": 1229,
+    "attack": 34,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1640,7 +1640,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n034 swarm·⑩落数(P=657·§19映射·基=bu_enemy_swarm)"
+    "note": "n034 swarm·⑩落数(P=430·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1648,8 +1648,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1915,
-    "attack": 56,
+    "maxHp": 1852,
+    "attack": 54,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1661,7 +1661,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n035 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n035 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1669,8 +1669,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3282,
-    "attack": 96,
+    "maxHp": 3174,
+    "attack": 93,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1682,7 +1682,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n036 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n036 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1690,8 +1690,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1915,
-    "attack": 56,
+    "maxHp": 1852,
+    "attack": 54,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1703,7 +1703,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n037 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n037 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1711,8 +1711,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3282,
-    "attack": 96,
+    "maxHp": 3174,
+    "attack": 93,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1724,7 +1724,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n038 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n038 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1732,8 +1732,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1915,
-    "attack": 56,
+    "maxHp": 1852,
+    "attack": 54,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1745,7 +1745,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n039 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n039 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1753,8 +1753,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3282,
-    "attack": 96,
+    "maxHp": 3174,
+    "attack": 93,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1766,7 +1766,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n040 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n040 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1774,8 +1774,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 1915,
-    "attack": 56,
+    "maxHp": 1852,
+    "attack": 54,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1787,7 +1787,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n041 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n041 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1795,8 +1795,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3282,
-    "attack": 96,
+    "maxHp": 3174,
+    "attack": 93,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1808,7 +1808,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n042 swarm·⑩落数(P=1554·§19映射·基=bu_enemy_swarm)"
+    "note": "n042 swarm·⑩落数(P=1111·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1816,8 +1816,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2249,
-    "attack": 67,
+    "maxHp": 2477,
+    "attack": 74,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1829,7 +1829,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n043 swarm·⑩落数(P=2123·§19映射·基=bu_enemy_swarm)"
+    "note": "n043 swarm·⑩落数(P=1486·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1837,8 +1837,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3856,
-    "attack": 115,
+    "maxHp": 4246,
+    "attack": 127,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1850,7 +1850,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n044 swarm·⑩落数(P=2123·§19映射·基=bu_enemy_swarm)"
+    "note": "n044 swarm·⑩落数(P=1486·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1858,8 +1858,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2249,
-    "attack": 67,
+    "maxHp": 2477,
+    "attack": 74,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1871,7 +1871,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n045 swarm·⑩落数(P=2123·§19映射·基=bu_enemy_swarm)"
+    "note": "n045 swarm·⑩落数(P=1486·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1879,8 +1879,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3856,
-    "attack": 115,
+    "maxHp": 4246,
+    "attack": 127,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1892,7 +1892,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n046 swarm·⑩落数(P=2123·§19映射·基=bu_enemy_swarm)"
+    "note": "n046 swarm·⑩落数(P=1486·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1900,8 +1900,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2249,
-    "attack": 67,
+    "maxHp": 2477,
+    "attack": 74,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1913,7 +1913,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n047 swarm·⑩落数(P=2123·§19映射·基=bu_enemy_swarm)"
+    "note": "n047 swarm·⑩落数(P=1486·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1921,8 +1921,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3856,
-    "attack": 115,
+    "maxHp": 4246,
+    "attack": 127,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1934,7 +1934,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n048 swarm·⑩落数(P=2123·§19映射·基=bu_enemy_swarm)"
+    "note": "n048 swarm·⑩落数(P=1486·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1942,8 +1942,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2294,
-    "attack": 68,
+    "maxHp": 2840,
+    "attack": 86,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1955,7 +1955,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n049 swarm·⑩落数(P=2524·§19映射·基=bu_enemy_swarm)"
+    "note": "n049 swarm·⑩落数(P=1704·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1963,8 +1963,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3932,
-    "attack": 117,
+    "maxHp": 4869,
+    "attack": 148,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1976,7 +1976,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n050 swarm·⑩落数(P=2524·§19映射·基=bu_enemy_swarm)"
+    "note": "n050 swarm·⑩落数(P=1704·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1984,8 +1984,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2294,
-    "attack": 68,
+    "maxHp": 2840,
+    "attack": 86,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -1997,7 +1997,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n051 swarm·⑩落数(P=2524·§19映射·基=bu_enemy_swarm)"
+    "note": "n051 swarm·⑩落数(P=1704·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2005,8 +2005,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3932,
-    "attack": 117,
+    "maxHp": 4869,
+    "attack": 148,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2018,7 +2018,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n052 swarm·⑩落数(P=2524·§19映射·基=bu_enemy_swarm)"
+    "note": "n052 swarm·⑩落数(P=1704·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2026,8 +2026,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2294,
-    "attack": 68,
+    "maxHp": 2840,
+    "attack": 86,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2039,7 +2039,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n053 swarm·⑩落数(P=2524·§19映射·基=bu_enemy_swarm)"
+    "note": "n053 swarm·⑩落数(P=1704·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2047,8 +2047,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 3932,
-    "attack": 117,
+    "maxHp": 4869,
+    "attack": 148,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2060,7 +2060,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n054 swarm·⑩落数(P=2524·§19映射·基=bu_enemy_swarm)"
+    "note": "n054 swarm·⑩落数(P=1704·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2068,8 +2068,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 2694,
-    "attack": 81,
+    "maxHp": 3253,
+    "attack": 100,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2081,7 +2081,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n055 swarm·⑩落数(P=2972·§19映射·基=bu_enemy_swarm)"
+    "note": "n055 swarm·⑩落数(P=1952·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2089,364 +2089,7 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 4619,
-    "attack": 140,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n056 swarm·⑩落数(P=2972·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n057_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 2694,
-    "attack": 81,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n057 swarm·⑩落数(P=2972·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n058_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 4619,
-    "attack": 140,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n058 swarm·⑩落数(P=2973·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n059_swarm_tough",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion_tough",
-    "maxHp": 4416,
-    "attack": 78,
-    "armor": 12,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n059 swarm_tough·⑩落数(P=2973·§19映射·基=bu_enemy_swarm_tough)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n059_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 2484,
-    "attack": 125,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n059 swarm·⑩落数(P=2973·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n060_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 5520,
-    "attack": 111,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n060 swarm·⑩落数(P=3912·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n061_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n061 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n062_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n062 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n063_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n063 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n064_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 4870,
-    "attack": 148,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n064 swarm·⑩落数(P=3684·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n065_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n065 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n066_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n066 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n067_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n067 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n068_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 4870,
-    "attack": 148,
-    "armor": 5,
-    "attackIntervalSec": 1.1,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "none",
-    "ultimateCdSec": 0,
-    "coreEffectRef": "none",
-    "note": "n068 swarm·⑩落数(P=3684·§19映射·基=bu_enemy_swarm)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n069_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 5681,
-    "attack": 407,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n069 shield·⑩落数(P=3684·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n070_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 6491,
-    "attack": 470,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n070 shield·⑩落数(P=4318·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n071_shield",
-    "targetType": "enemy",
-    "unitRef": "enemy_shield",
-    "roleTag": "shield",
-    "maxHp": 6491,
-    "attack": 470,
-    "armor": 25,
-    "attackIntervalSec": 1.3,
-    "attackRangeCells": 99,
-    "passiveEnergyPerSec": 3,
-    "sizeRows": 1,
-    "sizeCols": 1,
-    "targetingTag": "nearest_random_tie",
-    "normalEffectRef": "eff_basic_attack",
-    "ultimateEffectRef": "eff_state_shield",
-    "ultimateCdSec": 8,
-    "coreEffectRef": "none",
-    "note": "n071 shield·⑩落数(P=4318·§19映射·基=bu_enemy_shield)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "bu_n072_swarm",
-    "targetType": "enemy",
-    "unitRef": "enemy_swarm",
-    "roleTag": "minion",
-    "maxHp": 5564,
+    "maxHp": 5577,
     "attack": 171,
     "armor": 5,
     "attackIntervalSec": 1.1,
@@ -2459,7 +2102,364 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n072 swarm·⑩落数(P=4318·§19映射·基=bu_enemy_swarm)"
+    "note": "n056 swarm·⑩落数(P=1952·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n057_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 3253,
+    "attack": 100,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n057 swarm·⑩落数(P=1952·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n058_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 5577,
+    "attack": 171,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n058 swarm·⑩落数(P=1952·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n059_swarm_tough",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion_tough",
+    "maxHp": 5332,
+    "attack": 96,
+    "armor": 12,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n059 swarm_tough·⑩落数(P=1952·§19映射·基=bu_enemy_swarm_tough)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n059_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 2999,
+    "attack": 153,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n059 swarm·⑩落数(P=1952·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n060_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 4299,
+    "attack": 124,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n060 swarm·⑩落数(P=2424·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n061_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n061 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n062_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n062 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n063_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n063 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n064_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 6534,
+    "attack": 203,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n064 swarm·⑩落数(P=2287·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n065_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n065 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n066_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n066 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n067_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n067 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n068_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 6534,
+    "attack": 203,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n068 swarm·⑩落数(P=2287·§19映射·基=bu_enemy_swarm)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n069_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 7623,
+    "attack": 560,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n069 shield·⑩落数(P=2287·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n070_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 8497,
+    "attack": 629,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n070 shield·⑩落数(P=2549·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n071_shield",
+    "targetType": "enemy",
+    "unitRef": "enemy_shield",
+    "roleTag": "shield",
+    "maxHp": 8497,
+    "attack": 629,
+    "armor": 25,
+    "attackIntervalSec": 1.3,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "eff_state_shield",
+    "ultimateCdSec": 8,
+    "coreEffectRef": "none",
+    "note": "n071 shield·⑩落数(P=2549·§19映射·基=bu_enemy_shield)"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "bu_n072_swarm",
+    "targetType": "enemy",
+    "unitRef": "enemy_swarm",
+    "roleTag": "minion",
+    "maxHp": 7283,
+    "attack": 228,
+    "armor": 5,
+    "attackIntervalSec": 1.1,
+    "attackRangeCells": 99,
+    "passiveEnergyPerSec": 3,
+    "sizeRows": 1,
+    "sizeCols": 1,
+    "targetingTag": "nearest_random_tie",
+    "normalEffectRef": "eff_basic_attack",
+    "ultimateEffectRef": "none",
+    "ultimateCdSec": 0,
+    "coreEffectRef": "none",
+    "note": "n072 swarm·⑩落数(P=2549·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2467,8 +2467,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 6491,
-    "attack": 470,
+    "maxHp": 8497,
+    "attack": 629,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2480,7 +2480,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n073 shield·⑩落数(P=4318·§19映射·基=bu_enemy_shield)"
+    "note": "n073 shield·⑩落数(P=2549·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2488,8 +2488,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7163,
-    "attack": 523,
+    "maxHp": 9867,
+    "attack": 739,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2501,7 +2501,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n074 shield·⑩落数(P=5081·§19映射·基=bu_enemy_shield)"
+    "note": "n074 shield·⑩落数(P=2960·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2509,8 +2509,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7163,
-    "attack": 523,
+    "maxHp": 9867,
+    "attack": 739,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2522,7 +2522,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n075 shield·⑩落数(P=5081·§19映射·基=bu_enemy_shield)"
+    "note": "n075 shield·⑩落数(P=2960·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2530,8 +2530,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 6140,
-    "attack": 190,
+    "maxHp": 8457,
+    "attack": 268,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2543,7 +2543,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n076 swarm·⑩落数(P=5081·§19映射·基=bu_enemy_swarm)"
+    "note": "n076 swarm·⑩落数(P=2960·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2551,8 +2551,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7163,
-    "attack": 523,
+    "maxHp": 9867,
+    "attack": 739,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2564,7 +2564,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n077 shield·⑩落数(P=5081·§19映射·基=bu_enemy_shield)"
+    "note": "n077 shield·⑩落数(P=2960·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2572,8 +2572,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7493,
-    "attack": 549,
+    "maxHp": 10810,
+    "attack": 816,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2585,7 +2585,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n078 shield·⑩落数(P=5709·§19映射·基=bu_enemy_shield)"
+    "note": "n078 shield·⑩落数(P=3243·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2593,8 +2593,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7493,
-    "attack": 549,
+    "maxHp": 10810,
+    "attack": 816,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2606,7 +2606,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n079 shield·⑩落数(P=5709·§19映射·基=bu_enemy_shield)"
+    "note": "n079 shield·⑩落数(P=3243·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2614,8 +2614,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 6422,
-    "attack": 199,
+    "maxHp": 9266,
+    "attack": 296,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2627,7 +2627,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n080 swarm·⑩落数(P=5709·§19映射·基=bu_enemy_swarm)"
+    "note": "n080 swarm·⑩落数(P=3243·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2635,8 +2635,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7493,
-    "attack": 549,
+    "maxHp": 10810,
+    "attack": 816,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2648,7 +2648,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n081 shield·⑩落数(P=5710·§19映射·基=bu_enemy_shield)"
+    "note": "n081 shield·⑩落数(P=3243·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2656,8 +2656,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 7493,
-    "attack": 549,
+    "maxHp": 11690,
+    "attack": 888,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2669,7 +2669,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n082 shield·⑩落数(P=6113·§19映射·基=bu_enemy_shield)"
+    "note": "n082 shield·⑩落数(P=3507·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2677,8 +2677,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield_leader",
-    "maxHp": 13986,
-    "attack": 682,
+    "maxHp": 21821,
+    "attack": 1103,
     "armor": 30,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2690,7 +2690,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n083 shield_warden·⑩落数(P=6113·§19映射·基=bu_enemy_shield_warden)"
+    "note": "n083 shield_warden·⑩落数(P=3507·§19映射·基=bu_enemy_shield_warden)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2698,8 +2698,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 9441,
-    "attack": 606,
+    "maxHp": 14729,
+    "attack": 980,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2711,7 +2711,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n083 shield·⑩落数(P=6113·§19映射·基=bu_enemy_shield)"
+    "note": "n083 shield·⑩落数(P=3507·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2719,8 +2719,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 3737,
-    "attack": 317,
+    "maxHp": 5832,
+    "attack": 513,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2732,7 +2732,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n084 shield·⑩落数(P=6113·§19映射·基=bu_enemy_shield)"
+    "note": "n084 shield·⑩落数(P=3508·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2740,8 +2740,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 8069,
-    "attack": 444,
+    "maxHp": 13282,
+    "attack": 760,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2753,7 +2753,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n085 backline·⑩落数(P=6491·§19映射·基=bu_enemy_backline)"
+    "note": "n085 backline·⑩落数(P=3700·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2761,8 +2761,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 7410,
-    "attack": 222,
+    "maxHp": 12198,
+    "attack": 380,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2774,7 +2774,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n085 support·⑩落数(P=6491·§19映射·基=bu_enemy_support)"
+    "note": "n085 support·⑩落数(P=3700·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2782,8 +2782,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 14985,
-    "attack": 414,
+    "maxHp": 24667,
+    "attack": 709,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2795,7 +2795,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n086 backline·⑩落数(P=6491·§19映射·基=bu_enemy_backline)"
+    "note": "n086 backline·⑩落数(P=3700·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2803,8 +2803,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 8069,
-    "attack": 444,
+    "maxHp": 13282,
+    "attack": 760,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2816,7 +2816,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n087 backline·⑩落数(P=6491·§19映射·基=bu_enemy_backline)"
+    "note": "n087 backline·⑩落数(P=3700·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2824,8 +2824,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 7410,
-    "attack": 222,
+    "maxHp": 12198,
+    "attack": 380,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2837,7 +2837,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n087 support·⑩落数(P=6491·§19映射·基=bu_enemy_support)"
+    "note": "n087 support·⑩落数(P=3700·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2845,8 +2845,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 7578,
-    "attack": 238,
+    "maxHp": 11480,
+    "attack": 373,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -2858,7 +2858,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n088 swarm·⑩落数(P=6845·§19映射·基=bu_enemy_swarm)"
+    "note": "n088 swarm·⑩落数(P=4018·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2866,8 +2866,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 9521,
-    "attack": 530,
+    "maxHp": 14424,
+    "attack": 831,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2879,7 +2879,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n089 backline·⑩落数(P=6845·§19映射·基=bu_enemy_backline)"
+    "note": "n089 backline·⑩落数(P=4018·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2887,8 +2887,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 8744,
-    "attack": 265,
+    "maxHp": 13246,
+    "attack": 415,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2900,7 +2900,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n089 support·⑩落数(P=6845·§19映射·基=bu_enemy_support)"
+    "note": "n089 support·⑩落数(P=4018·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2908,8 +2908,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 17683,
-    "attack": 495,
+    "maxHp": 26787,
+    "attack": 775,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2921,7 +2921,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n090 backline·⑩落数(P=6845·§19映射·基=bu_enemy_backline)"
+    "note": "n090 backline·⑩落数(P=4018·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2929,8 +2929,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 9521,
-    "attack": 530,
+    "maxHp": 14424,
+    "attack": 831,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2942,7 +2942,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n091 backline·⑩落数(P=6845·§19映射·基=bu_enemy_backline)"
+    "note": "n091 backline·⑩落数(P=4018·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2950,8 +2950,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 8744,
-    "attack": 265,
+    "maxHp": 13246,
+    "attack": 415,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -2963,7 +2963,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n091 support·⑩落数(P=6845·§19映射·基=bu_enemy_support)"
+    "note": "n091 support·⑩落数(P=4018·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2971,8 +2971,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 8841,
-    "attack": 657,
+    "maxHp": 13633,
+    "attack": 1048,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -2984,7 +2984,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n092 shield·⑩落数(P=7699·§19映射·基=bu_enemy_shield)"
+    "note": "n092 shield·⑩落数(P=4090·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -2992,8 +2992,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 9521,
-    "attack": 530,
+    "maxHp": 14682,
+    "attack": 847,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3005,7 +3005,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n093 backline·⑩落数(P=7699·§19映射·基=bu_enemy_backline)"
+    "note": "n093 backline·⑩落数(P=4090·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3013,8 +3013,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 8744,
-    "attack": 265,
+    "maxHp": 13484,
+    "attack": 423,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3026,7 +3026,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n093 support·⑩落数(P=7699·§19映射·基=bu_enemy_support)"
+    "note": "n093 support·⑩落数(P=4090·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3034,8 +3034,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 17683,
-    "attack": 495,
+    "maxHp": 27267,
+    "attack": 790,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3047,7 +3047,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n094 backline·⑩落数(P=7699·§19映射·基=bu_enemy_backline)"
+    "note": "n094 backline·⑩落数(P=4090·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3055,8 +3055,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 9680,
-    "attack": 540,
+    "maxHp": 15027,
+    "attack": 868,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3068,7 +3068,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n095 backline·⑩落数(P=8053·§19映射·基=bu_enemy_backline)"
+    "note": "n095 backline·⑩落数(P=4186·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3076,8 +3076,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 8890,
-    "attack": 270,
+    "maxHp": 13800,
+    "attack": 434,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3089,7 +3089,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n095 support·⑩落数(P=8053·§19映射·基=bu_enemy_support)"
+    "note": "n095 support·⑩落数(P=4186·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3097,8 +3097,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 7705,
-    "attack": 242,
+    "maxHp": 11960,
+    "attack": 390,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -3110,7 +3110,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n096 swarm·⑩落数(P=8053·§19映射·基=bu_enemy_swarm)"
+    "note": "n096 swarm·⑩落数(P=4186·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3118,8 +3118,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 9680,
-    "attack": 540,
+    "maxHp": 15027,
+    "attack": 868,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3131,7 +3131,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n097 backline·⑩落数(P=8053·§19映射·基=bu_enemy_backline)"
+    "note": "n097 backline·⑩落数(P=4186·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3139,8 +3139,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 8890,
-    "attack": 270,
+    "maxHp": 13800,
+    "attack": 434,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3152,7 +3152,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n097 support·⑩落数(P=8053·§19映射·基=bu_enemy_support)"
+    "note": "n097 support·⑩落数(P=4186·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3160,8 +3160,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 18543,
-    "attack": 521,
+    "maxHp": 30000,
+    "attack": 876,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3173,7 +3173,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n098 backline·⑩落数(P=8443·§19映射·基=bu_enemy_backline)"
+    "note": "n098 backline·⑩落数(P=4500·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3181,8 +3181,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 9985,
-    "attack": 558,
+    "maxHp": 16154,
+    "attack": 939,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3194,7 +3194,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n099 backline·⑩落数(P=8443·§19映射·基=bu_enemy_backline)"
+    "note": "n099 backline·⑩落数(P=4500·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3202,8 +3202,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 9169,
-    "attack": 279,
+    "maxHp": 14835,
+    "attack": 469,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3215,7 +3215,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n099 support·⑩落数(P=8443·§19映射·基=bu_enemy_support)"
+    "note": "n099 support·⑩落数(P=4500·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3223,8 +3223,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 9271,
-    "attack": 691,
+    "maxHp": 15000,
+    "attack": 1162,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -3236,7 +3236,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n100 shield·⑩落数(P=8443·§19映射·基=bu_enemy_shield)"
+    "note": "n100 shield·⑩落数(P=4500·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3244,8 +3244,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 14417,
-    "attack": 664,
+    "maxHp": 24068,
+    "attack": 1155,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3257,7 +3257,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n101 backline·⑩落数(P=8959·§19映射·基=bu_enemy_backline)"
+    "note": "n101 backline·⑩落数(P=4789·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3265,8 +3265,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_support",
     "roleTag": "backline_support",
-    "maxHp": 13240,
-    "attack": 332,
+    "maxHp": 22103,
+    "attack": 577,
     "armor": 15,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3278,7 +3278,7 @@
     "ultimateEffectRef": "eff_ult_repair_burst",
     "ultimateCdSec": 14,
     "coreEffectRef": "none",
-    "note": "n101 support·⑩落数(P=8959·§19映射·基=bu_enemy_support)"
+    "note": "n101 support·⑩落数(P=4789·§19映射·基=bu_enemy_support)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3286,8 +3286,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 14074,
-    "attack": 866,
+    "maxHp": 21945,
+    "attack": 1399,
     "armor": 10,
     "attackIntervalSec": 3,
     "attackRangeCells": 99,
@@ -3299,7 +3299,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n102 backline·⑩落数(P=11668·§19映射·基=bu_enemy_backline)"
+    "note": "n102 backline·⑩落数(P=5500·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3307,8 +3307,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3320,7 +3320,7 @@
     "ultimateEffectRef": "eff_n103_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n103 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n103 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3328,8 +3328,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3341,7 +3341,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n103 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n103 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3349,8 +3349,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3370,8 +3370,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 23714,
-    "attack": 680,
+    "maxHp": 37573,
+    "attack": 1117,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3383,7 +3383,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n104 backline·⑩落数(P=11110·§19映射·基=bu_enemy_backline)"
+    "note": "n104 backline·⑩落数(P=5636·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3391,8 +3391,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3404,7 +3404,7 @@
     "ultimateEffectRef": "eff_n105_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n105 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n105 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3412,8 +3412,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3425,7 +3425,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n105 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n105 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3433,8 +3433,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3454,8 +3454,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3467,7 +3467,7 @@
     "ultimateEffectRef": "eff_n106_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n106 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n106 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3475,8 +3475,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3488,7 +3488,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n106 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n106 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3496,8 +3496,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3517,8 +3517,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3530,7 +3530,7 @@
     "ultimateEffectRef": "eff_n107_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n107 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n107 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3538,8 +3538,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3551,7 +3551,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n107 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n107 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3559,8 +3559,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3580,8 +3580,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 10163,
-    "attack": 327,
+    "maxHp": 16103,
+    "attack": 538,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -3593,7 +3593,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n108 swarm·⑩落数(P=11110·§19映射·基=bu_enemy_swarm)"
+    "note": "n108 swarm·⑩落数(P=5636·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3601,8 +3601,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3614,7 +3614,7 @@
     "ultimateEffectRef": "eff_n109_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n109 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n109 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3622,8 +3622,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3635,7 +3635,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n109 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n109 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3643,8 +3643,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3664,8 +3664,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3677,7 +3677,7 @@
     "ultimateEffectRef": "eff_n110_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n110 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n110 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3685,8 +3685,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3698,7 +3698,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n110 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n110 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3706,8 +3706,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3727,8 +3727,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3740,7 +3740,7 @@
     "ultimateEffectRef": "eff_n111_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n111 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n111 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3748,8 +3748,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3761,7 +3761,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n111 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n111 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3769,8 +3769,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3790,8 +3790,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 11857,
-    "attack": 902,
+    "maxHp": 18787,
+    "attack": 1482,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -3803,7 +3803,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n112 shield·⑩落数(P=11110·§19映射·基=bu_enemy_shield)"
+    "note": "n112 shield·⑩落数(P=5636·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3811,8 +3811,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11116,
-    "attack": 291,
+    "maxHp": 17613,
+    "attack": 479,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3824,7 +3824,7 @@
     "ultimateEffectRef": "eff_n113_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n113 summon_source·⑩落数(P=11110·§19映射·基=bu_enemy_summon_source)"
+    "note": "n113 summon_source·⑩落数(P=5636·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3832,8 +3832,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 8893,
-    "attack": 499,
+    "maxHp": 14090,
+    "attack": 821,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3845,7 +3845,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n113 boss_add·⑩落数(P=11110·§19映射·基=bu_enemy_boss_add)"
+    "note": "n113 boss_add·⑩落数(P=5636·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3853,8 +3853,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1779,
-    "attack": 125,
+    "maxHp": 2818,
+    "attack": 205,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3874,8 +3874,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11330,
-    "attack": 297,
+    "maxHp": 18309,
+    "attack": 499,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3887,7 +3887,7 @@
     "ultimateEffectRef": "eff_n114_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n114 summon_source·⑩落数(P=12082·§19映射·基=bu_enemy_summon_source)"
+    "note": "n114 summon_source·⑩落数(P=5859·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3895,8 +3895,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 9064,
-    "attack": 510,
+    "maxHp": 14648,
+    "attack": 856,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3908,7 +3908,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n114 boss_add·⑩落数(P=12082·§19映射·基=bu_enemy_boss_add)"
+    "note": "n114 boss_add·⑩落数(P=5859·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3916,8 +3916,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1813,
-    "attack": 127,
+    "maxHp": 2930,
+    "attack": 214,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3937,8 +3937,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11330,
-    "attack": 297,
+    "maxHp": 18309,
+    "attack": 499,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -3950,7 +3950,7 @@
     "ultimateEffectRef": "eff_n115_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n115 summon_source·⑩落数(P=12082·§19映射·基=bu_enemy_summon_source)"
+    "note": "n115 summon_source·⑩落数(P=5859·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3958,8 +3958,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 9064,
-    "attack": 510,
+    "maxHp": 14648,
+    "attack": 856,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -3971,7 +3971,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n115 boss_add·⑩落数(P=12082·§19映射·基=bu_enemy_boss_add)"
+    "note": "n115 boss_add·⑩落数(P=5859·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -3979,8 +3979,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1813,
-    "attack": 127,
+    "maxHp": 2930,
+    "attack": 214,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4000,8 +4000,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 24171,
-    "attack": 694,
+    "maxHp": 39060,
+    "attack": 1165,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4013,7 +4013,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n116 backline·⑩落数(P=12082·§19映射·基=bu_enemy_backline)"
+    "note": "n116 backline·⑩落数(P=5859·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4021,8 +4021,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11946,
-    "attack": 315,
+    "maxHp": 18500,
+    "attack": 505,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4034,7 +4034,7 @@
     "ultimateEffectRef": "eff_n117_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n117 summon_source·⑩落数(P=12838·§19映射·基=bu_enemy_summon_source)"
+    "note": "n117 summon_source·⑩落数(P=5920·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4042,8 +4042,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 9557,
-    "attack": 540,
+    "maxHp": 14800,
+    "attack": 866,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4055,7 +4055,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n117 boss_add·⑩落数(P=12838·§19映射·基=bu_enemy_boss_add)"
+    "note": "n117 boss_add·⑩落数(P=5920·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4063,8 +4063,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1911,
-    "attack": 135,
+    "maxHp": 2960,
+    "attack": 216,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4084,8 +4084,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 11946,
-    "attack": 315,
+    "maxHp": 18500,
+    "attack": 505,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4097,7 +4097,7 @@
     "ultimateEffectRef": "eff_n118_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n118 summon_source·⑩落数(P=12838·§19映射·基=bu_enemy_summon_source)"
+    "note": "n118 summon_source·⑩落数(P=5920·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4105,8 +4105,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 9557,
-    "attack": 540,
+    "maxHp": 14800,
+    "attack": 866,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4118,7 +4118,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n118 boss_add·⑩落数(P=12838·§19映射·基=bu_enemy_boss_add)"
+    "note": "n118 boss_add·⑩落数(P=5920·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4126,8 +4126,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 1911,
-    "attack": 135,
+    "maxHp": 2960,
+    "attack": 216,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4147,8 +4147,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 17648,
-    "attack": 384,
+    "maxHp": 26604,
+    "attack": 598,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4160,7 +4160,7 @@
     "ultimateEffectRef": "eff_n119_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n119 summon_source·⑩落数(P=14038·§19映射·基=bu_enemy_summon_source)"
+    "note": "n119 summon_source·⑩落数(P=6081·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4168,8 +4168,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 14118,
-    "attack": 658,
+    "maxHp": 21284,
+    "attack": 1025,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4181,7 +4181,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n119 boss_add·⑩落数(P=14038·§19映射·基=bu_enemy_boss_add)"
+    "note": "n119 boss_add·⑩落数(P=6081·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4189,8 +4189,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 2824,
-    "attack": 164,
+    "maxHp": 4257,
+    "attack": 256,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4210,8 +4210,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 28027,
-    "attack": 1125,
+    "maxHp": 33446,
+    "attack": 1618,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4223,7 +4223,7 @@
     "ultimateEffectRef": "eff_n120_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n120 summon_source·⑩落数(P=16954·§19映射·基=bu_enemy_summon_source)"
+    "note": "n120 summon_source·⑩落数(P=6706·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4231,8 +4231,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 7687,
-    "attack": 165,
+    "maxHp": 9174,
+    "attack": 238,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4252,8 +4252,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 6406,
-    "attack": 138,
+    "maxHp": 7645,
+    "attack": 198,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4273,8 +4273,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 24926,
+    "attack": 2792,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4286,7 +4286,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n121 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n121 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4294,8 +4294,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 40504,
+    "attack": 1692,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4307,7 +4307,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n121 charge·⑩落数(P=16810·§19映射·基=bu_enemy_charge)"
+    "note": "n121 charge·⑩落数(P=6543·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4315,8 +4315,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 27246,
-    "attack": 1354,
+    "maxHp": 43620,
+    "attack": 2251,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4328,7 +4328,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n122 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n122 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4336,8 +4336,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 24926,
+    "attack": 2792,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4349,7 +4349,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n123 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n123 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4357,8 +4357,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 40504,
+    "attack": 1692,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4370,7 +4370,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n123 charge·⑩落数(P=16810·§19映射·基=bu_enemy_charge)"
+    "note": "n123 charge·⑩落数(P=6543·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4378,8 +4378,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_summon",
     "roleTag": "summon_source",
-    "maxHp": 12772,
-    "attack": 338,
+    "maxHp": 20447,
+    "attack": 563,
     "armor": 12,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4391,7 +4391,7 @@
     "ultimateEffectRef": "eff_n124_summon",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n124 summon_source·⑩落数(P=16810·§19映射·基=bu_enemy_summon_source)"
+    "note": "n124 summon_source·⑩落数(P=6543·§19映射·基=bu_enemy_summon_source)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4399,8 +4399,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 10217,
-    "attack": 580,
+    "maxHp": 16358,
+    "attack": 965,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4412,7 +4412,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n124 boss_add·⑩落数(P=16810·§19映射·基=bu_enemy_boss_add)"
+    "note": "n124 boss_add·⑩落数(P=6543·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4420,8 +4420,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 2043,
-    "attack": 145,
+    "maxHp": 3272,
+    "attack": 241,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4441,8 +4441,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 24926,
+    "attack": 2792,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4454,7 +4454,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n125 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n125 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4462,8 +4462,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 40504,
+    "attack": 1692,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4475,7 +4475,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n125 charge·⑩落数(P=16810·§19映射·基=bu_enemy_charge)"
+    "note": "n125 charge·⑩落数(P=6543·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4483,8 +4483,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 27246,
-    "attack": 1354,
+    "maxHp": 43620,
+    "attack": 2251,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4496,7 +4496,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n126 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n126 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4504,8 +4504,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 24926,
+    "attack": 2792,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4517,7 +4517,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n127 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n127 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4525,8 +4525,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 40504,
+    "attack": 1692,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4538,7 +4538,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n127 charge·⑩落数(P=16810·§19映射·基=bu_enemy_charge)"
+    "note": "n127 charge·⑩落数(P=6543·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4546,8 +4546,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 11677,
-    "attack": 380,
+    "maxHp": 18694,
+    "attack": 632,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -4559,7 +4559,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n128 swarm·⑩落数(P=16810·§19映射·基=bu_enemy_swarm)"
+    "note": "n128 swarm·⑩落数(P=6543·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4567,8 +4567,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 24926,
+    "attack": 2792,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4580,7 +4580,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n129 burst_raider·⑩落数(P=16810·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n129 burst_raider·⑩落数(P=6543·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4588,8 +4588,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 40504,
+    "attack": 1692,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4601,7 +4601,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n129 charge·⑩落数(P=16810·§19映射·基=bu_enemy_charge)"
+    "note": "n129 charge·⑩落数(P=6543·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4609,8 +4609,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 27246,
-    "attack": 1354,
+    "maxHp": 44260,
+    "attack": 2286,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4622,7 +4622,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n130 burst_raider·⑩落数(P=17319·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n130 burst_raider·⑩落数(P=6639·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4630,8 +4630,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 25291,
+    "attack": 2836,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4643,7 +4643,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n131 burst_raider·⑩落数(P=17320·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n131 burst_raider·⑩落数(P=6639·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4651,8 +4651,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 41099,
+    "attack": 1719,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4664,7 +4664,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n131 charge·⑩落数(P=17320·§19映射·基=bu_enemy_charge)"
+    "note": "n131 charge·⑩落数(P=6639·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4672,8 +4672,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 13623,
-    "attack": 1048,
+    "maxHp": 22320,
+    "attack": 1785,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -4685,7 +4685,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n132 shield·⑩落数(P=17821·§19映射·基=bu_enemy_shield)"
+    "note": "n132 shield·⑩落数(P=6696·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4693,8 +4693,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 15569,
-    "attack": 1679,
+    "maxHp": 25509,
+    "attack": 2863,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4706,7 +4706,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n133 burst_raider·⑩落数(P=17822·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n133 burst_raider·⑩落数(P=6696·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4714,8 +4714,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 25300,
-    "attack": 1018,
+    "maxHp": 41451,
+    "attack": 1735,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4727,7 +4727,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n133 charge·⑩落数(P=17822·§19映射·基=bu_enemy_charge)"
+    "note": "n133 charge·⑩落数(P=6696·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4735,8 +4735,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 33093,
-    "attack": 1670,
+    "maxHp": 45007,
+    "attack": 2328,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4748,7 +4748,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n134 burst_raider·⑩落数(P=18381·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n134 burst_raider·⑩落数(P=6751·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4756,8 +4756,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 18911,
-    "attack": 2072,
+    "maxHp": 25718,
+    "attack": 2888,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4769,7 +4769,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n135 burst_raider·⑩落数(P=18381·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n135 burst_raider·⑩落数(P=6751·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4777,8 +4777,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 30730,
-    "attack": 1256,
+    "maxHp": 41792,
+    "attack": 1750,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4790,7 +4790,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n135 charge·⑩落数(P=18381·§19映射·基=bu_enemy_charge)"
+    "note": "n135 charge·⑩落数(P=6751·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4798,8 +4798,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 33093,
-    "attack": 974,
+    "maxHp": 49773,
+    "attack": 1514,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4811,7 +4811,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n136 backline·⑩落数(P=18871·§19映射·基=bu_enemy_backline)"
+    "note": "n136 backline·⑩落数(P=7466·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4819,8 +4819,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_burst",
     "roleTag": "burst_preview",
-    "maxHp": 26475,
-    "attack": 2383,
+    "maxHp": 39819,
+    "attack": 3703,
     "armor": 8,
     "attackIntervalSec": 2.4,
     "attackRangeCells": 99,
@@ -4832,7 +4832,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n137 burst_raider·⑩落数(P=18871·§19映射·基=bu_enemy_burst_raider)"
+    "note": "n137 burst_raider·⑩落数(P=7466·§19映射·基=bu_enemy_burst_raider)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4840,8 +4840,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 43021,
-    "attack": 1444,
+    "maxHp": 64705,
+    "attack": 2244,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4853,7 +4853,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n137 charge·⑩落数(P=18871·§19映射·基=bu_enemy_charge)"
+    "note": "n137 charge·⑩落数(P=7466·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4861,8 +4861,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_charge",
     "roleTag": "charge",
-    "maxHp": 21457,
-    "attack": 1044,
+    "maxHp": 32453,
+    "attack": 1632,
     "armor": 15,
     "attackIntervalSec": 2,
     "attackRangeCells": 99,
@@ -4874,7 +4874,7 @@
     "ultimateEffectRef": "eff_ult_short_circuit_pulse",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n138 charge·⑩落数(P=19308·§19映射·基=bu_enemy_charge)"
+    "note": "n138 charge·⑩落数(P=7508·§19映射·基=bu_enemy_charge)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4889,8 +4889,8 @@
     "rowId": "bu_n138_pollution",
     "unitRef": "enemy_pollution",
     "roleTag": "pollution",
-    "maxHp": 3678,
-    "attack": 125,
+    "maxHp": 5563,
+    "attack": 196,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -4918,8 +4918,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 24820,
-    "attack": 895,
+    "maxHp": 37755,
+    "attack": 1407,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4931,7 +4931,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n139 boss_add·⑩落数(P=19745·§19映射·基=bu_enemy_boss_add)"
+    "note": "n139 boss_add·⑩落数(P=7551·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4939,8 +4939,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_swarm",
     "roleTag": "minion",
-    "maxHp": 14183,
-    "attack": 469,
+    "maxHp": 21786,
+    "attack": 745,
     "armor": 5,
     "attackIntervalSec": 1.1,
     "attackRangeCells": 99,
@@ -4952,7 +4952,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n140 swarm·⑩落数(P=21516·§19映射·基=bu_enemy_swarm)"
+    "note": "n140 swarm·⑩落数(P=7625·§19映射·基=bu_enemy_swarm)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4960,8 +4960,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 24820,
-    "attack": 895,
+    "maxHp": 38125,
+    "attack": 1422,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4973,7 +4973,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n141 boss_add·⑩落数(P=21516·§19映射·基=bu_enemy_boss_add)"
+    "note": "n141 boss_add·⑩落数(P=7625·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -4981,8 +4981,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 25529,
-    "attack": 922,
+    "maxHp": 38440,
+    "attack": 1435,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -4994,7 +4994,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n142 boss_add·⑩落数(P=22179·§19映射·基=bu_enemy_boss_add)"
+    "note": "n142 boss_add·⑩落数(P=7688·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5002,8 +5002,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 25529,
-    "attack": 922,
+    "maxHp": 38440,
+    "attack": 1435,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -5015,7 +5015,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n143 boss_add·⑩落数(P=22179·§19映射·基=bu_enemy_boss_add)"
+    "note": "n143 boss_add·⑩落数(P=7688·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5023,8 +5023,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_shield",
     "roleTag": "shield",
-    "maxHp": 17250,
-    "attack": 1352,
+    "maxHp": 27237,
+    "attack": 2214,
     "armor": 25,
     "attackIntervalSec": 1.3,
     "attackRangeCells": 99,
@@ -5036,7 +5036,7 @@
     "ultimateEffectRef": "eff_state_shield",
     "ultimateCdSec": 8,
     "coreEffectRef": "none",
-    "note": "n144 shield·⑩落数(P=22769·§19映射·基=bu_enemy_shield)"
+    "note": "n144 shield·⑩落数(P=8171·§19映射·基=bu_enemy_shield)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5044,8 +5044,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 25875,
-    "attack": 936,
+    "maxHp": 40855,
+    "attack": 1533,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -5057,7 +5057,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n145 boss_add·⑩落数(P=22769·§19映射·基=bu_enemy_boss_add)"
+    "note": "n145 boss_add·⑩落数(P=8171·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5065,8 +5065,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 27313,
-    "attack": 992,
+    "maxHp": 42020,
+    "attack": 1580,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -5078,7 +5078,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n146 boss_add·⑩落数(P=24343·§19映射·基=bu_enemy_boss_add)"
+    "note": "n146 boss_add·⑩落数(P=8404·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5086,8 +5086,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 27313,
-    "attack": 992,
+    "maxHp": 42020,
+    "attack": 1580,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -5099,7 +5099,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n147 boss_add·⑩落数(P=24343·§19映射·基=bu_enemy_boss_add)"
+    "note": "n147 boss_add·⑩落数(P=8404·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5107,8 +5107,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_backline",
     "roleTag": "backline_turret",
-    "maxHp": 37390,
-    "attack": 1112,
+    "maxHp": 59600,
+    "attack": 1839,
     "armor": 10,
     "attackIntervalSec": 1.4,
     "attackRangeCells": 99,
@@ -5120,7 +5120,7 @@
     "ultimateEffectRef": "eff_ult_backline_strike",
     "ultimateCdSec": 12,
     "coreEffectRef": "none",
-    "note": "n148 backline·⑩落数(P=25107·§19映射·基=bu_enemy_backline)"
+    "note": "n148 backline·⑩落数(P=8940·§19映射·基=bu_enemy_backline)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5128,8 +5128,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 26173,
-    "attack": 783,
+    "maxHp": 41720,
+    "attack": 1295,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -5141,7 +5141,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n149 boss_add·⑩落数(P=25107·§19映射·基=bu_enemy_boss_add)"
+    "note": "n149 boss_add·⑩落数(P=8940·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5149,8 +5149,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 68180,
-    "attack": 1327,
+    "maxHp": 160664,
+    "attack": 3273,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,
@@ -5162,7 +5162,7 @@
     "ultimateEffectRef": "none",
     "ultimateCdSec": 0,
     "coreEffectRef": "none",
-    "note": "n150 boss_add·⑩落数(P=32094·§19映射·基=bu_enemy_boss_add)"
+    "note": "n150 boss_add·⑩落数(P=12080·§19映射·基=bu_enemy_boss_add)"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5170,8 +5170,8 @@
     "targetType": "enemy",
     "unitRef": "enemy_boss_add",
     "roleTag": "boss_add",
-    "maxHp": 11688,
-    "attack": 227,
+    "maxHp": 27542,
+    "attack": 561,
     "armor": 8,
     "attackIntervalSec": 1.2,
     "attackRangeCells": 99,

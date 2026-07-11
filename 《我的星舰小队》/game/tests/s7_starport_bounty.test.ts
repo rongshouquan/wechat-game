@@ -15,6 +15,9 @@ import {
   BOUNTY_COEF_POW,
   BOUNTY_DIFFICULTY_MULTS,
   BOUNTY_DIFFICULTY_REC_POWER,
+  BOUNTY_DIFFICULTY_ANCHOR_NODES,
+  bountyBattleNodeId,
+  bountyAutoDifficulty,
   S7BountyCard,
   S7BountyState,
   AFFIX_COUNT,
@@ -182,15 +185,31 @@ describe('S7StarportBounty - 产出终值（v0.7 §6-1 手推）', () => {
     expect(t3.hullAlloy).toBe(1137); // 手推定点
   });
 
-  it('难度四档倍率（总修订案 1a）：噩梦铜卡=floor(495×2.2)=1089；推荐战力=v0.7 快照定点', () => {
+  it('难度四档倍率（总修订案 1a）：噩梦铜卡=floor(495×2.2)=1089；推荐战力=v0.9 快照定点（定价重锚 v1 重定基）', () => {
     expect(BOUNTY_DIFFICULTY_MULTS).toEqual({ novice: 0.7, normal: 1.0, hard: 1.5, nightmare: 2.2 });
     expect(bountyCardRewards(card({}), 0, false, 0, 'nightmare').hullAlloy).toBe(1089);
     // 推荐战力=压力表 n10/n55/n98/n130 快照值（对表守卫：与初值表 json 逐值一致·重校时红=提醒重落）。
-    const json = JSON.parse(readFileSync(path.resolve(__dirname, '..', '..', '第三块-数值校准', '数值初值表-v0-数据.json'), 'utf-8')) as { pressure: number[] };
+    const json = JSON.parse(readFileSync(path.resolve(__dirname, '..', '..', '第三块-数值校准', '数值初值表-v0-数据.json'), 'utf-8')) as {
+      pressure: number[]; params: { bounty: { difficulty: { recNodes: Record<string, number> } } };
+    };
     expect(BOUNTY_DIFFICULTY_REC_POWER.novice).toBe(json.pressure[10]);
     expect(BOUNTY_DIFFICULTY_REC_POWER.normal).toBe(json.pressure[55]);
     expect(BOUNTY_DIFFICULTY_REC_POWER.hard).toBe(json.pressure[98]);
     expect(BOUNTY_DIFFICULTY_REC_POWER.nightmare).toBe(json.pressure[130]);
+    // 基底锚点=经济尺 recNodes 镜像（定价重锚批·拍板5：改任一侧必须同步——对表钉防漂）。
+    for (const d of ['novice', 'normal', 'hard', 'nightmare'] as const) {
+      expect(BOUNTY_DIFFICULTY_ANCHOR_NODES[d]).toBe(`n${String(json.params.bounty.difficulty.recNodes[d]).padStart(3, '0')}`);
+    }
+  });
+
+  it('基底锚点法（定价重锚批·拍板5）：难度→固定锚点节点；自动选档=已通关锚点最高档', () => {
+    expect(bountyBattleNodeId('novice')).toBe('n010');
+    expect(bountyBattleNodeId()).toBe('n055'); // 缺省 normal
+    expect(bountyBattleNodeId('nightmare')).toBe('n130');
+    expect(bountyAutoDifficulty([])).toBe('novice'); // 一个锚点没通=新手
+    expect(bountyAutoDifficulty(['n001', 'n010'])).toBe('novice'); // 通 n010 仍新手（n055 未通）
+    expect(bountyAutoDifficulty(['n010', 'n055'])).toBe('normal');
+    expect(bountyAutoDifficulty(['n010', 'n055', 'n098', 'n130'])).toBe('nightmare');
   });
 
   it('金卡附赠实物按"获得次数"轮换（普通信标→通用碎片→补给券→循环）', () => {

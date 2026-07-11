@@ -4,8 +4,8 @@
   "rowId": "np_n001",
   "scope": "normal",
   "refKey": "n001",
-  "pressureMin": 45,
-  "pressureMax": 45,
+  "pressureMin": 44,
+  "pressureMax": 44,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -13,8 +13,8 @@
   "rowId": "np_n002",
   "scope": "normal",
   "refKey": "n002",
-  "pressureMin": 54,
-  "pressureMax": 54,
+  "pressureMin": 53,
+  "pressureMax": 53,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -22,8 +22,8 @@
   "rowId": "np_n003",
   "scope": "normal",
   "refKey": "n003",
-  "pressureMin": 63,
-  "pressureMax": 63,
+  "pressureMin": 62,
+  "pressureMax": 62,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -31,8 +31,8 @@
   "rowId": "np_n004",
   "scope": "normal",
   "refKey": "n004",
-  "pressureMin": 73,
-  "pressureMax": 73,
+  "pressureMin": 71,
+  "pressureMax": 71,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -40,8 +40,8 @@
   "rowId": "np_n005",
   "scope": "normal",
   "refKey": "n005",
-  "pressureMin": 82,
-  "pressureMax": 82,
+  "pressureMin": 80,
+  "pressureMax": 80,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -49,8 +49,8 @@
   "rowId": "ep_n006",
   "scope": "elite",
   "refKey": "n006",
-  "pressureMin": 91,
-  "pressureMax": 91,
+  "pressureMin": 89,
+  "pressureMax": 89,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -58,8 +58,8 @@
   "rowId": "np_n007",
   "scope": "normal",
   "refKey": "n007",
-  "pressureMin": 101,
-  "pressureMax": 101,
+  "pressureMin": 98,
+  "pressureMax": 98,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -67,8 +67,8 @@
   "rowId": "np_n008",
   "scope": "normal",
   "refKey": "n008",
-  "pressureMin": 110,
-  "pressureMax": 110,
+  "pressureMin": 108,
+  "pressureMax": 108,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -76,8 +76,8 @@
   "rowId": "np_n009",
   "scope": "normal",
   "refKey": "n009",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -85,8 +85,8 @@
   "rowId": "np_n010",
   "scope": "normal",
   "refKey": "n010",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -94,8 +94,8 @@
   "rowId": "np_n011",
   "scope": "normal",
   "refKey": "n011",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -103,8 +103,8 @@
   "rowId": "np_n012",
   "scope": "normal",
   "refKey": "n012",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -112,8 +112,8 @@
   "rowId": "np_n013",
   "scope": "normal",
   "refKey": "n013",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -121,8 +121,8 @@
   "rowId": "np_n014",
   "scope": "normal",
   "refKey": "n014",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -130,8 +130,8 @@
   "rowId": "np_n015",
   "scope": "normal",
   "refKey": "n015",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -139,8 +139,8 @@
   "rowId": "np_n016",
   "scope": "normal",
   "refKey": "n016",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -148,8 +148,8 @@
   "rowId": "np_n017",
   "scope": "normal",
   "refKey": "n017",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -157,8 +157,8 @@
   "rowId": "np_n018",
   "scope": "normal",
   "refKey": "n018",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -166,8 +166,8 @@
   "rowId": "np_n019",
   "scope": "normal",
   "refKey": "n019",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -175,8 +175,8 @@
   "rowId": "np_n020",
   "scope": "normal",
   "refKey": "n020",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -184,8 +184,8 @@
   "rowId": "np_n021",
   "scope": "normal",
   "refKey": "n021",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -193,8 +193,8 @@
   "rowId": "np_n022",
   "scope": "normal",
   "refKey": "n022",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -202,8 +202,8 @@
   "rowId": "np_n023",
   "scope": "normal",
   "refKey": "n023",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -211,8 +211,8 @@
   "rowId": "np_n024",
   "scope": "normal",
   "refKey": "n024",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -220,8 +220,8 @@
   "rowId": "np_n025",
   "scope": "normal",
   "refKey": "n025",
-  "pressureMin": 140,
-  "pressureMax": 140,
+  "pressureMin": 136,
+  "pressureMax": 136,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -229,8 +229,8 @@
   "rowId": "np_n026",
   "scope": "normal",
   "refKey": "n026",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -238,8 +238,8 @@
   "rowId": "np_n027",
   "scope": "normal",
   "refKey": "n027",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -247,8 +247,8 @@
   "rowId": "np_n028",
   "scope": "normal",
   "refKey": "n028",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -256,8 +256,8 @@
   "rowId": "np_n029",
   "scope": "normal",
   "refKey": "n029",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -265,9 +265,9 @@
   "rowId": "bp_n030",
   "scope": "boss",
   "refKey": "n030",
-  "pressureRecommend": 657,
-  "pressureMin": 591,
-  "pressureMax": 723,
+  "pressureRecommend": 430,
+  "pressureMin": 387,
+  "pressureMax": 473,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -275,8 +275,8 @@
   "rowId": "np_n031",
   "scope": "normal",
   "refKey": "n031",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -284,8 +284,8 @@
   "rowId": "np_n032",
   "scope": "normal",
   "refKey": "n032",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -293,8 +293,8 @@
   "rowId": "np_n033",
   "scope": "normal",
   "refKey": "n033",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -302,8 +302,8 @@
   "rowId": "np_n034",
   "scope": "normal",
   "refKey": "n034",
-  "pressureMin": 657,
-  "pressureMax": 657,
+  "pressureMin": 430,
+  "pressureMax": 430,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -311,8 +311,8 @@
   "rowId": "np_n035",
   "scope": "normal",
   "refKey": "n035",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -320,8 +320,8 @@
   "rowId": "np_n036",
   "scope": "normal",
   "refKey": "n036",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -329,8 +329,8 @@
   "rowId": "np_n037",
   "scope": "normal",
   "refKey": "n037",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -338,8 +338,8 @@
   "rowId": "np_n038",
   "scope": "normal",
   "refKey": "n038",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -347,8 +347,8 @@
   "rowId": "np_n039",
   "scope": "normal",
   "refKey": "n039",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -356,8 +356,8 @@
   "rowId": "np_n040",
   "scope": "normal",
   "refKey": "n040",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -365,8 +365,8 @@
   "rowId": "np_n041",
   "scope": "normal",
   "refKey": "n041",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -374,8 +374,8 @@
   "rowId": "np_n042",
   "scope": "normal",
   "refKey": "n042",
-  "pressureMin": 1554,
-  "pressureMax": 1554,
+  "pressureMin": 1111,
+  "pressureMax": 1111,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -383,8 +383,8 @@
   "rowId": "np_n043",
   "scope": "normal",
   "refKey": "n043",
-  "pressureMin": 2123,
-  "pressureMax": 2123,
+  "pressureMin": 1486,
+  "pressureMax": 1486,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -392,8 +392,8 @@
   "rowId": "np_n044",
   "scope": "normal",
   "refKey": "n044",
-  "pressureMin": 2123,
-  "pressureMax": 2123,
+  "pressureMin": 1486,
+  "pressureMax": 1486,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -401,8 +401,8 @@
   "rowId": "np_n045",
   "scope": "normal",
   "refKey": "n045",
-  "pressureMin": 2123,
-  "pressureMax": 2123,
+  "pressureMin": 1486,
+  "pressureMax": 1486,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -410,8 +410,8 @@
   "rowId": "np_n046",
   "scope": "normal",
   "refKey": "n046",
-  "pressureMin": 2123,
-  "pressureMax": 2123,
+  "pressureMin": 1486,
+  "pressureMax": 1486,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -419,8 +419,8 @@
   "rowId": "np_n047",
   "scope": "normal",
   "refKey": "n047",
-  "pressureMin": 2123,
-  "pressureMax": 2123,
+  "pressureMin": 1486,
+  "pressureMax": 1486,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -428,8 +428,8 @@
   "rowId": "np_n048",
   "scope": "normal",
   "refKey": "n048",
-  "pressureMin": 2123,
-  "pressureMax": 2123,
+  "pressureMin": 1486,
+  "pressureMax": 1486,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -437,8 +437,8 @@
   "rowId": "np_n049",
   "scope": "normal",
   "refKey": "n049",
-  "pressureMin": 2524,
-  "pressureMax": 2524,
+  "pressureMin": 1704,
+  "pressureMax": 1704,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -446,8 +446,8 @@
   "rowId": "np_n050",
   "scope": "normal",
   "refKey": "n050",
-  "pressureMin": 2524,
-  "pressureMax": 2524,
+  "pressureMin": 1704,
+  "pressureMax": 1704,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -455,8 +455,8 @@
   "rowId": "np_n051",
   "scope": "normal",
   "refKey": "n051",
-  "pressureMin": 2524,
-  "pressureMax": 2524,
+  "pressureMin": 1704,
+  "pressureMax": 1704,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -464,8 +464,8 @@
   "rowId": "np_n052",
   "scope": "normal",
   "refKey": "n052",
-  "pressureMin": 2524,
-  "pressureMax": 2524,
+  "pressureMin": 1704,
+  "pressureMax": 1704,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -473,8 +473,8 @@
   "rowId": "np_n053",
   "scope": "normal",
   "refKey": "n053",
-  "pressureMin": 2524,
-  "pressureMax": 2524,
+  "pressureMin": 1704,
+  "pressureMax": 1704,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -482,8 +482,8 @@
   "rowId": "np_n054",
   "scope": "normal",
   "refKey": "n054",
-  "pressureMin": 2524,
-  "pressureMax": 2524,
+  "pressureMin": 1704,
+  "pressureMax": 1704,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -491,8 +491,8 @@
   "rowId": "np_n055",
   "scope": "normal",
   "refKey": "n055",
-  "pressureMin": 2972,
-  "pressureMax": 2972,
+  "pressureMin": 1952,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -500,8 +500,8 @@
   "rowId": "np_n056",
   "scope": "normal",
   "refKey": "n056",
-  "pressureMin": 2972,
-  "pressureMax": 2972,
+  "pressureMin": 1952,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -509,8 +509,8 @@
   "rowId": "np_n057",
   "scope": "normal",
   "refKey": "n057",
-  "pressureMin": 2972,
-  "pressureMax": 2972,
+  "pressureMin": 1952,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -518,8 +518,8 @@
   "rowId": "np_n058",
   "scope": "normal",
   "refKey": "n058",
-  "pressureMin": 2973,
-  "pressureMax": 2973,
+  "pressureMin": 1952,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -527,8 +527,8 @@
   "rowId": "ep_n059",
   "scope": "elite",
   "refKey": "n059",
-  "pressureMin": 2973,
-  "pressureMax": 2973,
+  "pressureMin": 1952,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -536,9 +536,9 @@
   "rowId": "bp_n060",
   "scope": "boss",
   "refKey": "n060",
-  "pressureRecommend": 3912,
-  "pressureMin": 3521,
-  "pressureMax": 4303,
+  "pressureRecommend": 2424,
+  "pressureMin": 2182,
+  "pressureMax": 2666,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -546,8 +546,8 @@
   "rowId": "np_n061",
   "scope": "normal",
   "refKey": "n061",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -555,8 +555,8 @@
   "rowId": "np_n062",
   "scope": "normal",
   "refKey": "n062",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -564,8 +564,8 @@
   "rowId": "np_n063",
   "scope": "normal",
   "refKey": "n063",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -573,8 +573,8 @@
   "rowId": "np_n064",
   "scope": "normal",
   "refKey": "n064",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -582,8 +582,8 @@
   "rowId": "np_n065",
   "scope": "normal",
   "refKey": "n065",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -591,8 +591,8 @@
   "rowId": "np_n066",
   "scope": "normal",
   "refKey": "n066",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -600,8 +600,8 @@
   "rowId": "np_n067",
   "scope": "normal",
   "refKey": "n067",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -609,8 +609,8 @@
   "rowId": "np_n068",
   "scope": "normal",
   "refKey": "n068",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -618,8 +618,8 @@
   "rowId": "np_n069",
   "scope": "normal",
   "refKey": "n069",
-  "pressureMin": 3684,
-  "pressureMax": 3684,
+  "pressureMin": 2287,
+  "pressureMax": 2287,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -627,8 +627,8 @@
   "rowId": "np_n070",
   "scope": "normal",
   "refKey": "n070",
-  "pressureMin": 4318,
-  "pressureMax": 4318,
+  "pressureMin": 2549,
+  "pressureMax": 2549,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -636,8 +636,8 @@
   "rowId": "np_n071",
   "scope": "normal",
   "refKey": "n071",
-  "pressureMin": 4318,
-  "pressureMax": 4318,
+  "pressureMin": 2549,
+  "pressureMax": 2549,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -645,8 +645,8 @@
   "rowId": "np_n072",
   "scope": "normal",
   "refKey": "n072",
-  "pressureMin": 4318,
-  "pressureMax": 4318,
+  "pressureMin": 2549,
+  "pressureMax": 2549,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -654,8 +654,8 @@
   "rowId": "np_n073",
   "scope": "normal",
   "refKey": "n073",
-  "pressureMin": 4318,
-  "pressureMax": 4318,
+  "pressureMin": 2549,
+  "pressureMax": 2549,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -663,8 +663,8 @@
   "rowId": "np_n074",
   "scope": "normal",
   "refKey": "n074",
-  "pressureMin": 5081,
-  "pressureMax": 5081,
+  "pressureMin": 2960,
+  "pressureMax": 2960,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -672,8 +672,8 @@
   "rowId": "np_n075",
   "scope": "normal",
   "refKey": "n075",
-  "pressureMin": 5081,
-  "pressureMax": 5081,
+  "pressureMin": 2960,
+  "pressureMax": 2960,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -681,8 +681,8 @@
   "rowId": "np_n076",
   "scope": "normal",
   "refKey": "n076",
-  "pressureMin": 5081,
-  "pressureMax": 5081,
+  "pressureMin": 2960,
+  "pressureMax": 2960,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -690,8 +690,8 @@
   "rowId": "np_n077",
   "scope": "normal",
   "refKey": "n077",
-  "pressureMin": 5081,
-  "pressureMax": 5081,
+  "pressureMin": 2960,
+  "pressureMax": 2960,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -699,8 +699,8 @@
   "rowId": "np_n078",
   "scope": "normal",
   "refKey": "n078",
-  "pressureMin": 5709,
-  "pressureMax": 5709,
+  "pressureMin": 3243,
+  "pressureMax": 3243,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -708,8 +708,8 @@
   "rowId": "np_n079",
   "scope": "normal",
   "refKey": "n079",
-  "pressureMin": 5709,
-  "pressureMax": 5709,
+  "pressureMin": 3243,
+  "pressureMax": 3243,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -717,8 +717,8 @@
   "rowId": "np_n080",
   "scope": "normal",
   "refKey": "n080",
-  "pressureMin": 5709,
-  "pressureMax": 5709,
+  "pressureMin": 3243,
+  "pressureMax": 3243,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -726,8 +726,8 @@
   "rowId": "np_n081",
   "scope": "normal",
   "refKey": "n081",
-  "pressureMin": 5710,
-  "pressureMax": 5710,
+  "pressureMin": 3243,
+  "pressureMax": 3243,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -735,8 +735,8 @@
   "rowId": "np_n082",
   "scope": "normal",
   "refKey": "n082",
-  "pressureMin": 6113,
-  "pressureMax": 6113,
+  "pressureMin": 3507,
+  "pressureMax": 3507,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -744,8 +744,8 @@
   "rowId": "ep_n083",
   "scope": "elite",
   "refKey": "n083",
-  "pressureMin": 6113,
-  "pressureMax": 6113,
+  "pressureMin": 3507,
+  "pressureMax": 3507,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -753,9 +753,9 @@
   "rowId": "bp_n084",
   "scope": "boss",
   "refKey": "n084",
-  "pressureRecommend": 6113,
-  "pressureMin": 5502,
-  "pressureMax": 6724,
+  "pressureRecommend": 3508,
+  "pressureMin": 3157,
+  "pressureMax": 3859,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -763,8 +763,8 @@
   "rowId": "np_n085",
   "scope": "normal",
   "refKey": "n085",
-  "pressureMin": 6491,
-  "pressureMax": 6491,
+  "pressureMin": 3700,
+  "pressureMax": 3700,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -772,8 +772,8 @@
   "rowId": "np_n086",
   "scope": "normal",
   "refKey": "n086",
-  "pressureMin": 6491,
-  "pressureMax": 6491,
+  "pressureMin": 3700,
+  "pressureMax": 3700,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -781,8 +781,8 @@
   "rowId": "np_n087",
   "scope": "normal",
   "refKey": "n087",
-  "pressureMin": 6491,
-  "pressureMax": 6491,
+  "pressureMin": 3700,
+  "pressureMax": 3700,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -790,8 +790,8 @@
   "rowId": "np_n088",
   "scope": "normal",
   "refKey": "n088",
-  "pressureMin": 6845,
-  "pressureMax": 6845,
+  "pressureMin": 4018,
+  "pressureMax": 4018,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -799,8 +799,8 @@
   "rowId": "np_n089",
   "scope": "normal",
   "refKey": "n089",
-  "pressureMin": 6845,
-  "pressureMax": 6845,
+  "pressureMin": 4018,
+  "pressureMax": 4018,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -808,8 +808,8 @@
   "rowId": "np_n090",
   "scope": "normal",
   "refKey": "n090",
-  "pressureMin": 6845,
-  "pressureMax": 6845,
+  "pressureMin": 4018,
+  "pressureMax": 4018,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -817,8 +817,8 @@
   "rowId": "np_n091",
   "scope": "normal",
   "refKey": "n091",
-  "pressureMin": 6845,
-  "pressureMax": 6845,
+  "pressureMin": 4018,
+  "pressureMax": 4018,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -826,8 +826,8 @@
   "rowId": "np_n092",
   "scope": "normal",
   "refKey": "n092",
-  "pressureMin": 7699,
-  "pressureMax": 7699,
+  "pressureMin": 4090,
+  "pressureMax": 4090,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -835,8 +835,8 @@
   "rowId": "np_n093",
   "scope": "normal",
   "refKey": "n093",
-  "pressureMin": 7699,
-  "pressureMax": 7699,
+  "pressureMin": 4090,
+  "pressureMax": 4090,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -844,8 +844,8 @@
   "rowId": "np_n094",
   "scope": "normal",
   "refKey": "n094",
-  "pressureMin": 7699,
-  "pressureMax": 7699,
+  "pressureMin": 4090,
+  "pressureMax": 4090,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -853,8 +853,8 @@
   "rowId": "np_n095",
   "scope": "normal",
   "refKey": "n095",
-  "pressureMin": 8053,
-  "pressureMax": 8053,
+  "pressureMin": 4186,
+  "pressureMax": 4186,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -862,8 +862,8 @@
   "rowId": "np_n096",
   "scope": "normal",
   "refKey": "n096",
-  "pressureMin": 8053,
-  "pressureMax": 8053,
+  "pressureMin": 4186,
+  "pressureMax": 4186,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -871,8 +871,8 @@
   "rowId": "np_n097",
   "scope": "normal",
   "refKey": "n097",
-  "pressureMin": 8053,
-  "pressureMax": 8053,
+  "pressureMin": 4186,
+  "pressureMax": 4186,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -880,8 +880,8 @@
   "rowId": "np_n098",
   "scope": "normal",
   "refKey": "n098",
-  "pressureMin": 8443,
-  "pressureMax": 8443,
+  "pressureMin": 4500,
+  "pressureMax": 4500,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -889,8 +889,8 @@
   "rowId": "np_n099",
   "scope": "normal",
   "refKey": "n099",
-  "pressureMin": 8443,
-  "pressureMax": 8443,
+  "pressureMin": 4500,
+  "pressureMax": 4500,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -898,8 +898,8 @@
   "rowId": "np_n100",
   "scope": "normal",
   "refKey": "n100",
-  "pressureMin": 8443,
-  "pressureMax": 8443,
+  "pressureMin": 4500,
+  "pressureMax": 4500,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -907,8 +907,8 @@
   "rowId": "ep_n101",
   "scope": "elite",
   "refKey": "n101",
-  "pressureMin": 8959,
-  "pressureMax": 8959,
+  "pressureMin": 4789,
+  "pressureMax": 4789,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -916,9 +916,9 @@
   "rowId": "bp_n102",
   "scope": "boss",
   "refKey": "n102",
-  "pressureRecommend": 11668,
-  "pressureMin": 10501,
-  "pressureMax": 12835,
+  "pressureRecommend": 5500,
+  "pressureMin": 4950,
+  "pressureMax": 6050,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -926,8 +926,8 @@
   "rowId": "np_n103",
   "scope": "normal",
   "refKey": "n103",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -935,8 +935,8 @@
   "rowId": "np_n104",
   "scope": "normal",
   "refKey": "n104",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -944,8 +944,8 @@
   "rowId": "np_n105",
   "scope": "normal",
   "refKey": "n105",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -953,8 +953,8 @@
   "rowId": "np_n106",
   "scope": "normal",
   "refKey": "n106",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -962,8 +962,8 @@
   "rowId": "np_n107",
   "scope": "normal",
   "refKey": "n107",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -971,8 +971,8 @@
   "rowId": "np_n108",
   "scope": "normal",
   "refKey": "n108",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -980,8 +980,8 @@
   "rowId": "np_n109",
   "scope": "normal",
   "refKey": "n109",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -989,8 +989,8 @@
   "rowId": "np_n110",
   "scope": "normal",
   "refKey": "n110",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -998,8 +998,8 @@
   "rowId": "np_n111",
   "scope": "normal",
   "refKey": "n111",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1007,8 +1007,8 @@
   "rowId": "np_n112",
   "scope": "normal",
   "refKey": "n112",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1016,8 +1016,8 @@
   "rowId": "np_n113",
   "scope": "normal",
   "refKey": "n113",
-  "pressureMin": 11110,
-  "pressureMax": 11110,
+  "pressureMin": 5636,
+  "pressureMax": 5636,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1025,8 +1025,8 @@
   "rowId": "np_n114",
   "scope": "normal",
   "refKey": "n114",
-  "pressureMin": 12082,
-  "pressureMax": 12082,
+  "pressureMin": 5859,
+  "pressureMax": 5859,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1034,8 +1034,8 @@
   "rowId": "np_n115",
   "scope": "normal",
   "refKey": "n115",
-  "pressureMin": 12082,
-  "pressureMax": 12082,
+  "pressureMin": 5859,
+  "pressureMax": 5859,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1043,8 +1043,8 @@
   "rowId": "np_n116",
   "scope": "normal",
   "refKey": "n116",
-  "pressureMin": 12082,
-  "pressureMax": 12082,
+  "pressureMin": 5859,
+  "pressureMax": 5859,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1052,8 +1052,8 @@
   "rowId": "np_n117",
   "scope": "normal",
   "refKey": "n117",
-  "pressureMin": 12838,
-  "pressureMax": 12838,
+  "pressureMin": 5920,
+  "pressureMax": 5920,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1061,8 +1061,8 @@
   "rowId": "np_n118",
   "scope": "normal",
   "refKey": "n118",
-  "pressureMin": 12838,
-  "pressureMax": 12838,
+  "pressureMin": 5920,
+  "pressureMax": 5920,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1070,8 +1070,8 @@
   "rowId": "ep_n119",
   "scope": "elite",
   "refKey": "n119",
-  "pressureMin": 14038,
-  "pressureMax": 14038,
+  "pressureMin": 6081,
+  "pressureMax": 6081,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1079,9 +1079,9 @@
   "rowId": "bp_n120",
   "scope": "boss",
   "refKey": "n120",
-  "pressureRecommend": 16954,
-  "pressureMin": 15259,
-  "pressureMax": 18649,
+  "pressureRecommend": 6706,
+  "pressureMin": 6035,
+  "pressureMax": 7377,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -1089,8 +1089,8 @@
   "rowId": "np_n121",
   "scope": "normal",
   "refKey": "n121",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1098,8 +1098,8 @@
   "rowId": "np_n122",
   "scope": "normal",
   "refKey": "n122",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1107,8 +1107,8 @@
   "rowId": "np_n123",
   "scope": "normal",
   "refKey": "n123",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1116,8 +1116,8 @@
   "rowId": "np_n124",
   "scope": "normal",
   "refKey": "n124",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1125,8 +1125,8 @@
   "rowId": "np_n125",
   "scope": "normal",
   "refKey": "n125",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1134,8 +1134,8 @@
   "rowId": "np_n126",
   "scope": "normal",
   "refKey": "n126",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1143,8 +1143,8 @@
   "rowId": "np_n127",
   "scope": "normal",
   "refKey": "n127",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1152,8 +1152,8 @@
   "rowId": "np_n128",
   "scope": "normal",
   "refKey": "n128",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1161,8 +1161,8 @@
   "rowId": "np_n129",
   "scope": "normal",
   "refKey": "n129",
-  "pressureMin": 16810,
-  "pressureMax": 16810,
+  "pressureMin": 6543,
+  "pressureMax": 6543,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1170,8 +1170,8 @@
   "rowId": "np_n130",
   "scope": "normal",
   "refKey": "n130",
-  "pressureMin": 17319,
-  "pressureMax": 17319,
+  "pressureMin": 6639,
+  "pressureMax": 6639,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1179,8 +1179,8 @@
   "rowId": "np_n131",
   "scope": "normal",
   "refKey": "n131",
-  "pressureMin": 17320,
-  "pressureMax": 17320,
+  "pressureMin": 6639,
+  "pressureMax": 6639,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1188,8 +1188,8 @@
   "rowId": "np_n132",
   "scope": "normal",
   "refKey": "n132",
-  "pressureMin": 17821,
-  "pressureMax": 17821,
+  "pressureMin": 6696,
+  "pressureMax": 6696,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1197,8 +1197,8 @@
   "rowId": "np_n133",
   "scope": "normal",
   "refKey": "n133",
-  "pressureMin": 17822,
-  "pressureMax": 17822,
+  "pressureMin": 6696,
+  "pressureMax": 6696,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1206,8 +1206,8 @@
   "rowId": "np_n134",
   "scope": "normal",
   "refKey": "n134",
-  "pressureMin": 18381,
-  "pressureMax": 18381,
+  "pressureMin": 6751,
+  "pressureMax": 6751,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1215,8 +1215,8 @@
   "rowId": "np_n135",
   "scope": "normal",
   "refKey": "n135",
-  "pressureMin": 18381,
-  "pressureMax": 18381,
+  "pressureMin": 6751,
+  "pressureMax": 6751,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1224,8 +1224,8 @@
   "rowId": "np_n136",
   "scope": "normal",
   "refKey": "n136",
-  "pressureMin": 18871,
-  "pressureMax": 18871,
+  "pressureMin": 7466,
+  "pressureMax": 7466,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1233,8 +1233,8 @@
   "rowId": "ep_n137",
   "scope": "elite",
   "refKey": "n137",
-  "pressureMin": 18871,
-  "pressureMax": 18871,
+  "pressureMin": 7466,
+  "pressureMax": 7466,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1242,9 +1242,9 @@
   "rowId": "bp_n138",
   "scope": "boss",
   "refKey": "n138",
-  "pressureRecommend": 19308,
-  "pressureMin": 17377,
-  "pressureMax": 21239,
+  "pressureRecommend": 7508,
+  "pressureMin": 6757,
+  "pressureMax": 8259,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -1252,8 +1252,8 @@
   "rowId": "np_n139",
   "scope": "normal",
   "refKey": "n139",
-  "pressureMin": 19745,
-  "pressureMax": 19745,
+  "pressureMin": 7551,
+  "pressureMax": 7551,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1261,8 +1261,8 @@
   "rowId": "np_n140",
   "scope": "normal",
   "refKey": "n140",
-  "pressureMin": 21516,
-  "pressureMax": 21516,
+  "pressureMin": 7625,
+  "pressureMax": 7625,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1270,8 +1270,8 @@
   "rowId": "np_n141",
   "scope": "normal",
   "refKey": "n141",
-  "pressureMin": 21516,
-  "pressureMax": 21516,
+  "pressureMin": 7625,
+  "pressureMax": 7625,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1279,8 +1279,8 @@
   "rowId": "np_n142",
   "scope": "normal",
   "refKey": "n142",
-  "pressureMin": 22179,
-  "pressureMax": 22179,
+  "pressureMin": 7688,
+  "pressureMax": 7688,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1288,8 +1288,8 @@
   "rowId": "np_n143",
   "scope": "normal",
   "refKey": "n143",
-  "pressureMin": 22179,
-  "pressureMax": 22179,
+  "pressureMin": 7688,
+  "pressureMax": 7688,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1297,8 +1297,8 @@
   "rowId": "np_n144",
   "scope": "normal",
   "refKey": "n144",
-  "pressureMin": 22769,
-  "pressureMax": 22769,
+  "pressureMin": 8171,
+  "pressureMax": 8171,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1306,8 +1306,8 @@
   "rowId": "np_n145",
   "scope": "normal",
   "refKey": "n145",
-  "pressureMin": 22769,
-  "pressureMax": 22769,
+  "pressureMin": 8171,
+  "pressureMax": 8171,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1315,8 +1315,8 @@
   "rowId": "np_n146",
   "scope": "normal",
   "refKey": "n146",
-  "pressureMin": 24343,
-  "pressureMax": 24343,
+  "pressureMin": 8404,
+  "pressureMax": 8404,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1324,8 +1324,8 @@
   "rowId": "np_n147",
   "scope": "normal",
   "refKey": "n147",
-  "pressureMin": 24343,
-  "pressureMax": 24343,
+  "pressureMin": 8404,
+  "pressureMax": 8404,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1333,8 +1333,8 @@
   "rowId": "np_n148",
   "scope": "normal",
   "refKey": "n148",
-  "pressureMin": 25107,
-  "pressureMax": 25107,
+  "pressureMin": 8940,
+  "pressureMax": 8940,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1342,8 +1342,8 @@
   "rowId": "ep_n149",
   "scope": "elite",
   "refKey": "n149",
-  "pressureMin": 25107,
-  "pressureMax": 25107,
+  "pressureMin": 8940,
+  "pressureMax": 8940,
   "note": "对锚批 v0.8 逐节点重标（显示推荐=真实需求·min=max=压力真值）"
  },
  {
@@ -1351,9 +1351,9 @@
   "rowId": "bp_n150",
   "scope": "boss",
   "refKey": "n150",
-  "pressureRecommend": 32094,
-  "pressureMin": 28885,
-  "pressureMax": 35303,
+  "pressureRecommend": 12080,
+  "pressureMin": 10872,
+  "pressureMax": 13288,
   "note": "对锚批 v0.8 重标·推荐=校准压力真值（±10% 显示带）"
  },
  {
@@ -1361,8 +1361,8 @@
   "rowId": "np_sf01",
   "scope": "normal",
   "refKey": "sf01",
-  "pressureMin": 45,
-  "pressureMax": 2973,
+  "pressureMin": 44,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1370,8 +1370,8 @@
   "rowId": "ep_sf01",
   "scope": "elite",
   "refKey": "sf01",
-  "pressureMin": 91,
-  "pressureMax": 2973,
+  "pressureMin": 89,
+  "pressureMax": 1952,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1379,8 +1379,8 @@
   "rowId": "np_sf02",
   "scope": "normal",
   "refKey": "sf02",
-  "pressureMin": 3684,
-  "pressureMax": 6113,
+  "pressureMin": 2287,
+  "pressureMax": 3507,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1388,8 +1388,8 @@
   "rowId": "ep_sf02",
   "scope": "elite",
   "refKey": "sf02",
-  "pressureMin": 6113,
-  "pressureMax": 6113,
+  "pressureMin": 3507,
+  "pressureMax": 3507,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1397,8 +1397,8 @@
   "rowId": "np_sf03",
   "scope": "normal",
   "refKey": "sf03",
-  "pressureMin": 6491,
-  "pressureMax": 8443,
+  "pressureMin": 3700,
+  "pressureMax": 4500,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1406,8 +1406,8 @@
   "rowId": "ep_sf03",
   "scope": "elite",
   "refKey": "sf03",
-  "pressureMin": 8959,
-  "pressureMax": 8959,
+  "pressureMin": 4789,
+  "pressureMax": 4789,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1415,8 +1415,8 @@
   "rowId": "np_sf04",
   "scope": "normal",
   "refKey": "sf04",
-  "pressureMin": 11110,
-  "pressureMax": 12838,
+  "pressureMin": 5636,
+  "pressureMax": 5920,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1424,8 +1424,8 @@
   "rowId": "ep_sf04",
   "scope": "elite",
   "refKey": "sf04",
-  "pressureMin": 14038,
-  "pressureMax": 14038,
+  "pressureMin": 6081,
+  "pressureMax": 6081,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1433,8 +1433,8 @@
   "rowId": "np_sf05",
   "scope": "normal",
   "refKey": "sf05",
-  "pressureMin": 16810,
-  "pressureMax": 18871,
+  "pressureMin": 6543,
+  "pressureMax": 7466,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1442,8 +1442,8 @@
   "rowId": "ep_sf05",
   "scope": "elite",
   "refKey": "sf05",
-  "pressureMin": 18871,
-  "pressureMax": 18871,
+  "pressureMin": 7466,
+  "pressureMax": 7466,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1451,8 +1451,8 @@
   "rowId": "np_sf06",
   "scope": "normal",
   "refKey": "sf06",
-  "pressureMin": 19745,
-  "pressureMax": 25107,
+  "pressureMin": 7551,
+  "pressureMax": 8940,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {
@@ -1460,8 +1460,8 @@
   "rowId": "ep_sf06",
   "scope": "elite",
   "refKey": "sf06",
-  "pressureMin": 25107,
-  "pressureMax": 25107,
+  "pressureMin": 8940,
+  "pressureMax": 8940,
   "note": "对锚批 v0.8 星域带重写（回退路径·逐节点行为主）"
  },
  {

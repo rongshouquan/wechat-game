@@ -1,52 +1,27 @@
 #!/usr/bin/env node
-// 对锚与阶梯批 · 生成回廊 φ 换算表（S7CorridorScaleTable.ts·生成件勿手改）。
-// 原理：回廊层强度走主线同一条 K 合同（pool=K_HP×500×φpool·dps=K_DPS×500×φdps^{>1?1.08}），
-// φ=strengthIndex(P)/strengthIndex(500)（tools/s7-battles-entry.ts·依赖反解器+growth_band）——
-// 运行时不移植反解器，改由本工具采样生成查表+线性插值；growth_band/K 合同/战力公式任一变动后
-// 重跑本工具重生成（奇偶校验测试=tests/s7_corridor_scale_parity.test.ts 会红）。
-import { build } from 'esbuild';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// 定价重锚 v1 · 生成回廊 φ 换算表（S7CorridorScaleTable.ts·生成件勿手改）。
+// 原理：回廊层强度走主线同一条 K 合同（pool=K_HP×500×φpool·dps=K_DPS×500×φdps^{>1?1.08}）。
+// φ 真值变更（旧→新→为什么对）：旧 φ=strengthIndex(P)/strengthIndex(500)（反解器+growth_band
+// 分析链·吸收 v0 刻度与强度的换算漂移）；v1 刻度按实测重标后"刻度即强度"（s7-power-recalib·
+// RMSE 2%），φ(P)=P/500 恒等——补丁随根因拆除（entry strengthIndex 已删·本表同步恒等采样）。
+// 保留查表+插值形状：运行时消费面（corridorPhi）与奇偶校验测试零改动成本。
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(HERE, '..', 'assets', 'scripts', 'core', 's7', 'S7CorridorScaleTable.ts');
 
-const tmp = mkdtempSync(path.join(tmpdir(), 's7-phigen-'));
-const outfile = path.join(tmp, 'entry.mjs');
-await build({
-  entryPoints: [path.join(HERE, 's7-battles-entry.ts')],
-  bundle: true, platform: 'node', format: 'esm', target: 'node18', outfile, logLevel: 'silent',
-});
-process.env.S7_GAME_ROOT = path.resolve(HERE, '..');
-const mod = await import(pathToFileURL(outfile).href);
+// 采样：恒等函数线性插值零误差——两点即精确；保留对数网格若干点纯为可读性/未来非线性留位。
+const POINTS = [100, 250, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 128000, 300000, 600000];
+const rows = POINTS.map((P) => `  [${P}, ${(P / 500).toFixed(6)}],`);
 
-// 采样：P 从 100 到 600k 对数网格 ×1.05 ＋ 150 关压力表全点（关键点零插值误差——
-// φ=反解器台阶函数，墙压力值可能正骑在台阶上，如 3912 曾被网格插值差 9%）。
-const POINTS = [];
-let p = 100;
-while (p <= 600000) {
-  POINTS.push(Math.round(p));
-  p *= 1.05;
-}
-for (const v of mod.loadPressure()) if (v > 0) POINTS.push(Math.round(v));
-POINTS.sort((a, b) => a - b);
-const DEDUP = [...new Set(POINTS)];
-POINTS.length = 0;
-POINTS.push(...DEDUP);
-const base = mod.strengthIndex(500, 'dps');
-const rows = POINTS.map((P) => {
-  const phi = P <= 500 ? P / 500 : mod.strengthIndex(P, 'dps') / base;
-  return `  [${P}, ${phi.toFixed(6)}],`;
-});
+const body = `// ⚠️ 生成件（tools/gen-corridor-scale.mjs）勿手改——定价重锚 v1。
+// 回廊层强度的 φ 换算表：φ(P)=P/500 恒等（v1 刻度即强度·主线 K 合同同一条换算链·细表 §19）。
+// 旧 strengthIndex 采样版（含 ~28k 反解器饱和）随刻度 v0 一并退役；本表=恒等线性（插值零误差），
+// 保留查表形状=运行时消费面不变。growth_band/战力公式变动后重跑生成器（奇偶校验测试守同步）。
 
-const body = `// ⚠️ 生成件（tools/gen-corridor-scale.mjs）勿手改——对锚与阶梯批。
-// 回廊层强度的 φ 换算表：φ(P)=strengthIndex(P)/strengthIndex(500)（主线 K 合同同一条换算链·
-// 细表 §19）；growth_band/战力公式/K 合同变动后重跑生成器（奇偶校验测试守同步）。
-// φ 在 ~28k（反解器顶=SS·L100）后饱和=主线同款行为，深层回廊难度随之封顶（对锚批已上报）。
-
-/** [战力P, φ] 采样点（对数网格·线性插值）。 */
+/** [战力P, φ] 采样点（线性插值）。 */
 export const S7_CORRIDOR_PHI_TABLE: ReadonlyArray<readonly [number, number]> = [
 ${rows.join('\n')}
 ] as const;
@@ -69,5 +44,4 @@ export function corridorPhi(power: number): number {
 }
 `;
 writeFileSync(OUT, body);
-console.log(`[gen-corridor-scale] 写出 ${OUT}（${POINTS.length} 采样点·φ(500)=1）`);
-rmSync(tmp, { recursive: true, force: true });
+console.log(`[gen-corridor-scale] 写出 ${OUT}（${POINTS.length} 采样点·φ 恒等=P/500）`);
