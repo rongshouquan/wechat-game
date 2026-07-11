@@ -13,8 +13,12 @@ import { S7PluginInventoryState, removeOwnedPlugin, findOwnedPlugin } from './S7
 import { merchantRecycleSteps } from './S7BuildingEffects';
 
 /** 回收星贝终值（步5 回写·传奇 150=初值表 v0.7 尺内值〔步3 清淤入模〕；精良/优秀=尺外比例值·未入尺注记）。
- *  商人回收价档（Lv3/6/9 各 +15·细案⑤）只作用传奇件：150→165→180→195。 */
-const RECYCLE_BY_QUALITY: Record<S7PluginQuality, number> = { fine: 30, superior: 75, legendary: 150 };
+ *  商人回收价档（Lv3/6/9 各 +15·细案⑤）只作用传奇件：150→165→180→195。
+ *  传奇+/++＝段二 E 组扩档占位（数值域·≈×2.3 阶比对齐 30→75→150 梯·合成产物拆解=玩家亏损操作，
+ *  价只保"不为零的容错"不保等值；2b 入尺复核·回收价档暂不作用）。 */
+const RECYCLE_BY_QUALITY: Record<S7PluginQuality, number> = {
+  fine: 30, superior: 75, legendary: 150, legendaryPlus: 350, legendaryPlusPlus: 800,
+};
 export const RECYCLE_LEGENDARY_STEP_ADD = 15;
 
 export type S7RecycleResult =

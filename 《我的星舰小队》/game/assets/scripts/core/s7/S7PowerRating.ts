@@ -48,8 +48,12 @@ export const S7_SHIP_LEVEL_POWER_FACTOR = [
   2.42, 2.4424, 2.4648, 2.4872, 2.5097, 2.5321, 2.5544, 2.5769, 2.5993, 3.0568,
   3.0782, 3.1021, 3.1261, 3.1499, 3.1739, 3.1978, 3.2218, 3.2456, 3.2696, 3.2935,
 ] as const;
-/** 插件战力（品质档·本批未动）。 */
-export const S7_PLUGIN_POWER: Record<S7PluginQuality, number> = { fine: 15, superior: 35, legendary: 70 };
+/** 插件战力（品质档）。传奇+/++＝段二 E7 扩档（数值域定·刻度诚实：+/++ 主数值沿传奇档，
+ *  增量=附加条 ≈半件传奇附加当量 ~20/条 → 90/110；毕业态锚不受影响（毕业态插件非全传奇·
+ *  +/++ 属毕业后追求）；2b 可用 s7-power-recalib 加构成实测复核。镜像=TRUTHS.pluginPower。 */
+export const S7_PLUGIN_POWER: Record<S7PluginQuality, number> = {
+  fine: 15, superior: 35, legendary: 70, legendaryPlus: 90, legendaryPlusPlus: 110,
+};
 /** 星核战力（装了就计·质变强度不折算·本批未动）。 */
 export const S7_CORE_POWER = 120;
 

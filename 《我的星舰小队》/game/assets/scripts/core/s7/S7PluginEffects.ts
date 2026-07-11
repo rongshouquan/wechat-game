@@ -10,11 +10,17 @@
 import type { S7PluginSlot } from '../../config/s7/ConfigTypesS7';
 import { S7EffectBlock } from './S7BattleEffectBlock';
 
-/** 插件品质（v1.0 §5.3）：精良 / 优秀 / 传奇。无等级，只分品质。 */
-export type S7PluginQuality = 'fine' | 'superior' | 'legendary';
-export const S7_PLUGIN_QUALITIES: readonly S7PluginQuality[] = ['fine', 'superior', 'legendary'];
+/** 插件品质：精良 / 优秀 / 传奇 / 传奇+ / 传奇++（段二 E2 扩两档·Ron 2026-07-12 拍板）。无等级，只分品质。
+ *  传奇+/++ 主数值沿传奇档（"零新效果内容、纯组合"）；多出来的=额外附加条（bonusEffectIds·见下方附加池）。 */
+export type S7PluginQuality = 'fine' | 'superior' | 'legendary' | 'legendaryPlus' | 'legendaryPlusPlus';
+export const S7_PLUGIN_QUALITIES: readonly S7PluginQuality[] = ['fine', 'superior', 'legendary', 'legendaryPlus', 'legendaryPlusPlus'];
 
-const QI: Record<S7PluginQuality, 0 | 1 | 2> = { fine: 0, superior: 1, legendary: 2 };
+/** 品质→三档数值下标：传奇+/++ 数值沿传奇档（E2）。 */
+const QI: Record<S7PluginQuality, 0 | 1 | 2> = { fine: 0, superior: 1, legendary: 2, legendaryPlus: 2, legendaryPlusPlus: 2 };
+/** 品质→应带的"额外附加条"数（E2：传奇+共 2 条特殊效果=本体附加+1 额外；++共 3 条=+2 额外）。 */
+export const S7_BONUS_COUNT_BY_QUALITY: Record<S7PluginQuality, number> = {
+  fine: 0, superior: 0, legendary: 0, legendaryPlus: 1, legendaryPlusPlus: 2,
+};
 type Trio = [number, number, number];
 
 function round6(x: number): number {
@@ -178,12 +184,72 @@ const PLUGIN_BUILDERS: Record<string, (q: 0 | 1 | 2) => S7EffectBlock[]> = {
   plg29: affix('plg29', 'durationPct', [0.15, 0.30, 0.70]),    // 持久：+15/30/50%·传奇附加再延长=50→70（§14）
 };
 
+// ===== 传奇附加条（段二 E2·B 案：同槽位传奇效果池随机抽·去重·零新效果内容） =====
+// 每条=某件插件"传奇附加"的独立块（source=plugbonus:<捐主id>·数值与本体传奇附加逐字相同）。
+// 只收录**独立嫁接可生效**的附加（自带完整语义、不依赖捐主本体词条）；下列 10 件不入池并记档理由：
+//   plg21(溅射扩格)/plg22(满蓄溅射)/plg23(吸血翻倍)/plg24(缩CD翻倍)/plg25(引爆扩格)/plg27(满目标刷CD)
+//   ＝依赖捐主本体词条（独立嫁接=死条）；plg18＝语义注无载体；plg12/plg16＝附加折在档值里无独立块；
+//   plg14＝绑净化节拍；plg15(闪避必暴)/plg30(免死后无敌)＝依赖捐主闩锁词条。
+//   ——收录判据=玩家抽到必然"有感"（体验＞完备）；池收窄属实现裁量·随段2a 交付候 Ron 复验（备选案=
+//   死条件连带捐主精良档基础词条一起嫁接·见交付说明）。
+const BONUS_BUILDERS: Record<string, () => S7EffectBlock[]> = {
+  // —— 武器槽（7/10 可嫁接）——
+  plg02: () => [{ kind: 'affix', affix: 'critSplashPct', value: 0.30, source: 'plugbonus:plg02' }],
+  plg04: () => [{ kind: 'affix', affix: 'critFollowupAtkPct', value: 0.5, source: 'plugbonus:plg04' }],
+  plg09: () => [{ kind: 'affix', affix: 'critHasteAmount', value: 0.20, source: 'plugbonus:plg09' }],
+  plg10: () => [{ kind: 'affix', affix: 'normalAtkDmgPct', value: 0.12, source: 'plugbonus:plg10' }],
+  plg17: () => [{ kind: 'affix', affix: 'critRateVsFortified', value: 0.12, source: 'plugbonus:plg17' }],
+  plg19: () => [{ kind: 'trigger', on: 'on_kill', onKillRoleTags: ['swarm', 'swarm_tough'], effectRef: 'eff_plg_cdr_05', source: 'plugbonus:plg19' }],
+  plg20: () => [{ kind: 'affix', affix: 'critDmgVsBoss', value: 0.30, source: 'plugbonus:plg20' }],
+  // —— 技能槽（6/10 可嫁接；plg26/28/29 附加=折在第三档的增量·还原成独立加法块）——
+  plg07: () => [{ kind: 'affix', affix: 'firstSkillCdHalf', value: 1, source: 'plugbonus:plg07' }],
+  plg11: () => [{ kind: 'affix', affix: 'skillAreaUp', value: 1, source: 'plugbonus:plg11' }],
+  plg13: () => [{ kind: 'affix', affix: 'skillCritDmgPct', value: 0.25, source: 'plugbonus:plg13' }],
+  plg26: () => [{ kind: 'affix', affix: 'effectAmp', value: 0.15, source: 'plugbonus:plg26' }],   // 55−40
+  plg28: () => [{ kind: 'affix', affix: 'aftershockAtkPct', value: 0.4, source: 'plugbonus:plg28' }], // 1.4−1.0
+  plg29: () => [{ kind: 'affix', affix: 'durationPct', value: 0.20, source: 'plugbonus:plg29' }], // 0.70−0.50
+  // —— 战术槽（5/10 可嫁接）——
+  plg01: () => [{
+    kind: 'stack',
+    rule: {
+      ruleId: 'plg01_guard_shield', on: 'was_hit_by_skill', stat: 'dmgTakenDownPct', perStack: 0, maxStacks: 1,
+      onFullEffectRef: 'eff_plg_guard_shield', onFullScope: 'self', onFullMaxFires: 3, source: 'plugbonus:plg01',
+    },
+    source: 'plugbonus:plg01',
+  } as S7EffectBlock], // ruleId 与本体同名=单位内天然去重（同槽一件+去重规则保证同单位不会双持）
+  plg03: () => [{ kind: 'affix', affix: 'armorDownOnShieldBreak', value: 0.20, source: 'plugbonus:plg03' }],
+  plg05: () => [{ kind: 'affix', affix: 'lowHpDmgTakenDown', value: 0.15, source: 'plugbonus:plg05' }],
+  plg06: () => [{ kind: 'affix', affix: 'firstControlImmune', value: 1, source: 'plugbonus:plg06' }],
+  plg08: () => [{ kind: 'affix', affix: 'overhealToShieldPct', value: 1.0, source: 'plugbonus:plg08' }],
+};
+
+/** 同槽位传奇效果池（可嫁接子集·合成抽附加条的唯一来源；顺序固定=确定性 RNG 可复现）。 */
+export const S7_GRAFTABLE_BONUS_POOL: Record<S7PluginSlot, readonly string[]> = {
+  weapon: ['plg02', 'plg04', 'plg09', 'plg10', 'plg17', 'plg19', 'plg20'],
+  skill: ['plg07', 'plg11', 'plg13', 'plg26', 'plg28', 'plg29'],
+  tactical: ['plg01', 'plg03', 'plg05', 'plg06', 'plg08'],
+};
+
+/** 一条附加（按捐主 id）解析成效果积木；未收录 id → 空数组（防脏档·合法性由合成/装配层把关）。 */
+export function bonusEffectBlocks(donorPluginId: string): S7EffectBlock[] {
+  const build = BONUS_BUILDERS[donorPluginId];
+  return build ? build() : [];
+}
+
 /**
  * 把一个插件实例解析成效果积木（⑩A3：按 pluginId 精确词条·slotTag 仅溯源兼容保留）。
  * 未知 id 或基础效果无载体 → 空数组（装配器已校验归属·空=挂牌件只贡献战力刻度不上战场）。
+ * 段二 E2：传奇+/++ 额外附加条经 bonusEffectIds 传入（捐主 id 列表·去重由合成/装配层保证），
+ * 主数值沿传奇档；低品质传入 bonusEffectIds=忽略（防脏档拼强度）。
  */
-export function pluginBlocks(pluginId: string, slotTag: S7PluginSlot, quality: S7PluginQuality): S7EffectBlock[] {
+export function pluginBlocks(
+  pluginId: string, slotTag: S7PluginSlot, quality: S7PluginQuality, bonusEffectIds?: readonly string[],
+): S7EffectBlock[] {
   void slotTag;
   const build = PLUGIN_BUILDERS[pluginId];
-  return build ? build(QI[quality]) : [];
+  const base = build ? build(QI[quality]) : [];
+  const allow = S7_BONUS_COUNT_BY_QUALITY[quality];
+  if (!bonusEffectIds || bonusEffectIds.length === 0 || allow <= 0) return base;
+  const extras = bonusEffectIds.slice(0, allow).flatMap((id) => bonusEffectBlocks(id));
+  return [...base, ...extras];
 }

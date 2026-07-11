@@ -249,10 +249,10 @@ const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | '
 const S7_DEMO_SEED_CORES = ['core10', 'core11']; // 步5 收编：旧 core01/02 占位 id 已删
 /** 插件槽位类型中文（仅显示用）。 */
 const S7_SLOT_TAG_NAMES: Record<S7PluginSlot, string> = { weapon: '武器', skill: '技能', tactical: '战术' };
-/** 品质中文（仅显示用）。 */
-const S7_QUALITY_NAMES: Record<string, string> = { fine: '精良', superior: '优秀', legendary: '传奇' };
+/** 品质中文（仅显示用·段二 E2 扩两档；散落的品质三元与合成 UI 切换=灰盒批接口清单）。 */
+const S7_QUALITY_NAMES: Record<string, string> = { fine: '精良', superior: '优秀', legendary: '传奇', legendaryPlus: '传奇+', legendaryPlusPlus: '传奇++' };
 /** 品质排序权重（越大越靠前）。插件用；驾驶员/星核暂无品质等级→0。 */
-const S7_QUALITY_RANK: Record<string, number> = { legendary: 3, superior: 2, fine: 1 };
+const S7_QUALITY_RANK: Record<string, number> = { legendaryPlusPlus: 5, legendaryPlus: 4, legendary: 3, superior: 2, fine: 1 };
 
 /** 装备（统称：驾驶员/插件/星核）的引用：kind + id（pilotId / 插件 instanceId / coreId）。 */
 type S7EquipKind = 'pilot' | 'plugin' | 'core';

@@ -114,8 +114,9 @@ describe('块4a 解析器 pluginBlocks：品质缩放 + 传奇额外效果', () 
     expect(shieldp.value).toBeLessThan(0);
   });
 
-  it('每个品质都被 S7_PLUGIN_QUALITIES 覆盖（无遗漏）', () => {
-    expect([...S7_PLUGIN_QUALITIES].sort()).toEqual(['fine', 'legendary', 'superior']);
+  it('每个品质都被 S7_PLUGIN_QUALITIES 覆盖（无遗漏·段二 E2 扩传奇+/++）', () => {
+    // 重定基（旧→新→为什么对）：E2 新品质档两枚（主数值沿传奇档·差异=附加条·craft2 测试套覆盖）。
+    expect([...S7_PLUGIN_QUALITIES].sort()).toEqual(['fine', 'legendary', 'legendaryPlus', 'legendaryPlusPlus', 'superior']);
   });
 });
 

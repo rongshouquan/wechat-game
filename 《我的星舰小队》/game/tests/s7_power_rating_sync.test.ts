@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   S7_TIER_POWER_BASE, S7_PILOT_STAR_POWER_MULT, S7_PILOT_LEVEL_POWER_COEF,
-  S7_SHIP_LEVEL_POWER_FACTOR, S7_LEVEL_GATE_POWER,
+  S7_SHIP_LEVEL_POWER_FACTOR, S7_LEVEL_GATE_POWER, S7_PLUGIN_POWER,
 } from '../assets/scripts/core/s7/S7PowerRating';
 import { shipLevelCapForTier, pilotLevelCapForStar } from '../assets/scripts/core/s7/S7UnitTierState';
 import { DEFAULT_S7_ASCEND_CONFIG } from '../assets/scripts/core/s7/S7AscendConfig';
@@ -48,6 +48,10 @@ describe('定价重锚 · 刻度 v1 双源同步（S7PowerRating ↔ 经济尺 T
     // 三源对表：S7UnitTierState 运行时上限 == 经济尺 TRUTHS 上限（舰按阶/员按星）——单侧改动=红。
     expect([0, 1, 2, 3, 4].map(shipLevelCapForTier)).toEqual(eco.TRUTHS.shipLevelCapByTier);
     expect([1, 2, 3, 4, 5].map(pilotLevelCapForStar)).toEqual(eco.TRUTHS.pilotLevelCapByStar);
+  });
+
+  it('插件战力表 镜像逐项一致（段二 E7 扩传奇+/++＝90/110·数值域定报备）', () => {
+    expect(S7_PLUGIN_POWER).toEqual(eco.TRUTHS.pluginPower);
   });
 
   it('升阶/升星成本梯 运行时默认表 == 机器真源（总控批发现①：真机占位 20/40/80/120 对齐 50/100/300/1000）', () => {

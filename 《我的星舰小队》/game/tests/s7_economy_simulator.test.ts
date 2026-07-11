@@ -101,10 +101,12 @@ describe('S7 经济尺 · 战力刻度 v1（定价重锚批实测重标·镜像 
     expect(p).toBeCloseTo((108 * 1.8213 + 85) * 1.27, 1);
   });
 
-  it('阶级基值 C100/B108/A132/S180/SS323（实测邻比）、星核 +120、插件 15/35/70（加法项本批未动）', () => {
+  it('阶级基值 C100/B108/A132/S180/SS323（实测邻比）、星核 +120、插件 15/35/70+90/110（段二 E7 扩档）', () => {
+    // 重定基（旧→新→为什么对）：重锚批"加法项未动"三键表 + 段二 E7 传奇+/++ 两键（90/110·数值域定·
+    // 运行时镜像守卫=s7_power_rating_sync）；旧三键原值一字未动。
     expect(TRUTHS.tierBase).toEqual([100, 108, 132, 180, 323]);
     expect(TRUTHS.corePower).toBe(120);
-    expect(TRUTHS.pluginPower).toEqual({ fine: 15, superior: 35, legendary: 70 });
+    expect(TRUTHS.pluginPower).toEqual({ fine: 15, superior: 35, legendary: 70, legendaryPlus: 90, legendaryPlusPlus: 110 });
     // 装核 = +120 平移
     const noCore = unitPower({ tier: 3, level: 1 }, { star: 1, level: 0 }, 0, false);
     const withCore = unitPower({ tier: 3, level: 1 }, { star: 1, level: 0 }, 0, true);

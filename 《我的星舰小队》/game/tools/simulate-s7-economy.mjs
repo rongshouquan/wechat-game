@@ -179,7 +179,9 @@ export const TRUTHS = {
   ],
   pilotStarCoef: [1.0, 1.09, 1.27, 1.30, 1.65],
   pilotLevelPct: 0.0036,
-  pluginPower: { fine: 15, superior: 35, legendary: 70 },
+  // 传奇+/++＝段二 E7 扩档镜像（S7PowerRating 同表·毕业后追求·四档基线策略不产 +/++ 件=对模拟输出零影响；
+  // 2b 入尺时决定是否给最优解/黑市线建 +/++ 库存轴）。
+  pluginPower: { fine: 15, superior: 35, legendary: 70, legendaryPlus: 90, legendaryPlusPlus: 110 },
   corePower: 120,
   pluginSlotsByTier: [1, 2, 3, 3, 3],
 

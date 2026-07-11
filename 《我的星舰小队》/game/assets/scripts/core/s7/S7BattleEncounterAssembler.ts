@@ -26,7 +26,7 @@ import { S7BattleEntry, S7BattleContext } from './S7BattleEntry';
 import { S7AutoBattleRunRequest, S7AutoBattlePlayerUnitInput } from './S7AutoBattleTypes';
 import { S7EffectBlock } from './S7BattleEffectBlock';
 import { coreBlocks } from './S7CoreEffects';
-import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES } from './S7PluginEffects';
+import { pluginBlocks, S7PluginQuality, S7_PLUGIN_QUALITIES, S7_BONUS_COUNT_BY_QUALITY } from './S7PluginEffects';
 import { pilotBlocks } from './S7PilotEffects';
 import { shipGrowthBlocks, pilotGrowthBlocks, shipTierBlocks, pilotNumericBlocks } from './S7UnitGrowth';
 import { shipBlocks } from './S7ShipEffects';
@@ -38,10 +38,12 @@ const PLAYER_SLOT_PATTERN = /^p[0-2]c[0-2]$/;
 const REQUIRED_PLAYER_SLOT_POLICY = 'five_ship_3x3_default';
 const REQUIRED_SEED_POLICY = 'node_id_plus_run_seed';
 
-/** 出战插件实例（块4a）：词条(pluginId) + 品质。槽位由 plugin_config 决定，不在此重复。 */
+/** 出战插件实例（块4a）：词条(pluginId) + 品质。槽位由 plugin_config 决定，不在此重复。
+ *  段二 E2：传奇+/++ 带额外附加条（捐主 pluginId 列表·+=1/++=2·低品质传入=校验报错）。 */
 export interface S7BattleLineupPluginInput {
   pluginId: string;
   quality: S7PluginQuality;
+  bonusEffectIds?: readonly string[];
 }
 
 /** 玩家出战单位输入：稳定 shipId + 玩家 3x3 锚点格（p0c0..p2c2）。不绑定 battle_unit_stat_param.rowId。 */
@@ -116,7 +118,8 @@ export type S7BattleEncounterAssemblerErrorCode =
   | 'unknown_plugin'
   | 'duplicate_plugin'
   | 'duplicate_plugin_slot'
-  | 'bad_plugin_quality';
+  | 'bad_plugin_quality'
+  | 'bad_bonus_effects';
 
 export class S7BattleEncounterAssemblerError extends Error {
   constructor(
@@ -343,11 +346,25 @@ export class S7BattleEncounterAssembler {
       if (!S7_PLUGIN_QUALITIES.includes(p.quality)) {
         throw new S7BattleEncounterAssemblerError(
           'bad_plugin_quality',
-          `插件 "${pluginId}" 品质非法 "${String(p.quality)}"（仅 fine/superior/legendary）`,
+          `插件 "${pluginId}" 品质非法 "${String(p.quality)}"（仅 ${S7_PLUGIN_QUALITIES.join('/')}）`,
         );
       }
+      // 段二 E2：附加条校验——条数按品质钳（+=1/++=2·低品质=0）、捐主必须存在于 plugin_config
+      // 且与本体及彼此去重；不合法直接抛（战斗入参必须干净·存档层 normalize 已兜过一层）。
+      const bonus = p.bonusEffectIds ?? [];
+      if (bonus.length > 0) {
+        const allow = S7_BONUS_COUNT_BY_QUALITY[p.quality];
+        const distinct = new Set(bonus);
+        const allKnown = bonus.every((id) => pluginConfigs.some((c) => c.pluginId === id));
+        if (bonus.length > allow || distinct.size !== bonus.length || distinct.has(pluginId) || !allKnown) {
+          throw new S7BattleEncounterAssemblerError(
+            'bad_bonus_effects',
+            `插件 "${pluginId}" 附加条非法（品质 ${p.quality} 允许 ${S7_BONUS_COUNT_BY_QUALITY[p.quality]} 条·须存在且与本体/彼此去重）：${JSON.stringify(bonus)}`,
+          );
+        }
+      }
 
-      out.push(...pluginBlocks(pluginId, config.slotTag, p.quality));
+      out.push(...pluginBlocks(pluginId, config.slotTag, p.quality, bonus));
     }
 
     return out;
