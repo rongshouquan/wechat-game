@@ -1,465 +1,465 @@
 [
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "puzzle_backline_001",
-    "threatType": "backline",
-    "threatHint": "双狙击塔远程点名后排 + 冲锋兽/重甲兽压前排：没嘲讽把塔火拉走、后排会被逐个点掉；没奶则消耗战撑不满全场——嘲讽坦吸塔火+真奶续航+输出抢拆双塔。",
-    "enemyFormation": [
-      {
-        "unitStatRef": "bu_enemy_backline",
-        "slotRef": "r1c5"
-      },
-      {
-        "unitStatRef": "bu_enemy_backline",
-        "slotRef": "r3c5"
-      },
-      {
-        "unitStatRef": "bu_enemy_swarm_tough",
-        "slotRef": "r2c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_charge",
-        "slotRef": "r2c0"
-      }
-    ],
-    "enemyHpPct": 11,
-    "enemyAtkPct": 1.05,
-    "candidatePacks": [
-      {
-        "packId": "pk1",
-        "shipId": "shp05",
-        "pilotId": "pil05"
-      },
-      {
-        "packId": "pk2",
-        "shipId": "shp06",
-        "pilotId": "pil06"
-      },
-      {
-        "packId": "pk3",
-        "shipId": "shp02",
-        "pilotId": "pil03"
-      },
-      {
-        "packId": "pk4",
-        "shipId": "shp09",
-        "pilotId": "pil04"
-      },
-      {
-        "packId": "pk5",
-        "shipId": "shp11",
-        "pilotId": "pil01"
-      },
-      {
-        "packId": "pk6",
-        "shipId": "shp15",
-        "pilotId": "pil02"
-      },
-      {
-        "packId": "pk7",
-        "shipId": "shp14",
-        "pilotId": "pil07"
-      },
-      {
-        "packId": "pk8",
-        "shipId": "shp01",
-        "pilotId": "pil08"
-      }
-    ],
-    "authorSolution": [
-      {
-        "packId": "pk2",
-        "slotRef": "p1c2"
-      },
-      {
-        "packId": "pk3",
-        "slotRef": "p0c0"
-      },
-      {
-        "packId": "pk4",
-        "slotRef": "p1c0"
-      },
-      {
-        "packId": "pk5",
-        "slotRef": "p0c1"
-      },
-      {
-        "packId": "pk6",
-        "slotRef": "p2c0"
-      }
-    ],
-    "note": "威胁=后排点名（真狙击版）。解=铁壁×砺嘲讽把塔火拉到坦身+甘霖真奶续航+三输出抢拆；乱选无嘲讽/无奶=被点名/耗死。·批③段三重构全记：敌射程按真源放开→塔普攻=真·点名后排（旧range7=历史沙包·旧作者解护卫墙结构性失效）；包配对重设（铁壁×砺=题眼工具·磐石×岩·甘霖真奶入池）；作者解=单嘲讽坦+三输出+真奶；威胁阵3塔→2塔+重甲兽（三塔chip与乱选窗无交集网格实证）；终值 atk1.05/hp11（网格：作者✓·乱选24.5%）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "puzzle_shield_001",
-    "threatType": "shield",
-    "threatHint": "敌全体反复自带护盾——这是场持久战：盾会一轮轮回，硬拼爆发凿不穿；要有奶锚顶住前排消耗、输出稳定啃、短路手断它张盾。",
-    "enemyFormation": [
-      {
-        "unitStatRef": "bu_enemy_shield",
-        "slotRef": "r1c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_shield",
-        "slotRef": "r2c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_shield",
-        "slotRef": "r3c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_shield",
-        "slotRef": "r2c3"
-      }
-    ],
-    "enemyHpPct": 13,
-    "enemyAtkPct": 0.6,
-    "candidatePacks": [
-      {
-        "packId": "pk1",
-        "shipId": "shp11",
-        "pilotId": "pil01"
-      },
-      {
-        "packId": "pk2",
-        "shipId": "shp20",
-        "pilotId": "pil02"
-      },
-      {
-        "packId": "pk3",
-        "shipId": "shp02",
-        "pilotId": "pil03"
-      },
-      {
-        "packId": "pk4",
-        "shipId": "shp01",
-        "pilotId": "pil04"
-      },
-      {
-        "packId": "pk5",
-        "shipId": "shp09",
-        "pilotId": "pil05"
-      },
-      {
-        "packId": "pk6",
-        "shipId": "shp15",
-        "pilotId": "pil06"
-      },
-      {
-        "packId": "pk7",
-        "shipId": "shp14",
-        "pilotId": "pil07"
-      },
-      {
-        "packId": "pk8",
-        "shipId": "shp19",
-        "pilotId": "pil08"
-      }
-    ],
-    "authorSolution": [
-      {
-        "packId": "pk6",
-        "slotRef": "p1c2"
-      },
-      {
-        "packId": "pk5",
-        "slotRef": "p2c2"
-      },
-      {
-        "packId": "pk1",
-        "slotRef": "p0c1"
-      },
-      {
-        "packId": "pk3",
-        "slotRef": "p2c1"
-      },
-      {
-        "packId": "pk2",
-        "slotRef": "p0c0"
-      }
-    ],
-    "note": "威胁=护盾循环。解=甘霖奶锚顶前排+烈阳/贯日/影刃稳定输出+锁链短路断盾；无奶硬拼=前排被磨穿。·批③段三重构：盾循环走 shieldMaxHpPct 0.25/CD8（咬合件）后本题从爆发题变持久题（旧作者解三脆皮顶前=结构性失效·乱选赢家母题=奶锚实证）——作者解/提示词按新机理重写·轴 0.6/13（12=乱选32.5%压线越闸·作者解60.2s余量厚吃得住+1档）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "puzzle_summon_001",
-    "threatType": "summon",
-    "threatHint": "敌召唤源不断产小弟、全场真开火——晨曦盾锚顶住消耗，霹雳连锁清一波波小弟，点源手集火拆三座召唤源；没盾锚/没清场手会被人海淹没。",
-    "enemyFormation": [
-      {
-        "unitStatRef": "bu_enemy_summon_source",
-        "slotRef": "r1c5"
-      },
-      {
-        "unitStatRef": "bu_enemy_summon_source",
-        "slotRef": "r2c6"
-      },
-      {
-        "unitStatRef": "bu_enemy_summon_source",
-        "slotRef": "r3c5"
-      },
-      {
-        "unitStatRef": "bu_enemy_swarm",
-        "slotRef": "r1c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_swarm",
-        "slotRef": "r3c1"
-      }
-    ],
-    "enemyHpPct": 18,
-    "enemyAtkPct": 1,
-    "candidatePacks": [
-      {
-        "packId": "pk1",
-        "shipId": "shp02",
-        "pilotId": "pil01"
-      },
-      {
-        "packId": "pk2",
-        "shipId": "shp09",
-        "pilotId": "pil02"
-      },
-      {
-        "packId": "pk3",
-        "shipId": "shp12",
-        "pilotId": "pil03"
-      },
-      {
-        "packId": "pk4",
-        "shipId": "shp01",
-        "pilotId": "pil04"
-      },
-      {
-        "packId": "pk5",
-        "shipId": "shp13",
-        "pilotId": "pil05"
-      },
-      {
-        "packId": "pk6",
-        "shipId": "shp14",
-        "pilotId": "pil06"
-      },
-      {
-        "packId": "pk7",
-        "shipId": "shp07",
-        "pilotId": "pil07"
-      },
-      {
-        "packId": "pk8",
-        "shipId": "shp16",
-        "pilotId": "pil08"
-      }
-    ],
-    "authorSolution": [
-      {
-        "packId": "pk5",
-        "slotRef": "p1c2"
-      },
-      {
-        "packId": "pk3",
-        "slotRef": "p2c1"
-      },
-      {
-        "packId": "pk1",
-        "slotRef": "p1c0"
-      },
-      {
-        "packId": "pk4",
-        "slotRef": "p0c2"
-      },
-      {
-        "packId": "pk6",
-        "slotRef": "p1c1"
-      }
-    ],
-    "note": "威胁=召唤人海。解=晨曦盾锚+霹雳连锁清场+影刃/极焰拆源+号角催进；乱选无锚无清场=被淹。·批③段三重构：敌射程按真源放开（旧=源打不到人+蜂群沙包=白嫖竞速题）→重定为真开火世界：作者解按赢家母题重写·轴 1.4/32→1.0/18（17=乱选31.5%压线·作者解52.8s@16余量吃得住）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "puzzle_heal_001",
-    "threatType": "heal",
-    "threatHint": "敌后排双奶妈狂奶最残友军、前排重甲扛线——硬拼输出会被奶回去：影刃狙掉奶源是胜负手，春风续航+号角催攻撑住拉锯。",
-    "enemyFormation": [
-      {
-        "unitStatRef": "bu_enemy_support",
-        "slotRef": "r1c5"
-      },
-      {
-        "unitStatRef": "bu_enemy_support",
-        "slotRef": "r3c5"
-      },
-      {
-        "unitStatRef": "bu_enemy_shield",
-        "slotRef": "r2c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_swarm_tough",
-        "slotRef": "r1c1"
-      },
-      {
-        "unitStatRef": "bu_enemy_swarm_tough",
-        "slotRef": "r3c1"
-      }
-    ],
-    "enemyHpPct": 22,
-    "enemyAtkPct": 1.6,
-    "candidatePacks": [
-      {
-        "packId": "pk1",
-        "shipId": "shp11",
-        "pilotId": "pil01"
-      },
-      {
-        "packId": "pk2",
-        "shipId": "shp02",
-        "pilotId": "pil02"
-      },
-      {
-        "packId": "pk3",
-        "shipId": "shp09",
-        "pilotId": "pil03"
-      },
-      {
-        "packId": "pk4",
-        "shipId": "shp12",
-        "pilotId": "pil04"
-      },
-      {
-        "packId": "pk5",
-        "shipId": "shp01",
-        "pilotId": "pil05"
-      },
-      {
-        "packId": "pk6",
-        "shipId": "shp16",
-        "pilotId": "pil06"
-      },
-      {
-        "packId": "pk7",
-        "shipId": "shp14",
-        "pilotId": "pil07"
-      },
-      {
-        "packId": "pk8",
-        "shipId": "shp05",
-        "pilotId": "pil08"
-      }
-    ],
-    "authorSolution": [
-      {
-        "packId": "pk2",
-        "slotRef": "p1c0"
-      },
-      {
-        "packId": "pk6",
-        "slotRef": "p2c0"
-      },
-      {
-        "packId": "pk5",
-        "slotRef": "p0c1"
-      },
-      {
-        "packId": "pk7",
-        "slotRef": "p0c0"
-      },
-      {
-        "packId": "pk4",
-        "slotRef": "p1c1"
-      }
-    ],
-    "note": "威胁=敌方治疗。解=影刃点奶源+春风续航+号角催进+霹雳/极焰输出；不点奶=伤害全被奶回。·批③段三重构：躯干重校（敌奶2.2/射程真开火）后旧作者解翻车·题面=悬崖题（点掉奶源与否定生死）——作者解按赢家母题重写·轴 2.15/28→1.6/22（悬崖带网格：乱选11%）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "puzzle_burst_001",
-    "threatType": "burst",
-    "threatHint": "敌重炮突袭者高攻点最近目标——脆皮别站前排，硬壳顶前面吃炮。",
-    "enemyFormation": [
-      {
-        "unitStatRef": "bu_enemy_burst_raider",
-        "slotRef": "r1c3"
-      },
-      {
-        "unitStatRef": "bu_enemy_burst_raider",
-        "slotRef": "r3c3"
-      },
-      {
-        "unitStatRef": "bu_enemy_charge",
-        "slotRef": "r2c2"
-      },
-      {
-        "unitStatRef": "bu_enemy_swarm",
-        "slotRef": "r2c0"
-      }
-    ],
-    "enemyHpPct": 10.5,
-    "enemyAtkPct": 1.75,
-    "candidatePacks": [
-      {
-        "packId": "pk1",
-        "shipId": "shp05",
-        "pilotId": "pil01"
-      },
-      {
-        "packId": "pk2",
-        "shipId": "shp13",
-        "pilotId": "pil02"
-      },
-      {
-        "packId": "pk3",
-        "shipId": "shp02",
-        "pilotId": "pil03"
-      },
-      {
-        "packId": "pk4",
-        "shipId": "shp09",
-        "pilotId": "pil04"
-      },
-      {
-        "packId": "pk5",
-        "shipId": "shp01",
-        "pilotId": "pil05"
-      },
-      {
-        "packId": "pk6",
-        "shipId": "shp14",
-        "pilotId": "pil06"
-      },
-      {
-        "packId": "pk7",
-        "shipId": "shp17",
-        "pilotId": "pil07"
-      },
-      {
-        "packId": "pk8",
-        "shipId": "shp03",
-        "pilotId": "pil08"
-      }
-    ],
-    "authorSolution": [
-      {
-        "packId": "pk1",
-        "slotRef": "p1c2"
-      },
-      {
-        "packId": "pk2",
-        "slotRef": "p1c0"
-      },
-      {
-        "packId": "pk3",
-        "slotRef": "p0c1"
-      },
-      {
-        "packId": "pk4",
-        "slotRef": "p2c1"
-      },
-      {
-        "packId": "pk5",
-        "slotRef": "p0c2"
-      }
-    ],
-    "note": "威胁=爆发。解=硬壳护卫顶前排(c2 近敌)吃重炮、脆皮远程放后排(c0)输出。·机制批③复调:影刃残影接真抬乱选地板(31.5%越闸)→批③复调三轮：atk 1.6→1.75+hp 8→9.5——迷雾致盲接真后乱选活率靠 40% 落空撑起(36%)·攻轴失效改抬血轴(杀不穿=超时判负·作者解 dps 充足不受扰)·作者解结构不变·批③段三复调：躯干统一(+10%攻)乱选32%→血轴9.5→10.5(全题库统一×1.10对冲)"
-  }
+ {
+  "schemaVersion": "s7-0.1.0",
+  "rowId": "puzzle_backline_001",
+  "threatType": "backline",
+  "threatHint": "双狙击塔远程点名后排 + 冲锋兽/重甲兽压前排：没嘲讽把塔火拉走、后排会被逐个点掉；没奶则消耗战撑不满全场——嘲讽坦吸塔火+真奶续航+输出抢拆双塔。",
+  "enemyFormation": [
+   {
+    "unitStatRef": "bu_enemy_backline",
+    "slotRef": "r1c5"
+   },
+   {
+    "unitStatRef": "bu_enemy_backline",
+    "slotRef": "r3c5"
+   },
+   {
+    "unitStatRef": "bu_enemy_swarm_tough",
+    "slotRef": "r2c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_charge",
+    "slotRef": "r2c0"
+   }
+  ],
+  "enemyHpPct": 11,
+  "enemyAtkPct": 1.15,
+  "candidatePacks": [
+   {
+    "packId": "pk1",
+    "shipId": "shp05",
+    "pilotId": "pil05"
+   },
+   {
+    "packId": "pk2",
+    "shipId": "shp06",
+    "pilotId": "pil06"
+   },
+   {
+    "packId": "pk3",
+    "shipId": "shp02",
+    "pilotId": "pil03"
+   },
+   {
+    "packId": "pk4",
+    "shipId": "shp09",
+    "pilotId": "pil04"
+   },
+   {
+    "packId": "pk5",
+    "shipId": "shp11",
+    "pilotId": "pil01"
+   },
+   {
+    "packId": "pk6",
+    "shipId": "shp15",
+    "pilotId": "pil02"
+   },
+   {
+    "packId": "pk7",
+    "shipId": "shp14",
+    "pilotId": "pil07"
+   },
+   {
+    "packId": "pk8",
+    "shipId": "shp01",
+    "pilotId": "pil08"
+   }
+  ],
+  "authorSolution": [
+   {
+    "packId": "pk2",
+    "slotRef": "p1c2"
+   },
+   {
+    "packId": "pk3",
+    "slotRef": "p0c0"
+   },
+   {
+    "packId": "pk4",
+    "slotRef": "p1c0"
+   },
+   {
+    "packId": "pk5",
+    "slotRef": "p0c1"
+   },
+   {
+    "packId": "pk6",
+    "slotRef": "p2c0"
+   }
+  ],
+  "note": "威胁=后排点名（真狙击版）。解=铁壁×砺嘲讽把塔火拉到坦身+甘霖真奶续航+三输出抢拆；乱选无嘲讽/无奶=被点名/耗死。·批③段三重构全记：敌射程按真源放开→塔普攻=真·点名后排（旧range7=历史沙包·旧作者解护卫墙结构性失效）；包配对重设（铁壁×砺=题眼工具·磐石×岩·甘霖真奶入池）；作者解=单嘲讽坦+三输出+真奶；威胁阵3塔→2塔+重甲兽（三塔chip与乱选窗无交集网格实证）；终值 atk1.05/hp11（网格：作者✓·乱选24.5%）·段2a R1 加压 atk1.05→1.15（五档平移使固定档候选包全体变强·乱选36.5%破闸→加压回带·作者解嘲讽+真奶结构吃得住）"
+ },
+ {
+  "schemaVersion": "s7-0.1.0",
+  "rowId": "puzzle_shield_001",
+  "threatType": "shield",
+  "threatHint": "敌全体反复自带护盾——这是场持久战：盾会一轮轮回，硬拼爆发凿不穿；要有奶锚顶住前排消耗、输出稳定啃、短路手断它张盾。",
+  "enemyFormation": [
+   {
+    "unitStatRef": "bu_enemy_shield",
+    "slotRef": "r1c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_shield",
+    "slotRef": "r2c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_shield",
+    "slotRef": "r3c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_shield",
+    "slotRef": "r2c3"
+   }
+  ],
+  "enemyHpPct": 16,
+  "enemyAtkPct": 0.66,
+  "candidatePacks": [
+   {
+    "packId": "pk1",
+    "shipId": "shp11",
+    "pilotId": "pil01"
+   },
+   {
+    "packId": "pk2",
+    "shipId": "shp20",
+    "pilotId": "pil02"
+   },
+   {
+    "packId": "pk3",
+    "shipId": "shp02",
+    "pilotId": "pil03"
+   },
+   {
+    "packId": "pk4",
+    "shipId": "shp01",
+    "pilotId": "pil04"
+   },
+   {
+    "packId": "pk5",
+    "shipId": "shp09",
+    "pilotId": "pil05"
+   },
+   {
+    "packId": "pk6",
+    "shipId": "shp15",
+    "pilotId": "pil06"
+   },
+   {
+    "packId": "pk7",
+    "shipId": "shp14",
+    "pilotId": "pil07"
+   },
+   {
+    "packId": "pk8",
+    "shipId": "shp19",
+    "pilotId": "pil08"
+   }
+  ],
+  "authorSolution": [
+   {
+    "packId": "pk6",
+    "slotRef": "p1c2"
+   },
+   {
+    "packId": "pk5",
+    "slotRef": "p2c2"
+   },
+   {
+    "packId": "pk1",
+    "slotRef": "p0c1"
+   },
+   {
+    "packId": "pk3",
+    "slotRef": "p2c1"
+   },
+   {
+    "packId": "pk2",
+    "slotRef": "p0c0"
+   }
+  ],
+  "note": "威胁=护盾循环。解=甘霖奶锚顶前排+烈阳/贯日/影刃稳定输出+锁链短路断盾；无奶硬拼=前排被磨穿。·批③段三重构：盾循环走 shieldMaxHpPct 0.25/CD8（咬合件）后本题从爆发题变持久题（旧作者解三脆皮顶前=结构性失效·乱选赢家母题=奶锚实证）——作者解/提示词按新机理重写·轴 0.6/13（12=乱选32.5%压线越闸·作者解60.2s余量厚吃得住+1档）·段2a R1 加压 atk0.6→0.66+hp13→16（五档平移候选包变强·乱选39%破闸·攻轴钝改血轴回带）"
+ },
+ {
+  "schemaVersion": "s7-0.1.0",
+  "rowId": "puzzle_summon_001",
+  "threatType": "summon",
+  "threatHint": "敌召唤源不断产小弟、全场真开火——晨曦盾锚顶住消耗，霹雳连锁清一波波小弟，点源手集火拆三座召唤源；没盾锚/没清场手会被人海淹没。",
+  "enemyFormation": [
+   {
+    "unitStatRef": "bu_enemy_summon_source",
+    "slotRef": "r1c5"
+   },
+   {
+    "unitStatRef": "bu_enemy_summon_source",
+    "slotRef": "r2c6"
+   },
+   {
+    "unitStatRef": "bu_enemy_summon_source",
+    "slotRef": "r3c5"
+   },
+   {
+    "unitStatRef": "bu_enemy_swarm",
+    "slotRef": "r1c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_swarm",
+    "slotRef": "r3c1"
+   }
+  ],
+  "enemyHpPct": 21.6,
+  "enemyAtkPct": 1.1,
+  "candidatePacks": [
+   {
+    "packId": "pk1",
+    "shipId": "shp02",
+    "pilotId": "pil01"
+   },
+   {
+    "packId": "pk2",
+    "shipId": "shp09",
+    "pilotId": "pil02"
+   },
+   {
+    "packId": "pk3",
+    "shipId": "shp12",
+    "pilotId": "pil03"
+   },
+   {
+    "packId": "pk4",
+    "shipId": "shp01",
+    "pilotId": "pil04"
+   },
+   {
+    "packId": "pk5",
+    "shipId": "shp13",
+    "pilotId": "pil05"
+   },
+   {
+    "packId": "pk6",
+    "shipId": "shp14",
+    "pilotId": "pil06"
+   },
+   {
+    "packId": "pk7",
+    "shipId": "shp07",
+    "pilotId": "pil07"
+   },
+   {
+    "packId": "pk8",
+    "shipId": "shp16",
+    "pilotId": "pil08"
+   }
+  ],
+  "authorSolution": [
+   {
+    "packId": "pk5",
+    "slotRef": "p1c2"
+   },
+   {
+    "packId": "pk3",
+    "slotRef": "p2c1"
+   },
+   {
+    "packId": "pk1",
+    "slotRef": "p1c0"
+   },
+   {
+    "packId": "pk4",
+    "slotRef": "p0c2"
+   },
+   {
+    "packId": "pk6",
+    "slotRef": "p1c1"
+   }
+  ],
+  "note": "威胁=召唤人海。解=晨曦盾锚+霹雳连锁清场+影刃/极焰拆源+号角催进；乱选无锚无清场=被淹。·批③段三重构：敌射程按真源放开（旧=源打不到人+蜂群沙包=白嫖竞速题）→重定为真开火世界：作者解按赢家母题重写·轴 1.4/32→1.0/18（17=乱选31.5%压线·作者解52.8s@16余量吃得住）·段2a R1 加压 hp×1.2+atk×1.1（五档平移候选包变强·乱选43%破闸回带）"
+ },
+ {
+  "schemaVersion": "s7-0.1.0",
+  "rowId": "puzzle_heal_001",
+  "threatType": "heal",
+  "threatHint": "敌后排双奶妈狂奶最残友军、前排重甲扛线——硬拼输出会被奶回去：影刃狙掉奶源是胜负手，春风续航+号角催攻撑住拉锯。",
+  "enemyFormation": [
+   {
+    "unitStatRef": "bu_enemy_support",
+    "slotRef": "r1c5"
+   },
+   {
+    "unitStatRef": "bu_enemy_support",
+    "slotRef": "r3c5"
+   },
+   {
+    "unitStatRef": "bu_enemy_shield",
+    "slotRef": "r2c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_swarm_tough",
+    "slotRef": "r1c1"
+   },
+   {
+    "unitStatRef": "bu_enemy_swarm_tough",
+    "slotRef": "r3c1"
+   }
+  ],
+  "enemyHpPct": 22,
+  "enemyAtkPct": 1.6,
+  "candidatePacks": [
+   {
+    "packId": "pk1",
+    "shipId": "shp11",
+    "pilotId": "pil01"
+   },
+   {
+    "packId": "pk2",
+    "shipId": "shp02",
+    "pilotId": "pil02"
+   },
+   {
+    "packId": "pk3",
+    "shipId": "shp09",
+    "pilotId": "pil03"
+   },
+   {
+    "packId": "pk4",
+    "shipId": "shp12",
+    "pilotId": "pil04"
+   },
+   {
+    "packId": "pk5",
+    "shipId": "shp01",
+    "pilotId": "pil05"
+   },
+   {
+    "packId": "pk6",
+    "shipId": "shp16",
+    "pilotId": "pil06"
+   },
+   {
+    "packId": "pk7",
+    "shipId": "shp14",
+    "pilotId": "pil07"
+   },
+   {
+    "packId": "pk8",
+    "shipId": "shp05",
+    "pilotId": "pil08"
+   }
+  ],
+  "authorSolution": [
+   {
+    "packId": "pk2",
+    "slotRef": "p1c0"
+   },
+   {
+    "packId": "pk6",
+    "slotRef": "p2c0"
+   },
+   {
+    "packId": "pk5",
+    "slotRef": "p0c1"
+   },
+   {
+    "packId": "pk7",
+    "slotRef": "p0c0"
+   },
+   {
+    "packId": "pk4",
+    "slotRef": "p1c1"
+   }
+  ],
+  "note": "威胁=敌方治疗。解=影刃点奶源+春风续航+号角催进+霹雳/极焰输出；不点奶=伤害全被奶回。·批③段三重构：躯干重校（敌奶2.2/射程真开火）后旧作者解翻车·题面=悬崖题（点掉奶源与否定生死）——作者解按赢家母题重写·轴 2.15/28→1.6/22（悬崖带网格：乱选11%）"
+ },
+ {
+  "schemaVersion": "s7-0.1.0",
+  "rowId": "puzzle_burst_001",
+  "threatType": "burst",
+  "threatHint": "敌重炮突袭者高攻点最近目标——脆皮别站前排，硬壳顶前面吃炮。",
+  "enemyFormation": [
+   {
+    "unitStatRef": "bu_enemy_burst_raider",
+    "slotRef": "r1c3"
+   },
+   {
+    "unitStatRef": "bu_enemy_burst_raider",
+    "slotRef": "r3c3"
+   },
+   {
+    "unitStatRef": "bu_enemy_charge",
+    "slotRef": "r2c2"
+   },
+   {
+    "unitStatRef": "bu_enemy_swarm",
+    "slotRef": "r2c0"
+   }
+  ],
+  "enemyHpPct": 10.5,
+  "enemyAtkPct": 1.75,
+  "candidatePacks": [
+   {
+    "packId": "pk1",
+    "shipId": "shp05",
+    "pilotId": "pil01"
+   },
+   {
+    "packId": "pk2",
+    "shipId": "shp13",
+    "pilotId": "pil02"
+   },
+   {
+    "packId": "pk3",
+    "shipId": "shp02",
+    "pilotId": "pil03"
+   },
+   {
+    "packId": "pk4",
+    "shipId": "shp09",
+    "pilotId": "pil04"
+   },
+   {
+    "packId": "pk5",
+    "shipId": "shp01",
+    "pilotId": "pil05"
+   },
+   {
+    "packId": "pk6",
+    "shipId": "shp14",
+    "pilotId": "pil06"
+   },
+   {
+    "packId": "pk7",
+    "shipId": "shp17",
+    "pilotId": "pil07"
+   },
+   {
+    "packId": "pk8",
+    "shipId": "shp03",
+    "pilotId": "pil08"
+   }
+  ],
+  "authorSolution": [
+   {
+    "packId": "pk1",
+    "slotRef": "p1c2"
+   },
+   {
+    "packId": "pk2",
+    "slotRef": "p1c0"
+   },
+   {
+    "packId": "pk3",
+    "slotRef": "p0c1"
+   },
+   {
+    "packId": "pk4",
+    "slotRef": "p2c1"
+   },
+   {
+    "packId": "pk5",
+    "slotRef": "p0c2"
+   }
+  ],
+  "note": "威胁=爆发。解=硬壳护卫顶前排(c2 近敌)吃重炮、脆皮远程放后排(c0)输出。·机制批③复调:影刃残影接真抬乱选地板(31.5%越闸)→批③复调三轮：atk 1.6→1.75+hp 8→9.5——迷雾致盲接真后乱选活率靠 40% 落空撑起(36%)·攻轴失效改抬血轴(杀不穿=超时判负·作者解 dps 充足不受扰)·作者解结构不变·批③段三复调：躯干统一(+10%攻)乱选32%→血轴9.5→10.5(全题库统一×1.10对冲)"
+ }
 ]
