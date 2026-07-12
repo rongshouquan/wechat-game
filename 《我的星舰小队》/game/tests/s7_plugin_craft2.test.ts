@@ -13,7 +13,7 @@ import {
   createDefaultS7PluginInventory, normalizeS7PluginInventory, addOwnedPlugin, S7PluginInventoryState,
 } from '../assets/scripts/core/s7/S7PluginInventory';
 import {
-  pluginBlocks, bonusEffectBlocks, S7_GRAFTABLE_BONUS_POOL, S7_BONUS_COUNT_BY_QUALITY, S7PluginQuality,
+  pluginBlocks, bonusEffectBlocks, S7_BONUS_POOL_BY_SLOT, S7_BONUS_GRAFT_AUDIT, S7_BONUS_COUNT_BY_QUALITY, S7PluginQuality,
 } from '../assets/scripts/core/s7/S7PluginEffects';
 import { S7_PLUGIN_POWER, shipPowerV0 } from '../assets/scripts/core/s7/S7PowerRating';
 import { S7BattleEncounterAssembler } from '../assets/scripts/core/s7/S7BattleEncounterAssembler';
@@ -136,15 +136,15 @@ describe('E3 主副槽语义 + E4 分层限槽', () => {
   });
 });
 
-describe('E2 附加条：条数/去重/继承/池纪律', () => {
-  it('传奇→+：产物恰 1 条附加·来自同槽可嫁接池·≠产物本体（扫全成功样本）', () => {
+describe('E2 附加条：条数/去重/继承/池纪律（R2·B 案全 30 池）', () => {
+  it('传奇→+：产物恰 1 条附加·来自同槽全量池·≠产物本体（扫全成功样本）', () => {
     for (let s = 0; s < 60; s++) {
       const { inv, main, fuel } = mk('plg02', 'legendary', 'plg04', 'legendary', s);
       const r = craftPlugins(inv, main.instanceId, fuel.instanceId, PLUGIN_CONFIGS);
       if (!(r.ok && r.success)) continue;
       expect(r.output.bonusEffectIds).toHaveLength(1);
       const bid = r.output.bonusEffectIds![0];
-      expect(S7_GRAFTABLE_BONUS_POOL.weapon).toContain(bid);
+      expect(S7_BONUS_POOL_BY_SLOT.weapon).toContain(bid);
       expect(bid).not.toBe(r.output.pluginId);
     }
   });
@@ -167,16 +167,32 @@ describe('E2 附加条：条数/去重/继承/池纪律', () => {
     expect(checked).toBe(true);
   });
 
-  it('可嫁接池纪律：三槽池成员都各在其槽、池内无重复、容量足够抽满 ++（≥3 排除本体后）', () => {
-    for (const [slot, pool] of Object.entries(S7_GRAFTABLE_BONUS_POOL) as [keyof typeof S7_GRAFTABLE_BONUS_POOL, readonly string[]][]) {
-      expect(new Set(pool).size).toBe(pool.length);
-      expect(pool.length).toBeGreaterThanOrEqual(3);
-      for (const id of pool) {
-        expect(slotOf(id)).toBe(slot);
-        expect(bonusEffectBlocks(id).length).toBeGreaterThan(0); // 池内条条有真载体（抽到必有感）
-      }
+  it('R2 池纪律与重定性审计：池=同槽全 10/全库 30；审计表=活21/条件1/白板8；块形态与定性一致', () => {
+    // R2 重定基（旧→新→为什么对）：撤"18 件可嫁接收窄"（Ron 裁定池=B 案全 30 件·真白板率如实报）——
+    // 旧断言"池内条条有真载体"随收窄裁量作废；新守卫=审计表与块形态互锁（定性错标即红）。
+    const allIds: string[] = [];
+    for (const [slot, pool] of Object.entries(S7_BONUS_POOL_BY_SLOT) as [keyof typeof S7_BONUS_POOL_BY_SLOT, readonly string[]][]) {
+      expect(pool).toHaveLength(10); // 同槽全量
+      expect(new Set(pool).size).toBe(10);
+      for (const id of pool) expect(slotOf(id)).toBe(slot);
+      allIds.push(...pool);
     }
-    expect(bonusEffectBlocks('plg21')).toEqual([]); // 未收录（依赖捐主本体）=空
+    expect(allIds).toHaveLength(30);
+    // 审计表全覆盖+分类汇总（数字=交付报告口径：活 21/条件 1/白板 8）。
+    const cls = (c: string) => allIds.filter((id) => S7_BONUS_GRAFT_AUDIT[id]?.cls === c);
+    expect(Object.keys(S7_BONUS_GRAFT_AUDIT).sort()).toEqual([...allIds].sort());
+    expect(cls('live')).toHaveLength(21);
+    expect(cls('conditional')).toHaveLength(1);
+    expect(cls('blank')).toHaveLength(8);
+    // 块形态互锁：live/conditional 必有块；语义死两件（plg18/plg12）=空块；其余 blank=惰性词条块（原义原块）。
+    for (const id of [...cls('live'), ...cls('conditional')]) {
+      expect(bonusEffectBlocks(id).length, `${id} 定性为可生效但无块`).toBeGreaterThan(0);
+    }
+    expect(bonusEffectBlocks('plg18')).toEqual([]);
+    expect(bonusEffectBlocks('plg12')).toEqual([]);
+    for (const id of ['plg15', 'plg22', 'plg23', 'plg25', 'plg27', 'plg30']) {
+      expect(bonusEffectBlocks(id).length, `${id}=惰性词条白板（原义原块·载体缺席不生效）`).toBeGreaterThan(0);
+    }
   });
 });
 

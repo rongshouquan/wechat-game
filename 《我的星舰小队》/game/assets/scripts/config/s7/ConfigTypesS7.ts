@@ -475,6 +475,9 @@ export interface S7ChapterConfig {
 }
 
 /** 星域配置（SF01-SF04）。 */
+/** 段二 R3 星域主题规则类型（v1.1）：weather=天气型（域内常驻）；event=事件型（按关卡出现率）。 */
+export type S7RegionRuleKind = 'weather' | 'event';
+
 export interface S7StarRegionConfig {
   schemaVersion: string;
   starfieldId: string;
@@ -484,6 +487,13 @@ export interface S7StarRegionConfig {
   reuseProblemTags: S7ProblemTag[];
   bossValidationTag: S7ProblemTag;
   fallback70Policy: 'keep_all' | 'cut_1' | 'cut_2';
+  // ===== 段二 R3 星域主题规则 v1.1（可选通道：缺席=无规则域=行为不变；引擎机制实装=2b/机制域）=====
+  /** 规则类型：weather=天气型可常驻；event=事件型（设计律：出现率 ≤50%·校验器武装）。缺席=无规则。 */
+  ruleKind?: S7RegionRuleKind;
+  /** 规则标签（如 graveyard_revive/mist_ambush/mothership_line/pollution_tide/storm_amp·灰盒占位语义名）。 */
+  ruleTag?: string;
+  /** 事件型出现率（0-0.5]；天气型不填（常驻）。 */
+  ruleRate?: number;
 }
 
 /** Boss 节点验证配置（N018/N037/N056/N075）。 */

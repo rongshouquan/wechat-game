@@ -20,7 +20,7 @@
 //   （接口清单在案）；两案并存期间互不影响（seq 共享=天然串行）。
 
 import { S7PluginConfig, S7PluginSlot } from '../../config/s7/ConfigTypesS7';
-import { S7PluginQuality, S7_BONUS_COUNT_BY_QUALITY, S7_GRAFTABLE_BONUS_POOL } from './S7PluginEffects';
+import { S7PluginQuality, S7_BONUS_COUNT_BY_QUALITY, S7_BONUS_POOL_BY_SLOT } from './S7PluginEffects';
 import {
   S7PluginInventoryState,
   S7OwnedPlugin,
@@ -193,7 +193,7 @@ export function craftPlugins(
     if (id !== outPluginId && !bonus.includes(id) && bonus.length < need) bonus.push(id);
   }
   if (bonus.length < need) {
-    const pool = S7_GRAFTABLE_BONUS_POOL[mainSlot].filter((id) => id !== outPluginId && !bonus.includes(id));
+    const pool = S7_BONUS_POOL_BY_SLOT[mainSlot].filter((id) => id !== outPluginId && !bonus.includes(id));
     while (bonus.length < need && pool.length > 0) {
       const drawn = rng.pick(pool) as string;
       bonus.push(drawn);

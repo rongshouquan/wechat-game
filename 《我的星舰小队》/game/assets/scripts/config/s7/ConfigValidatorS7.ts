@@ -889,6 +889,24 @@ function validateTierC(
     checkStringArrayEnum(errors, 'star_region_config', id, 'reuseProblemTags', row.reuseProblemTags, S7_PROBLEM_TAGS, false);
     if (typeof row.bossValidationTag !== 'string' || !S7_PROBLEM_TAGS.includes(row.bossValidationTag)) errors.push({ table: 'star_region_config', id, message: 'bossValidationTag 非法' });
     if (!['keep_all', 'cut_1', 'cut_2'].includes(String(row.fallback70Policy))) errors.push({ table: 'star_region_config', id, message: 'fallback70Policy 非法' });
+    // ---- 段二 R3 星域主题规则设计律（可选：缺席=无规则域合法·带了就严校）----
+    // 设计律（Ron R3 拍板）：天气型可常驻；事件型出现率 ≤50%。
+    if (row.ruleKind !== undefined) {
+      if (row.ruleKind !== 'weather' && row.ruleKind !== 'event') {
+        errors.push({ table: 'star_region_config', id, message: `ruleKind 仅支持 weather/event（实际 "${String(row.ruleKind)}"）` });
+      }
+      if (typeof row.ruleTag !== 'string' || row.ruleTag.length === 0) {
+        errors.push({ table: 'star_region_config', id, message: 'ruleKind 带了必须配非空 ruleTag' });
+      }
+      if (row.ruleKind === 'event') {
+        const rr = num(row.ruleRate);
+        if (rr === null || rr <= 0 || rr > 0.5) errors.push({ table: 'star_region_config', id, message: `事件型规则出现率必须 ∈(0,0.5]（设计律：事件型 ≤50%·实际 "${String(row.ruleRate)}"）` });
+      } else if (row.ruleKind === 'weather' && row.ruleRate !== undefined) {
+        errors.push({ table: 'star_region_config', id, message: '天气型规则=常驻，不填 ruleRate' });
+      }
+    } else if (row.ruleTag !== undefined || row.ruleRate !== undefined) {
+      errors.push({ table: 'star_region_config', id, message: 'ruleTag/ruleRate 只能与 ruleKind 一起出现' });
+    }
   }
   for (const id of S7_STARFIELD_IDS) if (!seenStarfields.has(id)) errors.push({ table: 'star_region_config', id, message: `缺少星域 ${id}` });
 

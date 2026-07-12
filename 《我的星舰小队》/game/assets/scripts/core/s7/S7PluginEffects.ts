@@ -184,16 +184,15 @@ const PLUGIN_BUILDERS: Record<string, (q: 0 | 1 | 2) => S7EffectBlock[]> = {
   plg29: affix('plg29', 'durationPct', [0.15, 0.30, 0.70]),    // 持久：+15/30/50%·传奇附加再延长=50→70（§14）
 };
 
-// ===== 传奇附加条（段二 E2·B 案：同槽位传奇效果池随机抽·去重·零新效果内容） =====
-// 每条=某件插件"传奇附加"的独立块（source=plugbonus:<捐主id>·数值与本体传奇附加逐字相同）。
-// 只收录**独立嫁接可生效**的附加（自带完整语义、不依赖捐主本体词条）；下列 10 件不入池并记档理由：
-//   plg21(溅射扩格)/plg22(满蓄溅射)/plg23(吸血翻倍)/plg24(缩CD翻倍)/plg25(引爆扩格)/plg27(满目标刷CD)
-//   ＝依赖捐主本体词条（独立嫁接=死条）；plg18＝语义注无载体；plg12/plg16＝附加折在档值里无独立块；
-//   plg14＝绑净化节拍；plg15(闪避必暴)/plg30(免死后无敌)＝依赖捐主闩锁词条。
-//   ——收录判据=玩家抽到必然"有感"（体验＞完备）；池收窄属实现裁量·随段2a 交付候 Ron 复验（备选案=
-//   死条件连带捐主精良档基础词条一起嫁接·见交付说明）。
+// ===== 传奇附加条（段二 E2·B 案＋R2 修订：**池=同槽全 10 件/全库 30 件**·随机抽去重·零新效果内容） =====
+// R2（Ron 2026-07-12 返工令）：撤 07-12 早前"18 件可嫁接收窄"裁量——附加条池=B 案全 30 件；
+// 所谓"死条"按**全游戏作用对象口径**逐条重定性（舰技能/驾驶员天赋/召唤物/词条族都算载体），
+// 真白板率如实报（审计表=S7_BONUS_GRAFT_AUDIT·数字见 §16g 补账）。
+// 每条=该件"传奇附加"的独立块（source=plugbonus:<捐主id>·语义与真源附加逐字对应）；
+// 折档类（plg16/24/26/28/29）=第三档增量还原成独立加法/当量块（复用既有效果行·零新机制）；
+// 语义绑定本体不可迁的（plg18/plg12）=空块（抽到=白板·审计表如实标）。
 const BONUS_BUILDERS: Record<string, () => S7EffectBlock[]> = {
-  // —— 武器槽（7/10 可嫁接）——
+  // —— 武器槽 ——
   plg02: () => [{ kind: 'affix', affix: 'critSplashPct', value: 0.30, source: 'plugbonus:plg02' }],
   plg04: () => [{ kind: 'affix', affix: 'critFollowupAtkPct', value: 0.5, source: 'plugbonus:plg04' }],
   plg09: () => [{ kind: 'affix', affix: 'critHasteAmount', value: 0.20, source: 'plugbonus:plg09' }],
@@ -201,14 +200,21 @@ const BONUS_BUILDERS: Record<string, () => S7EffectBlock[]> = {
   plg17: () => [{ kind: 'affix', affix: 'critRateVsFortified', value: 0.12, source: 'plugbonus:plg17' }],
   plg19: () => [{ kind: 'trigger', on: 'on_kill', onKillRoleTags: ['swarm', 'swarm_tough'], effectRef: 'eff_plg_cdr_05', source: 'plugbonus:plg19' }],
   plg20: () => [{ kind: 'affix', affix: 'critDmgVsBoss', value: 0.30, source: 'plugbonus:plg20' }],
-  // —— 技能槽（6/10 可嫁接；plg26/28/29 附加=折在第三档的增量·还原成独立加法块）——
+  plg21: () => [{ kind: 'affix', affix: 'normalSplashTargets', value: 3, source: 'plugbonus:plg21' }], // 条件条：吃宿主普攻溅射（载体=烈阳 L50 普攻小溅射/散射件本体）
+  plg22: () => [{ kind: 'affix', affix: 'chargedNormalSplashPct', value: 0.5, source: 'plugbonus:plg22' }], // 白板级：蓄力载体仅充能件本体（同槽互斥）
+  plg23: () => [{ kind: 'affix', affix: 'critLifestealDouble', value: 1, source: 'plugbonus:plg23' }], // 白板级：吸血载体仅嗜血件本体（同槽互斥）
+  // —— 技能槽 ——
   plg07: () => [{ kind: 'affix', affix: 'firstSkillCdHalf', value: 1, source: 'plugbonus:plg07' }],
   plg11: () => [{ kind: 'affix', affix: 'skillAreaUp', value: 1, source: 'plugbonus:plg11' }],
   plg13: () => [{ kind: 'affix', affix: 'skillCritDmgPct', value: 0.25, source: 'plugbonus:plg13' }],
+  plg18: () => [], // 白板：连放"第二次不耗蓄力"=修饰自身连放的语义注·独立嫁接无载体（审计表如实标）
+  plg24: () => [{ kind: 'trigger', on: 'attack_landed', effectRef: 'eff_plg_cdr_07', source: 'plugbonus:plg24' }], // 活：翻倍差值 +0.7s 独立成块（行现成）
+  plg25: () => [{ kind: 'affix', affix: 'skillDetonateCross', value: 1, source: 'plugbonus:plg25' }], // 白板级：引爆载体仅本体（同槽互斥）
   plg26: () => [{ kind: 'affix', affix: 'effectAmp', value: 0.15, source: 'plugbonus:plg26' }],   // 55−40
+  plg27: () => [{ kind: 'affix', affix: 'skillCdFullBonusSec', value: 1.5, source: 'plugbonus:plg27' }], // 白板级：逐目标缩CD载体仅本体
   plg28: () => [{ kind: 'affix', affix: 'aftershockAtkPct', value: 0.4, source: 'plugbonus:plg28' }], // 1.4−1.0
   plg29: () => [{ kind: 'affix', affix: 'durationPct', value: 0.20, source: 'plugbonus:plg29' }], // 0.70−0.50
-  // —— 战术槽（5/10 可嫁接）——
+  // —— 战术槽 ——
   plg01: () => [{
     kind: 'stack',
     rule: {
@@ -221,13 +227,53 @@ const BONUS_BUILDERS: Record<string, () => S7EffectBlock[]> = {
   plg05: () => [{ kind: 'affix', affix: 'lowHpDmgTakenDown', value: 0.15, source: 'plugbonus:plg05' }],
   plg06: () => [{ kind: 'affix', affix: 'firstControlImmune', value: 1, source: 'plugbonus:plg06' }],
   plg08: () => [{ kind: 'affix', affix: 'overhealToShieldPct', value: 1.0, source: 'plugbonus:plg08' }],
+  plg12: () => [], // 白板：濒死自愈翻倍=语义绑定本体自愈档不可独立迁（审计表如实标）
+  plg14: () => [{ kind: 'trigger', on: 'cd', cdSec: 8, effectRef: 'eff_plg_dimmune', source: 'plugbonus:plg14' }], // 活：周期免疫减益块独立成立（"清得更勤"绑本体不迁·部分嫁接如实注）
+  plg15: () => [{ kind: 'affix', affix: 'critAfterDodge', value: 1, source: 'plugbonus:plg15' }], // 白板级：闪避载体仅警戒件本体（同槽互斥）
+  plg16: () => [{ kind: 'trigger', on: 'battle_start', effectRef: 'eff_plg_share_10', source: 'plugbonus:plg16' }], // 活："分摊再提升"最小独立化=+10pp 互摊当量（行现成）
+  plg30: () => [{ kind: 'affix', affix: 'lethalGuardImmuneSec', value: 1.5, source: 'plugbonus:plg30' }], // 白板级：免死闩载体仅保命件本体（同槽互斥）
 };
 
-/** 同槽位传奇效果池（可嫁接子集·合成抽附加条的唯一来源；顺序固定=确定性 RNG 可复现）。 */
-export const S7_GRAFTABLE_BONUS_POOL: Record<S7PluginSlot, readonly string[]> = {
-  weapon: ['plg02', 'plg04', 'plg09', 'plg10', 'plg17', 'plg19', 'plg20'],
-  skill: ['plg07', 'plg11', 'plg13', 'plg26', 'plg28', 'plg29'],
-  tactical: ['plg01', 'plg03', 'plg05', 'plg06', 'plg08'],
+/** R2 重定性审计表（逐条·全游戏作用对象口径）：live=任意宿主生效；conditional=特定搭配生效（载体点名）；
+ *  blank=全游戏无独立载体（抽到=白板·如实入池如实报）。数字汇总见 §16g 补账与交付报告。 */
+export const S7_BONUS_GRAFT_AUDIT: Record<string, { cls: 'live' | 'conditional' | 'blank'; carriers: string }> = {
+  plg01: { cls: 'live', carriers: '任意宿主（受技能命中即触发罩盾）' },
+  plg02: { cls: 'live', carriers: '任意宿主（基础暴击 5%+装配暴击词条）' },
+  plg03: { cls: 'live', carriers: '任意宿主（伤害打破敌盾即触发）' },
+  plg04: { cls: 'live', carriers: '任意宿主' },
+  plg05: { cls: 'live', carriers: '任意宿主（低血状态）' },
+  plg06: { cls: 'live', carriers: '任意宿主（受首次硬控）' },
+  plg07: { cls: 'live', carriers: '任意宿主（带首发延迟技能）' },
+  plg08: { cls: 'live', carriers: '任意宿主（受治疗溢出·队伍带奶更肥）' },
+  plg09: { cls: 'live', carriers: '任意宿主' },
+  plg10: { cls: 'live', carriers: '任意宿主（普攻伤害专项）' },
+  plg11: { cls: 'live', carriers: '任意宿主（区域技能范围+1）' },
+  plg12: { cls: 'blank', carriers: '无（"濒死自愈翻倍"语义绑定本体自愈档·全游戏无独立自愈翻倍载体）' },
+  plg13: { cls: 'live', carriers: '任意宿主（技能可暴击=全体输出默认）' },
+  plg14: { cls: 'live', carriers: '任意宿主（周期免疫减益块独立生效·"清得更勤"部分绑本体不迁）' },
+  plg15: { cls: 'blank', carriers: '闪避词条仅警戒件本体（同槽互斥）——全游戏舰/员/核均无闪避源' },
+  plg16: { cls: 'live', carriers: '任意宿主（+10pp 相邻互摊当量·eff_plg_share_10）' },
+  plg17: { cls: 'live', carriers: '任意宿主（对带盾/高防敌·sf02 盾域起遍地）' },
+  plg18: { cls: 'blank', carriers: '无（"连放第二次不耗蓄力"=修饰自身连放的语义注）' },
+  plg19: { cls: 'live', carriers: '任意宿主（击杀小怪·群怪域高频）' },
+  plg20: { cls: 'live', carriers: '任意宿主（对 Boss/精英）' },
+  plg21: { cls: 'conditional', carriers: '烈阳 L50（普攻小溅射 normalSplashPct 0.30）——溅射扩到 4 格随宿主舰生效；其余宿主=白板' },
+  plg22: { cls: 'blank', carriers: '蓄力词条仅充能件本体（同槽互斥）' },
+  plg23: { cls: 'blank', carriers: '吸血词条仅嗜血件本体（同槽互斥·舰/员/核无吸血源〔烬"贪婪"=对高血增伤非吸血〕）' },
+  plg24: { cls: 'live', carriers: '任意宿主（普攻命中缩 CD +0.7s=翻倍差值独立块）' },
+  plg25: { cls: 'blank', carriers: '引爆词条仅本体（同槽互斥）' },
+  plg26: { cls: 'live', carriers: '任意宿主（效果量通用放大）' },
+  plg27: { cls: 'blank', carriers: '逐目标缩 CD 词条仅本体（同槽互斥）' },
+  plg28: { cls: 'live', carriers: '任意宿主（技能命中延迟追加·独立 affix）' },
+  plg29: { cls: 'live', carriers: '任意宿主（持续型效果延长）' },
+  plg30: { cls: 'blank', carriers: '免死闩词条仅保命件本体（同槽互斥·苏5★=替他人挡/甘霖SS=复活·非免死闩载体）' },
+};
+
+/** 同槽位传奇效果池（R2＝B 案全量：同槽全 10 件；顺序固定=确定性 RNG 可复现）。 */
+export const S7_BONUS_POOL_BY_SLOT: Record<S7PluginSlot, readonly string[]> = {
+  weapon: ['plg02', 'plg04', 'plg09', 'plg10', 'plg17', 'plg19', 'plg20', 'plg21', 'plg22', 'plg23'],
+  skill: ['plg07', 'plg11', 'plg13', 'plg18', 'plg24', 'plg25', 'plg26', 'plg27', 'plg28', 'plg29'],
+  tactical: ['plg01', 'plg03', 'plg05', 'plg06', 'plg08', 'plg12', 'plg14', 'plg15', 'plg16', 'plg30'],
 };
 
 /** 一条附加（按捐主 id）解析成效果积木；未收录 id → 空数组（防脏档·合法性由合成/装配层把关）。 */
