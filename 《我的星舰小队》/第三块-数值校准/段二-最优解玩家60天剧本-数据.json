@@ -1,9 +1,11 @@
 {
  "meta": {
-  "name": "最优解玩家 60 天成长剧本 v1.1（返工版）",
-  "kind": "设计靶（F2 手绘线·R1-R8 返工落地）",
+  "name": "最优解玩家 60 天成长剧本 v1.2（返工批 R10-R16）",
+  "kind": "设计靶（F2 手绘线·R1-R9+R10-R16 返工落地）",
   "date": "2026-07-12",
-  "caliber": "无限时间/全渠道拉满/运气平均/推进线=单把5%（呈现=怼墙中·平均需X把·今日过概率Y%）/黑市不做30连看（刷新+计数购物照用）/故意失败族入主口径（#9×3+#11×1+#12×1）——机器线另跑仅自然触发对照·差值交Ron拍",
+  "caliber": "无限时间/全渠道拉满/运气平均（R13 钉死：\"最优\"只在决策不在骰子·全程平均概率结算·投放绝不按理想运气调）/推进线=单把5%（呈现=怼墙中·平均需X把·今日过概率Y%）/黑市不做30连看（刷新+计数购物照用）/故意失败族入主口径（#9×3+#11×1+#12×1）——机器线另跑仅自然触发对照·差值交Ron拍",
+  "bigItemRule": "R11 大件排布律：质变级获得物（首核/每SS/每5★/传奇+·++首件/宝库大额核/超新星/毕业核）要么当破墙钥匙（前夜到手=记破墙当日行）、要么当走廊燃料（破墙后到手·当日推进≥前日×1.3=舞台），禁止浪费在卡墙中段——M4 v2 机器武装（蛋/扩张=常规供给不受此律）",
+  "gradCoreAnchor": "R12 毕业核锚：实质=结构锚（破墙⑧前夕到手→开风暴之眼→最后一域 50 关全程=毕业核舞台·毕业战靠它打赢）；\"主线进度 75-80%\"=结构锚的数字投影（到手日≈毕业日 75%）——最优解 D30/重 D36-37〔插值〕/普 D44-46/轻 D55 带（普/重/轻=2b 落准）；到手线（D30）与图鉴集齐线（D51）拆两条（集齐=毕业后收尾·流通核/重复款）",
   "world": {
    "N": 450,
    "regions": [
@@ -244,164 +246,212 @@
     {
      "node": 7,
      "kind": "词缀点名（纯）",
+     "diff": "微阻滞",
      "note": "D1 微阻滞①"
     },
     {
      "node": 18,
      "kind": "奇阵·贴脸（纯）",
+     "diff": "微阻滞",
      "note": "D1 微阻滞②"
     },
     {
      "node": 33,
-     "kind": "限时斩首（纯·引擎通道首秀）"
+     "kind": "限时斩首（纯·引擎通道首秀）",
+     "diff": "无压力"
     },
     {
      "node": 68,
-     "kind": "奇阵·包围（纯）"
+     "kind": "奇阵·包围（纯）",
+     "diff": "无压力"
     },
     {
      "node": 88,
      "kind": "词缀点名（纯）",
+     "diff": "微阻滞",
      "note": "墙①前哨"
     },
     {
      "node": 116,
-     "kind": "福利·合金（纯福利）"
+     "kind": "福利·合金（纯福利）",
+     "diff": "福利"
     },
     {
      "node": 122,
-     "kind": "奇阵·贴脸（纯）"
+     "kind": "奇阵·贴脸（纯）",
+     "diff": "无压力"
     },
     {
      "node": 128,
-     "kind": "词缀点名（纯）"
+     "kind": "词缀点名（纯）",
+     "diff": "微阻滞"
     },
     {
      "node": 142,
-     "kind": "词缀点名（纯）"
+     "kind": "限时斩首（纯·参数升档）",
+     "diff": "微阻滞"
     },
     {
      "node": 150,
      "kind": "奇阵+词缀（1+1 首秀）",
+     "diff": "微阻滞",
      "note": "组合化起点（R4）"
     },
     {
      "node": 165,
-     "kind": "限时斩首（纯·参数升档）"
+     "kind": "词缀点名（纯）",
+     "diff": "微阻滞"
     },
     {
      "node": 168,
-     "kind": "词缀点名（纯）"
+     "kind": "奇阵·包围（纯·参数升档Ⅰ）",
+     "diff": "阻滞",
+     "note": "墙③前哨"
     },
     {
      "node": 186,
-     "kind": "镜像关（纯·新花样②首秀）"
+     "kind": "镜像关（纯·新花样②首秀）",
+     "diff": "微阻滞"
     },
     {
      "node": 192,
-     "kind": "词缀点名（纯）"
+     "kind": "词缀点名（纯）",
+     "diff": "无压力"
     },
     {
      "node": 198,
-     "kind": "斩首+词缀（1+1）"
+     "kind": "斩首+词缀（1+1）",
+     "diff": "微阻滞"
     },
     {
      "node": 208,
-     "kind": "福利·驾驶记录（纯福利）"
+     "kind": "福利·驾驶记录（纯福利）",
+     "diff": "福利"
     },
     {
      "node": 224,
-     "kind": "奇阵·龟缩+迷雾藏兵（1+1·域规则联动）"
+     "kind": "奇阵·龟缩+迷雾藏兵（1+1·域规则联动）",
+     "diff": "阻滞"
     },
     {
      "node": 232,
-     "kind": "福利·星贝（纯福利）"
+     "kind": "福利·星贝（纯福利）",
+     "diff": "福利"
     },
     {
      "node": 238,
      "kind": "词缀点名（纯）",
+     "diff": "微阻滞",
      "note": "墙④前哨"
     },
     {
      "node": 244,
-     "kind": "奇阵·包围（纯·参数升档）"
+     "kind": "奇阵·包围（纯·参数升档Ⅱ）",
+     "diff": "阻滞"
     },
     {
      "node": 258,
-     "kind": "满血复活连战（纯·精英版）"
+     "kind": "满血复活连战（纯·精英版）",
+     "diff": "微阻滞"
     },
     {
      "node": 266,
-     "kind": "镜像+词缀（1+1·参数升档）"
+     "kind": "镜像+词缀（1+1·参数升档）",
+     "diff": "阻滞"
     },
     {
      "node": 274,
-     "kind": "福利·星贝（纯福利）"
+     "kind": "福利·星贝（纯福利）",
+     "diff": "福利"
     },
     {
      "node": 284,
-     "kind": "词缀点名（纯）"
+     "kind": "词缀点名（纯）",
+     "diff": "无压力"
     },
     {
      "node": 290,
-     "kind": "斩首+奇阵（1+1）"
+     "kind": "斩首+奇阵（1+1）",
+     "diff": "微阻滞"
     },
     {
      "node": 298,
-     "kind": "词缀点名（纯）"
+     "kind": "词缀点名（纯）",
+     "diff": "微阻滞"
     },
     {
      "node": 306,
      "kind": "复活连战+词缀（1+1）",
+     "diff": "阻滞",
      "note": "墙⑥前哨"
     },
     {
      "node": 320,
-     "kind": "斩首+词缀+奇阵（1+1+1 首秀）"
+     "kind": "斩首+词缀+奇阵（1+1+1 首秀）",
+     "diff": "变态",
+     "note": "变态①·小 Boss 级高光"
     },
     {
      "node": 330,
-     "kind": "福利·合金（纯福利·垫关）"
+     "kind": "福利·合金（纯福利·垫关）",
+     "diff": "福利"
     },
     {
      "node": 336,
-     "kind": "镜像关（纯·参数升档）"
+     "kind": "镜像关（纯·参数升档）",
+     "diff": "微阻滞"
     },
     {
      "node": 344,
-     "kind": "词缀点名（纯）"
+     "kind": "词缀点名（纯）",
+     "diff": "无压力"
     },
     {
      "node": 348,
-     "kind": "复活+奇阵（1+1）"
+     "kind": "复活+奇阵（1+1）",
+     "diff": "微阻滞"
     },
     {
      "node": 356,
-     "kind": "词缀点名（纯）"
+     "kind": "词缀点名（纯）",
+     "diff": "微阻滞"
     },
     {
      "node": 362,
      "kind": "斩首+复活（1+1）",
+     "diff": "阻滞",
      "note": "墙⑦前哨"
     },
     {
      "node": 372,
-     "kind": "镜像+词缀+奇阵（1+1+1）"
+     "kind": "镜像+词缀+奇阵（1+1+1）",
+     "diff": "变态",
+     "note": "变态②"
     },
     {
      "node": 378,
-     "kind": "福利·驾驶记录（纯福利·垫关）"
+     "kind": "福利·驾驶记录（纯福利·垫关）",
+     "diff": "福利"
     },
     {
      "node": 390,
      "kind": "斩首+复活+词缀（1+1+1·变态组合预告）",
-     "note": "墙⑧前哨"
+     "diff": "变态",
+     "note": "墙⑧前哨·变态③压轴"
     },
     {
      "node": 396,
-     "kind": "奇阵·贴脸（纯）"
+     "kind": "奇阵·贴脸（纯）",
+     "diff": "微阻滞"
     }
-   ]
+   ],
+   "eliteDiffBands": {
+    "福利": "≥95%（白送）",
+    "无压力": "70-85%",
+    "微阻滞": "40-60%（磨 2-3 把·主力档·B7 精英 ≈40% 锚）",
+    "阻滞": "20-35%（磨 3-5 把）",
+    "变态": "5-15%（小 Boss 级·磨 4-6 把不卡天·对齐中期里程碑 Boss ~10% 量纲）"
+   }
   },
   "bossAccountNote": "13 Boss=8 墙（六域）+3 高潮+1 风暴前哨硬仗+毕业战=墙⑨（第七域）——R7 加域后的账目协调·候 Ron 核；36 格矩阵 9 墙=①-⑧+毕业战数字不变",
   "walletKeys": [
@@ -421,13 +471,247 @@
    "adTicket"
   ],
   "graduationDay": 41,
-  "wallDaysTotal": 11.5,
+  "wallDaysTotal": 12,
+  "wallDaysPer": [
+   "①=0.5",
+   "②=0.5",
+   "③=1",
+   "④=1",
+   "⑤=1",
+   "⑥=1",
+   "⑦=2",
+   "⑧=1",
+   "⑨=4"
+  ],
   "supplyLine": {
-   "legendPlusFirst": 25,
+   "legendPlusFirst": 24,
    "legendPlusPlusFirst": 30,
    "coresTotal": 27,
+   "gradCoreFirst": 30,
    "dexComplete": 51
-  }
+  },
+  "coreLedger": {
+   "total": 27,
+   "byChannel": {
+    "陨星弹": 1,
+    "扩张": 8,
+    "蛋": 12,
+    "宝库": 5,
+    "黑市": 1
+   },
+   "eggDays": [
+    5,
+    9,
+    13,
+    17,
+    21,
+    25,
+    29,
+    33,
+    37,
+    42,
+    49,
+    57
+   ],
+   "fragTail": 23,
+   "entries": [
+    {
+     "d": 2,
+     "ch": "陨星弹",
+     "big": true,
+     "note": "首Boss 掉落·首核（D2 编排白名单）"
+    },
+    {
+     "d": 5,
+     "ch": "蛋"
+    },
+    {
+     "d": 7,
+     "ch": "扩张"
+    },
+    {
+     "d": 9,
+     "ch": "蛋"
+    },
+    {
+     "d": 13,
+     "ch": "蛋"
+    },
+    {
+     "d": 14,
+     "ch": "扩张"
+    },
+    {
+     "d": 17,
+     "ch": "蛋"
+    },
+    {
+     "d": 18,
+     "ch": "宝库·流通①",
+     "gem": 120,
+     "big": true,
+     "note": "SS① 日撞喜（破墙⑤日）"
+    },
+    {
+     "d": 21,
+     "ch": "扩张"
+    },
+    {
+     "d": 21,
+     "ch": "蛋"
+    },
+    {
+     "d": 25,
+     "ch": "蛋"
+    },
+    {
+     "d": 27,
+     "ch": "宝库·流通②",
+     "gem": 120,
+     "big": true,
+     "note": "护罩系·破墙⑦钥匙撞喜"
+    },
+    {
+     "d": 28,
+     "ch": "扩张"
+    },
+    {
+     "d": 29,
+     "ch": "蛋"
+    },
+    {
+     "d": 30,
+     "ch": "宝库·毕业核①",
+     "gem": 200,
+     "big": true,
+     "note": "R12：到手当日破墙⑧·最后 50 关全程=毕业核舞台"
+    },
+    {
+     "d": 33,
+     "ch": "蛋"
+    },
+    {
+     "d": 35,
+     "ch": "扩张"
+    },
+    {
+     "d": 37,
+     "ch": "蛋"
+    },
+    {
+     "d": 42,
+     "ch": "扩张"
+    },
+    {
+     "d": 42,
+     "ch": "蛋"
+    },
+    {
+     "d": 45,
+     "ch": "宝库·复购×1.5",
+     "gem": 180,
+     "big": true,
+     "note": "重复款=多舰装配（毕业后收集线）"
+    },
+    {
+     "d": 48,
+     "ch": "黑市·超新星",
+     "big": true,
+     "note": "198 计数·图鉴 15/16（毕业后收集线）"
+    },
+    {
+     "d": 49,
+     "ch": "扩张"
+    },
+    {
+     "d": 49,
+     "ch": "蛋"
+    },
+    {
+     "d": 51,
+     "ch": "宝库·毕业核②",
+     "gem": 200,
+     "big": true,
+     "note": "图鉴 16 款集齐日（R12 拆线=集齐留毕业后收尾）"
+    },
+    {
+     "d": 56,
+     "ch": "扩张"
+    },
+    {
+     "d": 57,
+     "ch": "蛋"
+    }
+   ]
+  },
+  "bigItemAudit": [
+   {
+    "d": 2,
+    "items": "陨星弹（首核）",
+    "state": "推进",
+    "verdict": "编排白名单（D2 首Boss+首核=开屏质变日）"
+   },
+   {
+    "d": 15,
+    "items": "员1 5★（能力终极质变）",
+    "state": "破墙",
+    "verdict": "钥匙型 ✓（到手当日破墙④）"
+   },
+   {
+    "d": 18,
+    "items": "SS①（主力1 终极质变）＋宝库·流通①",
+    "state": "破墙",
+    "verdict": "钥匙型 ✓（到手当日破墙⑤）"
+   },
+   {
+    "d": 21,
+    "items": "SS②（主力2）＋员2 5★（双质变破墙日·R11 钥匙型=到手当日破墙）",
+    "state": "破墙",
+    "verdict": "钥匙型 ✓（到手当日破墙⑥）"
+   },
+   {
+    "d": 24,
+    "items": "首件传奇+（合成塔 40% 首爆·R2 供给线 ≈D25 带内·走廊尾燃料）",
+    "state": "推进",
+    "verdict": "燃料型 ✓（推进日 15 关 ≥前日×1.3 舞台达标）"
+   },
+   {
+    "d": 27,
+    "items": "宝库流通②核（护罩系·120 宝石·R11 钥匙型撞喜）",
+    "state": "破墙",
+    "verdict": "钥匙型 ✓（到手当日破墙⑦）"
+   },
+   {
+    "d": 30,
+    "items": "毕业核①（宝库 200 宝石·到手当日破墙⑧=R12）＋传奇++ 首件（20% 塔首爆·R2 D30±2）",
+    "state": "破墙",
+    "verdict": "钥匙型 ✓（到手当日破墙⑧）"
+   },
+   {
+    "d": 33,
+    "items": "SS③（毕业队形 3SS 成·眼内燃料提速日）",
+    "state": "推进",
+    "verdict": "燃料型 ✓（推进日 8 关 ≥前日×1.3 舞台达标）"
+   },
+   {
+    "d": 45,
+    "items": "宝库·复购×1.5",
+    "state": "长线",
+    "verdict": "毕业后收集线（R12 拆线·无推进舞台要求）"
+   },
+   {
+    "d": 48,
+    "items": "黑市·超新星",
+    "state": "长线",
+    "verdict": "毕业后收集线（R12 拆线·无推进舞台要求）"
+   },
+   {
+    "d": 51,
+    "items": "宝库·毕业核②",
+    "state": "长线",
+    "verdict": "毕业后收集线（R12 拆线·无推进舞台要求）"
+   }
+  ]
  },
  "days": [
   {
@@ -518,7 +802,7 @@
     "patrolToken": 144
    },
    "outsideWallet": {
-    "snapshot": "D1：磐石(B阶L10·岩1★)/极焰(B阶L10·炎1★)/烈阳(A阶备料L10·苏1★)/贯日(C阶L10)/晨曦(C阶L10)；核 0；插件=精良×5（三选一+首抽）；专属存量：极焰 ≈180/磐石 ≈60/其余 <40",
+    "snapshot": "D1（R13 写实：教程所送+平均运气·不点名愿望舰）：教程固定件=突击位舰+驾驶员（起手）/炮击位舰+驾驶员（关3）/驾驶员（关5）〔教程占位名（晨星护卫舰/米娅）与真源名对齐=教程收尾批既有账·R15③ 指针〕；平均运气抽出=再入列 3 舰（定位看脸·五定位 D1 未必齐——保障线=D3-5 确定性渠道补齐·见 D5 检查点）；养成态=主力位 B 阶 L10×2/A 阶备料 L10×1/C 阶 L10×2（定位构成=平均线）；核 0；插件=精良×5（三选一+首抽）；专属存量：主力 ≈180/副力 ≈60/其余 <40",
     "coresOwned": 0
    },
    "decisions": "三选一全选主力1 专属·星贝全买券（日限）·抽卡船人对半·D1 全花不留存量",
@@ -610,9 +894,9 @@
      "balance": 4
     },
     "coreFrag": {
-     "income": 14,
+     "income": 12,
      "spend": 0,
-     "balance": 26
+     "balance": 24
     },
     "fullCore": {
      "income": 1,
@@ -662,7 +946,7 @@
     "patrolToken": 156
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 1
    },
    "decisions": "合金全喂主力1 冲 S 备料（首Boss 后首日上 S=GDD-M 节奏）·首败故意送头×3 起账·巡逻派驻首配（非主力 4 艘）",
@@ -754,9 +1038,9 @@
      "balance": 6
     },
     "coreFrag": {
-     "income": 14,
+     "income": 12,
      "spend": 0,
-     "balance": 40
+     "balance": 36
     },
     "fullCore": {
      "income": 0,
@@ -806,7 +1090,7 @@
     "patrolToken": 156
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 1
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -898,9 +1182,9 @@
      "balance": 8
     },
     "coreFrag": {
-     "income": 14,
+     "income": 12,
      "spend": 0,
-     "balance": 54
+     "balance": 48
     },
     "fullCore": {
      "income": 0,
@@ -950,7 +1234,7 @@
     "patrolToken": 156
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 1
    },
    "decisions": "黑市开门首刷：小件 4 坑+手动再刷×2 全扫·宝箱 10 计数必买·大件页存钱目标=舰包 128",
@@ -1042,9 +1326,9 @@
      "balance": 10
     },
     "coreFrag": {
-     "income": 14,
+     "income": 12,
      "spend": 60,
-     "balance": 8
+     "balance": 0
     },
     "fullCore": {
      "income": 1,
@@ -1094,7 +1378,7 @@
     "patrolToken": 156
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 2
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -1147,7 +1431,7 @@
    },
    "bottleneck": "星矿/合金/星贝（建筑+升级+买券三口抢·前期瓶颈族）",
    "hook": "明天：破墙②在望（偷鸡带已到）",
-   "checkpoint": "—",
+   "checkpoint": "⬥R13 投放保障：五定位各有一艘可用 ≤D5（保底/碎片转换/商店等确定性渠道·不动概率·2b 落实现）——R14 联动：货架不是考卷，给选择权不设门槛",
    "transform": null
   },
   {
@@ -1186,9 +1470,9 @@
      "balance": 12
     },
     "coreFrag": {
-     "income": 14,
+     "income": 12,
      "spend": 0,
-     "balance": 22
+     "balance": 12
     },
     "fullCore": {
      "income": 0,
@@ -1238,7 +1522,7 @@
     "patrolToken": 156
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 2
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -1330,9 +1614,9 @@
      "balance": 14
     },
     "coreFrag": {
-     "income": 20,
+     "income": 18,
      "spend": 0,
-     "balance": 42
+     "balance": 30
     },
     "fullCore": {
      "income": 1,
@@ -1382,7 +1666,7 @@
     "patrolToken": 156
    },
    "outsideWallet": {
-    "snapshot": "D7：极焰(S阶L20·炎3★)/磐石(S阶L20·岩2★)/烈阳(S阶L18·苏2★)/贯日(A阶L16)/晨曦(A阶L15)；核 3（陨星弹+扩张+蛋）·陨星弹=极焰；插件=优秀×8 精良×7；专属存量：极焰 120（清后回攒）/磐石 90/烈阳 140",
+    "snapshot": "D7：极焰(S阶L20·炎3★)/磐石(S阶L20·岩2★)/烈阳(S阶L18·苏2★)/贯日(A阶L16)/晨曦(A阶L15)；核 3（陨星弹+扩张+蛋·渠道账对表）·陨星弹=极焰；插件=优秀×8 精良×7；专属存量：极焰 120（清后回攒）/磐石 90/烈阳 140",
     "coresOwned": 3
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -1474,9 +1758,9 @@
      "balance": 15
     },
     "coreFrag": {
-     "income": 18,
+     "income": 16,
      "spend": 0,
-     "balance": 60
+     "balance": 46
     },
     "fullCore": {
      "income": 0,
@@ -1526,7 +1810,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 3
    },
    "decisions": "钥匙赛跑：黑市 shardSmall+专属池兑换并行（解题墙=攒工具天数）",
@@ -1618,9 +1902,9 @@
      "balance": 16
     },
     "coreFrag": {
-     "income": 18,
+     "income": 16,
      "spend": 60,
-     "balance": 18
+     "balance": 2
     },
     "fullCore": {
      "income": 1,
@@ -1670,7 +1954,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 4
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -1762,9 +2046,9 @@
      "balance": 17
     },
     "coreFrag": {
-     "income": 18,
+     "income": 16,
      "spend": 0,
-     "balance": 36
+     "balance": 18
     },
     "fullCore": {
      "income": 0,
@@ -1814,7 +2098,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 4
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -1906,9 +2190,9 @@
      "balance": 18
     },
     "coreFrag": {
-     "income": 18,
+     "income": 16,
      "spend": 0,
-     "balance": 54
+     "balance": 34
     },
     "fullCore": {
      "income": 0,
@@ -1958,7 +2242,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 4
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -2010,7 +2294,7 @@
     "total": 39
    },
    "bottleneck": "专属碎片/驾驶记录（升阶升星梯 50/100/300/1000 主导·中期瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：走廊继续暴推",
    "checkpoint": "—",
    "transform": null
   },
@@ -2050,14 +2334,14 @@
      "balance": 19
     },
     "coreFrag": {
-     "income": 18,
-     "spend": 60,
-     "balance": 12
+     "income": 16,
+     "spend": 0,
+     "balance": 50
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
-     "balance": 5
+     "balance": 4
     },
     "starGem": {
      "income": 16,
@@ -2102,8 +2386,8 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 5
+    "snapshot": "—",
+    "coresOwned": 4
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "主力4 S 阶",
@@ -2142,7 +2426,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 5,
+    "cores": 4,
     "legendPlus": 0,
     "legendPP": 0
    },
@@ -2154,7 +2438,7 @@
     "total": 39
    },
    "bottleneck": "专属碎片/驾驶记录（升阶升星梯 50/100/300/1000 主导·中期瓶颈族）",
-   "hook": "明天：走廊继续暴推",
+   "hook": "明天：新星核到手",
    "checkpoint": "—",
    "transform": null
   },
@@ -2194,12 +2478,12 @@
      "balance": 20
     },
     "coreFrag": {
-     "income": 18,
-     "spend": 0,
-     "balance": 30
+     "income": 16,
+     "spend": 60,
+     "balance": 6
     },
     "fullCore": {
-     "income": 0,
+     "income": 1,
      "spend": 0,
      "balance": 5
     },
@@ -2246,7 +2530,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 5
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -2338,9 +2622,9 @@
      "balance": 21
     },
     "coreFrag": {
-     "income": 24,
+     "income": 22,
      "spend": 0,
-     "balance": 54
+     "balance": 28
     },
     "fullCore": {
      "income": 1,
@@ -2390,7 +2674,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "D14：五 S 成军前夜（贯日 S 备料 280/300）·员1 炎 4★L28/岩 3★/苏 3★/砺 3★/澈 2★；核 6（小太阳=烈阳·守护铃=磐石）；插件=传奇×2 优秀×10；专属存量：极焰 620/1000（SS① 冲刺 62%）",
+    "snapshot": "D14：五 S 成军前夜（贯日 S 备料 280/300）·员1 炎 4★L28/岩 3★/苏 3★/砺 3★/澈 2★；核 6（小太阳=烈阳·守护铃=磐石·渠道账对表）；插件=传奇×2 优秀×10；专属存量：极焰 620/1000（SS① 冲刺 62%）",
     "coresOwned": 6
    },
    "decisions": "连战配队：奶位/续航件优先喂养（墙④=耐力考）",
@@ -2482,9 +2766,9 @@
      "balance": 22
     },
     "coreFrag": {
-     "income": 18,
+     "income": 16,
      "spend": 0,
-     "balance": 72
+     "balance": 44
     },
     "fullCore": {
      "income": 0,
@@ -2534,7 +2818,7 @@
     "patrolToken": 211
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 6
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -2586,7 +2870,7 @@
     "total": 59
    },
    "bottleneck": "专属碎片/驾驶记录（升阶升星梯 50/100/300/1000 主导·中期瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：走廊继续暴推",
    "checkpoint": "—",
    "transform": "员1 5★（能力终极质变）"
   },
@@ -2626,19 +2910,19 @@
      "balance": 23
     },
     "coreFrag": {
-     "income": 22,
-     "spend": 60,
-     "balance": 34
+     "income": 14,
+     "spend": 0,
+     "balance": 58
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
-     "balance": 7
+     "balance": 6
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 212
+     "balance": 208
     },
     "supplyTicket": {
      "income": 62,
@@ -2678,8 +2962,8 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 7
+    "snapshot": "—",
+    "coresOwned": 6
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "主力5 S 阶（五 S 成军）",
@@ -2718,7 +3002,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 7,
+    "cores": 6,
     "legendPlus": 0,
     "legendPP": 0
    },
@@ -2770,19 +3054,19 @@
      "balance": 24
     },
     "coreFrag": {
-     "income": 22,
-     "spend": 0,
-     "balance": 56
+     "income": 14,
+     "spend": 60,
+     "balance": 12
     },
     "fullCore": {
-     "income": 0,
+     "income": 1,
      "spend": 0,
      "balance": 7
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 232
+     "balance": 224
     },
     "supplyTicket": {
      "income": 62,
@@ -2822,7 +3106,7 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 7
    },
    "decisions": "SS① 冲刺：通碎 1:1 全转主力1+黑市 uniPack（1000 碎大关）",
@@ -2914,9 +3198,9 @@
      "balance": 25
     },
     "coreFrag": {
-     "income": 22,
+     "income": 14,
      "spend": 0,
-     "balance": 78
+     "balance": 26
     },
     "fullCore": {
      "income": 1,
@@ -2924,9 +3208,9 @@
      "balance": 8
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 120,
-     "balance": 132
+     "balance": 120
     },
     "supplyTicket": {
      "income": 62,
@@ -2966,7 +3250,7 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 8
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -3058,9 +3342,9 @@
      "balance": 26
     },
     "coreFrag": {
-     "income": 22,
+     "income": 14,
      "spend": 0,
-     "balance": 100
+     "balance": 40
     },
     "fullCore": {
      "income": 0,
@@ -3068,9 +3352,9 @@
      "balance": 8
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 152
+     "balance": 136
     },
     "supplyTicket": {
      "income": 62,
@@ -3110,11 +3394,11 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 8
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "员1 4★→5★ 已达·员2 4★",
+   "growth": "员2 4★",
    "joy": "—",
    "pinch": {
     "pinch": "—",
@@ -3162,7 +3446,7 @@
     "total": 38
    },
    "bottleneck": "专属碎片/驾驶记录（升阶升星梯 50/100/300/1000 主导·中期瓶颈族）",
-   "hook": "明天：员2 5★+墙⑥双考开工",
+   "hook": "明天：墙⑥双考开工（员2 5★ 备料收口中）",
    "checkpoint": "—",
    "transform": null
   },
@@ -3173,7 +3457,7 @@
     "cleared": 311,
     "newToday": 6,
     "state": "卡墙⑥",
-    "initWinBand": "撞墙⑥ 解+连叠加 0-4%（钥匙×耐力·卡 1.5 起）"
+    "initWinBand": "撞墙⑥ 解+连叠加 0-4%（钥匙×耐力·卡 1.5 起·员2 5★ 备料收口中）"
    },
    "wallet": {
     "starOre": {
@@ -3202,9 +3486,9 @@
      "balance": 27
     },
     "coreFrag": {
-     "income": 22,
+     "income": 14,
      "spend": 0,
-     "balance": 122
+     "balance": 54
     },
     "fullCore": {
      "income": 0,
@@ -3212,9 +3496,9 @@
      "balance": 8
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 172
+     "balance": 152
     },
     "supplyTicket": {
      "income": 62,
@@ -3254,11 +3538,11 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 8
    },
-   "decisions": "反召唤+双钥储备（sf04 半数流水线关的常备配装）",
-   "growth": "★员2 5★",
+   "decisions": "反召唤+双钥储备（sf04 半数流水线关的常备配装）·员2 5★ 备料收口",
+   "growth": "员2 5★ 备料收口（明日双质变破墙）",
    "joy": "—",
    "pinch": {
     "pinch": "双钥匙+SS② 碎片双线",
@@ -3306,9 +3590,9 @@
     "total": 64
    },
    "bottleneck": "专属碎片/驾驶记录（升阶升星梯 50/100/300/1000 主导·中期瓶颈族）",
-   "hook": "明天：破墙⑥在望（偷鸡带已到）",
+   "hook": "明天：SS②+员2 5★ 双质变=破墙⑥在望",
    "checkpoint": "⬥墙⑥（n312·解题+连战叠加墙）：矩阵 肝2/重2.5/普3/轻4·≤7 硬顶",
-   "transform": "员2 5★"
+   "transform": null
   },
   {
    "day": 21,
@@ -3317,7 +3601,7 @@
     "cleared": 326,
     "newToday": 15,
     "state": "破墙⑥",
-    "initWinBand": "SS②+钥匙齐→破墙 14%→sf05 爽段开门"
+    "initWinBand": "SS②+员2 5★+钥匙齐→破墙 14%→sf05 爽段开门"
    },
    "wallet": {
     "starOre": {
@@ -3346,19 +3630,19 @@
      "balance": 28
     },
     "coreFrag": {
-     "income": 28,
-     "spend": 0,
-     "balance": 150
+     "income": 20,
+     "spend": 60,
+     "balance": 14
     },
     "fullCore": {
-     "income": 1,
+     "income": 2,
      "spend": 0,
-     "balance": 9
+     "balance": 10
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 192
+     "balance": 168
     },
     "supplyTicket": {
      "income": 62,
@@ -3398,12 +3682,12 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "D21：SS②日——极焰 SS L30(炎 5★L30)/磐石 SS L30(岩 4★)/烈阳 S L28(苏 5★L28)/贯日 S L26(砺 4★)/晨曦 S L26(澈 4★)；核 9（超级护罩/星鲸入列）；插件=传奇×5（首合研究中）；专属存量：烈阳 480/1000",
-    "coresOwned": 9
+    "snapshot": "D21：SS②+员2 5★ 双质变日——极焰 SS L30(炎 5★L30)/磐石 SS L30(岩 4★)/烈阳 S L28(苏 5★L28)/贯日 S L26(砺 4★)/晨曦 S L26(澈 4★)；核 10（超级护罩/星鲸入列·渠道账对表·v1.1\"核 9\"漂移已修）；插件=传奇×5（首合研究中）；专属存量：烈阳 480/1000",
+    "coresOwned": 10
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "★SS②（主力2）",
-   "joy": "SS②+爽段开门",
+   "growth": "★SS②（主力2）＋★员2 5★（双质变破墙日·R11 钥匙型）",
+   "joy": "SS②+员2 5★ 双质变破墙+爽段开门",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
@@ -3438,7 +3722,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 9,
+    "cores": 10,
     "legendPlus": 0,
     "legendPP": 0
    },
@@ -3452,7 +3736,7 @@
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：走廊继续暴推",
    "checkpoint": "—",
-   "transform": "SS②（主力2）"
+   "transform": "SS②（主力2）＋员2 5★（双质变破墙日·R11 钥匙型=到手当日破墙）"
   },
   {
    "day": 22,
@@ -3490,19 +3774,19 @@
      "balance": 29
     },
     "coreFrag": {
-     "income": 22,
+     "income": 14,
      "spend": 0,
-     "balance": 172
+     "balance": 28
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 9
+     "balance": 10
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 212
+     "balance": 184
     },
     "supplyTicket": {
      "income": 62,
@@ -3542,8 +3826,8 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 9
+    "snapshot": "—",
+    "coresOwned": 10
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "员3 4★",
@@ -3582,7 +3866,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 9,
+    "cores": 10,
     "legendPlus": 0,
     "legendPP": 0
    },
@@ -3634,19 +3918,19 @@
      "balance": 30
     },
     "coreFrag": {
-     "income": 22,
+     "income": 14,
      "spend": 0,
-     "balance": 194
+     "balance": 42
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 9
+     "balance": 10
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 232
+     "balance": 200
     },
     "supplyTicket": {
      "income": 62,
@@ -3686,15 +3970,15 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 9
+    "snapshot": "—",
+    "coresOwned": 10
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "大节点Ⅳ（L40）主力线",
    "joy": "高潮③碾轧演出",
    "pinch": {
-    "pinch": "—",
-    "monetize": "—"
+    "pinch": "传奇件燃料（合成塔 40% 赌局·差副槽件·明日开赌）",
+    "monetize": "#12 合成返还（故意合败族首用）+黑市 plugLegend 包"
    },
    "unlock": "—",
    "side": {
@@ -3726,7 +4010,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 9,
+    "cores": 10,
     "legendPlus": 0,
     "legendPP": 0
    },
@@ -3738,7 +4022,7 @@
     "total": 38
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：传奇+ 首赌首爆（40% 塔·燃料已囤·走廊尾提速）",
    "checkpoint": "—",
    "transform": null
   },
@@ -3746,10 +4030,10 @@
    "day": 24,
    "phase": "D",
    "progress": {
-    "cleared": 358,
-    "newToday": 10,
+    "cleared": 363,
+    "newToday": 15,
     "state": "推进",
-    "initWinBand": "73-83%"
+    "initWinBand": "73-83%+首件传奇+ 上舰当日提速（走廊尾加速日）"
    },
    "wallet": {
     "starOre": {
@@ -3778,19 +4062,19 @@
      "balance": 31
     },
     "coreFrag": {
-     "income": 22,
-     "spend": 60,
-     "balance": 156
+     "income": 14,
+     "spend": 0,
+     "balance": 56
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
      "balance": 10
     },
     "starGem": {
-     "income": 20,
+     "income": 16,
      "spend": 0,
-     "balance": 252
+     "balance": 216
     },
     "supplyTicket": {
      "income": 62,
@@ -3830,12 +4114,12 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 10
    },
-   "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "员4 4★",
-   "joy": "—",
+   "decisions": "合成开赌：传奇×2 同槽 40% 塔·首赌不锁（锁价 180 留身份件）·失败→#12 返还——首爆上舰当日提速（走廊尾）",
+   "growth": "★首件传奇+（合成塔 40% 首爆·R2 ≈D25 带内·走廊尾燃料）·员4 4★",
+   "joy": "首件传奇+（合成赌局首爆·上舰当日走廊尾提速）",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
@@ -3871,29 +4155,29 @@
    },
    "collect": {
     "cores": 10,
-    "legendPlus": 0,
+    "legendPlus": 1,
     "legendPP": 0
    },
    "minutes": {
-    "main": 9,
+    "main": 14,
     "side": 16,
     "ads": 7,
-    "research": 5,
-    "total": 37
+    "research": 10,
+    "total": 47
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：传奇+ 首赌（40% 塔·燃料已囤 2 件）",
+   "hook": "明天：撞墙⑦（攒资本）",
    "checkpoint": "—",
-   "transform": null
+   "transform": "首件传奇+（合成塔 40% 首爆·R2 供给线 ≈D25 带内·走廊尾燃料）"
   },
   {
    "day": 25,
    "phase": "D",
    "progress": {
     "cleared": 367,
-    "newToday": 9,
+    "newToday": 4,
     "state": "卡墙⑦",
-    "initWinBand": "撞墙⑦ 机+解叠加 0-3%（污染潮下双钥·卡 1.5·首件传奇+ 合成研究夜）"
+    "initWinBand": "撞墙⑦ 机+解叠加 0-3%（污染潮下双钥·卡 1.5·第二钥研究夜）"
    },
    "wallet": {
     "starOre": {
@@ -3922,19 +4206,19 @@
      "balance": 32
     },
     "coreFrag": {
-     "income": 22,
-     "spend": 0,
-     "balance": 178
-    },
-    "fullCore": {
-     "income": 0,
-     "spend": 0,
+     "income": 14,
+     "spend": 60,
      "balance": 10
     },
-    "starGem": {
-     "income": 20,
+    "fullCore": {
+     "income": 1,
      "spend": 0,
-     "balance": 272
+     "balance": 11
+    },
+    "starGem": {
+     "income": 16,
+     "spend": 0,
+     "balance": 232
     },
     "supplyTicket": {
      "income": 62,
@@ -3974,15 +4258,15 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 10
+    "snapshot": "—",
+    "coresOwned": 11
    },
-   "decisions": "合成开赌：传奇×2 同槽 40% 塔·首赌不锁（锁价 180 留身份件）·失败→#12 返还",
-   "growth": "★首件传奇+（合成塔 40% 首爆·R2 供给线 D25）",
-   "joy": "首件传奇+（合成赌局首爆）",
+   "decisions": "双钥赛跑：黑市小件坑手动再刷×2+宝石留 120 候流通②（护罩系）——毕业核 200 大目标并行储蓄",
+   "growth": "第二钥研究开工（净化+护罩双钥赛跑）",
+   "joy": "—",
    "pinch": {
-    "pinch": "传奇件燃料（合成塔 40% 赌局·差副槽件）",
-    "monetize": "#12 合成返还（故意合败族首用）+黑市 plugLegend 包"
+    "pinch": "—",
+    "monetize": "—"
    },
    "unlock": "—",
    "side": {
@@ -4014,16 +4298,16 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 10,
+    "cores": 11,
     "legendPlus": 1,
     "legendPP": 0
    },
    "minutes": {
-    "main": 30,
+    "main": 26,
     "side": 16,
     "ads": 7,
     "research": 14,
-    "total": 67
+    "total": 63
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：撞墙⑦（攒资本）",
@@ -4066,19 +4350,19 @@
      "balance": 33
     },
     "coreFrag": {
-     "income": 22,
+     "income": 14,
      "spend": 0,
-     "balance": 200
+     "balance": 24
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
      "balance": 11
     },
     "starGem": {
-     "income": 20,
-     "spend": 120,
-     "balance": 172
+     "income": 16,
+     "spend": 0,
+     "balance": 248
     },
     "supplyTicket": {
      "income": 62,
@@ -4118,11 +4402,11 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 11
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "第二钥合成（净化+护罩）",
+   "growth": "第二钥合成中（差一步·破墙前夜）",
    "joy": "—",
    "pinch": {
     "pinch": "—",
@@ -4170,7 +4454,7 @@
     "total": 59
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：双钥齐=破墙⑦（研究一晚的兑现日）",
+   "hook": "明天：双钥齐=破墙⑦（研究一晚的兑现日·流通②护罩核撞喜）",
    "checkpoint": "—",
    "transform": null
   },
@@ -4181,7 +4465,7 @@
     "cleared": 381,
     "newToday": 14,
     "state": "破墙⑦",
-    "initWinBand": "双钥齐 88% 过→sf06 风暴核心开门（增幅域·战斗更快更凶）"
+    "initWinBand": "双钥齐（流通②核当日到手）88% 过→sf06 风暴核心开门（增幅域·战斗更快更凶）"
    },
    "wallet": {
     "starOre": {
@@ -4210,9 +4494,9 @@
      "balance": 34
     },
     "coreFrag": {
-     "income": 22,
-     "spend": 60,
-     "balance": 162
+     "income": 14,
+     "spend": 0,
+     "balance": 38
     },
     "fullCore": {
      "income": 1,
@@ -4220,9 +4504,9 @@
      "balance": 12
     },
     "starGem": {
-     "income": 20,
-     "spend": 0,
-     "balance": 192
+     "income": 16,
+     "spend": 120,
+     "balance": 144
     },
     "supplyTicket": {
      "income": 62,
@@ -4262,12 +4546,12 @@
     "patrolToken": 280
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 12
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "双钥齐＝墙⑦破",
-   "joy": "双钥破墙⑦+风暴域开门",
+   "growth": "双钥齐（宝库流通②护罩系核当日到手）＝墙⑦破",
+   "joy": "双钥齐（护罩系流通核撞喜）破墙⑦+风暴域开门",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
@@ -4310,13 +4594,13 @@
     "main": 25,
     "side": 16,
     "ads": 7,
-    "research": 5,
-    "total": 53
+    "research": 10,
+    "total": 58
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：大仗演出日",
    "checkpoint": "—",
-   "transform": null
+   "transform": "宝库流通②核（护罩系·120 宝石·R11 钥匙型撞喜）"
   },
   {
    "day": 28,
@@ -4354,9 +4638,9 @@
      "balance": 35
     },
     "coreFrag": {
-     "income": 30,
+     "income": 19,
      "spend": 0,
-     "balance": 192
+     "balance": 57
     },
     "fullCore": {
      "income": 1,
@@ -4366,7 +4650,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 214
+     "balance": 166
     },
     "supplyTicket": {
      "income": 64,
@@ -4406,7 +4690,7 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 13
    },
    "decisions": "终装配研究开工：四层瀑布逐层对比（换核/换附加/换站位）",
@@ -4447,7 +4731,7 @@
    },
    "collect": {
     "cores": 13,
-    "legendPlus": 1,
+    "legendPlus": 2,
     "legendPP": 0
    },
    "minutes": {
@@ -4458,7 +4742,7 @@
     "total": 39
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：撞第七域资格仗（毕业前最后大坎）",
+   "hook": "明天：撞第七域资格仗（毕业前最后大坎·毕业核①读秒开始）",
    "checkpoint": "—",
    "transform": null
   },
@@ -4469,7 +4753,7 @@
     "cleared": 399,
     "newToday": 6,
     "state": "卡墙⑧",
-    "initWinBand": "撞墙⑧ 战+连叠加 1-4%（第七域资格仗·卡 2 起）"
+    "initWinBand": "撞墙⑧ 战+连叠加 1-4%（第七域资格仗·毕业核①读秒 188/200=中盘挤压·卡 2 起）"
    },
    "wallet": {
     "starOre": {
@@ -4498,19 +4782,19 @@
      "balance": 36
     },
     "coreFrag": {
-     "income": 24,
-     "spend": 0,
-     "balance": 216
+     "income": 13,
+     "spend": 60,
+     "balance": 10
     },
     "fullCore": {
-     "income": 0,
+     "income": 1,
      "spend": 0,
-     "balance": 13
+     "balance": 14
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 236
+     "balance": 188
     },
     "supplyTicket": {
      "income": 64,
@@ -4550,15 +4834,15 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 13
+    "snapshot": "—",
+    "coresOwned": 14
    },
-   "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
+   "decisions": "毕业核读秒：宝石 188/200 差 12（中盘挤压 R12）·回廊冲层+成就线补口·计数照攒舰包（SS③ 线不停）",
    "growth": "—",
    "joy": "—",
    "pinch": {
-    "pinch": "SS③ 碎片 1000（资格仗门槛）",
-    "monetize": "黑市舰包二单+专属池兑换并轨"
+    "pinch": "宝石 188/200（毕业核①差 12·读秒=\"辛苦攒\"中盘挤压 R12）",
+    "monetize": "#10 回廊里程碑翻倍不吃宝石（红线）——纯回廊冲层+成就线解"
    },
    "unlock": "—",
    "side": {
@@ -4590,7 +4874,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 13,
+    "cores": 14,
     "legendPlus": 2,
     "legendPP": 0
    },
@@ -4602,7 +4886,7 @@
     "total": 64
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：撞墙⑧（攒资本）",
+   "hook": "明天：毕业核①上架拍下=当日破墙⑧+风暴之眼开门（R12 大日子）",
    "checkpoint": "⬥墙⑧（n400·战力+连战叠加墙）：矩阵 肝2.5/重3/普4/轻5.5·≤7 硬顶",
    "transform": null
   },
@@ -4610,10 +4894,10 @@
    "day": 30,
    "phase": "E",
    "progress": {
-    "cleared": 399,
-    "newToday": 0,
-    "state": "卡墙⑧",
-    "initWinBand": "卡墙⑧ 第 2 天 3-6%（SS③ 碎片冲刺+++ 首爆研究）"
+    "cleared": 410,
+    "newToday": 11,
+    "state": "破墙⑧",
+    "initWinBand": "毕业核①拍下→当日破墙⑧ 16%→风暴之眼开门（最后 50 关全程=毕业核的舞台·R12）"
    },
    "wallet": {
     "starOre": {
@@ -4642,19 +4926,19 @@
      "balance": 37
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 240
+     "balance": 23
     },
     "fullCore": {
      "income": 1,
      "spend": 0,
-     "balance": 14
+     "balance": 15
     },
     "starGem": {
      "income": 22,
-     "spend": 180,
-     "balance": 78
+     "spend": 200,
+     "balance": 10
     },
     "supplyTicket": {
      "income": 64,
@@ -4694,17 +4978,17 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "D30：3SS 前夜（烈阳 940/1000）·传奇+ ×2/++ ×1（首爆日）；核 13；员 炎5★/苏5★/岩4★/砺4★/澈4★；全队 L38-44；专属沉淀池 ≈4200（板凳线蓄水）",
-    "coresOwned": 14
+    "snapshot": "D30 毕业核日：宝库 200 宝石拍下毕业核①→当日破墙⑧+风暴之眼开门（R12）·传奇+ ×2/++ ×1（首爆日）；3SS 差一（烈阳 940/1000·D33 齐）；核 15（渠道账对表·v1.1\"核 13\"漂移已修）；员 炎5★/苏5★/岩4★/砺4★/澈4★；全队 L38-44；专属沉淀池 ≈4200（板凳线蓄水）",
+    "coresOwned": 15
    },
-   "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "★首件传奇++（20% 塔首爆·R2 供给线 D30±2）",
-   "joy": "传奇++ 首爆（20% 塔）",
+   "decisions": "宝库 200 拍毕业核①→当日破墙⑧（复购让位长线 D45）·传奇++ 首爆上全维终装配·风暴之眼配装预研",
+   "growth": "★毕业核①到手（宝库 200 宝石）＝当日破墙⑧（R12）·★首件传奇++（20% 塔首爆·R2 D30±2）",
+   "joy": "毕业核①到手当日轰开第七域资格仗（R12 大日子）+传奇++ 首爆（20% 塔）",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
    },
-   "unlock": "—",
+   "unlock": "★风暴之眼开门（第七域·规则组合递进·每关硬仗档）——毕业核开门日（R12）",
    "side": {
     "corridor": 48,
     "bounty": 3,
@@ -4716,8 +5000,8 @@
     "pts": {
      "#1回港翻倍": 3,
      "#2补给箱": 1,
-     "#3首通翻倍": 0,
-     "#4再选一": 0,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
      "#5打捞秒完": 1,
      "#6赞助券": 1,
      "#7货舱多选": 2,
@@ -4729,12 +5013,12 @@
      "黑市手动刷新": 1,
      "黑市30连看": 0
     },
-    "counterToday": 16,
-    "natural": 11,
+    "counterToday": 18,
+    "natural": 13,
     "deliberate": 5
    },
    "collect": {
-    "cores": 14,
+    "cores": 15,
     "legendPlus": 2,
     "legendPP": 1
    },
@@ -4742,22 +5026,22 @@
     "main": 22,
     "side": 16,
     "ads": 7,
-    "research": 14,
-    "total": 59
+    "research": 10,
+    "total": 55
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：SS③ 到手=破墙⑧+风暴之眼开门",
-   "checkpoint": "—",
-   "transform": "传奇++ 首件（合成塔 20% 首爆·R2 供给线 D30±2）"
+   "hook": "明天：风暴之眼 1+1 段开嚼（毕业核首秀走廊）",
+   "checkpoint": "⬥毕业核①到手=破墙⑧当日（R12 结构锚=破墙⑧前夕→开风暴之眼→最后一域全程=毕业核舞台；\"主线 75-80%\"=该结构锚的数字投影〔30/41≈73%〕）·普 D44-46/重 D36-37〔插值〕/轻 D55 带=2b 落准",
+   "transform": "毕业核①（宝库 200 宝石·到手当日破墙⑧=R12）＋传奇++ 首件（20% 塔首爆·R2 D30±2）"
   },
   {
    "day": 31,
    "phase": "E",
    "progress": {
-    "cleared": 410,
-    "newToday": 11,
-    "state": "破墙⑧",
-    "initWinBand": "SS③ 到手→破墙 16%→风暴之眼开门（每关硬仗档）"
+    "cleared": 417,
+    "newToday": 7,
+    "state": "推进",
+    "initWinBand": "风暴之眼 1+1 规则段 30-45%（每关磨 2-3 把·硬仗档·毕业核首秀走廊）"
    },
    "wallet": {
     "starOre": {
@@ -4786,19 +5070,19 @@
      "balance": 38
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 264
+     "balance": 36
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 14
+     "balance": 15
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 100
+     "balance": 32
     },
     "supplyTicket": {
      "income": 64,
@@ -4838,17 +5122,17 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 14
+    "snapshot": "—",
+    "coresOwned": 15
    },
-   "decisions": "黑市舰包二单拍下（SS③ 主引擎）·风暴之眼配装=组合规则逐关重排（1+1 段）",
-   "growth": "★SS③（毕业队形 3SS 成）",
-   "joy": "SS③=3SS 队形成+风暴之眼开门",
+   "decisions": "黑市舰包二单拍下（SS③ 主引擎·D33 到手）·风暴之眼配装=组合规则逐关重排（1+1 段）",
+   "growth": "—",
+   "joy": "毕业核上阵首日（1+1 规则关连啃·大杀四方开始）",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
    },
-   "unlock": "★风暴之眼开门（第七域·规则组合递进·每关硬仗档）",
+   "unlock": "—",
    "side": {
     "corridor": 49,
     "bounty": 3,
@@ -4878,30 +5162,30 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 14,
+    "cores": 15,
     "legendPlus": 2,
     "legendPP": 1
    },
    "minutes": {
-    "main": 22,
+    "main": 6,
     "side": 16,
     "ads": 7,
-    "research": 10,
-    "total": 55
+    "research": 5,
+    "total": 34
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：走廊继续暴推",
    "checkpoint": "—",
-   "transform": "SS③（毕业队形 3SS 成）"
+   "transform": null
   },
   {
    "day": 32,
    "phase": "E",
    "progress": {
-    "cleared": 417,
-    "newToday": 7,
+    "cleared": 423,
+    "newToday": 6,
     "state": "推进",
-    "initWinBand": "风暴之眼 1+1 规则段 30-45%（每关磨 2-3 把·硬仗档）"
+    "initWinBand": "1+1 段 30-42%"
    },
    "wallet": {
     "starOre": {
@@ -4930,19 +5214,19 @@
      "balance": 39
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 288
+     "balance": 49
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 14
+     "balance": 15
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 122
+     "balance": 54
     },
     "supplyTicket": {
      "income": 64,
@@ -4982,8 +5266,8 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 14
+    "snapshot": "—",
+    "coresOwned": 15
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "—",
@@ -5022,19 +5306,19 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 14,
-    "legendPlus": 2,
+    "cores": 15,
+    "legendPlus": 3,
     "legendPP": 1
    },
    "minutes": {
-    "main": 6,
+    "main": 5,
     "side": 16,
     "ads": 7,
     "research": 5,
-    "total": 34
+    "total": 33
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：SS③到手",
    "checkpoint": "—",
    "transform": null
   },
@@ -5042,10 +5326,10 @@
    "day": 33,
    "phase": "E",
    "progress": {
-    "cleared": 424,
-    "newToday": 7,
+    "cleared": 431,
+    "newToday": 8,
     "state": "推进",
-    "initWinBand": "1+1 段 30-42%"
+    "initWinBand": "SS③ 到手=3SS 队形→眼内提速（三叠段开门 25-40%）"
    },
    "wallet": {
     "starOre": {
@@ -5074,19 +5358,19 @@
      "balance": 40
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 60,
-     "balance": 252
+     "balance": 2
     },
     "fullCore": {
      "income": 1,
      "spend": 0,
-     "balance": 15
+     "balance": 16
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 144
+     "balance": 76
     },
     "supplyTicket": {
      "income": 64,
@@ -5126,12 +5410,12 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 15
+    "snapshot": "—",
+    "coresOwned": 16
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "员3 4★ 进度·大节点Ⅴ（L50 满级档）主力1",
-   "joy": "—",
+   "growth": "★SS③（毕业队形 3SS 成·眼内燃料提速）·大节点Ⅴ（L50 满级档）主力1",
+   "joy": "SS③=3SS 毕业队形成（眼内提速）",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
@@ -5166,30 +5450,30 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 15,
+    "cores": 16,
     "legendPlus": 3,
     "legendPP": 1
    },
    "minutes": {
-    "main": 6,
+    "main": 7,
     "side": 16,
     "ads": 7,
-    "research": 5,
-    "total": 34
+    "research": 10,
+    "total": 40
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：走廊继续暴推",
    "checkpoint": "—",
-   "transform": null
+   "transform": "SS③（毕业队形 3SS 成·眼内燃料提速日）"
   },
   {
    "day": 34,
    "phase": "E",
    "progress": {
-    "cleared": 431,
+    "cleared": 438,
     "newToday": 7,
     "state": "推进",
-    "initWinBand": "三叠段 25-40%（坟场+迷雾+母舰等组合·配装逐关重排）"
+    "initWinBand": "三叠段 25-38%（坟场+迷雾+母舰等组合·配装逐关重排）"
    },
    "wallet": {
     "starOre": {
@@ -5218,19 +5502,19 @@
      "balance": 41
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 276
+     "balance": 15
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 15
+     "balance": 16
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 166
+     "balance": 98
     },
     "supplyTicket": {
      "income": 64,
@@ -5270,8 +5554,8 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 15
+    "snapshot": "—",
+    "coresOwned": 16
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "—",
@@ -5286,150 +5570,6 @@
     "bounty": 3,
     "puzzle": 1,
     "drill": 18,
-    "salvage": 5
-   },
-   "ads": {
-    "pts": {
-     "#1回港翻倍": 3,
-     "#2补给箱": 1,
-     "#3首通翻倍": 1,
-     "#4再选一": 1,
-     "#5打捞秒完": 1,
-     "#6赞助券": 1,
-     "#7货舱多选": 2,
-     "#8商人刷新": 1,
-     "#9安慰包(故意送头×3)": 3,
-     "#10回廊翻倍": 1,
-     "#11保卡(故意失败×1)": 1,
-     "#12合成返还(故意合败×1)": 1,
-     "黑市手动刷新": 1,
-     "黑市30连看": 0
-    },
-    "counterToday": 18,
-    "natural": 13,
-    "deliberate": 5
-   },
-   "collect": {
-    "cores": 15,
-    "legendPlus": 3,
-    "legendPP": 1
-   },
-   "minutes": {
-    "main": 6,
-    "side": 16,
-    "ads": 7,
-    "research": 5,
-    "total": 34
-   },
-   "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天：新星核到手",
-   "checkpoint": "—",
-   "transform": null
-  },
-  {
-   "day": 35,
-   "phase": "E",
-   "progress": {
-    "cleared": 438,
-    "newToday": 7,
-    "state": "推进",
-    "initWinBand": "三叠段 25-38%"
-   },
-   "wallet": {
-    "starOre": {
-     "income": 4200,
-     "spend": 3800,
-     "balance": 8100
-    },
-    "hullAlloy": {
-     "income": 6800,
-     "spend": 6500,
-     "balance": 7300
-    },
-    "pilotToken": {
-     "income": 4600,
-     "spend": 4400,
-     "balance": 5600
-    },
-    "shipBlueprint": {
-     "income": 36,
-     "spend": 35,
-     "balance": 42
-    },
-    "pilotShardUniversal": {
-     "income": 36,
-     "spend": 35,
-     "balance": 42
-    },
-    "coreFrag": {
-     "income": 30,
-     "spend": 0,
-     "balance": 306
-    },
-    "fullCore": {
-     "income": 1,
-     "spend": 0,
-     "balance": 16
-    },
-    "starGem": {
-     "income": 22,
-     "spend": 0,
-     "balance": 188
-    },
-    "supplyTicket": {
-     "income": 64,
-     "spend": 62,
-     "balance": 72
-    },
-    "beaconCommon": {
-     "income": 8,
-     "spend": 8,
-     "balance": 1
-    },
-    "beaconRare": {
-     "income": 5,
-     "spend": 5,
-     "balance": 1
-    },
-    "beaconEpic": {
-     "income": 3,
-     "spend": 3,
-     "balance": 0
-    },
-    "starCargo": {
-     "income": 680,
-     "spend": 640,
-     "balance": 1240
-    },
-    "adTicket": {
-     "income": 6,
-     "spend": 6,
-     "balance": 0
-    }
-   },
-   "passiveIncome": {
-    "offlineAlloy": 734,
-    "patrolAlloy": 490,
-    "offlineToken": 497,
-    "patrolToken": 331
-   },
-   "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 16
-   },
-   "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "—",
-   "joy": "—",
-   "pinch": {
-    "pinch": "—",
-    "monetize": "—"
-   },
-   "unlock": "—",
-   "side": {
-    "corridor": 55,
-    "bounty": 3,
-    "puzzle": 1,
-    "drill": 19,
     "salvage": 5
    },
    "ads": {
@@ -5471,13 +5611,157 @@
    "transform": null
   },
   {
-   "day": 36,
+   "day": 35,
    "phase": "E",
    "progress": {
     "cleared": 444,
     "newToday": 6,
     "state": "推进",
     "initWinBand": "四叠段 22-35%（磨 3-4 把/关）"
+   },
+   "wallet": {
+    "starOre": {
+     "income": 4200,
+     "spend": 3800,
+     "balance": 8100
+    },
+    "hullAlloy": {
+     "income": 6800,
+     "spend": 6500,
+     "balance": 7300
+    },
+    "pilotToken": {
+     "income": 4600,
+     "spend": 4400,
+     "balance": 5600
+    },
+    "shipBlueprint": {
+     "income": 36,
+     "spend": 35,
+     "balance": 42
+    },
+    "pilotShardUniversal": {
+     "income": 36,
+     "spend": 35,
+     "balance": 42
+    },
+    "coreFrag": {
+     "income": 19,
+     "spend": 0,
+     "balance": 34
+    },
+    "fullCore": {
+     "income": 1,
+     "spend": 0,
+     "balance": 17
+    },
+    "starGem": {
+     "income": 22,
+     "spend": 0,
+     "balance": 120
+    },
+    "supplyTicket": {
+     "income": 64,
+     "spend": 62,
+     "balance": 72
+    },
+    "beaconCommon": {
+     "income": 8,
+     "spend": 8,
+     "balance": 1
+    },
+    "beaconRare": {
+     "income": 5,
+     "spend": 5,
+     "balance": 1
+    },
+    "beaconEpic": {
+     "income": 3,
+     "spend": 3,
+     "balance": 0
+    },
+    "starCargo": {
+     "income": 680,
+     "spend": 640,
+     "balance": 1240
+    },
+    "adTicket": {
+     "income": 6,
+     "spend": 6,
+     "balance": 0
+    }
+   },
+   "passiveIncome": {
+    "offlineAlloy": 734,
+    "patrolAlloy": 490,
+    "offlineToken": 497,
+    "patrolToken": 331
+   },
+   "outsideWallet": {
+    "snapshot": "—",
+    "coresOwned": 17
+   },
+   "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
+   "growth": "—",
+   "joy": "—",
+   "pinch": {
+    "pinch": "—",
+    "monetize": "—"
+   },
+   "unlock": "—",
+   "side": {
+    "corridor": 55,
+    "bounty": 3,
+    "puzzle": 1,
+    "drill": 19,
+    "salvage": 5
+   },
+   "ads": {
+    "pts": {
+     "#1回港翻倍": 3,
+     "#2补给箱": 1,
+     "#3首通翻倍": 1,
+     "#4再选一": 1,
+     "#5打捞秒完": 1,
+     "#6赞助券": 1,
+     "#7货舱多选": 2,
+     "#8商人刷新": 1,
+     "#9安慰包(故意送头×3)": 3,
+     "#10回廊翻倍": 1,
+     "#11保卡(故意失败×1)": 1,
+     "#12合成返还(故意合败×1)": 1,
+     "黑市手动刷新": 1,
+     "黑市30连看": 0
+    },
+    "counterToday": 18,
+    "natural": 13,
+    "deliberate": 5
+   },
+   "collect": {
+    "cores": 17,
+    "legendPlus": 3,
+    "legendPP": 1
+   },
+   "minutes": {
+    "main": 5,
+    "side": 16,
+    "ads": 7,
+    "research": 5,
+    "total": 33
+   },
+   "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
+   "hook": "明天：走廊继续暴推",
+   "checkpoint": "—",
+   "transform": null
+  },
+  {
+   "day": 36,
+   "phase": "E",
+   "progress": {
+    "cleared": 449,
+    "newToday": 5,
+    "state": "推进",
+    "initWinBand": "五叠段收口 20-30%（毕业战门前）"
    },
    "wallet": {
     "starOre": {
@@ -5506,19 +5790,19 @@
      "balance": 43
     },
     "coreFrag": {
-     "income": 24,
-     "spend": 60,
-     "balance": 270
+     "income": 13,
+     "spend": 0,
+     "balance": 47
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
      "balance": 17
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 210
+     "balance": 142
     },
     "supplyTicket": {
      "income": 64,
@@ -5558,7 +5842,7 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 17
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
@@ -5599,7 +5883,7 @@
    },
    "collect": {
     "cores": 17,
-    "legendPlus": 3,
+    "legendPlus": 4,
     "legendPP": 1
    },
    "minutes": {
@@ -5619,9 +5903,9 @@
    "phase": "E",
    "progress": {
     "cleared": 449,
-    "newToday": 5,
+    "newToday": 0,
     "state": "卡墙⑨",
-    "initWinBand": "五叠段收口+撞毕业战 n450 0-3%（六规则全叠·卡 2.5 起）"
+    "initWinBand": "撞毕业战 n450 0-3%（六规则全叠·卡 2.5 起）"
    },
    "wallet": {
     "starOre": {
@@ -5650,19 +5934,19 @@
      "balance": 44
     },
     "coreFrag": {
-     "income": 24,
-     "spend": 0,
-     "balance": 294
+     "income": 13,
+     "spend": 60,
+     "balance": 0
     },
     "fullCore": {
-     "income": 0,
+     "income": 1,
      "spend": 0,
-     "balance": 17
+     "balance": 18
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 232
+     "balance": 164
     },
     "supplyTicket": {
      "income": 64,
@@ -5702,8 +5986,8 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 17
+    "snapshot": "—",
+    "coresOwned": 18
    },
    "decisions": "毕业战研究周：星贝锁定三连赌（540×3）·全队终装配定稿",
    "growth": "—",
@@ -5724,8 +6008,8 @@
     "pts": {
      "#1回港翻倍": 3,
      "#2补给箱": 1,
-     "#3首通翻倍": 1,
-     "#4再选一": 1,
+     "#3首通翻倍": 0,
+     "#4再选一": 0,
      "#5打捞秒完": 1,
      "#6赞助券": 1,
      "#7货舱多选": 2,
@@ -5737,21 +6021,21 @@
      "黑市手动刷新": 1,
      "黑市30连看": 0
     },
-    "counterToday": 18,
-    "natural": 13,
+    "counterToday": 16,
+    "natural": 11,
     "deliberate": 5
    },
    "collect": {
-    "cores": 17,
+    "cores": 18,
     "legendPlus": 4,
     "legendPP": 1
    },
    "minutes": {
-    "main": 27,
+    "main": 22,
     "side": 16,
     "ads": 7,
     "research": 14,
-    "total": 64
+    "total": 59
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：撞墙⑨（攒资本）",
@@ -5794,19 +6078,19 @@
      "balance": 45
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 318
+     "balance": 13
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 17
+     "balance": 18
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 254
+     "balance": 186
     },
     "supplyTicket": {
      "income": 64,
@@ -5846,8 +6130,8 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 17
+    "snapshot": "—",
+    "coresOwned": 18
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "—",
@@ -5886,7 +6170,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 17,
+    "cores": 18,
     "legendPlus": 4,
     "legendPP": 1
    },
@@ -5938,19 +6222,19 @@
      "balance": 46
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 342
+     "balance": 26
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 17
+     "balance": 18
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 276
+     "balance": 208
     },
     "supplyTicket": {
      "income": 64,
@@ -5990,8 +6274,8 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 17
+    "snapshot": "—",
+    "coresOwned": 18
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "—",
@@ -6030,7 +6314,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 17,
+    "cores": 18,
     "legendPlus": 4,
     "legendPP": 1
    },
@@ -6053,7 +6337,7 @@
     "cleared": 449,
     "newToday": 0,
     "state": "卡墙⑨",
-    "initWinBand": "卡毕业战 收口日（毕业冲刺·平均需 ~11 把·今日过概率 55%〔跨日累计〕）"
+    "initWinBand": "卡毕业战 收口日（员3 4★ 满格=毕业阵容 A2 态齐·平均需 ~11 把·今日过概率 55%〔跨日累计〕）"
    },
    "wallet": {
     "starOre": {
@@ -6082,19 +6366,19 @@
      "balance": 47
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 366
+     "balance": 39
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 17
+     "balance": 18
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 298
+     "balance": 230
     },
     "supplyTicket": {
      "income": 64,
@@ -6134,11 +6418,11 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 17
+    "snapshot": "—",
+    "coresOwned": 18
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
-   "growth": "★员3 5★→毕业阵容=3SS+2S/2×5★+3×4★（A2 转正态）",
+   "growth": "员3 4★ 满格→毕业阵容=3SS+2S/2×5★+3×4★（A2 转正态齐·v1.1\"员3 5★\"标签与 A2/D41 快照矛盾已修）",
    "joy": "—",
    "pinch": {
     "pinch": "—",
@@ -6174,8 +6458,8 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 17,
-    "legendPlus": 4,
+    "cores": 18,
+    "legendPlus": 5,
     "legendPP": 1
    },
    "minutes": {
@@ -6188,7 +6472,7 @@
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
    "hook": "明天：毕业决战（阵容转正完毕·就差临门一脚）",
    "checkpoint": "—",
-   "transform": "员3 5★（毕业阵容 2×5★+3×4★ 成·A2 态）"
+   "transform": null
   },
   {
    "day": 41,
@@ -6226,19 +6510,19 @@
      "balance": 48
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 390
+     "balance": 52
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 17
+     "balance": 18
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 320
+     "balance": 252
     },
     "supplyTicket": {
      "income": 64,
@@ -6278,12 +6562,12 @@
     "patrolToken": 331
    },
    "outsideWallet": {
-    "snapshot": "D41 毕业：极焰 SS L50/磐石 SS L48/烈阳 SS L47/贯日 S L40/晨曦 S L40；员 炎5★L50/苏5★L48/岩4★L40/砺4★L40/澈4★L40（=A2 转正态 3SS+2S/2×5★+3×4★/L50 上下 ✓）；核 17（含毕业核①路上）；插件=传奇+×5/++×1（战力≈天花板终值·2c 双桩实测）",
-    "coresOwned": 17
+    "snapshot": "D41 毕业：极焰 SS L50/磐石 SS L48/烈阳 SS L47/贯日 S L40/晨曦 S L40；员 炎5★L50/苏5★L48/岩4★L40/砺4★L40/澈4★L40（=A2 转正态 3SS+2S/2×5★+3×4★/L50 上下 ✓）；核 18（渠道账对表·毕业核① D30 起在阵=最后 50 关全程·R12）；插件=传奇+×5/++×1（战力≈天花板终值·2c 双桩实测）",
+    "coresOwned": 18
    },
    "decisions": "常规最优序：通碎→瓶颈主力·星贝→券至日限+黑市宝箱·合金/记录逐级买满·核碎 60 即开蛋·巡逻派驻=非主力高阶 10 艘",
    "growth": "★毕业！n450 首通",
-   "joy": "毕业！六规则全叠终墙磨四把过（60 天最大爽点）",
+   "joy": "毕业！六规则全叠终墙磨四把过（60 天最大爽点·毕业战靠毕业核打赢=R12）",
    "pinch": {
     "pinch": "—",
     "monetize": "—"
@@ -6318,7 +6602,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 17,
+    "cores": 18,
     "legendPlus": 5,
     "legendPP": 1
    },
@@ -6330,8 +6614,8 @@
     "total": 41
    },
    "bottleneck": "核碎/宝石（开蛋 60+宝库 120-200 定向储蓄·中后期瓶颈族）",
-   "hook": "明天起：长线开门（毕业核仪式/SS④⑤/图鉴收尾/++ 组合研究排队上桌）",
-   "checkpoint": "⬥毕业 D41 ≥40 铁线 ✓（R7）·毕业日矩阵 40/48/60/73 的天花板上界",
+   "hook": "明天起：长线开门（图鉴收尾/SS④⑤/++ 组合研究排队上桌——毕业核已在手 12 天=R12）",
+   "checkpoint": "⬥毕业 D41 ≥40 铁线 ✓（R7）·毕业日矩阵 40/48/60/73 的天花板上界·用核陪跑 12 天/最后 50 关全程（普通档 ≥15 天=攒得久爽得久·见对照摘要）",
    "transform": null
   },
   {
@@ -6370,19 +6654,19 @@
      "balance": 50
     },
     "coreFrag": {
-     "income": 24,
-     "spend": 0,
-     "balance": 414
+     "income": 13,
+     "spend": 60,
+     "balance": 5
     },
     "fullCore": {
-     "income": 1,
+     "income": 2,
      "spend": 0,
-     "balance": 18
+     "balance": 20
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 342
+     "balance": 274
     },
     "supplyTicket": {
      "income": 56,
@@ -6422,8 +6706,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 18
+    "snapshot": "—",
+    "coresOwned": 20
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "—",
@@ -6462,7 +6746,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 18,
+    "cores": 20,
     "legendPlus": 5,
     "legendPP": 2
    },
@@ -6474,7 +6758,7 @@
     "total": 28
    },
    "bottleneck": "插件燃料（传奇件=合成塔 40/20% 的持续吞噬·毕业后瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：长线事件继续（黑市/回廊/合成三线推进）",
    "checkpoint": "—",
    "transform": null
   },
@@ -6514,19 +6798,19 @@
      "balance": 52
     },
     "coreFrag": {
-     "income": 18,
-     "spend": 60,
-     "balance": 372
+     "income": 7,
+     "spend": 0,
+     "balance": 12
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
-     "balance": 19
+     "balance": 20
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 364
+     "balance": 296
     },
     "supplyTicket": {
      "income": 56,
@@ -6566,8 +6850,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 19
+    "snapshot": "—",
+    "coresOwned": 20
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "—",
@@ -6606,7 +6890,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 19,
+    "cores": 20,
     "legendPlus": 5,
     "legendPP": 2
    },
@@ -6658,19 +6942,19 @@
      "balance": 54
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 390
+     "balance": 19
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 19
+     "balance": 20
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 386
+     "balance": 318
     },
     "supplyTicket": {
      "income": 56,
@@ -6710,8 +6994,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 19
+    "snapshot": "—",
+    "coresOwned": 20
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "★SS④（冲顶①）",
@@ -6750,8 +7034,8 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 19,
-    "legendPlus": 5,
+    "cores": 20,
+    "legendPlus": 6,
     "legendPP": 2
    },
    "minutes": {
@@ -6802,19 +7086,19 @@
      "balance": 56
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 408
+     "balance": 26
     },
     "fullCore": {
      "income": 1,
      "spend": 0,
-     "balance": 20
+     "balance": 21
     },
     "starGem": {
      "income": 22,
-     "spend": 200,
-     "balance": 208
+     "spend": 180,
+     "balance": 160
     },
     "supplyTicket": {
      "income": 56,
@@ -6854,10 +7138,10 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 20
+    "snapshot": "—",
+    "coresOwned": 21
    },
-   "decisions": "毕业核①宝库 200（毕业仪式①）",
+   "decisions": "宝库复购×1.5（180 宝石）拍下=重复款多舰装配（毕业后收集线·R12）",
    "growth": "—",
    "joy": "—",
    "pinch": {
@@ -6894,7 +7178,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 20,
+    "cores": 21,
     "legendPlus": 6,
     "legendPP": 2
    },
@@ -6946,19 +7230,19 @@
      "balance": 58
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 426
+     "balance": 33
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 20
+     "balance": 21
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 230
+     "balance": 182
     },
     "supplyTicket": {
      "income": 56,
@@ -6998,8 +7282,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 20
+    "snapshot": "—",
+    "coresOwned": 21
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "—",
@@ -7038,7 +7322,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 20,
+    "cores": 21,
     "legendPlus": 6,
     "legendPP": 2
    },
@@ -7050,7 +7334,7 @@
     "total": 28
    },
    "bottleneck": "插件燃料（传奇件=合成塔 40/20% 的持续吞噬·毕业后瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：长线事件继续（黑市/回廊/合成三线推进）",
    "checkpoint": "—",
    "transform": null
   },
@@ -7090,19 +7374,19 @@
      "balance": 60
     },
     "coreFrag": {
-     "income": 18,
-     "spend": 60,
-     "balance": 384
+     "income": 7,
+     "spend": 0,
+     "balance": 40
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
      "balance": 21
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 252
+     "balance": 204
     },
     "supplyTicket": {
      "income": 56,
@@ -7142,7 +7426,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 21
    },
    "decisions": "++ 赌局：先合满意的 +（锁 2 条）再升 ++（只赌第 3 条）=分层锁定研究径",
@@ -7234,9 +7518,9 @@
      "balance": 62
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 402
+     "balance": 47
     },
     "fullCore": {
      "income": 1,
@@ -7246,7 +7530,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 274
+     "balance": 226
     },
     "supplyTicket": {
      "income": 56,
@@ -7286,7 +7570,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 22
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -7327,7 +7611,7 @@
    },
    "collect": {
     "cores": 22,
-    "legendPlus": 6,
+    "legendPlus": 7,
     "legendPP": 2
    },
    "minutes": {
@@ -7378,19 +7662,19 @@
      "balance": 64
     },
     "coreFrag": {
-     "income": 24,
-     "spend": 0,
-     "balance": 426
+     "income": 13,
+     "spend": 60,
+     "balance": 0
     },
     "fullCore": {
-     "income": 1,
+     "income": 2,
      "spend": 0,
-     "balance": 23
+     "balance": 24
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 296
+     "balance": 248
     },
     "supplyTicket": {
      "income": 56,
@@ -7430,8 +7714,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 23
+    "snapshot": "—",
+    "coresOwned": 24
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "—",
@@ -7470,7 +7754,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 23,
+    "cores": 24,
     "legendPlus": 7,
     "legendPP": 2
    },
@@ -7522,19 +7806,19 @@
      "balance": 66
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 444
+     "balance": 7
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 23
+     "balance": 24
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 318
+     "balance": 270
     },
     "supplyTicket": {
      "income": 56,
@@ -7574,15 +7858,15 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 23
+    "snapshot": "—",
+    "coresOwned": 24
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "—",
    "joy": "—",
    "pinch": {
-    "pinch": "宝石 200（毕业核②差 12）",
-    "monetize": "#10 回廊里程碑翻倍不吃宝石（红线）——纯回廊冲层解"
+    "pinch": "—",
+    "monetize": "—"
    },
    "unlock": "—",
    "side": {
@@ -7614,7 +7898,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 23,
+    "cores": 24,
     "legendPlus": 7,
     "legendPP": 2
    },
@@ -7666,19 +7950,19 @@
      "balance": 68
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 462
+     "balance": 14
     },
     "fullCore": {
      "income": 1,
      "spend": 0,
-     "balance": 24
+     "balance": 25
     },
     "starGem": {
      "income": 22,
      "spend": 200,
-     "balance": 140
+     "balance": 92
     },
     "supplyTicket": {
      "income": 56,
@@ -7718,8 +8002,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 24
+    "snapshot": "—",
+    "coresOwned": 25
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "★图鉴 16 款集齐（宝库毕业核②）",
@@ -7758,7 +8042,7 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 24,
+    "cores": 25,
     "legendPlus": 7,
     "legendPP": 2
    },
@@ -7771,7 +8055,7 @@
    },
    "bottleneck": "插件燃料（传奇件=合成塔 40/20% 的持续吞噬·毕业后瓶颈族）",
    "hook": "明天：长线事件继续（黑市/回廊/合成三线推进）",
-   "checkpoint": "⬥图鉴 16/16（R6 账目闭合）",
+   "checkpoint": "⬥图鉴 16/16 集齐（R12 拆线=毕业后收尾线·到手线=D30 毕业核①）",
    "transform": null
   },
   {
@@ -7810,19 +8094,19 @@
      "balance": 70
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 480
+     "balance": 21
     },
     "fullCore": {
      "income": 0,
      "spend": 0,
-     "balance": 24
+     "balance": 25
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 162
+     "balance": 114
     },
     "supplyTicket": {
      "income": 56,
@@ -7862,8 +8146,8 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
-    "coresOwned": 24
+    "snapshot": "—",
+    "coresOwned": 25
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
    "growth": "★SS⑤（冲顶②）",
@@ -7902,8 +8186,8 @@
     "deliberate": 5
    },
    "collect": {
-    "cores": 24,
-    "legendPlus": 7,
+    "cores": 25,
+    "legendPlus": 8,
     "legendPP": 2
    },
    "minutes": {
@@ -7914,7 +8198,7 @@
     "total": 28
    },
    "bottleneck": "插件燃料（传奇件=合成塔 40/20% 的持续吞噬·毕业后瓶颈族）",
-   "hook": "明天：新星核到手",
+   "hook": "明天：长线事件继续（黑市/回廊/合成三线推进）",
    "checkpoint": "—",
    "transform": null
   },
@@ -7954,19 +8238,19 @@
      "balance": 72
     },
     "coreFrag": {
-     "income": 18,
-     "spend": 60,
-     "balance": 438
+     "income": 7,
+     "spend": 0,
+     "balance": 28
     },
     "fullCore": {
-     "income": 1,
+     "income": 0,
      "spend": 0,
      "balance": 25
     },
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 184
+     "balance": 136
     },
     "supplyTicket": {
      "income": 56,
@@ -8006,7 +8290,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 25
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8098,9 +8382,9 @@
      "balance": 74
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 456
+     "balance": 35
     },
     "fullCore": {
      "income": 0,
@@ -8110,7 +8394,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 206
+     "balance": 158
     },
     "supplyTicket": {
      "income": 56,
@@ -8150,7 +8434,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 25
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8242,9 +8526,9 @@
      "balance": 76
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 474
+     "balance": 42
     },
     "fullCore": {
      "income": 0,
@@ -8254,7 +8538,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 228
+     "balance": 180
     },
     "supplyTicket": {
      "income": 56,
@@ -8294,7 +8578,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 25
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8386,9 +8670,9 @@
      "balance": 78
     },
     "coreFrag": {
-     "income": 24,
+     "income": 13,
      "spend": 0,
-     "balance": 498
+     "balance": 55
     },
     "fullCore": {
      "income": 1,
@@ -8398,7 +8682,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 250
+     "balance": 202
     },
     "supplyTicket": {
      "income": 56,
@@ -8438,7 +8722,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 26
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8501,7 +8785,7 @@
     "cleared": 450,
     "newToday": 0,
     "state": "长线",
-    "initWinBand": "长线：星核数量线 24 颗（多颗同款多舰装配研究）"
+    "initWinBand": "长线：星核第 27 颗到手（渠道账收官 27/27·多颗同款多舰装配研究）"
    },
    "wallet": {
     "starOre": {
@@ -8530,9 +8814,9 @@
      "balance": 80
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 60,
-     "balance": 456
+     "balance": 2
     },
     "fullCore": {
      "income": 1,
@@ -8542,7 +8826,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 272
+     "balance": 224
     },
     "supplyTicket": {
      "income": 56,
@@ -8582,7 +8866,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 27
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8674,9 +8958,9 @@
      "balance": 82
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 474
+     "balance": 9
     },
     "fullCore": {
      "income": 0,
@@ -8686,7 +8970,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 294
+     "balance": 246
     },
     "supplyTicket": {
      "income": 56,
@@ -8726,7 +9010,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 27
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8818,9 +9102,9 @@
      "balance": 84
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 492
+     "balance": 16
     },
     "fullCore": {
      "income": 0,
@@ -8830,7 +9114,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 316
+     "balance": 268
     },
     "supplyTicket": {
      "income": 56,
@@ -8870,7 +9154,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 27
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
@@ -8962,9 +9246,9 @@
      "balance": 86
     },
     "coreFrag": {
-     "income": 18,
+     "income": 7,
      "spend": 0,
-     "balance": 510
+     "balance": 23
     },
     "fullCore": {
      "income": 0,
@@ -8974,7 +9258,7 @@
     "starGem": {
      "income": 22,
      "spend": 0,
-     "balance": 338
+     "balance": 290
     },
     "supplyTicket": {
      "income": 56,
@@ -9014,7 +9298,7 @@
     "patrolToken": 334
    },
    "outsideWallet": {
-    "snapshot": "—（关键日点名=D1/7/14/21/30/41·逐日全量点名表=2c 机器线）",
+    "snapshot": "—",
     "coresOwned": 27
    },
    "decisions": "长线序：黑市计数→大件存钱·宝石→毕业核·传奇燃料→合成塔·派驻=满 10 艘高阶轮换",
