@@ -54,10 +54,8 @@ export type S7FxRefResolver = (unitStatRef: string) => { unitRef: string; roleTa
 
 const EMPTY_REF: { unitRef: string; roleTag: string } = { unitRef: '', roleTag: '' };
 
-/** 敌上我下版位（拍板定死）+ 对峙带（Ron 07-13 二调：敌人下移别太远·带宽收窄仍清晰）：
- *  敌 y 0.14-0.42 / 对峙带 0.42-0.60（全空）/ 我 y 0.60-0.86。 */
-const ENEMY_Y_TOP = 0.14;
-const ENEMY_Y_BOTTOM = 0.42;
+/** 敌上我下版位（拍板定死）+ 对峙带：敌三排 y=0.20/0.29/0.38（layoutEnemies）/
+ *  对峙带 0.42-0.60（全空）/ 我 y 0.60-0.86。 */
 const PLAYER_Y_TOP = 0.6;
 const PLAYER_Y_BOTTOM = 0.86;
 const X_MARGIN = 0.12;
@@ -96,29 +94,57 @@ function extents(roster: S7PlaybackUnit[], side: string): GridExtent {
   return { maxRow, maxCol };
 }
 
-function place(u: S7PlaybackUnit, ext: GridExtent, isBoss: boolean): S7FxPoint {
+function clamp01x(v: number): number {
+  return Math.max(0.08, Math.min(0.92, v));
+}
+
+function placePlayer(u: S7PlaybackUnit, ext: GridExtent): S7FxPoint {
   const cols = ext.maxCol + 1;
   const rows = ext.maxRow + 1;
   let x = cols <= 1 ? 0.5 : X_MARGIN + (u.col / (cols - 1)) * (1 - 2 * X_MARGIN);
-  let y: number;
-  if (u.side === 'player') {
-    y = rows <= 1 ? (PLAYER_Y_TOP + PLAYER_Y_BOTTOM) / 2 : PLAYER_Y_TOP + (u.row / (rows - 1)) * (PLAYER_Y_BOTTOM - PLAYER_Y_TOP);
-  } else if (isBoss) {
-    // Boss 坐镇敌阵后中（Ron 07-13 反馈②：不贴近我方）。
-    x = 0.5;
-    y = ENEMY_Y_TOP + 0.03;
-  } else {
-    // 敌 row0 靠近中线（前排），row 越大越靠上——渲染直觉：前排在下。
-    y = rows <= 1 ? (ENEMY_Y_TOP + ENEMY_Y_BOTTOM) / 2 : ENEMY_Y_BOTTOM - (u.row / (rows - 1)) * (ENEMY_Y_BOTTOM - ENEMY_Y_TOP);
-    // 雁形微弯：越靠两翼越向后收一点（队列感·非棋盘）。
-    y -= Math.abs(x - 0.5) * 0.06;
-  }
-  // 自然错落（Boss 不抖）。
-  if (!isBoss) {
-    x += (hash01(u.unitId, 7) - 0.5) * 2 * JITTER_X;
-    y += (hash01(u.unitId, 13) - 0.5) * 2 * JITTER_Y;
-  }
+  let y = rows <= 1 ? (PLAYER_Y_TOP + PLAYER_Y_BOTTOM) / 2 : PLAYER_Y_TOP + (u.row / (rows - 1)) * (PLAYER_Y_BOTTOM - PLAYER_Y_TOP);
+  x += (hash01(u.unitId, 7) - 0.5) * 2 * JITTER_X;
+  y += (hash01(u.unitId, 13) - 0.5) * 2 * JITTER_Y;
   return { x, y };
+}
+
+/** 敌方视觉阵型（Ron 07-13 三调·借鉴放置军团"紧凑团块+纵深多排"）：
+ *  三排楔形——前 40% / 中 35% / 后 25%（前中厚重·别都压最后一排）；
+ *  Boss 居中排中心被小怪簇拥；横向以中轴聚拢（固定间距=团块感，非均布全宽）；
+ *  中排绕开 Boss 从两侧排、排间交错；哈希错落保自然。
+ *  战斗格 row/col 只作排序键（逻辑前排优先进视觉前排），不再线性映射坐标。 */
+function layoutEnemies(roster: S7PlaybackUnit[], bossId: string): Map<string, S7FxPoint> {
+  const map = new Map<string, S7FxPoint>();
+  const others = roster
+    .filter((u) => u.side === 'enemy' && u.unitId !== bossId)
+    .sort((a, b) => a.row - b.row || a.col - b.col || (a.unitId < b.unitId ? -1 : 1));
+  const n = others.length;
+  const frontN = Math.round(n * 0.4);
+  const midN = Math.round(n * 0.35);
+  const rows = [others.slice(0, frontN), others.slice(frontN, frontN + midN), others.slice(frontN + midN)];
+  const rowY = [0.38, 0.29, 0.2];
+  const SPACING = 0.125;
+  rows.forEach((rowUnits, ri) => {
+    const m = rowUnits.length;
+    rowUnits.forEach((u, i) => {
+      let x: number;
+      if (ri === 1) {
+        // 中排：Boss 占中心（体宽约 0.16 屏），小怪从 ±0.19 起左右交替向外不压 Boss。
+        const side = i % 2 === 0 ? 1 : -1;
+        const step = Math.floor(i / 2);
+        x = 0.5 + side * (0.19 + step * SPACING);
+      } else {
+        // 前/后排：以中轴聚拢，排间错半位。
+        const offset = ri === 0 ? 0 : SPACING / 2;
+        x = 0.5 + (i - (m - 1) / 2) * SPACING + offset;
+      }
+      x = clamp01x(x + (hash01(u.unitId, 7) - 0.5) * 2 * 0.016);
+      const y = rowY[ri] + (hash01(u.unitId, 13) - 0.5) * 2 * 0.014;
+      map.set(u.unitId, { x, y });
+    });
+  });
+  map.set(bossId, { x: 0.5, y: rowY[1] });
+  return map;
 }
 
 /**
@@ -131,7 +157,6 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
   for (const u of playback.roster) byId.set(u.unitId, u);
 
   const playerExt = extents(playback.roster, 'player');
-  const enemyExt = extents(playback.roster, 'enemy');
   // Boss 判定=敌方 maxHp 最大者（与渲染壳尺寸阶同口径）。
   let bossId = '';
   let bossHp = -1;
@@ -141,10 +166,12 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
       bossId = u.unitId;
     }
   }
+  const enemyPos = layoutEnemies(playback.roster, bossId);
   const posOf = (unitId: string): S7FxPoint => {
     const u = byId.get(unitId);
     if (!u) return { x: 0.5, y: 0.5 };
-    return place(u, u.side === 'player' ? playerExt : enemyExt, u.unitId === bossId);
+    if (u.side === 'enemy') return enemyPos.get(unitId) ?? { x: 0.5, y: 0.28 };
+    return placePlayer(u, playerExt);
   };
 
   const layout: Record<string, { at: S7FxPoint; side: string }> = {};

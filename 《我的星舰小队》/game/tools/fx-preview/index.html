@@ -41,7 +41,8 @@ const ENEMY_COLOR = '#C4453F', ENEMY_DARK = '#3A3437';
 
 // ---- 素材（组装 v0：就位即换皮，缺图自动回占位块）----
 const SPRITE_FILES = {
-  shp03: 'ship_fengshi', shp06: 'ship_tiebi', shp09: 'ship_lieyang', shp13: 'ship_chenxi', shp20: 'ship_suolian',
+  shp03: 'ship_fengshi', shp06: 'ship_tiebi', shp09: 'ship_lieyang_body', shp13: 'ship_chenxi_body', shp20: 'ship_suolian_body',
+  shp09_p0: 'ship_lieyang_part0', shp13_p0: 'ship_chenxi_part0', shp20_p0: 'ship_suolian_part0', shp20_p1: 'ship_suolian_part1',
   pirate_s: 'pirate_xiaobing', pirate_m: 'pirate_dafu', pirate_l: 'pirate_chuanzhang_body', pirate_l_flag: 'pirate_chuanzhang_flag',
   // 背景=打谁的地盘看谁的天（总谱§4 族群基调）：本场星盗域→星盗地盘；?bg=mint 切雪原
   bg: new URLSearchParams(location.search).get('bg') === 'mint' ? 'bg_mint_winter' : 'bg_pirate_turf',
@@ -70,7 +71,7 @@ for (const u of DATA.roster) {
     else { sprite = IMGS.pirate_s; w = 54; h = 54; }
   }
   units[u.unitId] = {
-    x: lay.at.x * W, y: lay.at.y * H, side: u.side,
+    x: lay.at.x * W, y: lay.at.y * H, side: u.side, unitRef: u.unitRef,
     color: isP ? (SHIP_COLOR[u.unitRef] || '#FFE066') : ENEMY_COLOR,
     w, h, sprite,
     hpPct: 100, alive: true, present: isP,
@@ -194,23 +195,56 @@ function drawShip(u) {
     cx.globalAlpha = alpha;
   }
   if (ok(u.sprite)) {
-    // 素材版（组装 v0）：真 sprite；受击白闪用叠加高亮近似
+    // 烈阳原图机头朝下（军舰画法）→ 渲染转 180° 修正朝向（sprite 与件同转，焰/影/灯不受影响）
+    const flip = u.unitRef === 'shp09';
+    cx.save();
+    if (flip) cx.rotate(Math.PI);
+    // 素材版：真 sprite；受击白闪用叠加高亮近似
     cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
-    // Boss 分件动画（省做法#10·Ron 拍"值得"）：船长骷髅旗独立迎风摆
-    if (u.sprite === IMGS.pirate_l && ok(IMGS.pirate_l_flag)) {
-      const k = w / 1328; // 原图→渲染尺度
-      const ax = -w / 2 + 655 * k, ay = -h / 2 + 450 * k; // 摆动轴=杆根
+    // 分件动画（省做法#10·Ron 拍"性价比拉满"）：
+    const k = w / 1328;
+    const drawPart = (img, rx0, ry0, rx1, ry1, ax, ay, rot, dx, dy) => {
+      if (!ok(img)) return;
       cx.save();
-      cx.translate(ax, ay);
-      cx.rotate(Math.sin(t * 2.1 + u.phase) * 0.09); // 旗摆 ±5°
-      cx.drawImage(IMGS.pirate_l_flag, (600 - 655) * k, (90 - 450) * k, 340 * k, 360 * k);
+      cx.translate(-w / 2 + ax * k + (dx || 0), -h / 2 + ay * k + (dy || 0));
+      cx.rotate(rot || 0);
+      cx.drawImage(img, (rx0 - ax) * k, (ry0 - ay) * k, (rx1 - rx0) * k, (ry1 - ry0) * k);
       cx.restore();
+    };
+    if (u.unitRef === 'shp13') {
+      // 晨曦金环：悬浮轻转+上下浮（"天使环"活感）
+      drawPart(IMGS.shp13_p0, 505, 140, 800, 350, 652, 245, Math.sin(t * 1.8 + u.phase) * 0.07, 0, Math.sin(t * 2.3 + u.phase) * 1.6);
+    } else if (u.unitRef === 'shp20') {
+      // 锁链双线轴：来回转（收放线作业感）
+      const spin = Math.sin(t * 4.2 + u.phase) * 0.12;
+      drawPart(IMGS.shp20_p0, 220, 620, 410, 820, 315, 720, spin);
+      drawPart(IMGS.shp20_p1, 915, 620, 1105, 820, 1010, 720, -spin);
+    } else if (u.unitRef === 'shp09') {
+      // 烈阳双联炮管：开火后坐（沿舰轴缩回弹回·与开火点头联动）
+      const rec = u.lungeT > 0 ? Math.sin((u.lungeT / 0.14) * Math.PI) * 7 : 0;
+      drawPart(IMGS.shp09_p0, 455, 400, 890, 700, 672, 550, 0, 0, rec);
+    } else if (u.sprite === IMGS.pirate_l) {
+      // 船长骷髅旗：迎风摆 ±5°
+      drawPart(IMGS.pirate_l_flag, 600, 90, 940, 450, 655, 450, Math.sin(t * 2.1 + u.phase) * 0.09);
     }
     if (u.flashT > 0) {
       cx.globalAlpha = alpha * 0.75;
       cx.globalCompositeOperation = 'lighter';
       cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
       cx.globalCompositeOperation = 'source-over';
+    }
+    cx.restore();
+    // 锋矢三光球：程序脉冲光点（不切件·三球呼吸发光=签名锚点强调）
+    if (u.unitRef === 'shp03' && u.alive) {
+      const pulse = 0.5 + 0.5 * Math.sin(t * 3.6 + u.phase);
+      cx.globalAlpha = alpha * (0.25 + pulse * 0.45);
+      cx.fillStyle = '#BFF3FF';
+      for (const [px, py] of [[0, -h * 0.44], [-w * 0.42, -h * 0.05], [w * 0.42, -h * 0.05]]) {
+        cx.beginPath();
+        cx.arc(px, py, 3 + pulse * 1.5, 0, Math.PI * 2);
+        cx.fill();
+      }
+      cx.globalAlpha = alpha;
     }
   } else {
     // 占位舰体：圆角胶囊 + 泡舱（素材缺位兜底）

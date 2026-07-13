@@ -118,4 +118,28 @@ describe('S7FxScript 指令流', () => {
     const tl = buildS7FxScript(miniPlayback());
     expect(tl.commands.length).toBeGreaterThan(0);
   });
+
+  it('敌方三排楔形阵：前中后排都有人、Boss 居中排中心、前排厚于后排（Ron 阵型三调）', () => {
+    const pb = miniPlayback();
+    // 1 Boss（maxHp 最大）+ 7 小怪
+    pb.roster = [
+      pb.roster[0],
+      { unitId: 'BOSS', side: 'enemy', slotRef: 'r2c2', row: 2, col: 2, maxHp: 500, unitStatRef: 'bu_boss' },
+      ...Array.from({ length: 7 }, (_, i) => ({
+        unitId: `M${i}`, side: 'enemy' as const, slotRef: `r${i % 3}c${i % 5}`, row: i % 3, col: i % 5, maxHp: 50, unitStatRef: 'bu_n001',
+      })),
+    ] as typeof pb.roster;
+    const tl = buildS7FxScript(pb);
+    const boss = tl.layout['BOSS'].at;
+    expect(boss.x).toBeCloseTo(0.5, 5);
+    expect(boss.y).toBeCloseTo(0.29, 5);
+    const ys = Array.from({ length: 7 }, (_, i) => tl.layout[`M${i}`].at.y);
+    const front = ys.filter((y) => y > 0.34);
+    const mid = ys.filter((y) => y > 0.245 && y <= 0.34);
+    const back = ys.filter((y) => y <= 0.245);
+    expect(front.length).toBeGreaterThan(0);
+    expect(mid.length).toBeGreaterThan(0);
+    expect(back.length).toBeGreaterThan(0);
+    expect(front.length).toBeGreaterThanOrEqual(back.length); // 前中厚重、后排最薄
+  });
 });
