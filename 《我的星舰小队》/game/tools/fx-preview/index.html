@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星舰小队 · 战斗演出预览壳（占位图形版）</title>
+<style>
+  body { background: #1a1c22; color: #dfe2ea; font-family: "Microsoft YaHei", system-ui, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
+  h1 { font-size: 15px; font-weight: 600; margin: 10px 0 6px; }
+  #meta { font-size: 12px; color: #9aa0b4; margin-bottom: 8px; }
+  #wrap { position: relative; }
+  canvas { border-radius: 12px; display: block; }
+  #bar { margin: 10px 0 16px; display: flex; gap: 8px; }
+  button { background: #2c3040; color: #dfe2ea; border: 1px solid #3c4160; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #3a3f54; }
+</style>
+</head>
+<body>
+<h1>战斗演出预览壳 · 引擎真日志驱动（占位图形 · 素材就位自动换皮）</h1>
+<div id="meta">加载中…</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="bar">
+  <button onclick="restart()">⟲ 重播</button>
+  <button onclick="setSpeed(1)">1x</button>
+  <button onclick="setSpeed(2)">2x</button>
+  <button onclick="setSpeed(3)">3x</button>
+</div>
+<script src="timeline-sample.js"></script>
+<script>
+const W = 464, H = 832; // 928x1664 半尺寸
+const cv = document.getElementById('cv');
+cv.width = W; cv.height = H;
+const cx = cv.getContext('2d');
+const DATA = window.S7_FX_TIMELINE;
+document.getElementById('meta').textContent =
+  `${DATA.nodeId} · 我方战力 ${DATA.teamPower} · ${DATA.winner === 'player' ? '胜' : '负'}(${DATA.reason}) · 逻辑 ${DATA.durationSec}s · 指令 ${DATA.commands.length} 条`;
+
+// ---- 舰色（五舰签名色 + 兜底）----
+const SHIP_COLOR = { shp03: '#4FC3F7', shp06: '#3BA8A0', shp09: '#FF8A3D', shp13: '#F5A8C0', shp20: '#B05CE0' };
+const ENEMY_COLOR = '#C4453F', ENEMY_DARK = '#3A3437';
+
+// ---- 单位运行态 ----
+const units = {}; // unitId -> {x,y,side,color,w,h,hpPct,alive,present,flashT,shakeT,recoilT,spawnT,deadT,phase}
+for (const u of DATA.roster) {
+  const lay = DATA.layout[u.unitId];
+  const isP = u.side === 'player';
+  units[u.unitId] = {
+    x: lay.at.x * W, y: lay.at.y * H, side: u.side,
+    color: isP ? (SHIP_COLOR[u.unitRef] || '#FFE066') : ENEMY_COLOR,
+    w: isP ? 56 : 44, h: isP ? 64 : 50,
+    hpPct: 100, alive: true, present: isP,
+    flashT: 0, shakeT: 0, recoilT: 0, spawnT: 0, deadT: 0,
+    phase: Math.random() * Math.PI * 2, // V0 悬浮相位错开
+  };
+}
+
+// ---- 星点流（L2 · 0KB 资产 · 恒向下）----
+const stars = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 0.5 + Math.random() * 1.5, v: 18 + Math.random() * 30 }));
+// 飘雪（世界氛围）
+const flakes = Array.from({ length: 26 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 1 + Math.random() * 2, v: 8 + Math.random() * 12, drift: Math.random() * 2 - 1 }));
+
+// ---- 演出运行池 ----
+let projs = [], impacts = [], bursts = [];
+let t = 0, speed = 1, lastTs = 0, cmdIdx = 0;
+const CMDS = DATA.commands;
+const END_T = DATA.fxDurationSec + 1.5;
+
+function restart() {
+  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = [];
+  for (const u of Object.values(units)) { u.hpPct = 100; u.alive = true; u.flashT = u.shakeT = u.recoilT = u.deadT = 0; }
+  for (const ru of DATA.roster) units[ru.unitId].present = ru.side === 'player';
+}
+function setSpeed(s) { speed = s; }
+
+function exec(c) {
+  const u = units[c.unitId];
+  switch (c.kind) {
+    case 'spawn': if (u) { u.present = true; u.spawnT = 0.4; } break;
+    case 'muzzle': impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 }); break;
+    case 'projectile': projs.push({ c, age: 0 }); break;
+    case 'impact': {
+      const life = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42 : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
+      impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: c.impact.kind, size: c.impact.size, color: c.color, age: 0, life });
+      break;
+    }
+    case 'unit_flash': if (u) u.flashT = 0.12; break;
+    case 'unit_shake': if (u) u.shakeT = 0.1; break;
+    case 'hp_change': if (u) u.hpPct = c.hpPct; break;
+    case 'death_burst': {
+      if (u) { u.alive = false; u.deadT = 0.4; }
+      const n = 5;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + Math.random() * 0.5;
+        bursts.push({ x: c.at.x * W, y: c.at.y * H, vx: Math.cos(a) * 70, vy: Math.sin(a) * 70, age: 0, life: 0.4, color: ['#FFD93D', '#FF8A3D', '#F5A8C0', '#4FC3F7', '#7ED957'][i % 5] });
+      }
+      break;
+    }
+    case 'recoil': if (u) u.recoilT = 0.15; break;
+  }
+}
+
+function drawShip(u) {
+  if (!u.present || (!u.alive && u.deadT <= 0)) return;
+  let ox = 0, oy = Math.sin(t * 2 + u.phase) * 1.6; // V0 悬浮 ±3px（半尺寸 1.6）
+  if (u.shakeT > 0) { ox += (Math.random() - 0.5) * 4; oy += (Math.random() - 0.5) * 4; }
+  if (u.recoilT > 0) oy += (u.side === 'player' ? 4 : -4) * (u.recoilT / 0.15);
+  if (u.spawnT > 0) oy += (u.side === 'player' ? 1 : -1) * u.spawnT * 120;
+  const alpha = !u.alive ? Math.max(0, u.deadT / 0.4) : 1;
+  cx.save();
+  cx.globalAlpha = alpha;
+  cx.translate(u.x + ox, u.y + oy);
+  // 占位舰体：圆角胶囊 + 泡舱（素材就位后换 drawImage）
+  const w = u.w, h = u.h;
+  cx.fillStyle = u.flashT > 0 ? '#FFFFFF' : u.color;
+  cx.beginPath();
+  cx.roundRect(-w / 2, -h / 2, w, h, w * 0.4);
+  cx.fill();
+  cx.lineWidth = 3;
+  cx.strokeStyle = 'rgba(30,32,40,.55)';
+  cx.stroke();
+  if (u.side === 'enemy') { // 星盗涂装块
+    cx.fillStyle = u.flashT > 0 ? '#FFFFFF' : ENEMY_DARK;
+    cx.beginPath();
+    cx.roundRect(-w / 2 + 4, -h / 2 + 4, w - 8, h * 0.4, w * 0.25);
+    cx.fill();
+  }
+  // 泡舱
+  cx.fillStyle = 'rgba(210,240,250,.85)';
+  cx.beginPath();
+  cx.arc(0, u.side === 'player' ? -h * 0.18 : h * 0.18, w * 0.26, 0, Math.PI * 2);
+  cx.fill();
+  cx.restore();
+  // 血条（细线化=对标验收尺：高≤单位高 8%）
+  if (u.alive) {
+    const bw = w * 1.05, bh = 4, bx = u.x - bw / 2, by = u.y - u.h / 2 - 10 + oy;
+    cx.fillStyle = 'rgba(20,22,30,.6)';
+    cx.fillRect(bx, by, bw, bh);
+    cx.fillStyle = u.side === 'player' ? '#5BE06B' : '#E5484D';
+    cx.fillRect(bx, by, bw * (u.hpPct / 100), bh);
+  }
+}
+
+function arcPos(c, k) {
+  const x0 = c.from.x * W, y0 = c.from.y * H, x1 = c.to.x * W, y1 = c.to.y * H;
+  const x = x0 + (x1 - x0) * k, y = y0 + (y1 - y0) * k;
+  const lift = (c.spec.arc || 0) * 120 * Math.sin(Math.PI * k);
+  return { x, y: y - lift };
+}
+
+function drawProj(p) {
+  const k = Math.min(1, p.age / p.c.flightSec);
+  const { x, y } = arcPos(p.c, k);
+  const s = p.c.spec.size, col = p.c.spec.color;
+  cx.save();
+  cx.translate(x, y);
+  const ang = Math.atan2((p.c.to.y - p.c.from.y), (p.c.to.x - p.c.from.x));
+  cx.rotate(ang + Math.PI / 2);
+  cx.fillStyle = col;
+  cx.shadowColor = col; cx.shadowBlur = 6;
+  switch (p.c.spec.shape) {
+    case 'bolt': cx.fillRect(-2 * s, -9 * s, 4 * s, 18 * s); break;
+    case 'shell': cx.beginPath(); cx.arc(0, 0, 7 * s, 0, Math.PI * 2); cx.fill(); break;
+    case 'ring': cx.lineWidth = 3 * s; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 9 * s, 0, Math.PI * 2); cx.stroke(); break;
+    case 'orb': cx.beginPath(); cx.arc(0, 0, 6 * s, 0, Math.PI * 2); cx.fill(); cx.strokeStyle = '#fff'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(0, 0, 8.5 * s, p.age * 12, p.age * 12 + 2); cx.stroke(); break;
+    case 'blade': cx.rotate(p.age * 20); cx.fillRect(-8 * s, -2.5 * s, 16 * s, 5 * s); cx.fillRect(-2.5 * s, -8 * s, 5 * s, 16 * s); break;
+    case 'bubble': cx.globalAlpha = 0.85; cx.beginPath(); cx.arc(0, 0, 7 * s, 0, Math.PI * 2); cx.fill(); cx.strokeStyle = '#fff'; cx.lineWidth = 1.5; cx.stroke(); break;
+    case 'beam': cx.fillRect(-1.5 * s, -14 * s, 3 * s, 28 * s); break;
+    case 'mist': cx.globalAlpha = 0.5; cx.beginPath(); cx.arc(0, 0, 10 * s, 0, Math.PI * 2); cx.fill(); break;
+  }
+  cx.restore();
+}
+
+function drawImpact(im) {
+  const k = im.age / im.life, inv = 1 - k;
+  cx.save();
+  cx.translate(im.x, im.y);
+  cx.globalAlpha = inv;
+  const col = im.color || '#FFD93D';
+  switch (im.kind) {
+    case 'muzzle': cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, 6 + k * 6, 0, Math.PI * 2); cx.fill(); break;
+    case 'burst_small': case 'burst_mid': case 'burst_big': {
+      const base = im.kind === 'burst_big' ? 30 : im.kind === 'burst_mid' ? 20 : 12;
+      cx.fillStyle = '#FFF3B0'; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.5 + k), 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.3 + k * 0.6), 0, Math.PI * 2); cx.fill();
+      break;
+    }
+    case 'ring_expand': cx.lineWidth = 4 * inv + 1; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 8 + k * 46 * im.size, 0, Math.PI * 2); cx.stroke(); break;
+    case 'bubble_pop': cx.globalAlpha = 0.7 * inv + 0.15; cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, 14 * im.size * (0.6 + k * 0.5), 0, Math.PI * 2); cx.fill(); cx.strokeStyle = '#fff'; cx.lineWidth = 2; cx.stroke(); break;
+    case 'cage_ring': cx.lineWidth = 3; cx.strokeStyle = col; const r = 16 * im.size; for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + k * 1.5; cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, 3, 0, Math.PI * 2); cx.stroke(); } cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke(); break;
+  }
+  cx.restore();
+}
+
+function frame(ts) {
+  const dt = Math.min(0.05, (ts - lastTs) / 1000) * speed;
+  lastTs = ts;
+  t += dt;
+  if (t > END_T) { restart(); requestAnimationFrame(frame); return; }
+
+  while (cmdIdx < CMDS.length && CMDS[cmdIdx].tSec <= t) { exec(CMDS[cmdIdx]); cmdIdx++; }
+
+  // ---- 背景层：薄荷底 + 顶部星空带 + 星点流 + 飘雪 ----
+  cx.fillStyle = '#8ED8CC';
+  cx.fillRect(0, 0, W, H);
+  const grad = cx.createLinearGradient(0, 0, 0, H * 0.16);
+  grad.addColorStop(0, '#232B4A'); grad.addColorStop(1, 'rgba(35,43,74,0)');
+  cx.fillStyle = grad; cx.fillRect(0, 0, W, H * 0.16);
+  cx.fillStyle = 'rgba(255,255,255,.5)';
+  for (const s of stars) { s.y += s.v * dt; if (s.y > H) { s.y = -2; s.x = Math.random() * W; } cx.fillRect(s.x, s.y, s.s, s.s * 2.2); }
+  cx.fillStyle = 'rgba(255,255,255,.75)';
+  for (const f of flakes) { f.y += f.v * dt; f.x += f.drift * dt * 6; if (f.y > H) { f.y = -3; f.x = Math.random() * W; } cx.beginPath(); cx.arc(f.x, f.y, f.s, 0, Math.PI * 2); cx.fill(); }
+
+  // ---- 单位层 ----
+  for (const u of Object.values(units)) {
+    u.flashT = Math.max(0, u.flashT - dt); u.shakeT = Math.max(0, u.shakeT - dt);
+    u.recoilT = Math.max(0, u.recoilT - dt); u.spawnT = Math.max(0, u.spawnT - dt);
+    if (!u.alive) u.deadT = Math.max(0, u.deadT - dt);
+    drawShip(u);
+  }
+
+  // ---- 特效层 ----
+  projs = projs.filter((p) => (p.age += dt) < p.c.flightSec + 0.02);
+  for (const p of projs) drawProj(p);
+  impacts = impacts.filter((im) => (im.age += dt) < im.life);
+  for (const im of impacts) drawImpact(im);
+  bursts = bursts.filter((b) => (b.age += dt) < b.life);
+  for (const b of bursts) { b.x += b.vx * dt; b.y += b.vy * dt; cx.globalAlpha = 1 - b.age / b.life; cx.fillStyle = b.color; cx.beginPath(); cx.arc(b.x, b.y, 3.4, 0, Math.PI * 2); cx.fill(); cx.globalAlpha = 1; }
+
+  // ---- UI 层（占位）：顶部倒计时 + 右下暂停 ----
+  cx.fillStyle = 'rgba(22,26,40,.8)';
+  cx.beginPath(); cx.roundRect(W / 2 - 36, 10, 72, 26, 8); cx.fill();
+  cx.fillStyle = '#EAF2FF'; cx.font = 'bold 15px monospace'; cx.textAlign = 'center';
+  const remain = Math.max(0, 120 - t);
+  cx.fillText(`${Math.floor(remain / 60)}:${String(Math.floor(remain % 60)).padStart(2, '0')}`, W / 2, 28);
+  cx.fillStyle = 'rgba(240,120,60,.92)';
+  cx.beginPath(); cx.arc(W - 32, H - 32, 17, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = '#fff'; cx.fillRect(W - 38, H - 40, 4.5, 16); cx.fillRect(W - 30, H - 40, 4.5, 16);
+
+  if (!usingTimer) requestAnimationFrame(frame);
+}
+// rAF 驱动为主；后台标签/嵌入式 WebView 下 rAF 可能挂起 → 800ms 未起步则切 setInterval 兜底。
+let usingTimer = false;
+requestAnimationFrame((ts) => { lastTs = ts; requestAnimationFrame(frame); });
+setTimeout(() => {
+  if (t === 0 && cmdIdx === 0) {
+    usingTimer = true;
+    lastTs = performance.now();
+    setInterval(() => frame(performance.now()), 33);
+  }
+}, 800);
+</script>
+</body>
+</html>
