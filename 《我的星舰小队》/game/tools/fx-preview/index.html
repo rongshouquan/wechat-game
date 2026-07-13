@@ -74,8 +74,8 @@ for (const u of DATA.roster) {
     color: isP ? (SHIP_COLOR[u.unitRef] || '#FFE066') : ENEMY_COLOR,
     w, h, sprite,
     hpPct: 100, alive: true, present: isP,
-    flashT: 0, shakeT: 0, recoilT: 0, spawnT: 0, deadT: 0,
-    phase: Math.random() * Math.PI * 2, // V0 悬浮相位错开
+    flashT: 0, shakeT: 0, recoilT: 0, spawnT: 0, deadT: 0, lungeT: 0,
+    phase: Math.random() * Math.PI * 2, // V0 悬浮/摇摆相位错开
   };
 }
 
@@ -101,7 +101,12 @@ function exec(c) {
   const u = units[c.unitId];
   switch (c.kind) {
     case 'spawn': if (u) { u.present = true; u.spawnT = 0.4; } break;
-    case 'muzzle': impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 }); break;
+    case 'muzzle': {
+      impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 });
+      const mu = units[c.unitId];
+      if (mu) mu.lungeT = 0.14; // 开火点头：向对面顶一下再回弹
+      break;
+    }
     case 'projectile': projs.push({ c, age: 0 }); break;
     case 'impact': {
       const dflt = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42 : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
@@ -132,22 +137,56 @@ function exec(c) {
 
 function drawShip(u) {
   if (!u.present || (!u.alive && u.deadT <= 0)) return;
-  let ox = 0, oy = Math.sin(t * 2 + u.phase) * 1.6; // V0 悬浮 ±3px（半尺寸 1.6）
+  const fwd = u.side === 'player' ? -1 : 1; // 机头方向（我方朝上=-y）
+  let ox = 0, oy = Math.sin(t * 2 + u.phase) * 1.9; // V0 悬浮
   if (u.shakeT > 0) { ox += (Math.random() - 0.5) * 4; oy += (Math.random() - 0.5) * 4; }
-  if (u.recoilT > 0) oy += (u.side === 'player' ? 4 : -4) * (u.recoilT / 0.15);
+  if (u.recoilT > 0) oy -= fwd * 4 * (u.recoilT / 0.15); // 技能后坐（向后）
+  if (u.lungeT > 0) { // 开火点头（向前顶 0.14s 内先冲后回）
+    const k = u.lungeT / 0.14;
+    oy += fwd * Math.sin(k * Math.PI) * 3.5;
+  }
   if (u.spawnT > 0) oy += (u.side === 'player' ? 1 : -1) * u.spawnT * 120;
   const alpha = !u.alive ? Math.max(0, u.deadT / 0.4) : 1;
   cx.save();
   cx.globalAlpha = alpha;
   cx.translate(u.x + ox, u.y + oy);
   const w = u.w, h = u.h;
-  // 脚下软影（省做法①程序化·接地感=治"贴纸感"）
+  // 脚下软影（影子不随机身摇摆·先画）
   cx.globalAlpha = alpha * 0.18;
   cx.fillStyle = '#1A2B33';
   cx.beginPath();
   cx.ellipse(0, h * 0.42, w * 0.34, h * 0.09, 0, 0, Math.PI * 2);
   cx.fill();
   cx.globalAlpha = alpha;
+  // 气流摇摆（±2.5°·相位错开）+ 呼吸微缩放——"活着"的主力
+  cx.rotate(Math.sin(t * 1.35 + u.phase) * 0.044);
+  cx.scale(1, 1 + Math.sin(t * 2.6 + u.phase) * 0.012);
+  // 引擎尾焰（省做法①程序化·总谱 V0 火苗摇曳）——纯净体素材的尾焰由引擎现场画
+  if (u.alive) {
+    const tailY = -fwd * h * 0.46; // 尾部（机头反方向）
+    const flick = 0.7 + 0.3 * Math.sin(t * 17 + u.phase * 3) + 0.15 * Math.sin(t * 31 + u.phase);
+    const fl = h * 0.16 * flick;
+    const fw2 = w * 0.1;
+    for (const [col, kk] of [['rgba(120,220,255,.55)', 1], ['rgba(255,255,255,.75)', 0.55]]) {
+      cx.fillStyle = col;
+      cx.beginPath();
+      cx.moveTo(-fw2 * kk, tailY);
+      cx.lineTo(fw2 * kk, tailY);
+      cx.lineTo(0, tailY - fwd * fl * kk); // 焰尖=尾部向外延伸（我方朝下/敌方朝上）
+      cx.closePath();
+      cx.fill();
+    }
+  }
+  // 灯点眨眼（省做法①·1-2 个小光点周期闪烁）
+  const blink = (Math.sin(t * 3.4 + u.phase * 2) + 1) / 2;
+  if (blink > 0.5 && u.alive) {
+    cx.globalAlpha = alpha * (blink - 0.5) * 1.6;
+    cx.fillStyle = '#FFF7C2';
+    cx.beginPath();
+    cx.arc(w * 0.22, -h * 0.05, 2.2, 0, Math.PI * 2);
+    cx.fill();
+    cx.globalAlpha = alpha;
+  }
   if (ok(u.sprite)) {
     // 素材版（组装 v0）：真 sprite；受击白闪用叠加高亮近似
     cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
@@ -327,6 +366,7 @@ function frame(ts) {
   for (const u of Object.values(units)) {
     u.flashT = Math.max(0, u.flashT - dt); u.shakeT = Math.max(0, u.shakeT - dt);
     u.recoilT = Math.max(0, u.recoilT - dt); u.spawnT = Math.max(0, u.spawnT - dt);
+    u.lungeT = Math.max(0, u.lungeT - dt);
     if (!u.alive) u.deadT = Math.max(0, u.deadT - dt);
     drawShip(u);
   }
