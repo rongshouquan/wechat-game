@@ -39,15 +39,38 @@ document.getElementById('meta').textContent =
 const SHIP_COLOR = { shp03: '#4FC3F7', shp06: '#3BA8A0', shp09: '#FF8A3D', shp13: '#F5A8C0', shp20: '#B05CE0' };
 const ENEMY_COLOR = '#C4453F', ENEMY_DARK = '#3A3437';
 
+// ---- 素材（组装 v0：就位即换皮，缺图自动回占位块）----
+const SPRITE_FILES = {
+  shp03: 'ship_fengshi', shp06: 'ship_tiebi', shp09: 'ship_lieyang', shp13: 'ship_chenxi', shp20: 'ship_suolian',
+  pirate_s: 'pirate_xiaobing', pirate_m: 'pirate_dafu', pirate_l: 'pirate_chuanzhang', bg: 'bg_mint_winter',
+};
+const IMGS = {};
+for (const [k, f] of Object.entries(SPRITE_FILES)) { const im = new Image(); im.src = `sprites/${f}.png`; IMGS[k] = im; }
+const ok = (im) => im && im.complete && im.naturalWidth > 0;
+
 // ---- 单位运行态 ----
-const units = {}; // unitId -> {x,y,side,color,w,h,hpPct,alive,present,flashT,shakeT,recoilT,spawnT,deadT,phase}
+const units = {}; // unitId -> {x,y,side,color,w,h,hpPct,alive,present,flashT,shakeT,recoilT,spawnT,deadT,phase,sprite}
+// 敌方尺寸阶（对标验收尺②）：同场敌按 maxHp 分层——最大=船长档(我方 200%+)，
+// ≥60% 分位=大副档(100%)，其余=小兵档(60%)。
+const enemyHps = DATA.roster.filter((u) => u.side === 'enemy').map((u) => u.maxHp);
+const maxEnemyHp = Math.max(...enemyHps, 1);
 for (const u of DATA.roster) {
   const lay = DATA.layout[u.unitId];
   const isP = u.side === 'player';
+  let sprite = null, w = 56, h = 64;
+  if (isP) {
+    sprite = IMGS[u.unitRef] || null;
+    w = 92; h = 92;
+  } else {
+    const ratio = u.maxHp / maxEnemyHp;
+    if (ratio >= 0.999) { sprite = IMGS.pirate_l; w = 150; h = 150; }
+    else if (ratio >= 0.35) { sprite = IMGS.pirate_m; w = 78; h = 78; }
+    else { sprite = IMGS.pirate_s; w = 54; h = 54; }
+  }
   units[u.unitId] = {
     x: lay.at.x * W, y: lay.at.y * H, side: u.side,
     color: isP ? (SHIP_COLOR[u.unitRef] || '#FFE066') : ENEMY_COLOR,
-    w: isP ? 56 : 44, h: isP ? 64 : 50,
+    w, h, sprite,
     hpPct: 100, alive: true, present: isP,
     flashT: 0, shakeT: 0, recoilT: 0, spawnT: 0, deadT: 0,
     phase: Math.random() * Math.PI * 2, // V0 悬浮相位错开
@@ -109,26 +132,36 @@ function drawShip(u) {
   cx.save();
   cx.globalAlpha = alpha;
   cx.translate(u.x + ox, u.y + oy);
-  // 占位舰体：圆角胶囊 + 泡舱（素材就位后换 drawImage）
   const w = u.w, h = u.h;
-  cx.fillStyle = u.flashT > 0 ? '#FFFFFF' : u.color;
-  cx.beginPath();
-  cx.roundRect(-w / 2, -h / 2, w, h, w * 0.4);
-  cx.fill();
-  cx.lineWidth = 3;
-  cx.strokeStyle = 'rgba(30,32,40,.55)';
-  cx.stroke();
-  if (u.side === 'enemy') { // 星盗涂装块
-    cx.fillStyle = u.flashT > 0 ? '#FFFFFF' : ENEMY_DARK;
+  if (ok(u.sprite)) {
+    // 素材版（组装 v0）：真 sprite；受击白闪用叠加高亮近似
+    cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
+    if (u.flashT > 0) {
+      cx.globalAlpha = alpha * 0.75;
+      cx.globalCompositeOperation = 'lighter';
+      cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
+      cx.globalCompositeOperation = 'source-over';
+    }
+  } else {
+    // 占位舰体：圆角胶囊 + 泡舱（素材缺位兜底）
+    cx.fillStyle = u.flashT > 0 ? '#FFFFFF' : u.color;
     cx.beginPath();
-    cx.roundRect(-w / 2 + 4, -h / 2 + 4, w - 8, h * 0.4, w * 0.25);
+    cx.roundRect(-w / 2, -h / 2, w, h, w * 0.4);
+    cx.fill();
+    cx.lineWidth = 3;
+    cx.strokeStyle = 'rgba(30,32,40,.55)';
+    cx.stroke();
+    if (u.side === 'enemy') {
+      cx.fillStyle = u.flashT > 0 ? '#FFFFFF' : ENEMY_DARK;
+      cx.beginPath();
+      cx.roundRect(-w / 2 + 4, -h / 2 + 4, w - 8, h * 0.4, w * 0.25);
+      cx.fill();
+    }
+    cx.fillStyle = 'rgba(210,240,250,.85)';
+    cx.beginPath();
+    cx.arc(0, u.side === 'player' ? -h * 0.18 : h * 0.18, w * 0.26, 0, Math.PI * 2);
     cx.fill();
   }
-  // 泡舱
-  cx.fillStyle = 'rgba(210,240,250,.85)';
-  cx.beginPath();
-  cx.arc(0, u.side === 'player' ? -h * 0.18 : h * 0.18, w * 0.26, 0, Math.PI * 2);
-  cx.fill();
   cx.restore();
   // 血条（细线化=对标验收尺：高≤单位高 8%）
   if (u.alive) {
@@ -150,7 +183,7 @@ function arcPos(c, k) {
 function drawProj(p) {
   const k = Math.min(1, p.age / p.c.flightSec);
   const { x, y } = arcPos(p.c, k);
-  const s = p.c.spec.size, col = p.c.spec.color;
+  const s = p.c.spec.size * 1.8, col = p.c.spec.color; // 1.8=半尺寸画布下的可读性倍率
   cx.save();
   cx.translate(x, y);
   const ang = Math.atan2((p.c.to.y - p.c.from.y), (p.c.to.x - p.c.from.x));
@@ -199,12 +232,16 @@ function frame(ts) {
 
   while (cmdIdx < CMDS.length && CMDS[cmdIdx].tSec <= t) { exec(CMDS[cmdIdx]); cmdIdx++; }
 
-  // ---- 背景层：薄荷底 + 顶部星空带 + 星点流 + 飘雪 ----
-  cx.fillStyle = '#8ED8CC';
-  cx.fillRect(0, 0, W, H);
-  const grad = cx.createLinearGradient(0, 0, 0, H * 0.16);
-  grad.addColorStop(0, '#232B4A'); grad.addColorStop(1, 'rgba(35,43,74,0)');
-  cx.fillStyle = grad; cx.fillRect(0, 0, W, H * 0.16);
+  // ---- 背景层：背景板素材（L67 定版）优先，缺位回程序底色 + 顶部星空带 ----
+  if (ok(IMGS.bg)) {
+    cx.drawImage(IMGS.bg, 0, 0, W, H);
+  } else {
+    cx.fillStyle = '#8ED8CC';
+    cx.fillRect(0, 0, W, H);
+    const grad = cx.createLinearGradient(0, 0, 0, H * 0.16);
+    grad.addColorStop(0, '#232B4A'); grad.addColorStop(1, 'rgba(35,43,74,0)');
+    cx.fillStyle = grad; cx.fillRect(0, 0, W, H * 0.16);
+  }
   cx.fillStyle = 'rgba(255,255,255,.5)';
   for (const s of stars) { s.y += s.v * dt; if (s.y > H) { s.y = -2; s.x = Math.random() * W; } cx.fillRect(s.x, s.y, s.s, s.s * 2.2); }
   cx.fillStyle = 'rgba(255,255,255,.75)';
