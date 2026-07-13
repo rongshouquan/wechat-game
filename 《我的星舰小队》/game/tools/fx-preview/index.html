@@ -83,13 +83,13 @@ const stars = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.
 const flakes = Array.from({ length: 26 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 1 + Math.random() * 2, v: 8 + Math.random() * 12, drift: Math.random() * 2 - 1 }));
 
 // ---- 演出运行池 ----
-let projs = [], impacts = [], bursts = [];
+let projs = [], impacts = [], bursts = [], banners = [];
 let t = 0, speed = 1, lastTs = 0, cmdIdx = 0;
 const CMDS = DATA.commands;
 const END_T = DATA.fxDurationSec + 1.5;
 
 function restart() {
-  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = [];
+  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = []; banners = [];
   for (const u of Object.values(units)) { u.hpPct = 100; u.alive = true; u.flashT = u.shakeT = u.recoilT = u.deadT = 0; }
   for (const ru of DATA.roster) units[ru.unitId].present = ru.side === 'player';
 }
@@ -102,8 +102,14 @@ function exec(c) {
     case 'muzzle': impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 }); break;
     case 'projectile': projs.push({ c, age: 0 }); break;
     case 'impact': {
-      const life = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42 : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
+      const dflt = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42 : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
+      const life = c.impact.durationSec || dflt; // 签名落点持续（牢笼 2s / 圣盾泡 2.5s）
       impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: c.impact.kind, size: c.impact.size, color: c.color, age: 0, life });
+      break;
+    }
+    case 'banner': {
+      if (banners.length >= 2) banners.shift(); // 总谱 V2：横幅同屏 ≤2
+      banners.push({ text: c.text, color: c.color, age: 0, life: 1.1 });
       break;
     }
     case 'unit_flash': if (u) u.flashT = 0.12; break;
@@ -133,6 +139,13 @@ function drawShip(u) {
   cx.globalAlpha = alpha;
   cx.translate(u.x + ox, u.y + oy);
   const w = u.w, h = u.h;
+  // 脚下软影（省做法①程序化·接地感=治"贴纸感"）
+  cx.globalAlpha = alpha * 0.18;
+  cx.fillStyle = '#1A2B33';
+  cx.beginPath();
+  cx.ellipse(0, h * 0.42, w * 0.34, h * 0.09, 0, 0, Math.PI * 2);
+  cx.fill();
+  cx.globalAlpha = alpha;
   if (ok(u.sprite)) {
     // 素材版（组装 v0）：真 sprite；受击白闪用叠加高亮近似
     cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
@@ -210,10 +223,14 @@ function drawProj(p) {
 }
 
 function drawImpact(im) {
-  const k = im.age / im.life, inv = 1 - k;
+  const k = im.age / im.life;
+  // 包络：入场 0.15s 淡入、退场最后 0.25s 淡出、中段全亮（长持续落点=牢笼/圣盾泡不再一路淡）
+  const fadeIn = Math.min(1, im.age / 0.15);
+  const fadeOut = Math.min(1, (im.life - im.age) / 0.25);
+  const env = Math.min(fadeIn, fadeOut);
   cx.save();
   cx.translate(im.x, im.y);
-  cx.globalAlpha = inv;
+  cx.globalAlpha = env;
   const col = im.color || '#FFD93D';
   switch (im.kind) {
     case 'muzzle': cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, 6 + k * 6, 0, Math.PI * 2); cx.fill(); break;
@@ -223,11 +240,56 @@ function drawImpact(im) {
       cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.3 + k * 0.6), 0, Math.PI * 2); cx.fill();
       break;
     }
-    case 'ring_expand': cx.lineWidth = 4 * inv + 1; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 8 + k * 46 * im.size, 0, Math.PI * 2); cx.stroke(); break;
-    case 'bubble_pop': cx.globalAlpha = 0.7 * inv + 0.15; cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, 14 * im.size * (0.6 + k * 0.5), 0, Math.PI * 2); cx.fill(); cx.strokeStyle = '#fff'; cx.lineWidth = 2; cx.stroke(); break;
-    case 'cage_ring': cx.lineWidth = 3; cx.strokeStyle = col; const r = 16 * im.size; for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + k * 1.5; cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, 3, 0, Math.PI * 2); cx.stroke(); } cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke(); break;
+    case 'ring_expand': cx.lineWidth = 4 * (1 - k) + 1; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 8 + k * 46 * im.size, 0, Math.PI * 2); cx.stroke(); break;
+    case 'bubble_pop': {
+      // 长持续=护罩呼吸；短持续=泡闪
+      const breathe = 1 + Math.sin(im.age * 5) * 0.06;
+      cx.globalAlpha = env * 0.55;
+      cx.fillStyle = col;
+      cx.beginPath(); cx.arc(0, 0, 15 * im.size * breathe, 0, Math.PI * 2); cx.fill();
+      cx.globalAlpha = env * 0.9;
+      cx.strokeStyle = '#fff'; cx.lineWidth = 2;
+      cx.beginPath(); cx.arc(0, 0, 15 * im.size * breathe, 0, Math.PI * 2); cx.stroke();
+      break;
+    }
+    case 'cage_ring': {
+      // 力场牢笼：持续旋转的珠链圈（罩住目标·看得见的 2 秒）
+      cx.lineWidth = 2.5; cx.strokeStyle = col;
+      const r = 17 * im.size;
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + im.age * 2.2;
+        cx.beginPath(); cx.arc(Math.cos(a) * r, Math.sin(a) * r, 3.2, 0, Math.PI * 2); cx.stroke();
+      }
+      cx.globalAlpha = env * 0.8;
+      cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke();
+      cx.globalAlpha = env * 0.25;
+      cx.fillStyle = col;
+      cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.fill();
+      break;
+    }
   }
   cx.restore();
+}
+
+function drawBanners(dt) {
+  banners = banners.filter((b) => (b.age += dt) < b.life);
+  banners.forEach((b, i) => {
+    const fadeIn = Math.min(1, b.age / 0.12);
+    const fadeOut = Math.min(1, (b.life - b.age) / 0.3);
+    const a = Math.min(fadeIn, fadeOut);
+    const y = 64 + i * 34;
+    cx.save();
+    cx.globalAlpha = a * 0.92;
+    cx.font = 'bold 16px "Microsoft YaHei", sans-serif';
+    const tw = cx.measureText(b.text).width;
+    cx.fillStyle = b.color;
+    cx.beginPath(); cx.roundRect(W / 2 - tw / 2 - 14, y - 13, tw + 28, 26, 13); cx.fill();
+    cx.strokeStyle = 'rgba(255,255,255,.8)'; cx.lineWidth = 1.5; cx.stroke();
+    cx.fillStyle = '#FFFFFF';
+    cx.textAlign = 'center';
+    cx.fillText(b.text, W / 2, y + 5.5);
+    cx.restore();
+  });
 }
 
 function frame(ts) {
@@ -268,6 +330,7 @@ function frame(ts) {
   for (const im of impacts) drawImpact(im);
   bursts = bursts.filter((b) => (b.age += dt) < b.life);
   for (const b of bursts) { b.x += b.vx * dt; b.y += b.vy * dt; cx.globalAlpha = 1 - b.age / b.life; cx.fillStyle = b.color; cx.beginPath(); cx.arc(b.x, b.y, 3.4, 0, Math.PI * 2); cx.fill(); cx.globalAlpha = 1; }
+  drawBanners(dt);
 
   // ---- UI 层（占位）：顶部倒计时 + 右下暂停 ----
   cx.fillStyle = 'rgba(22,26,40,.8)';

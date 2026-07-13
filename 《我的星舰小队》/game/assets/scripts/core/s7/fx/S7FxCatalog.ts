@@ -44,10 +44,13 @@ export interface S7FxProjectileSpec {
 /** 一条签名演出（弹体可为 null=原地效果，如环自心扩散）。 */
 export interface S7FxSignature {
   projectile: S7FxProjectileSpec | null;
-  /** color：原地效果（无弹体）时的落点用色；有弹体时可省=跟弹色。 */
-  impact: { kind: S7FxImpactKind; size: number; color?: string };
+  /** color：原地效果（无弹体）时的落点用色；durationSec：落点行为持续秒
+   *  （Ron 07-13 反馈④：牢笼/盾泡要罩得住看得见——缺省由渲染壳按 kind 取短默认）。 */
+  impact: { kind: S7FxImpactKind; size: number; color?: string; durationSec?: number };
   /** 响度档：1=普攻 V1、2=技能 V2（V3 星核质变不在本表）。 */
   vLevel: 1 | 2;
+  /** 技能名（仅 V2 有意义·横幅用·取自星舰真源技能名）。 */
+  name?: string;
 }
 
 /** 查表输入（由调用方解出，本层不读配置）。 */
@@ -109,23 +112,23 @@ function proj(p: Partial<S7FxProjectileSpec> & { shape: S7FxShape; color: string
 const SHIP_SIGNS: Record<string, { normal: S7FxSignature; ultimate: S7FxSignature }> = {
   shp03: {
     normal: sig(proj({ shape: 'bolt', color: '#4FC3F7', count: 3, intervalSec: 0.1, flightSec: 0.18, size: 0.7 }), 'burst_small', 0.7, 1),
-    ultimate: sig(proj({ shape: 'blade', color: '#4FC3F7', count: 2, intervalSec: 0.12, flightSec: 0.3, size: 1.1, arc: 0.25 }), 'burst_mid', 1, 2),
+    ultimate: { ...sig(proj({ shape: 'blade', color: '#4FC3F7', count: 2, intervalSec: 0.12, flightSec: 0.32, size: 1.6, arc: 0.25 }), 'burst_mid', 1.3, 2), name: '分镖' },
   },
   shp06: {
     normal: sig(proj({ shape: 'ring', color: '#3BA8A0', flightSec: 0.35, size: 1.1 }), 'ring_expand', 1, 1),
-    ultimate: sig(null, 'ring_expand', 1.8, 2, '#3BA8A0'), // 怒吼：自心钢青声波环，无飞行弹体
+    ultimate: { ...sig(null, 'ring_expand', 2.2, 2, '#3BA8A0'), name: '怒吼', impact: { kind: 'ring_expand', size: 2.2, color: '#3BA8A0', durationSec: 0.9 } }, // 自心钢青声波大环
   },
   shp09: {
     normal: sig(proj({ shape: 'shell', color: '#FF8A3D', flightSec: 0.4, size: 1.5 }), 'burst_mid', 1.3, 1),
-    ultimate: sig(proj({ shape: 'shell', color: '#FF8A3D', flightSec: 0.4, size: 2.2, arc: 1 }), 'burst_big', 2, 2),
+    ultimate: { ...sig(proj({ shape: 'shell', color: '#FF8A3D', flightSec: 0.55, size: 2.8, arc: 1 }), 'burst_big', 2.4, 2), name: '过载轰击' },
   },
   shp13: {
     normal: sig(proj({ shape: 'bubble', color: COLOR_SHIELD, flightSec: 0.35, size: 1 }), 'bubble_pop', 1, 1),
-    ultimate: sig(null, 'bubble_pop', 1.4, 2, COLOR_SHIELD), // 圣盾：全队原地功能蓝亮泡（渲染壳按目标逐个罩）
+    ultimate: { ...sig(null, 'bubble_pop', 1.6, 2, COLOR_SHIELD), name: '圣盾', impact: { kind: 'bubble_pop', size: 1.6, color: COLOR_SHIELD, durationSec: 2.5 } }, // 全队罩泡·罩得住看得见
   },
   shp20: {
     normal: sig(proj({ shape: 'orb', color: '#9C6BD4', flightSec: 0.38, size: 0.9 }), 'burst_small', 0.8, 1),
-    ultimate: sig(proj({ shape: 'ring', color: '#B96BE0', flightSec: 0.35, size: 1.4 }), 'cage_ring', 1.6, 2),
+    ultimate: { ...sig(proj({ shape: 'ring', color: '#B96BE0', flightSec: 0.4, size: 1.8 }), 'cage_ring', 2, 2), name: '力场牢笼', impact: { kind: 'cage_ring', size: 2, color: '#B96BE0', durationSec: 2 } }, // 牢笼罩 2 秒
   },
 };
 

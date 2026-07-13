@@ -34,7 +34,8 @@ export type S7FxCommand =
       flightSec: number;
       vLevel: 1 | 2;
     }
-  | { tSec: number; kind: 'impact'; at: S7FxPoint; impact: { kind: S7FxImpactKind; size: number }; color: string; vLevel: 1 | 2 }
+  | { tSec: number; kind: 'impact'; at: S7FxPoint; impact: { kind: S7FxImpactKind; size: number; durationSec?: number }; color: string; vLevel: 1 | 2 }
+  | { tSec: number; kind: 'banner'; unitId: string; text: string; color: string }
   | { tSec: number; kind: 'unit_flash'; unitId: string; crit: boolean }
   | { tSec: number; kind: 'unit_shake'; unitId: string }
   | { tSec: number; kind: 'hp_change'; unitId: string; hpPct: number }
@@ -54,12 +55,28 @@ export type S7FxRefResolver = (unitStatRef: string) => { unitRef: string; roleTa
 
 const EMPTY_REF: { unitRef: string; roleTag: string } = { unitRef: '', roleTag: '' };
 
-/** 敌上我下版位（拍板定死）：敌 y 0.12-0.42 / 我 y 0.62-0.90。 */
-const ENEMY_Y_TOP = 0.12;
-const ENEMY_Y_BOTTOM = 0.42;
+/** 敌上我下版位（拍板定死）+ 对峙带（Ron 07-13 反馈②：敌我中间必须隔开距离）：
+ *  敌 y 0.10-0.34 / 对峙带 0.34-0.62（全空）/ 我 y 0.62-0.86。 */
+const ENEMY_Y_TOP = 0.1;
+const ENEMY_Y_BOTTOM = 0.34;
 const PLAYER_Y_TOP = 0.62;
-const PLAYER_Y_BOTTOM = 0.9;
-const X_MARGIN = 0.1;
+const PLAYER_Y_BOTTOM = 0.86;
+const X_MARGIN = 0.12;
+
+/** 自然队形抖动（Ron 07-13 反馈②：有队列感但不死板）：按 unitId 确定性哈希
+ *  给格位加 ±JITTER 的错落偏移——同一场战斗永远同一队形（可复现），
+ *  骨架仍是阵列、观感自然随意。 */
+const JITTER_X = 0.022;
+const JITTER_Y = 0.018;
+
+function hash01(s: string, salt: number): number {
+  let h = 2166136261 ^ salt;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 1000) / 1000;
+}
 
 /** 命中侧视觉相对弹体到达的微错峰（死亡星爆再晚一拍）。 */
 const DEATH_LAG_SEC = 0.05;
@@ -80,16 +97,27 @@ function extents(roster: S7PlaybackUnit[], side: string): GridExtent {
   return { maxRow, maxCol };
 }
 
-function place(u: S7PlaybackUnit, ext: GridExtent): S7FxPoint {
+function place(u: S7PlaybackUnit, ext: GridExtent, isBoss: boolean): S7FxPoint {
   const cols = ext.maxCol + 1;
   const rows = ext.maxRow + 1;
-  const x = cols <= 1 ? 0.5 : X_MARGIN + (u.col / (cols - 1)) * (1 - 2 * X_MARGIN);
+  let x = cols <= 1 ? 0.5 : X_MARGIN + (u.col / (cols - 1)) * (1 - 2 * X_MARGIN);
   let y: number;
   if (u.side === 'player') {
     y = rows <= 1 ? (PLAYER_Y_TOP + PLAYER_Y_BOTTOM) / 2 : PLAYER_Y_TOP + (u.row / (rows - 1)) * (PLAYER_Y_BOTTOM - PLAYER_Y_TOP);
+  } else if (isBoss) {
+    // Boss 坐镇敌阵后中（Ron 07-13 反馈②：不贴近我方）。
+    x = 0.5;
+    y = ENEMY_Y_TOP + 0.03;
   } else {
     // 敌 row0 靠近中线（前排），row 越大越靠上——渲染直觉：前排在下。
     y = rows <= 1 ? (ENEMY_Y_TOP + ENEMY_Y_BOTTOM) / 2 : ENEMY_Y_BOTTOM - (u.row / (rows - 1)) * (ENEMY_Y_BOTTOM - ENEMY_Y_TOP);
+    // 雁形微弯：越靠两翼越向后收一点（队列感·非棋盘）。
+    y -= Math.abs(x - 0.5) * 0.06;
+  }
+  // 自然错落（Boss 不抖）。
+  if (!isBoss) {
+    x += (hash01(u.unitId, 7) - 0.5) * 2 * JITTER_X;
+    y += (hash01(u.unitId, 13) - 0.5) * 2 * JITTER_Y;
   }
   return { x, y };
 }
@@ -105,10 +133,19 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
 
   const playerExt = extents(playback.roster, 'player');
   const enemyExt = extents(playback.roster, 'enemy');
+  // Boss 判定=敌方 maxHp 最大者（与渲染壳尺寸阶同口径）。
+  let bossId = '';
+  let bossHp = -1;
+  for (const u of playback.roster) {
+    if (u.side === 'enemy' && u.maxHp > bossHp) {
+      bossHp = u.maxHp;
+      bossId = u.unitId;
+    }
+  }
   const posOf = (unitId: string): S7FxPoint => {
     const u = byId.get(unitId);
     if (!u) return { x: 0.5, y: 0.5 };
-    return place(u, u.side === 'player' ? playerExt : enemyExt);
+    return place(u, u.side === 'player' ? playerExt : enemyExt, u.unitId === bossId);
   };
 
   const layout: Record<string, { at: S7FxPoint; side: string }> = {};
@@ -138,7 +175,19 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
       });
       const from = posOf(atk.actorId);
 
-      if (atk.isUltimate) cmds.push({ tSec: t, kind: 'recoil', unitId: atk.actorId });
+      if (atk.isUltimate) {
+        cmds.push({ tSec: t, kind: 'recoil', unitId: atk.actorId });
+        // V2 技能名横幅（总谱 §1 V2：舰色底白字·渲染壳限同屏 ≤2）。
+        if (sign.name) {
+          cmds.push({
+            tSec: t,
+            kind: 'banner',
+            unitId: atk.actorId,
+            text: sign.name,
+            color: sign.projectile?.color ?? sign.impact.color ?? '#FFFFFF',
+          });
+        }
+      }
 
       if (!sign.projectile) {
         // 原地效果（怒吼环/圣盾泡）：每个目标当拍出 impact。
