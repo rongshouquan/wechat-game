@@ -188,8 +188,14 @@ function drawProj(p) {
   cx.translate(x, y);
   const ang = Math.atan2((p.c.to.y - p.c.from.y), (p.c.to.x - p.c.from.x));
   cx.rotate(ang + Math.PI / 2);
+  // 发光感=外圈半透明同色圆（省做法①程序化·总谱§7 禁 shadowBlur 高开销项）
+  cx.globalAlpha = 0.28;
   cx.fillStyle = col;
-  cx.shadowColor = col; cx.shadowBlur = 6;
+  cx.beginPath();
+  cx.arc(0, 0, 11 * s, 0, Math.PI * 2);
+  cx.fill();
+  cx.globalAlpha = 1;
+  cx.fillStyle = col;
   switch (p.c.spec.shape) {
     case 'bolt': cx.fillRect(-2 * s, -9 * s, 4 * s, 18 * s); break;
     case 'shell': cx.beginPath(); cx.arc(0, 0, 7 * s, 0, Math.PI * 2); cx.fill(); break;
