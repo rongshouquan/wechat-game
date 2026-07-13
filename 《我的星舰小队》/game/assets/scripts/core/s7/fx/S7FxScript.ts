@@ -35,7 +35,6 @@ export type S7FxCommand =
       vLevel: 1 | 2;
     }
   | { tSec: number; kind: 'impact'; at: S7FxPoint; impact: { kind: S7FxImpactKind; size: number; durationSec?: number }; color: string; vLevel: 1 | 2 }
-  | { tSec: number; kind: 'banner'; unitId: string; text: string; color: string }
   | { tSec: number; kind: 'unit_flash'; unitId: string; crit: boolean }
   | { tSec: number; kind: 'unit_shake'; unitId: string }
   | { tSec: number; kind: 'hp_change'; unitId: string; hpPct: number }
@@ -55,11 +54,11 @@ export type S7FxRefResolver = (unitStatRef: string) => { unitRef: string; roleTa
 
 const EMPTY_REF: { unitRef: string; roleTag: string } = { unitRef: '', roleTag: '' };
 
-/** 敌上我下版位（拍板定死）+ 对峙带（Ron 07-13 反馈②：敌我中间必须隔开距离）：
- *  敌 y 0.10-0.34 / 对峙带 0.34-0.62（全空）/ 我 y 0.62-0.86。 */
-const ENEMY_Y_TOP = 0.1;
-const ENEMY_Y_BOTTOM = 0.34;
-const PLAYER_Y_TOP = 0.62;
+/** 敌上我下版位（拍板定死）+ 对峙带（Ron 07-13 二调：敌人下移别太远·带宽收窄仍清晰）：
+ *  敌 y 0.14-0.42 / 对峙带 0.42-0.60（全空）/ 我 y 0.60-0.86。 */
+const ENEMY_Y_TOP = 0.14;
+const ENEMY_Y_BOTTOM = 0.42;
+const PLAYER_Y_TOP = 0.6;
 const PLAYER_Y_BOTTOM = 0.86;
 const X_MARGIN = 0.12;
 
@@ -176,16 +175,12 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
       const from = posOf(atk.actorId);
 
       if (atk.isUltimate) {
+        // recoil=V2 施法标记：渲染壳据此做后坐+施法视觉强调（舰身泛光+舰色光环
+        // 自身扩散·2026-07-13 Ron 拍撤文字横幅，技能辨识改纯视觉）。
         cmds.push({ tSec: t, kind: 'recoil', unitId: atk.actorId });
-        // V2 技能名横幅（总谱 §1 V2：舰色底白字·渲染壳限同屏 ≤2）。
-        if (sign.name) {
-          cmds.push({
-            tSec: t,
-            kind: 'banner',
-            unitId: atk.actorId,
-            text: sign.name,
-            color: sign.projectile?.color ?? sign.impact.color ?? '#FFFFFF',
-          });
+        const castColor = sign.projectile?.color ?? sign.impact.color;
+        if (castColor) {
+          cmds.push({ tSec: t, kind: 'impact', at: from, impact: { kind: 'ring_expand', size: 1.3 }, color: castColor, vLevel: 2 });
         }
       }
 
