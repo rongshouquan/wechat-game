@@ -122,17 +122,19 @@ function layoutEnemies(roster: S7PlaybackUnit[], bossId: string): Map<string, S7
   const frontN = Math.round(n * 0.4);
   const midN = Math.round(n * 0.35);
   const rows = [others.slice(0, frontN), others.slice(frontN, frontN + midN), others.slice(frontN + midN)];
-  const rowY = [0.38, 0.29, 0.2];
-  const SPACING = 0.125;
+  // 同类竖屏上下对阵（疯狂骑士团/咸鱼之王型）通用规律：排距舒展、间距均匀、
+  // 与我方梯形镜像呼应——比"兵海团块"松、比均摊满区紧。
+  const rowY = [0.37, 0.28, 0.19];
+  const SPACING = 0.165;
   rows.forEach((rowUnits, ri) => {
     const m = rowUnits.length;
     rowUnits.forEach((u, i) => {
       let x: number;
       if (ri === 1) {
-        // 中排：Boss 占中心（体宽约 0.16 屏），小怪从 ±0.19 起左右交替向外不压 Boss。
+        // 中排：Boss 占中心（体宽约 0.16 屏），小怪从 ±0.21 起左右交替向外不压 Boss。
         const side = i % 2 === 0 ? 1 : -1;
         const step = Math.floor(i / 2);
-        x = 0.5 + side * (0.19 + step * SPACING);
+        x = 0.5 + side * (0.21 + step * SPACING);
       } else {
         // 前/后排：以中轴聚拢，排间错半位。
         const offset = ri === 0 ? 0 : SPACING / 2;

@@ -132,7 +132,7 @@ describe('S7FxScript 指令流', () => {
     const tl = buildS7FxScript(pb);
     const boss = tl.layout['BOSS'].at;
     expect(boss.x).toBeCloseTo(0.5, 5);
-    expect(boss.y).toBeCloseTo(0.29, 5);
+    expect(boss.y).toBeCloseTo(0.28, 5); // =rowY[1] 中排（07-13 舒展版 0.29→0.28，随排距表调）
     const ys = Array.from({ length: 7 }, (_, i) => tl.layout[`M${i}`].at.y);
     const front = ys.filter((y) => y > 0.34);
     const mid = ys.filter((y) => y > 0.245 && y <= 0.34);
