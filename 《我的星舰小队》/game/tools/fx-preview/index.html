@@ -51,6 +51,24 @@ const IMGS = {};
 for (const [k, f] of Object.entries(SPRITE_FILES)) { const im = new Image(); im.src = `sprites/${f}.png`; IMGS[k] = im; }
 const ok = (im) => im && im.complete && im.naturalWidth > 0;
 
+// ---- 弹药特效图集（L69·黑底发光体·lighter 加法混合=黑自动透明）----
+// 映射键=弹形+色系近似；baseAngle=图内弹头朝向（径向对称件为 0）
+const VFX_FILES = { bolt_cyan: Math.PI, shell_orange: 0, ring_teal: 0, orb_purple: 0, bubble_blue: 0, bolt_red: Math.PI, blade_cyan: 0, explosion: 0, heal_orb: 0 };
+const VFX = {};
+for (const [k, ang] of Object.entries(VFX_FILES)) { const im = new Image(); im.src = `sprites/vfx/${k}.png`; VFX[k] = { im, baseAngle: ang }; }
+function vfxForProjectile(spec) {
+  if (spec.color === '#7ED957') return VFX.heal_orb; // 功能绿=治疗
+  switch (spec.shape) {
+    case 'bolt': return spec.color === '#D94A4A' ? VFX.bolt_red : VFX.bolt_cyan;
+    case 'shell': return VFX.shell_orange;
+    case 'ring': return VFX.ring_teal;
+    case 'orb': return VFX.orb_purple;
+    case 'bubble': return VFX.bubble_blue;
+    case 'blade': return VFX.blade_cyan;
+    default: return null;
+  }
+}
+
 // ---- 单位运行态 ----
 const units = {}; // unitId -> {x,y,side,color,w,h,hpPct,alive,present,flashT,shakeT,recoilT,spawnT,deadT,phase,sprite}
 // 敌方尺寸阶（对标验收尺②）：同场敌按 maxHp 分层——最大=船长档(我方 200%+)，
@@ -277,6 +295,11 @@ function drawShip(u) {
   }
 }
 
+function hash01seed(v) {
+  const x = Math.sin(v * 12.9898) * 43758.5453;
+  return (x - Math.floor(x)) * Math.PI * 2;
+}
+
 function arcPos(c, k) {
   const x0 = c.from.x * W, y0 = c.from.y * H, x1 = c.to.x * W, y1 = c.to.y * H;
   const x = x0 + (x1 - x0) * k, y = y0 + (y1 - y0) * k;
@@ -288,6 +311,19 @@ function drawProj(p) {
   const k = Math.min(1, p.age / p.c.flightSec);
   const { x, y } = arcPos(p.c, k);
   const s = p.c.spec.size * 1.8, col = p.c.spec.color; // 1.8=半尺寸画布下的可读性倍率
+  // 特效图集版（L69）：黑底发光体 lighter 叠加；缺图回程序几何形
+  const vfx = vfxForProjectile(p.c.spec);
+  if (vfx && ok(vfx.im)) {
+    const ang2 = Math.atan2(p.c.to.y - p.c.from.y, p.c.to.x - p.c.from.x) + Math.PI / 2;
+    const size = 30 * s * (p.c.spec.shape === 'blade' ? 1.2 : 1);
+    cx.save();
+    cx.translate(x, y);
+    cx.rotate(ang2 - vfx.baseAngle + (p.c.spec.shape === 'blade' ? p.age * 14 : 0));
+    cx.globalCompositeOperation = 'lighter';
+    cx.drawImage(vfx.im, -size / 2, -size / 2, size, size);
+    cx.restore();
+    return;
+  }
   cx.save();
   cx.translate(x, y);
   const ang = Math.atan2((p.c.to.y - p.c.from.y), (p.c.to.x - p.c.from.x));
@@ -327,8 +363,17 @@ function drawImpact(im) {
     case 'muzzle': cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, 6 + k * 6, 0, Math.PI * 2); cx.fill(); break;
     case 'burst_small': case 'burst_mid': case 'burst_big': {
       const base = im.kind === 'burst_big' ? 30 : im.kind === 'burst_mid' ? 20 : 12;
-      cx.fillStyle = '#FFF3B0'; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.5 + k), 0, Math.PI * 2); cx.fill();
-      cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.3 + k * 0.6), 0, Math.PI * 2); cx.fill();
+      if (ok(VFX.explosion.im)) {
+        // 特效图集版：爆炸闪光图 lighter 叠加，尺寸随档位+膨胀曲线
+        const sz = base * 2.6 * im.size * (0.55 + k * 0.7);
+        cx.globalCompositeOperation = 'lighter';
+        cx.rotate(hash01seed(im.x + im.y)); // 每个爆点固定随机转角防复制感
+        cx.drawImage(VFX.explosion.im, -sz / 2, -sz / 2, sz, sz);
+        cx.globalCompositeOperation = 'source-over';
+      } else {
+        cx.fillStyle = '#FFF3B0'; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.5 + k), 0, Math.PI * 2); cx.fill();
+        cx.fillStyle = col; cx.beginPath(); cx.arc(0, 0, base * im.size * (0.3 + k * 0.6), 0, Math.PI * 2); cx.fill();
+      }
       break;
     }
     case 'ring_expand': cx.lineWidth = 4 * (1 - k) + 1; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 8 + k * 46 * im.size, 0, Math.PI * 2); cx.stroke(); break;
@@ -364,7 +409,11 @@ function drawImpact(im) {
 
 
 function frame(ts) {
-  const dt = Math.min(0.05, (ts - lastTs) / 1000) * speed;
+  // 每帧自愈：强制回到基准画布状态（防 save/restore 泄漏级联死屏——07-14 实案）
+  cx.resetTransform();
+  cx.globalAlpha = 1;
+  cx.globalCompositeOperation = 'source-over';
+  const dt = Math.max(0, Math.min(0.05, (ts - lastTs) / 1000)) * speed; // dt 钳非负：防真假时钟混用倒流
   lastTs = ts;
   t += dt;
   if (t > END_T) { restart(); requestAnimationFrame(frame); return; }
