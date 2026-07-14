@@ -196,6 +196,9 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
 
   const cmds: S7FxCommand[] = [];
   let maxT = playback.durationSec;
+  // 治疗差分基线（帧快照上一次血量·初值=满血）
+  const lastHp = new Map<string, number>();
+  for (const u of playback.roster) lastHp.set(u.unitId, u.maxHp);
 
   for (const frame of playback.frames) {
     const t = frame.timeSec;
@@ -283,6 +286,17 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
       cmds.push({ tSec: frameArrival, kind: 'unit_flash', unitId: hit.targetId, crit: hit.crit });
       cmds.push({ tSec: frameArrival, kind: 'unit_shake', unitId: hit.targetId });
       cmds.push({ tSec: frameArrival, kind: 'hp_change', unitId: hit.targetId, hpPct: pctOf(hit.hpAfter, byId.get(hit.targetId)), delta: -hit.amount, crit: hit.crit });
+    }
+    // 治疗侧（总谱 §3.3：不做治疗数字——泛绿柔光+血条"看得见地回涨"）：伤害走 hits，
+    // 血量回升只能从帧快照差分（heal/regen 日志不产 hit）；delta>0 = 渲染层泛绿+慢涨条。
+    for (const u of playback.roster) {
+      const snap = frame.units[u.unitId];
+      if (!snap) continue;
+      const prev = lastHp.get(u.unitId) ?? u.maxHp;
+      if (snap.hp > prev && snap.alive) {
+        cmds.push({ tSec: frameArrival, kind: 'hp_change', unitId: u.unitId, hpPct: snap.hpPct, delta: snap.hp - prev });
+      }
+      lastHp.set(u.unitId, snap.hp);
     }
     for (const dead of frame.deaths) {
       const dt = frameArrival + DEATH_LAG_SEC;

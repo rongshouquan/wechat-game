@@ -145,3 +145,86 @@ describe('S7FxPlayModel 播放态', () => {
     expect(m.t).toBeLessThanOrEqual(0.05 + 1e-9);
   });
 });
+
+describe('S7FxPlayModel 磨精件（星流曲线/推镜/顿帧/治疗/收尾）', () => {
+  it('治疗差分：快照血量回升 → hp_change 正 delta → 泛绿计时器亮、不出伤害数字', () => {
+    const pb = miniPlayback();
+    // A 在 t=2 帧快照血量从 700 回到 700（无变化）→ 改造：t=1 A 掉到 500，t=2 回到 650
+    pb.frames[1].hits.push({ targetId: 'A', amount: 200, crit: false, hpAfter: 500 } as never);
+    pb.frames[1].units = { A: { hp: 500, hpPct: 71, alive: true, present: true } } as never;
+    pb.frames[2].units = { A: { hp: 650, hpPct: 93, alive: true, present: true } } as never;
+    const tl = buildS7FxScript(pb, RESOLVE);
+    const healCmd = tl.commands.find((c) => c.kind === 'hp_change' && (c.delta ?? 0) > 0);
+    expect(healCmd).toBeTruthy();
+    const roster: S7FxRosterEntry[] = pb.roster.map((u) => {
+      const r = RESOLVE(u.unitStatRef);
+      return { unitId: u.unitId, side: u.side, unitRef: r.unitRef, roleTag: r.roleTag, maxHp: u.maxHp };
+    });
+    const m = new S7FxPlayModel(tl, roster, 'player');
+    stepTo(m, 2.1); // 辉光 0.35s——在其存续期内踩点
+    expect(m.units.A.healGlowT).toBeGreaterThan(0);
+    expect(m.pops.filter((p) => p.txt.indexOf('+') >= 0).length).toBe(0); // 治疗不出数字（总谱 §3.3）
+  });
+
+  it('末杀顿帧：敌方全灭瞬间 freezeT 点亮、战斗时钟急停 0.22s', () => {
+    const pb = miniPlayback();
+    pb.frames[2].deaths = ['E1', 'E2'];
+    const tl = buildS7FxScript(pb, RESOLVE);
+    const roster: S7FxRosterEntry[] = pb.roster.map((u) => {
+      const r = RESOLVE(u.unitStatRef);
+      return { unitId: u.unitId, side: u.side, unitRef: r.unitRef, roleTag: r.roleTag, maxHp: u.maxHp };
+    });
+    const m = new S7FxPlayModel(tl, roster, 'player');
+    while (m.freezeT <= 0 && m.t < 2.5) m.step(0.02); // 步到顿帧点亮那一拍
+    expect(m.freezeT).toBeGreaterThan(0);
+    const tAt = m.t;
+    m.step(0.05); m.step(0.05); // 顿帧期内推进
+    expect(m.t).toBe(tAt); // 时钟没走
+    expect(m.starSpeedK()).toBeLessThan(0.1); // 急刹
+    for (let i = 0; i < 6; i += 1) m.step(0.05); // 顿帧耗尽后恢复
+    expect(m.t).toBeGreaterThan(tAt);
+  });
+
+  it('星流曲线：入场快掠→巡航→V3 拉线脉冲→胜局收尾加速', () => {
+    const m = makeModel();
+    expect(m.starSpeedK()).toBeGreaterThan(2); // t<0.5 入场快掠
+    stepTo(m, 0.8);
+    expect(m.starSpeedK()).toBe(1); // 巡航
+    m.starPulseT = 0.2;
+    expect(m.starSpeedK()).toBeGreaterThan(4); // 曲速脉冲
+    expect(m.starStreakK()).toBeGreaterThan(0);
+    m.starPulseT = 0;
+    m.skipToEnd();
+    // makeModel 未传 winner（''）→ 收尾按败局慢漂；带 winner 的加速在收尾测覆盖
+    expect(m.starSpeedK()).toBeLessThan(1);
+  });
+
+  it('Boss 登场推镜：Boss spawn 点亮 1s 推镜、峰值 ≤1.06、结束回 1', () => {
+    const m = makeModel();
+    m.step(0.02); // t=0 帧 spawn（E2=Boss）
+    expect(m.bossZoomT).toBeGreaterThan(0);
+    let peak = 1;
+    for (let i = 0; i < 60; i += 1) { m.step(0.02); peak = Math.max(peak, m.zoomScale()); }
+    expect(peak).toBeGreaterThan(1.03);
+    expect(peak).toBeLessThanOrEqual(1.06 + 1e-9);
+    for (let i = 0; i < 30; i += 1) m.step(0.05);
+    expect(m.zoomScale()).toBe(1);
+  });
+
+  it('胜局收尾：finished 后我方向上冲出（负位移）、敌方不动、0.9s 后 outroDone', () => {
+    const pb = miniPlayback();
+    const tl = buildS7FxScript(pb, RESOLVE);
+    const roster: S7FxRosterEntry[] = pb.roster.map((u) => {
+      const r = RESOLVE(u.unitStatRef);
+      return { unitId: u.unitId, side: u.side, unitRef: r.unitRef, roleTag: r.roleTag, maxHp: u.maxHp };
+    });
+    const m = new S7FxPlayModel(tl, roster, 'player');
+    while (!m.finished) m.step(0.05);
+    expect(m.outroDone()).toBe(false);
+    for (let i = 0; i < 12; i += 1) m.step(0.05);
+    expect(m.outroOffsetY(m.units.A)).toBeLessThan(0); // 我方向上（参考系 y 向下=负）
+    expect(m.outroOffsetY(m.units.E2)).toBe(0); // 敌方不动（胜局）
+    for (let i = 0; i < 8; i += 1) m.step(0.05);
+    expect(m.outroDone()).toBe(true);
+  });
+});

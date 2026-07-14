@@ -153,6 +153,7 @@ export class S7BattleFxLayer extends Component {
   private popPool: Node[] = [];
   private clouds: Array<{ x: number; y: number; s: number; v: number }> = [];
   private stars: Array<{ x: number; y: number; s: number; v: number }> = [];
+  private shownHp: Record<string, number> = {}; // 血条显示值（非对称平滑·回涨看得见）
   private rand = (() => { let s = 0xC0C05 >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; })();
 
   /** 开演。resolveRef=unitStatRef→{unitRef,roleTag}（Demo 侧从 runtime 表拼）。 */
@@ -162,7 +163,7 @@ export class S7BattleFxLayer extends Component {
       const r = resolveRef(u.unitStatRef);
       return { unitId: u.unitId, side: u.side, unitRef: r.unitRef, roleTag: r.roleTag, maxHp: u.maxHp };
     });
-    this.model = new S7FxPlayModel(timeline, roster);
+    this.model = new S7FxPlayModel(timeline, roster, pb.winner);
     this.speed = opts?.speed ?? 1;
     this.onFinish = opts?.onFinish ?? null;
     this.buildStage(opts?.bg ?? 'bg_pirate_turf');
@@ -184,18 +185,23 @@ export class S7BattleFxLayer extends Component {
     this.playing = false;
     this.model = null;
     this.node.removeAllChildren();
+    this.node.setScale(1, 1, 1);
     this.unitRigs = {};
     this.avatarNodes = [];
     this.projPool = [];
     this.impactPool = [];
     this.popPool = [];
+    this.shownHp = {};
   }
 
   update(dt: number): void {
     if (!this.playing || !this.model) return;
     this.model.step(dt * this.speed);
     this.syncFrame(dt);
-    if (this.model.finished) {
+    // 镜头（总谱 §5·根节点缩放实现·放大方向不露画布外）
+    const z = this.model.zoomScale();
+    this.node.setScale(z, z, 1);
+    if (this.model.outroDone()) { // 收尾演出放完才收场（胜=冲出画面/负=掉队淡出）
       this.playing = false;
       if (this.onFinish) { const f = this.onFinish; this.onFinish = null; f(); }
     }
@@ -210,6 +216,8 @@ export class S7BattleFxLayer extends Component {
     this.projPool = [];
     this.impactPool = [];
     this.popPool = [];
+    this.shownHp = {};
+    this.node.setScale(1, 1, 1);
     const vs = view.getVisibleSize();
     this.viewW = vs.width;
     this.viewH = vs.height;
@@ -428,8 +436,8 @@ export class S7BattleFxLayer extends Component {
       rig.root.active = show;
       if (!show) continue;
       const o = this.idleOffsets(u, t);
-      const alpha = !u.alive ? Math.max(0, u.deadT / 0.4) : 1;
-      const p = this.refToView(u.x + o.drift + o.ox, u.y + o.oy);
+      const alpha = (!u.alive ? Math.max(0, u.deadT / 0.4) : 1) * m.outroAlpha(u);
+      const p = this.refToView(u.x + o.drift + o.ox, u.y + o.oy + m.outroOffsetY(u));
       rig.root.setPosition(p.x, p.y);
       rig.root.angle = (-o.rot * 180) / Math.PI;
       rig.root.setScale(1 - o.sq, 1 + o.sq, 1);
@@ -551,9 +559,11 @@ export class S7BattleFxLayer extends Component {
         if (this.setFrame(sp, 'vfx_explosion')) {
           sp.enabled = true;
           tryAdditive(sp);
-          const size = base * im.size * (1 + kk * 1.6) * 2.2 * this.k;
+          // burst_big 降档 1.75（V3 三连爆推镜下 2.2 过曝=预览 v2 实测）
+          const mul = im.kind === 'burst_big' ? 1.75 : 2.2;
+          const size = base * im.size * (1 + kk * 1.6) * mul * this.k;
           n.getComponent(UITransform)!.setContentSize(size, size);
-          sp.color = new Color(255, 255, 255, Math.round(env * 255));
+          sp.color = new Color(255, 255, 255, Math.round(env * 235));
         } else {
           sp.enabled = false;
           rg.fillColor = hexColor(im.color, Math.round(env * 220));
@@ -602,13 +612,15 @@ export class S7BattleFxLayer extends Component {
     const hud = this.hudG!;
     g.clear();
     hud.clear();
-    // 星点流+飘雪（近景大气·恒向下）
+    // 星点流（近景大气·恒向下）：速度=情绪曲线（总谱 §4）·V3 脉冲期拉成线（曲速感）
+    const spdK = m.starSpeedK();
+    const streak = m.starStreakK();
     for (const s of this.stars) {
-      s.y += s.v * 0.0166;
+      s.y += s.v * 0.0166 * spdK;
       if (s.y > S7FX_REF_H) { s.y = -2; s.x = this.rand() * S7FX_REF_W; }
       const p = this.refToView(s.x, s.y);
-      g.fillColor = new Color(255, 255, 255, 110);
-      g.rect(p.x, p.y, s.s * this.k, s.s * 2.2 * this.k);
+      g.fillColor = new Color(255, 255, 255, streak > 0 ? 160 : 110);
+      g.rect(p.x, p.y, s.s * this.k, s.s * 2.2 * (1 + streak * 5) * this.k);
       g.fill();
     }
     // 星爆碎粒+火星余烬
@@ -624,9 +636,28 @@ export class S7BattleFxLayer extends Component {
       g.circle(p.x, p.y, e.size * this.k);
       g.fill();
     }
-    // HP 条 + 头像徽记环（我方左端头像·敌方裸条）
+    // 败局收尾：我方冒烟缓缓掉队（总谱 §4·柔和不挫败）——画在清空后免同帧被擦
+    if (m.finished && m.winner !== 'player') {
+      for (const u of m.unitList) {
+        if (u.side !== 'player' || !u.alive || !u.present) continue;
+        for (let i = 0; i < 2; i += 1) {
+          const puffY = u.y + u.h * 0.42 + ((m.outroT * 40 + i * 11) % 22);
+          const pp = this.refToView(u.x + Math.sin(t * 6 + u.phase + i * 2.1) * 4, puffY);
+          g.fillColor = new Color(150, 150, 158, 70);
+          g.circle(pp.x, pp.y, (3.2 + i * 1.6) * this.k);
+          g.fill();
+        }
+      }
+    }
+    // HP 条 + 头像徽记环（我方左端头像·敌方裸条）；显示血量做非对称平滑——
+    // 掉血快贴（打击感）·回血慢涨（总谱 §3.3"回涨要看得见地长"）
     for (const u of m.unitList) {
       if (!u.present || (!u.alive && u.deadT <= 0)) continue;
+      const shown = this.shownHp[u.unitId] ?? u.hpPct;
+      const gap = u.hpPct - shown;
+      const rate = gap >= 0 ? 2.8 : 10; // 涨慢掉快
+      const next = Math.abs(gap) < 0.4 ? u.hpPct : shown + gap * Math.min(1, rate * 0.0166);
+      this.shownHp[u.unitId] = next;
       const barW = u.w * 0.9;
       const bx = u.x - barW / 2;
       const by = u.y - u.h * 0.62;
@@ -636,8 +667,17 @@ export class S7BattleFxLayer extends Component {
       hud.rect(p0.x, p0.y, barW * this.k, 4.6 * this.k);
       hud.fill();
       hud.fillColor = isP ? new Color(88, 214, 100, 235) : new Color(214, 74, 74, 235);
-      hud.rect(p0.x, p0.y, barW * this.k * Math.max(0, u.hpPct) / 100, 4.6 * this.k);
+      hud.rect(p0.x, p0.y, barW * this.k * Math.max(0, next) / 100, 4.6 * this.k);
       hud.fill();
+      // 治疗泛绿柔光（总谱 §3.3·0.35s）
+      if (u.healGlowT > 0) {
+        const hk = u.healGlowT / 0.35;
+        const pc = this.refToView(u.x, u.y);
+        hud.strokeColor = new Color(126, 217, 87, Math.round(hk * 150));
+        hud.lineWidth = 3 * this.k;
+        hud.ellipse(pc.x, pc.y, u.w * 0.5 * this.k, u.h * 0.5 * this.k);
+        hud.stroke();
+      }
     }
     // 头像位置同步
     for (const n of this.avatarNodes) {

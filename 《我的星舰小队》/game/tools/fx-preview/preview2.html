@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星舰小队 · 战斗演出预览 v2（真模型驱动）</title>
+<style>
+body{margin:0;background:#0c0e16;display:flex;flex-direction:column;align-items:center;font-family:sans-serif}
+#bar{color:#9aa;padding:6px;font-size:12px}
+button{margin:0 4px;padding:4px 12px;background:#2a3242;color:#dde;border:0;border-radius:6px}
+canvas{border-radius:8px}
+</style>
+</head>
+<body>
+<div id="bar">
+  <button onclick="restart()">⟲ 重播</button>
+  <button onclick="setSpeed(1)">1x</button>
+  <button onclick="setSpeed(2)">2x</button>
+  <button onclick="setSpeed(3)">3x</button>
+  <span id="info"></span>
+</div>
+<canvas id="cv"></canvas>
+<script src="timeline-sample.js"></script>
+<script src="fx-model.js"></script>
+<script>
+// 预览 v2：与 Cocos S7BattleFxLayer 消费同一 S7FxPlayModel——本文件只做 Canvas2D 渲染，
+// 零演出逻辑（逻辑全在模型·改一处两端生效）。素材/视觉规格 = 组装 v8 + 磨精轮。
+const DATA = window.S7_FX_TIMELINE;
+const M = S7FX;
+const REF_W = M.S7FX_REF_W, REF_H = M.S7FX_REF_H;
+const W = 464, H = 825, K = W / REF_W;
+const cv = document.getElementById('cv');
+cv.width = W; cv.height = H;
+const cx = cv.getContext('2d');
+document.getElementById('info').textContent = `${DATA.nodeId} · ${DATA.winner === 'player' ? '胜' : '负'} · ${DATA.durationSec}s`;
+
+// ---- 模型 ----
+const timeline = { commands: DATA.commands, durationSec: DATA.fxDurationSec, layout: DATA.layout };
+let model = new M.S7FxPlayModel(timeline, DATA.roster, DATA.winner);
+let speed = 1;
+function restart() { model = new M.S7FxPlayModel(timeline, DATA.roster, DATA.winner); shownHp = {}; }
+function setSpeed(s) { speed = s; }
+
+// ---- 素材 ----
+const IMGS = {};
+const FILES = {
+  shp03: 'ship_fengshi', shp06: 'ship_tiebi', shp09: 'ship_lieyang_body', shp13: 'ship_chenxi_body', shp20: 'ship_suolian_body',
+  shp09_p0: 'ship_lieyang_part0', shp13_p0: 'ship_chenxi_part0', shp20_p0: 'ship_suolian_part0', shp20_p1: 'ship_suolian_part1',
+  pirate_s: 'pirate_xiaobing', pirate_m: 'pirate_dafu', pirate_l: 'pirate_chuanzhang_body', pirate_l_flag: 'pirate_chuanzhang_flag',
+  bg: new URLSearchParams(location.search).get('bg') === 'mint' ? 'bg_mint_winter' : 'bg_pirate_turf',
+};
+for (const [k, f] of Object.entries(FILES)) { const im = new Image(); im.src = `sprites/${f}.png`; IMGS[k] = im; }
+const VFX = {};
+for (const n of ['vfx_bolt_cyan', 'vfx_bolt_red', 'vfx_shell_orange', 'vfx_blade_cyan', 'vfx_orb_purple', 'vfx_ring_teal', 'vfx_bubble_blue', 'vfx_heal_orb', 'vfx_explosion']) {
+  const im = new Image(); im.src = `sprites/vfx/${n.replace('vfx_', '')}.png`; VFX[n] = im;
+}
+const AVATARS = {};
+for (const pil of Object.values(M.S7FX_PILOT_OF_SHIP)) { const im = new Image(); im.src = `sprites/avatars/${pil}.png`; AVATARS[pil] = im; }
+const ok = (im) => im && im.complete && im.naturalWidth > 0;
+const IS_MINT = new URLSearchParams(location.search).get('bg') === 'mint';
+const GROUND_SHADOW = IS_MINT ? '#14303A' : '#2A1430';
+const AIR_TINT = IS_MINT ? '190,215,228' : '186,148,192';
+
+// ---- 大气/云（渲染层自有·与 Cocos 侧同参数）----
+let rndS = 0xC0C05 >>> 0;
+const rnd = () => { rndS = (Math.imul(rndS, 1664525) + 1013904223) >>> 0; return rndS / 4294967296; };
+const clouds = Array.from({ length: 3 }, (_, i) => ({ x: rnd() * REF_W, y: (i / 3) * REF_H + rnd() * 90, s: 58 + rnd() * 46, v: 26 + rnd() * 14 }));
+const stars = Array.from({ length: 90 }, () => ({ x: rnd() * REF_W, y: rnd() * REF_H, s: 0.5 + rnd() * 1.5, v: 18 + rnd() * 30 }));
+let shownHp = {};
+
+function rv(x, y) { return { x: x * K, y: y * K }; } // 参考像素→画布（同比例·预览画布=参考幅面）
+
+function hex(hexs, a) {
+  const h = hexs.replace('#', '');
+  return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
+}
+
+function idle(u, t) {
+  const fwd = u.side === 'player' ? -1 : 1;
+  const drift = Math.sin(t * 0.7 + u.phase * 3.1) * (u.side === 'player' ? 2.2 : 1.6);
+  const bob = Math.sin(t * 2 + u.phase) * 1.9;
+  let ox = 0, oy = bob;
+  if (u.shakeT > 0) { ox += (Math.random() - 0.5) * 4; oy += (Math.random() - 0.5) * 4; }
+  if (u.recoilT > 0) oy -= fwd * 4 * (u.recoilT / 0.15);
+  if (u.lungeT > 0) oy += fwd * Math.sin((u.lungeT / 0.14) * Math.PI) * 3.5;
+  if (u.spawnT > 0) oy += (u.side === 'player' ? 1 : -1) * u.spawnT * 120;
+  return { drift, bob, ox, oy, rot: Math.sin(t * 1.6 + u.phase) * 0.06, sq: Math.sin(t * 3.1 + u.phase) * 0.024 };
+}
+
+function spriteOf(u) {
+  if (u.side === 'player') return IMGS[u.unitRef] || null;
+  return u.isBoss ? IMGS.pirate_l : u.w >= 78 ? IMGS.pirate_m : IMGS.pirate_s;
+}
+
+let lastTs = 0, lastFrameAt = 0;
+function frame(ts) {
+  const dt = Math.max(0, Math.min(0.05, (ts - lastTs) / 1000));
+  lastTs = ts;
+  lastFrameAt = performance.now();
+  model.step(dt * speed);
+  const m = model, t = m.t;
+  cx.setTransform(1, 0, 0, 1, 0, 0);
+  cx.globalAlpha = 1;
+  cx.globalCompositeOperation = 'source-over';
+  // 镜头（根缩放·围画布中心）
+  const z = m.zoomScale();
+  cx.translate(W / 2, H / 2); cx.scale(z, z); cx.translate(-W / 2, -H / 2);
+  // 底+背景板
+  cx.fillStyle = '#100c1a';
+  cx.fillRect(-W, -H, W * 3, H * 3);
+  if (ok(IMGS.bg)) cx.drawImage(IMGS.bg, 0, 0, W, H);
+  // 顶部深空带
+  const sky = cx.createLinearGradient(0, 0, 0, H * 0.12);
+  sky.addColorStop(0, 'rgba(24,16,42,.95)'); sky.addColorStop(1, 'rgba(24,16,42,0)');
+  cx.fillStyle = sky; cx.fillRect(0, 0, W, H * 0.12);
+  // 云絮
+  for (const cl of clouds) {
+    cl.y += cl.v * dt;
+    if (cl.y - cl.s > REF_H) { cl.y = -cl.s; cl.x = rnd() * REF_W; }
+    const p = rv(cl.x, cl.y);
+    cx.fillStyle = 'rgba(255,250,252,0.10)';
+    cx.beginPath(); cx.ellipse(p.x, p.y, cl.s * 1.5 * K, cl.s * 0.62 * K, 0, 0, Math.PI * 2); cx.fill();
+    cx.beginPath(); cx.ellipse(p.x + cl.s * 0.7 * K, p.y - cl.s * 0.2 * K, cl.s * 0.9 * K, cl.s * 0.4 * K, 0, 0, Math.PI * 2); cx.fill();
+  }
+  // 单位（含高空投影/切件/施法环/泛绿/收尾位移）
+  for (const u of m.unitList) {
+    if (!u.present || (!u.alive && u.deadT <= 0)) continue;
+    const o = idle(u, t);
+    const alpha = (!u.alive ? Math.max(0, u.deadT / 0.4) : 1) * m.outroAlpha(u);
+    const px = u.x + o.drift + o.ox, py = u.y + o.oy + m.outroOffsetY(u);
+    const p = rv(px, py);
+    if (u.spawnT <= 0 && !m.finished) {
+      const bobK = (o.bob / 1.9 + 1) / 2;
+      const sp = rv(u.x + o.drift + u.w * 0.14, u.y + u.h * 0.62);
+      cx.globalAlpha = (0.11 - bobK * 0.03) * alpha;
+      cx.fillStyle = GROUND_SHADOW;
+      cx.beginPath(); cx.ellipse(sp.x, sp.y, u.w * 0.26 * K, u.h * 0.06 * K, 0, 0, Math.PI * 2); cx.fill();
+      cx.globalAlpha = 1;
+    }
+    cx.save();
+    cx.globalAlpha = alpha;
+    cx.translate(p.x, p.y);
+    cx.rotate(o.rot);
+    cx.scale(1 - o.sq, 1 + o.sq);
+    const s = spriteOf(u), wpx = u.w * K, hpx = u.h * K;
+    if (ok(s)) {
+      cx.drawImage(s, -wpx / 2, -hpx / 2, wpx, hpx);
+      // 切件
+      const rigs = u.side === 'player' ? (M.S7FX_PART_RIGS[u.unitRef] || []) : (u.isBoss ? [M.S7FX_PIRATE_FLAG_RIG] : []);
+      for (const rig of rigs) {
+        const im = IMGS[u.unitRef + '_p0'] && rig.sprite.indexOf('part0') >= 0 ? IMGS[u.unitRef + '_p0']
+          : rig.sprite.indexOf('part1') >= 0 ? IMGS[u.unitRef + '_p1'] : rig.sprite.indexOf('flag') >= 0 ? IMGS.pirate_l_flag : IMGS[u.unitRef + '_p0'];
+        if (!ok(im)) continue;
+        const MS = M.S7FX_MASTER_SIZE;
+        const ax = (rig.axis[0] / MS - 0.5) * wpx, ay = (rig.axis[1] / MS - 0.5) * hpx;
+        let rot = 0, dy = 0;
+        if (rig.mode === 'halo') { rot = Math.sin(t * 1.8 + u.phase) * 0.07; dy = Math.sin(t * 2.3 + u.phase) * 1.6 * K; }
+        else if (rig.mode === 'spin') rot = Math.sin(t * 4.2 + u.phase) * 0.12;
+        else if (rig.mode === 'spin2') rot = -Math.sin(t * 4.2 + u.phase) * 0.12;
+        else if (rig.mode === 'recoil') dy = (u.lungeT > 0 ? Math.sin((u.lungeT / 0.14) * Math.PI) * 7 : 0) * K * 0.5;
+        else if (rig.mode === 'flag') rot = Math.sin(t * 2.1 + u.phase) * 0.09;
+        cx.save();
+        cx.translate(ax, ay + dy);
+        cx.rotate(rot);
+        cx.drawImage(im, -wpx / 2 - ax, -hpx / 2 - ay, wpx, hpx);
+        cx.restore();
+      }
+    } else {
+      cx.fillStyle = u.color;
+      cx.beginPath(); cx.ellipse(0, 0, wpx * 0.42, hpx * 0.42, 0, 0, Math.PI * 2); cx.fill();
+    }
+    if (u.flashT > 0) {
+      cx.globalAlpha = alpha * (u.flashT / 0.12) * 0.5;
+      cx.fillStyle = '#fff';
+      cx.beginPath(); cx.ellipse(0, 0, wpx * 0.46, hpx * 0.46, 0, 0, Math.PI * 2); cx.fill();
+    }
+    cx.restore();
+    // 施法环
+    if (u.castGlowT > 0) {
+      const gk = u.castGlowT / 0.55, rr = 0.55 + (1 - gk) * 0.4;
+      cx.strokeStyle = hex(u.color, gk * 0.75 * alpha);
+      cx.lineWidth = (5 * gk + 1.5) * K;
+      cx.beginPath(); cx.ellipse(p.x, p.y, u.w * rr * K, u.h * rr * K, 0, 0, Math.PI * 2); cx.stroke();
+    }
+    // 治疗泛绿
+    if (u.healGlowT > 0) {
+      const hk = u.healGlowT / 0.35;
+      cx.strokeStyle = hex('#7ED957', hk * 0.6);
+      cx.lineWidth = 3 * K;
+      cx.beginPath(); cx.ellipse(p.x, p.y, u.w * 0.5 * K, u.h * 0.5 * K, 0, 0, Math.PI * 2); cx.stroke();
+    }
+  }
+  // 空气透视
+  const airG = cx.createLinearGradient(0, H * 0.10, 0, H * 0.46);
+  airG.addColorStop(0, `rgba(${AIR_TINT},0.10)`); airG.addColorStop(1, `rgba(${AIR_TINT},0)`);
+  cx.fillStyle = airG; cx.fillRect(0, 0, W, H * 0.46);
+  // V3 压暗
+  const da = m.darkenAlpha();
+  if (da > 0) { cx.fillStyle = `rgba(10,8,20,${da})`; cx.fillRect(0, 0, W, H); }
+  // 弹体
+  for (const pr of m.projs) {
+    const pose = m.projPose(pr);
+    const p = rv(pose.x, pose.y);
+    const vfx = M.s7FxVfxForProjectile(pr.spec);
+    if (vfx && ok(VFX[vfx.name])) {
+      const size = 30 * pr.spec.size * 1.8 * (pr.spec.shape === 'blade' ? 1.2 : 1) * K;
+      cx.save();
+      cx.translate(p.x, p.y);
+      cx.rotate(pose.angle - vfx.baseAngle + (pr.spec.shape === 'blade' ? pr.age * 14 : 0));
+      cx.globalCompositeOperation = 'lighter';
+      cx.drawImage(VFX[vfx.name], -size / 2, -size / 2, size, size);
+      cx.restore();
+      cx.globalCompositeOperation = 'source-over';
+    } else {
+      cx.fillStyle = pr.spec.color;
+      cx.beginPath(); cx.arc(p.x, p.y, 6 * pr.spec.size * K, 0, Math.PI * 2); cx.fill();
+    }
+  }
+  // 爆点/环/泡/牢笼
+  for (const im of m.impacts) {
+    const kk = im.age / im.life;
+    const env = Math.max(0, Math.min(Math.min(1, im.age / 0.15), (im.life - im.age) / 0.25 > 1 ? 1 : (im.life - im.age) / 0.25));
+    const p = rv(im.x, im.y);
+    if (im.kind === 'burst_small' || im.kind === 'burst_mid' || im.kind === 'burst_big') {
+      const base = im.kind === 'burst_big' ? 30 : im.kind === 'burst_mid' ? 20 : 12;
+      if (ok(VFX.vfx_explosion)) {
+        const mul = im.kind === 'burst_big' ? 1.75 : 2.2; // V3 大爆降档防过曝（与 Cocos 侧一致）
+        const size = base * im.size * (1 + kk * 1.6) * mul * K;
+        cx.save(); cx.globalAlpha = env * 0.92; cx.globalCompositeOperation = 'lighter';
+        cx.drawImage(VFX.vfx_explosion, p.x - size / 2, p.y - size / 2, size, size);
+        cx.restore(); cx.globalCompositeOperation = 'source-over';
+      }
+    } else if (im.kind === 'muzzle') {
+      cx.fillStyle = hex(im.color, env);
+      cx.beginPath(); cx.arc(p.x, p.y, (6 + kk * 6) * K, 0, Math.PI * 2); cx.fill();
+    } else if (im.kind === 'ring_expand' || im.kind === 'cage_ring') {
+      cx.strokeStyle = hex(im.color, env * 0.92);
+      cx.lineWidth = (4 * (1 - kk) + 1.2) * K;
+      cx.beginPath(); cx.arc(p.x, p.y, (8 + kk * 46 * im.size) * K, 0, Math.PI * 2); cx.stroke();
+      if (im.kind === 'cage_ring') {
+        const rr = (8 + kk * 46 * im.size) * K;
+        cx.fillStyle = hex(im.color, env);
+        for (let i = 0; i < 6; i += 1) {
+          const a = (i / 6) * Math.PI * 2 + t * 2.4;
+          cx.beginPath(); cx.arc(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr, 2.6 * K, 0, Math.PI * 2); cx.fill();
+        }
+      }
+    } else if (im.kind === 'bubble_pop') {
+      const rr = (14 + Math.min(kk, 0.25) * 40) * im.size * K;
+      cx.fillStyle = hex(im.color, env * 0.24);
+      cx.beginPath(); cx.arc(p.x, p.y, rr, 0, Math.PI * 2); cx.fill();
+      cx.strokeStyle = `rgba(255,255,255,${env * 0.67})`;
+      cx.lineWidth = 1.6 * K;
+      cx.beginPath(); cx.arc(p.x, p.y, rr, 0, Math.PI * 2); cx.stroke();
+    }
+  }
+  // 星流（速度=情绪曲线·脉冲拉线）+ 星爆 + 余烬 + 败局烟
+  const spdK = m.starSpeedK(), streak = m.starStreakK();
+  cx.fillStyle = `rgba(255,255,255,${streak > 0 ? 0.63 : 0.43})`;
+  for (const s2 of stars) {
+    s2.y += s2.v * dt * spdK;
+    if (s2.y > REF_H) { s2.y = -2; s2.x = rnd() * REF_W; }
+    const p = rv(s2.x, s2.y);
+    cx.fillRect(p.x, p.y, s2.s * K, s2.s * 2.2 * (1 + streak * 5) * K);
+  }
+  for (const b of m.bursts) {
+    const p = rv(b.x, b.y);
+    cx.fillStyle = hex(b.color, 1 - b.age / b.life);
+    cx.beginPath(); cx.arc(p.x, p.y, b.size * K, 0, Math.PI * 2); cx.fill();
+  }
+  cx.globalCompositeOperation = 'lighter';
+  for (const e of m.embers) {
+    const p = rv(e.x, e.y);
+    cx.fillStyle = hex(e.color, (1 - e.age / e.life) * 0.85);
+    cx.beginPath(); cx.arc(p.x, p.y, e.size * K, 0, Math.PI * 2); cx.fill();
+  }
+  cx.globalCompositeOperation = 'source-over';
+  if (m.finished && m.winner !== 'player') {
+    for (const u of m.unitList) {
+      if (u.side !== 'player' || !u.alive || !u.present) continue;
+      for (let i = 0; i < 2; i += 1) {
+        const puffY = u.y + u.h * 0.42 + ((m.outroT * 40 + i * 11) % 22);
+        const pp = rv(u.x + Math.sin(t * 6 + u.phase + i * 2.1) * 4, puffY);
+        cx.fillStyle = 'rgba(150,150,158,0.27)';
+        cx.beginPath(); cx.arc(pp.x, pp.y, (3.2 + i * 1.6) * K, 0, Math.PI * 2); cx.fill();
+      }
+    }
+  }
+  // HUD：血条（非对称平滑）+头像+徽记环
+  for (const u of m.unitList) {
+    if (!u.present || (!u.alive && u.deadT <= 0)) continue;
+    const shown = shownHp[u.unitId] ?? u.hpPct;
+    const gap = u.hpPct - shown;
+    const rate = gap >= 0 ? 2.8 : 10;
+    shownHp[u.unitId] = Math.abs(gap) < 0.4 ? u.hpPct : shown + gap * Math.min(1, rate * dt);
+    const off = m.outroOffsetY(u);
+    const barW = u.w * 0.9;
+    const p0 = rv(u.x - barW / 2, u.y - u.h * 0.62 + off);
+    cx.fillStyle = 'rgba(14,16,26,0.78)';
+    cx.fillRect(p0.x, p0.y, barW * K, 4.6 * K);
+    cx.fillStyle = u.side === 'player' ? 'rgba(88,214,100,0.92)' : 'rgba(214,74,74,0.92)';
+    cx.fillRect(p0.x, p0.y, barW * K * Math.max(0, shownHp[u.unitId]) / 100, 4.6 * K);
+    if (u.side === 'player') {
+      const pil = M.S7FX_PILOT_OF_SHIP[u.unitRef];
+      const pa = rv(u.x - u.w * 0.45 - 11, u.y - u.h * 0.62 + 2.3 + off);
+      if (pil && ok(AVATARS[pil])) {
+        cx.save();
+        cx.beginPath(); cx.arc(pa.x, pa.y, 8.5 * K, 0, Math.PI * 2); cx.clip();
+        cx.drawImage(AVATARS[pil], pa.x - 8.5 * K, pa.y - 8.5 * K, 17 * K, 17 * K);
+        cx.restore();
+        cx.strokeStyle = M.S7FX_GROUP_RING[u.unitRef] || '#fff';
+        cx.lineWidth = 1.8 * K;
+        cx.beginPath(); cx.arc(pa.x, pa.y, 9.4 * K, 0, Math.PI * 2); cx.stroke();
+      }
+    }
+  }
+  // 伤害数字
+  cx.textAlign = 'center';
+  for (const pop of m.pops) {
+    const k = pop.age / pop.life;
+    const rise = 26 * (1 - (1 - k) * (1 - k));
+    const p = rv(pop.x, pop.y - rise);
+    const popScale = pop.crit && pop.age < 0.12 ? 1 + (0.12 - pop.age) * 3 : 1;
+    cx.globalAlpha = k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45;
+    cx.font = `bold ${Math.round((pop.crit ? 16 : 11.5) * popScale)}px "Segoe UI", sans-serif`;
+    cx.lineWidth = 3; cx.strokeStyle = 'rgba(20,12,28,0.85)';
+    cx.strokeText(pop.txt, p.x, p.y);
+    cx.fillStyle = pop.crit ? '#FFD75E' : '#F4F7FF';
+    cx.fillText(pop.txt, p.x, p.y);
+  }
+  cx.globalAlpha = 1;
+  // 倒计时+暂停钮（占位 UI）
+  cx.setTransform(1, 0, 0, 1, 0, 0);
+  cx.fillStyle = 'rgba(22,26,40,.8)';
+  cx.beginPath(); cx.roundRect(W / 2 - 36, 10, 72, 26, 8); cx.fill();
+  cx.fillStyle = '#EAF2FF'; cx.font = 'bold 15px monospace';
+  const remain = Math.max(0, 120 - t);
+  cx.fillText(`${Math.floor(remain / 60)}:${String(Math.floor(remain % 60)).padStart(2, '0')}`, W / 2, 28);
+  cx.fillStyle = 'rgba(240,120,60,.92)';
+  cx.beginPath(); cx.arc(W - 32, H - 32, 17, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = '#fff'; cx.fillRect(W - 38, H - 40, 4.5, 16); cx.fillRect(W - 30, H - 40, 4.5, 16);
+  scheduleRaf();
+}
+let rafPending = false;
+function scheduleRaf() {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame((ts) => { rafPending = false; frame(ts); });
+}
+requestAnimationFrame((ts) => { lastTs = ts; scheduleRaf(); });
+setInterval(() => { if (performance.now() - lastFrameAt > 40) frame(performance.now()); }, 33);
+</script>
+</body>
+</html>

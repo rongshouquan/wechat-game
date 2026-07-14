@@ -116,6 +116,8 @@ export interface S7FxUnitState {
   spawnT: number;
   castGlowT: number;
   deadT: number;
+  /** 治疗泛绿柔光（总谱 §3.3·0.35s）。 */
+  healGlowT: number;
   /** 相位（确定性哈希·渲染层做悬浮/摇摆错拍）。 */
   phase: number;
 }
@@ -184,15 +186,27 @@ export class S7FxPlayModel {
   darkenT = 0;
   darkenDur = 0;
   finished = false;
+  /** 胜负（收尾演出分流：胜=我方加速冲出画面上缘·负=敌方扬长而去我方冒烟淡出=总谱 §4 速度曲线）。 */
+  winner = '';
+  /** 收尾演出计时（finished 后累计；outroDone 才通知宿主收场）。 */
+  outroT = 0;
+  /** 末杀顿帧（清场最后一击=急刹+顿帧 0.22s·总谱 §4/§5）。 */
+  freezeT = 0;
+  /** V3 曲速脉冲（星光拉线+punch-zoom 0.3s·与压暗同步·总谱 §4/§5）。 */
+  starPulseT = 0;
+  /** Boss 登场推镜（1.00→1.06 约 1s·总谱 §5）。 */
+  bossZoomT = 0;
+  private bossZoomPlayed = false;
 
   private cmdIdx = 0;
   private readonly cmds: S7FxCommand[];
   private readonly endT: number;
   private rng = makeRng(0x53375);
 
-  constructor(timeline: S7FxTimeline, roster: S7FxRosterEntry[]) {
+  constructor(timeline: S7FxTimeline, roster: S7FxRosterEntry[], winner = '') {
     this.cmds = timeline.commands;
     this.endT = timeline.durationSec + 1.5;
+    this.winner = winner;
     // 敌方尺寸阶（对标验收尺②）：最大 maxHp=船长档 150 / ≥35% 分位=大副档 78 / 其余=小兵档 54；我方 92。
     let maxEnemyHp = 1;
     for (const r of roster) if (r.side === 'enemy' && r.maxHp > maxEnemyHp) maxEnemyHp = r.maxHp;
@@ -216,7 +230,7 @@ export class S7FxPlayModel {
         y: (lay ? lay.at.y : 0.5) * S7FX_REF_H,
         w: size, h: size, isBoss,
         hpPct: 100, alive: true, present: isP,
-        flashT: 0, shakeT: 0, recoilT: 0, lungeT: 0, spawnT: 0, castGlowT: 0, deadT: 0,
+        flashT: 0, shakeT: 0, recoilT: 0, lungeT: 0, spawnT: 0, castGlowT: 0, deadT: 0, healGlowT: 0,
         phase: hash01(r.unitId, 31) * Math.PI * 2,
       };
       this.units[r.unitId] = u;
@@ -230,6 +244,11 @@ export class S7FxPlayModel {
     this.darkenT = 0;
     this.darkenDur = 0;
     this.finished = false;
+    this.outroT = 0;
+    this.freezeT = 0;
+    this.starPulseT = 0;
+    this.bossZoomT = 0;
+    this.bossZoomPlayed = false;
     this.projs.length = 0;
     this.impacts.length = 0;
     this.bursts.length = 0;
@@ -238,7 +257,7 @@ export class S7FxPlayModel {
     this.rng = makeRng(0x53375);
     for (const u of this.unitList) {
       u.hpPct = 100; u.alive = true; u.present = u.side === 'player';
-      u.flashT = 0; u.shakeT = 0; u.recoilT = 0; u.lungeT = 0; u.spawnT = 0; u.castGlowT = 0; u.deadT = 0;
+      u.flashT = 0; u.shakeT = 0; u.recoilT = 0; u.lungeT = 0; u.spawnT = 0; u.castGlowT = 0; u.deadT = 0; u.healGlowT = 0;
     }
   }
 
@@ -255,14 +274,23 @@ export class S7FxPlayModel {
     this.embers.length = 0;
     this.pops.length = 0;
     this.darkenT = 0;
+    this.freezeT = 0;
+    this.starPulseT = 0;
+    this.bossZoomT = 0;
     for (const u of this.unitList) { u.spawnT = 0; if (!u.alive) u.deadT = 0; }
     this.finished = true;
+    this.outroT = 9; // 跳过=不放收尾演出，直接可收场
   }
 
   /** 推进 dt 秒（渲染层每帧调用；speed 由调用方乘进 dt）。 */
   step(dt: number): void {
     if (dt < 0) dt = 0;
     if (dt > 0.05) dt = 0.05; // 防真假时钟混用大跳帧（预览壳同款钳制）
+    // 镜头/星流计时器走真实时间（顿帧冻的是战斗，不冻镜头呼吸）
+    if (this.bossZoomT > 0) this.bossZoomT = Math.max(0, this.bossZoomT - dt);
+    if (this.starPulseT > 0) this.starPulseT = Math.max(0, this.starPulseT - dt);
+    if (this.finished) { this.outroT += dt; return; } // 收尾演出期：战斗态定格，只累计 outro
+    if (this.freezeT > 0) { this.freezeT -= dt; return; } // 末杀顿帧：全场急停
     this.t += dt;
     while (this.cmdIdx < this.cmds.length && this.cmds[this.cmdIdx].tSec <= this.t) {
       this.exec(this.cmds[this.cmdIdx]);
@@ -303,6 +331,7 @@ export class S7FxPlayModel {
       if (u.lungeT > 0) u.lungeT = Math.max(0, u.lungeT - dt);
       if (u.spawnT > 0) u.spawnT = Math.max(0, u.spawnT - dt);
       if (u.castGlowT > 0) u.castGlowT = Math.max(0, u.castGlowT - dt);
+      if (u.healGlowT > 0) u.healGlowT = Math.max(0, u.healGlowT - dt);
       if (!u.alive && u.deadT > 0) u.deadT = Math.max(0, u.deadT - dt);
     }
     if (this.darkenT > 0) this.darkenT = Math.max(0, this.darkenT - dt);
@@ -314,6 +343,57 @@ export class S7FxPlayModel {
     if (this.darkenT <= 0 || this.darkenDur <= 0) return 0;
     const dk = Math.min(1, (this.darkenDur - this.darkenT) / 0.25, this.darkenT / 0.35);
     return 0.42 * Math.max(0, dk);
+  }
+
+  /** 星流速度倍率（总谱 §4 速度情绪曲线：入场快掠/巡航/V3 拉线/末杀急刹/胜负收尾）。 */
+  starSpeedK(): number {
+    if (this.finished) return this.winner === 'player' ? 3.5 : 0.6; // 胜=追击加速·负=掉队慢漂
+    if (this.freezeT > 0) return 0.05; // 急刹
+    if (this.starPulseT > 0) return 4.5; // 曲速脉冲
+    if (this.t < 0.5) return 3.2; // 入场仪式快掠（与滑入 0.5s 咬合）
+    return 1;
+  }
+
+  /** 星光拉线强度 0-1（V3 脉冲期星点画成长条=曲速感）。 */
+  starStreakK(): number {
+    return this.starPulseT > 0 ? this.starPulseT / 0.3 : 0;
+  }
+
+  /** 镜头缩放（总谱 §5：Boss 登场推镜 1.00→1.06 / V3 punch-zoom 1.00→1.04→1.00；
+   *  同一时刻镜头动作 ≤1——Boss 推镜优先。放大方向永不露画布外。 */
+  zoomScale(): number {
+    if (this.bossZoomT > 0) {
+      const k = 1 - this.bossZoomT; // 0→1
+      const env = k < 0.4 ? k / 0.4 : k > 0.8 ? (1 - k) / 0.2 : 1; // 推 0.4s/驻 0.4s/回 0.2s
+      return 1 + 0.06 * Math.max(0, Math.min(1, env));
+    }
+    if (this.starPulseT > 0) {
+      const k = 1 - this.starPulseT / 0.3;
+      return 1 + 0.04 * Math.sin(Math.PI * k);
+    }
+    return 1;
+  }
+
+  /** 收尾演出完成（渲染层此时才通知宿主开结果窗）。 */
+  outroDone(): boolean {
+    return this.finished && this.outroT >= 0.9;
+  }
+
+  /** 收尾纵向位移（参考像素·y 负=向上）：胜=我方依次加速冲出画面上缘；负=敌方扬长而去。 */
+  outroOffsetY(u: S7FxUnitState): number {
+    if (!this.finished || this.outroT <= 0) return 0;
+    const win = this.winner === 'player';
+    const mover = win ? u.side === 'player' : u.side === 'enemy';
+    if (!mover || !u.alive) return 0;
+    const stagger = (u.phase / (Math.PI * 2)) * 0.25; // 依次冲出（错拍 ≤0.25s）
+    const tt = Math.max(0, this.outroT - stagger);
+    return -(tt * tt) * (win ? 1400 : 900);
+  }
+
+  /** 收尾透明度（负局我方缓缓掉队淡出=柔和不挫败；其余 1）。 */
+  outroAlpha(u: S7FxUnitState): number {
+    if (!this.finished || this.winner === 'player' || u.side !== 'player') return 1;
+    return Math.max(0.25, 1 - this.outroT * 0.8);
   }
 
   /** 弹体当前位置+朝向（参考像素；含发射锚点与高抛弧）。 */
@@ -340,7 +420,12 @@ export class S7FxPlayModel {
     const u = 'unitId' in c ? this.units[c.unitId] : undefined;
     switch (c.kind) {
       case 'spawn':
-        if (u) { u.present = true; u.spawnT = 0.4; }
+        if (u) {
+          u.present = true;
+          u.spawnT = 0.4;
+          // Boss 登场推镜（首个 Boss 一次性·总谱 §5：1.00→1.06 约 1s）
+          if (u.isBoss && !this.bossZoomPlayed) { this.bossZoomPlayed = true; this.bossZoomT = 1.0; }
+        }
         break;
       case 'muzzle': {
         const m = this.muzzleOffset(c.unitId, 0);
@@ -384,12 +469,16 @@ export class S7FxPlayModel {
       case 'hp_change': {
         if (u) u.hpPct = c.hpPct;
         if (u && typeof c.delta === 'number' && c.delta < 0) {
+          // 同拍多数字防撞字：x 撒得更开 + 按同屏序号纵向错层
+          const lane = this.pops.length % 3;
           this.pops.push({
-            x: u.x + (this.rng() - 0.5) * u.w * 0.4, y: u.y - u.h * 0.55,
+            x: u.x + (this.rng() - 0.5) * u.w * 0.9, y: u.y - u.h * 0.55 - lane * 9,
             txt: String(-c.delta), crit: !!c.crit, age: 0, life: 0.8,
           });
           if (this.pops.length > POP_CAP) this.pops.splice(0, this.pops.length - POP_CAP);
         }
+        // 治疗（差分正 delta）：泛绿柔光·不出数字（总谱 §3.3"血条就是数字的替身"）
+        if (u && typeof c.delta === 'number' && c.delta > 0) u.healGlowT = 0.35;
         break;
       }
       case 'death_burst': {
@@ -399,6 +488,14 @@ export class S7FxPlayModel {
           const a = (i / 5) * Math.PI * 2 + this.rng() * 0.5;
           this.bursts.push({ x: c.at.x * S7FX_REF_W, y: c.at.y * S7FX_REF_H, vx: Math.cos(a) * 70, vy: Math.sin(a) * 70, age: 0, life: 0.4, color: colors[i % 5], size: 3.4 });
         }
+        // 清场最后一击=急刹+顿帧（总谱 §4/§5·敌方全灭瞬间）
+        if (u && u.side === 'enemy') {
+          let anyEnemyAlive = false;
+          for (const other of this.unitList) {
+            if (other.side === 'enemy' && other.alive) { anyEnemyAlive = true; break; }
+          }
+          if (!anyEnemyAlive) this.freezeT = 0.22;
+        }
         break;
       }
       case 'recoil':
@@ -407,6 +504,7 @@ export class S7FxPlayModel {
       case 'darken':
         this.darkenT = c.durationSec;
         this.darkenDur = c.durationSec;
+        this.starPulseT = 0.3; // V3 曲速脉冲：星光拉线+punch-zoom 与压暗同拍（总谱 §4/§5）
         break;
       default:
         break;
