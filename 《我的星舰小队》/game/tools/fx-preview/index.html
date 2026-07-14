@@ -244,8 +244,8 @@ function drawShip(u) {
       const rec = u.lungeT > 0 ? Math.sin((u.lungeT / 0.14) * Math.PI) * 7 : 0;
       drawPart(IMGS.shp09_p0, 500, 80, 850, 315, 672, 300, 0, 0, rec);
     } else if (u.sprite === IMGS.pirate_l) {
-      // 船长骷髅旗：迎风摆 ±5°
-      drawPart(IMGS.pirate_l_flag, 600, 90, 940, 450, 655, 450, Math.sin(t * 2.1 + u.phase) * 0.09);
+      // 船长骷髅旗：迎风摆 ±5°——坐标=L72-抽5 新母版件位（杆底连警灯上方）
+      drawPart(IMGS.pirate_l_flag, 640, 70, 880, 240, 660, 240, Math.sin(t * 2.1 + u.phase) * 0.09);
     }
     if (u.flashT > 0) {
       cx.globalAlpha = alpha * 0.75;
