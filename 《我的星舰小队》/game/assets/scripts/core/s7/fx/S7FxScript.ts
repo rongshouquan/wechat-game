@@ -33,6 +33,10 @@ export type S7FxCommand =
       spec: S7FxProjectileSpec;
       flightSec: number;
       vLevel: 1 | 2;
+      /** 发射锚点制：射手 unitId + 连射序号（渲染壳据此把弹起点挪到炮口/光球，
+       *  多锚点按 shotIdx 轮转——锋矢三连=三颗光球各出一发；缺省（如 V3 天降）不偏移）。 */
+      srcId?: string;
+      shotIdx?: number;
     }
   | { tSec: number; kind: 'impact'; at: S7FxPoint; impact: { kind: S7FxImpactKind; size: number; durationSec?: number }; color: string; vLevel: 1 | 2 }
   | { tSec: number; kind: 'unit_flash'; unitId: string; crit: boolean }
@@ -263,7 +267,7 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
         const tgList = targets.length > 0 ? [targets[shot % targets.length]] : [];
         for (const tg of tgList) {
           const to = posOf(tg);
-          cmds.push({ tSec: launch, kind: 'projectile', from, to, spec: p, flightSec: p.flightSec, vLevel: sign.vLevel });
+          cmds.push({ tSec: launch, kind: 'projectile', from, to, spec: p, flightSec: p.flightSec, vLevel: sign.vLevel, srcId: atk.actorId, shotIdx: shot });
           if (sign.impact.kind !== 'none') {
             cmds.push({ tSec: arrive, kind: 'impact', at: to, impact: sign.impact, color: p.color, vLevel: sign.vLevel });
           }

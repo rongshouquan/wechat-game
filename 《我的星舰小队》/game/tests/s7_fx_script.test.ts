@@ -89,6 +89,15 @@ describe('S7FxScript 指令流', () => {
     expect(f1.filter((c) => c.kind === 'impact')).toHaveLength(3);
   });
 
+  it('发射锚点制：常规弹带 srcId=射手 + shotIdx 连射序号（渲染壳据此定炮口）', () => {
+    const tl = buildS7FxScript(miniPlayback(), RESOLVE);
+    const shots = tl.commands.filter(
+      (c): c is Extract<S7FxCommand, { kind: 'projectile' }> => c.kind === 'projectile' && c.tSec >= 1 && c.tSec < 2
+    );
+    expect(shots.every((c) => c.srcId === shots[0].srcId && typeof c.srcId === 'string' && c.srcId.length > 0)).toBe(true);
+    expect(shots.map((c) => c.shotIdx).sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual([0, 1, 2]);
+  });
+
   it('命中视觉锚首发到达时刻（演出-结算同拍锁定：伤害视觉不早于弹道出现）', () => {
     const tl = buildS7FxScript(miniPlayback(), RESOLVE);
     const firstShot = tl.commands.find((c) => c.kind === 'projectile')!;
@@ -131,6 +140,7 @@ describe('S7FxScript 指令流', () => {
     if (meteor && meteor.kind === 'projectile') {
       expect(meteor.from.y).toBeLessThan(0); // 天顶画外落下
       expect(meteor.spec.size).toBeGreaterThan(3);
+      expect(meteor.srcId).toBeUndefined(); // 天降弹不带射手锚点（不被炮口偏移拐走）
     }
     const bigBurst = f1.find((c) => c.kind === 'impact' && c.impact.kind === 'burst_big');
     expect(bigBurst).toBeTruthy();

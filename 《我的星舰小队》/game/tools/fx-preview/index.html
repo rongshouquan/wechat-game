@@ -122,12 +122,17 @@ function exec(c) {
   switch (c.kind) {
     case 'spawn': if (u) { u.present = true; u.spawnT = 0.4; } break;
     case 'muzzle': {
-      impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 });
+      const [mx, my] = muzzleOffset(c.unitId, 0); // 炮口闪也落锚点（首锚）
+      impacts.push({ x: c.at.x * W + mx, y: c.at.y * H + my, kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 });
       const mu = units[c.unitId];
       if (mu) mu.lungeT = 0.14; // 开火点头：向对面顶一下再回弹
       break;
     }
-    case 'projectile': projs.push({ c, age: 0 }); break;
+    case 'projectile': {
+      const [ox, oy] = c.srcId ? muzzleOffset(c.srcId, c.shotIdx) : [0, 0]; // 发射锚点制（V3 天降无 srcId 不偏移）
+      projs.push({ c, age: 0, ox, oy });
+      break;
+    }
     case 'impact': {
       const dflt = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42 : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
       const life = c.impact.durationSec || dflt; // 签名落点持续（牢笼 2s / 圣盾泡 2.5s）
@@ -178,14 +183,22 @@ function drawShip(u) {
   cx.rotate(Math.sin(t * 1.6 + u.phase) * 0.06);
   const sq = Math.sin(t * 3.1 + u.phase) * 0.024;
   cx.scale(1 - sq, 1 + sq);
-  // 施法泛光（横幅已撤·技能辨识=视觉）：舰身外圈舰色光环脉冲
+  // 施法泛光（横幅已撤·技能辨识=视觉）：舰色能量环脉冲外扩
+  // （实心圆盘版淘汰——大盘盖住舰身发闷发灰，环形读作"能量涌出"且不遮主体）
   if (u.castGlowT > 0) {
-    const gk = u.castGlowT / 0.55;
-    cx.globalAlpha = alpha * gk * 0.55;
-    cx.fillStyle = u.color;
+    const gk = u.castGlowT / 0.55; // 1→0
+    const rr = 0.55 + (1 - gk) * 0.4;
+    cx.strokeStyle = u.color;
+    cx.globalAlpha = alpha * gk * 0.75;
+    cx.lineWidth = 5 * gk + 1.5;
     cx.beginPath();
-    cx.ellipse(0, 0, w * (0.62 + (1 - gk) * 0.25), h * (0.62 + (1 - gk) * 0.25), 0, 0, Math.PI * 2);
-    cx.fill();
+    cx.ellipse(0, 0, w * rr, h * rr, 0, 0, Math.PI * 2);
+    cx.stroke();
+    cx.globalAlpha = alpha * gk * 0.35;
+    cx.lineWidth = 2;
+    cx.beginPath();
+    cx.ellipse(0, 0, w * rr * 0.78, h * rr * 0.78, 0, 0, Math.PI * 2);
+    cx.stroke();
     cx.globalAlpha = alpha;
   }
   // 引擎尾焰（省做法①程序化·总谱 V0 火苗摇曳）——纯净体素材的尾焰由引擎现场画
@@ -336,14 +349,36 @@ function hexRgb(hex) {
   return [parseInt(h.slice(0, 2), 16) || 255, parseInt(h.slice(2, 4), 16) || 255, parseInt(h.slice(4, 6), 16) || 255];
 }
 
+// 发射锚点表（弹从武器口出·总谱§2a 锚点=开火签名的"哪里开火"）：
+// 每舰 1-N 个锚点，[dx,dy]=占本舰绘制框的比例（y 负=朝机头）；多锚点按 shotIdx 轮转
+// ——锋矢三连=鼻尖+双翼光球各一发，烈阳/锁链双管左右交替。敌方/未精雕舰走通用鼻口。
+const MUZZLES = {
+  shp03: [[0, -0.42], [-0.36, -0.06], [0.36, -0.06]],
+  shp06: [[0, -0.30]],
+  shp09: [[-0.06, -0.43], [0.06, -0.43]],
+  shp13: [[0, -0.40]],
+  shp20: [[-0.29, -0.11], [0.29, -0.11]],
+};
+const MUZZLE_PLAYER_DEFAULT = [[0, -0.38]];
+const MUZZLE_ENEMY_DEFAULT = [[0, 0.36]];
+function muzzleOffset(unitId, shotIdx) {
+  const u = units[unitId];
+  if (!u) return [0, 0];
+  const anchors = MUZZLES[u.unitRef] || (u.side === 'player' ? MUZZLE_PLAYER_DEFAULT : MUZZLE_ENEMY_DEFAULT);
+  const [dx, dy] = anchors[(shotIdx || 0) % anchors.length];
+  return [dx * u.w, dy * u.h];
+}
+
 // 亲和组徽记色（驾驶员真源 §0③：人-舰-弹三层同色系互认·头像底环用）
 const GROUP_RING = { shp03: '#FFA94D', shp06: '#63B8FF', shp09: '#FFE066', shp13: '#7FE7D0', shp20: '#B78CF0' };
 const PILOT_OF_SHIP = { shp03: 'pil03', shp06: 'pil06', shp09: 'pil09', shp13: 'pil13', shp20: 'pil20' };
 const AVATARS = {};
 for (const pil of Object.values(PILOT_OF_SHIP)) { const im = new Image(); im.src = `sprites/avatars/${pil}.png`; AVATARS[pil] = im; }
 
-function arcPos(c, k) {
-  const x0 = c.from.x * W, y0 = c.from.y * H, x1 = c.to.x * W, y1 = c.to.y * H;
+function arcPos(p, k) {
+  const c = p.c;
+  // 起点=发射锚点（炮口/光球），终点=目标不变；偏移随飞行进度收敛归零（弹道自然汇向目标）
+  const x0 = c.from.x * W + (p.ox || 0), y0 = c.from.y * H + (p.oy || 0), x1 = c.to.x * W, y1 = c.to.y * H;
   const x = x0 + (x1 - x0) * k, y = y0 + (y1 - y0) * k;
   const lift = (c.spec.arc || 0) * 120 * Math.sin(Math.PI * k);
   return { x, y: y - lift };
@@ -351,7 +386,7 @@ function arcPos(c, k) {
 
 function drawProj(p) {
   const k = Math.min(1, p.age / p.c.flightSec);
-  const { x, y } = arcPos(p.c, k);
+  const { x, y } = arcPos(p, k);
   const s = p.c.spec.size * 1.8, col = p.c.spec.color; // 1.8=半尺寸画布下的可读性倍率
   // 特效图集版（L69）：黑底发光体 lighter 叠加；缺图回程序几何形
   const vfx = vfxForProjectile(p.c.spec);
