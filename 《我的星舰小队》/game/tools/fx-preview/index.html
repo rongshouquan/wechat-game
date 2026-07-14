@@ -213,8 +213,8 @@ function drawShip(u) {
     cx.globalAlpha = alpha;
   }
   if (ok(u.sprite)) {
-    // 烈阳原图机头朝下（军舰画法）→ 渲染转 180° 修正朝向（sprite 与件同转，焰/影/灯不受影响）
-    const flip = u.unitRef === 'shp09';
+    // L71 新母版全员朝向已正（烈阳甲虫壳炮口朝上），180° 翻转退役
+    const flip = false;
     cx.save();
     if (flip) cx.rotate(Math.PI);
     // 素材版：真 sprite；受击白闪用叠加高亮近似
@@ -230,17 +230,17 @@ function drawShip(u) {
       cx.restore();
     };
     if (u.unitRef === 'shp13') {
-      // 晨曦金环：悬浮轻转+上下浮（"天使环"活感）
-      drawPart(IMGS.shp13_p0, 505, 140, 800, 350, 652, 245, Math.sin(t * 1.8 + u.phase) * 0.07, 0, Math.sin(t * 2.3 + u.phase) * 1.6);
+      // 晨曦金环+冠：悬浮轻转+上下浮（"天使环"活感）——坐标=L71-抽4 新母版件位
+      drawPart(IMGS.shp13_p0, 495, 160, 810, 440, 652, 300, Math.sin(t * 1.8 + u.phase) * 0.07, 0, Math.sin(t * 2.3 + u.phase) * 1.6);
     } else if (u.unitRef === 'shp20') {
-      // 锁链双线轴：来回转（收放线作业感）
+      // 锁链双线轴：来回转（收放线作业感）——坐标=L70-A3 新母版件位
       const spin = Math.sin(t * 4.2 + u.phase) * 0.12;
-      drawPart(IMGS.shp20_p0, 220, 620, 410, 820, 315, 720, spin);
-      drawPart(IMGS.shp20_p1, 915, 620, 1105, 820, 1010, 720, -spin);
+      drawPart(IMGS.shp20_p0, 175, 425, 400, 630, 287, 527, spin);
+      drawPart(IMGS.shp20_p1, 930, 425, 1160, 630, 1045, 527, -spin);
     } else if (u.unitRef === 'shp09') {
-      // 烈阳双联炮管：开火后坐（沿舰轴缩回弹回·与开火点头联动）
+      // 烈阳双联炮管：开火后坐（沿舰轴缩回弹回·与开火点头联动）——坐标=L71-抽4 甲虫壳件位
       const rec = u.lungeT > 0 ? Math.sin((u.lungeT / 0.14) * Math.PI) * 7 : 0;
-      drawPart(IMGS.shp09_p0, 455, 400, 890, 700, 672, 550, 0, 0, rec);
+      drawPart(IMGS.shp09_p0, 500, 80, 850, 315, 672, 300, 0, 0, rec);
     } else if (u.sprite === IMGS.pirate_l) {
       // 船长骷髅旗：迎风摆 ±5°
       drawPart(IMGS.pirate_l_flag, 600, 90, 940, 450, 655, 450, Math.sin(t * 2.1 + u.phase) * 0.09);
