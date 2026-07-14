@@ -47,6 +47,10 @@ const SPRITE_FILES = {
   // 背景=打谁的地盘看谁的天（总谱§4 族群基调）：本场星盗域→星盗地盘；?bg=mint 切雪原
   bg: new URLSearchParams(location.search).get('bg') === 'mint' ? 'bg_mint_winter' : 'bg_pirate_turf',
 };
+// 板别环境参数（接地影色/空气雾色跟着地盘走·融合三件套的场景侧）
+const IS_MINT = new URLSearchParams(location.search).get('bg') === 'mint';
+const GROUND_SHADOW = IS_MINT ? '#14303A' : '#2A1430';
+const AIR_TINT = IS_MINT ? '190,215,228' : '186,148,192';
 const IMGS = {};
 for (const [k, f] of Object.entries(SPRITE_FILES)) { const im = new Image(); im.src = `sprites/${f}.png`; IMGS[k] = im; }
 const ok = (im) => im && im.complete && im.naturalWidth > 0;
@@ -104,14 +108,14 @@ const stars = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.
 const flakes = Array.from({ length: 26 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 1 + Math.random() * 2, v: 8 + Math.random() * 12, drift: Math.random() * 2 - 1 }));
 
 // ---- 演出运行池 ----
-let projs = [], impacts = [], bursts = [];
+let projs = [], impacts = [], bursts = [], embers = [], pops = [];
 let darkenT = 0, darkenDur = 0; // V3 全场压暗
 let t = 0, speed = 1, lastTs = 0, cmdIdx = 0, lastFrameAt = 0;
 const CMDS = DATA.commands;
 const END_T = DATA.fxDurationSec + 1.5;
 
 function restart() {
-  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = []; darkenT = 0; darkenDur = 0;
+  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = []; embers = []; pops = []; darkenT = 0; darkenDur = 0;
   for (const u of Object.values(units)) { u.hpPct = 100; u.alive = true; u.flashT = u.shakeT = u.recoilT = u.deadT = 0; }
   for (const ru of DATA.roster) units[ru.unitId].present = ru.side === 'player';
 }
@@ -137,11 +141,30 @@ function exec(c) {
       const dflt = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42 : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
       const life = c.impact.durationSec || dflt; // 签名落点持续（牢笼 2s / 圣盾泡 2.5s）
       impacts.push({ x: c.at.x * W, y: c.at.y * H, kind: c.impact.kind, size: c.impact.size, color: c.color, age: 0, life });
+      // 爆点二层（对标放置军团"爆=闪+烟+碎屑"多层）：火星余烬受重力散落
+      if (c.impact.kind === 'burst_small' || c.impact.kind === 'burst_mid' || c.impact.kind === 'burst_big') {
+        const n = c.impact.kind === 'burst_big' ? 9 : c.impact.kind === 'burst_mid' ? 6 : 3;
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 70;
+          embers.push({ x: c.at.x * W, y: c.at.y * H, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 36,
+            age: 0, life: 0.45 + Math.random() * 0.3, color: c.color, size: 1.2 + Math.random() * 1.6 });
+        }
+        if (embers.length > 90) embers.splice(0, embers.length - 90);
+      }
       break;
     }
     case 'unit_flash': if (u) u.flashT = 0.12; break;
     case 'unit_shake': if (u) u.shakeT = 0.1; break;
-    case 'hp_change': if (u) u.hpPct = c.hpPct; break;
+    case 'hp_change': {
+      if (u) u.hpPct = c.hpPct;
+      // 浮动伤害数字（对标三家"打了多少看得见"·暴击大号金字）
+      if (u && typeof c.delta === 'number' && c.delta < 0) {
+        pops.push({ x: u.x + (Math.random() - 0.5) * u.w * 0.4, y: u.y - u.h * 0.55,
+          txt: String(-c.delta), crit: !!c.crit, age: 0, life: 0.8 });
+        if (pops.length > 26) pops.splice(0, pops.length - 26);
+      }
+      break;
+    }
     case 'death_burst': {
       if (u) { u.alive = false; u.deadT = 0.4; }
       const n = 5;
@@ -159,7 +182,10 @@ function exec(c) {
 function drawShip(u) {
   if (!u.present || (!u.alive && u.deadT <= 0)) return;
   const fwd = u.side === 'player' ? -1 : 1; // 机头方向（我方朝上=-y）
-  let ox = 0, oy = Math.sin(t * 2 + u.phase) * 1.9; // V0 悬浮
+  // 巡航漂移（贴纸感解药之一：船在"开"，不是钉在格子上）——影子随船平移
+  const drift = Math.sin(t * 0.7 + u.phase * 3.1) * (u.side === 'player' ? 2.2 : 1.6);
+  const bob = Math.sin(t * 2 + u.phase) * 1.9; // V0 悬浮（只作用船体，不作用影子）
+  let ox = 0, oy = bob;
   if (u.shakeT > 0) { ox += (Math.random() - 0.5) * 4; oy += (Math.random() - 0.5) * 4; }
   if (u.recoilT > 0) oy -= fwd * 4 * (u.recoilT / 0.15); // 技能后坐（向后）
   if (u.lungeT > 0) { // 开火点头（向前顶 0.14s 内先冲后回）
@@ -170,15 +196,27 @@ function drawShip(u) {
   const alpha = !u.alive ? Math.max(0, u.deadT / 0.4) : 1;
   cx.save();
   cx.globalAlpha = alpha;
-  cx.translate(u.x + ox, u.y + oy);
+  cx.translate(u.x + drift, u.y); // 地面锚（悬浮/后坐/入场不带进来）
   const w = u.w, h = u.h;
-  // 脚下软影（影子不随机身摇摆·先画）
-  cx.globalAlpha = alpha * 0.18;
-  cx.fillStyle = '#1A2B33';
-  cx.beginPath();
-  cx.ellipse(0, h * 0.42, w * 0.34, h * 0.09, 0, 0, Math.PI * 2);
-  cx.fill();
+  if (u.spawnT <= 0) {
+    // 接地影（贴纸感解药之二）：船升影缩淡、船落影大实=光影跟地面呼吸
+    const bobK = (bob / 1.9 + 1) / 2; // 0=最低 1=最高
+    cx.globalAlpha = alpha * (0.30 - bobK * 0.10);
+    cx.fillStyle = GROUND_SHADOW;
+    cx.beginPath();
+    cx.ellipse(0, h * 0.46, w * (0.40 - bobK * 0.05), h * (0.105 - bobK * 0.018), 0, 0, Math.PI * 2);
+    cx.fill();
+    // 引擎地光斑（贴纸感解药之三）：船的光落在地上=单位与场地发生光照关系
+    cx.globalCompositeOperation = 'lighter';
+    cx.globalAlpha = alpha * (0.055 + 0.028 * Math.sin(t * 7 + u.phase));
+    cx.fillStyle = u.side === 'player' ? u.color : '#D9584A';
+    cx.beginPath();
+    cx.ellipse(0, h * 0.46, w * 0.30, h * 0.075, 0, 0, Math.PI * 2);
+    cx.fill();
+    cx.globalCompositeOperation = 'source-over';
+  }
   cx.globalAlpha = alpha;
+  cx.translate(ox, oy); // 船体层偏移（悬浮/抖动/后坐/点头/入场滑入）
   // 气流摇摆（加幅 ±3.4°·相位错开）+ 果冻感（squash&stretch：XY 反相 ±2.4%·糖果软感）
   cx.rotate(Math.sin(t * 1.6 + u.phase) * 0.06);
   const sq = Math.sin(t * 3.1 + u.phase) * 0.024;
@@ -542,6 +580,14 @@ function frame(ts) {
     drawShip(u);
   }
 
+  // ---- 空气透视（治贴纸感④·敌方在"远处"要隔着一层空气）：敌区罩极淡的
+  //      大气色雾，罩单位不罩特效（特效层在后面画=保持"高饱和担当"锐度）----
+  const airG = cx.createLinearGradient(0, H * 0.10, 0, H * 0.46);
+  airG.addColorStop(0, `rgba(${AIR_TINT},0.10)`);
+  airG.addColorStop(1, `rgba(${AIR_TINT},0)`);
+  cx.fillStyle = airG;
+  cx.fillRect(0, 0, W, H * 0.46);
+
   // ---- V3 压暗膜（星核质变头部空间·总谱§1）：盖场景不盖特效与 UI ----
   if (darkenT > 0) {
     darkenT = Math.max(0, darkenT - dt);
@@ -557,6 +603,32 @@ function frame(ts) {
   for (const im of impacts) drawImpact(im);
   bursts = bursts.filter((b) => (b.age += dt) < b.life);
   for (const b of bursts) { b.x += b.vx * dt; b.y += b.vy * dt; cx.globalAlpha = 1 - b.age / b.life; cx.fillStyle = b.color; cx.beginPath(); cx.arc(b.x, b.y, 3.4, 0, Math.PI * 2); cx.fill(); cx.globalAlpha = 1; }
+  // 火星余烬（爆点二层·加法发光+重力下坠）
+  embers = embers.filter((e) => (e.age += dt) < e.life);
+  cx.globalCompositeOperation = 'lighter';
+  for (const e of embers) {
+    e.vy += 150 * dt; e.x += e.vx * dt; e.y += e.vy * dt;
+    cx.globalAlpha = (1 - e.age / e.life) * 0.85;
+    cx.fillStyle = e.color;
+    cx.beginPath(); cx.arc(e.x, e.y, e.size, 0, Math.PI * 2); cx.fill();
+  }
+  cx.globalCompositeOperation = 'source-over';
+  cx.globalAlpha = 1;
+  // 浮动伤害数字（升腾渐隐·暴击金色大号带顿点）
+  pops = pops.filter((p) => (p.age += dt) < p.life);
+  cx.textAlign = 'center';
+  for (const p of pops) {
+    const k = p.age / p.life;
+    const rise = 26 * (1 - Math.pow(1 - k, 2));
+    const popScale = p.crit ? (p.age < 0.12 ? 1 + (0.12 - p.age) * 3 : 1) : 1;
+    cx.globalAlpha = k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45;
+    cx.font = `bold ${Math.round((p.crit ? 16 : 11.5) * popScale)}px "Segoe UI", sans-serif`;
+    cx.lineWidth = 3; cx.strokeStyle = 'rgba(20,12,28,0.85)';
+    cx.strokeText(p.txt, p.x, p.y - rise);
+    cx.fillStyle = p.crit ? '#FFD75E' : '#F4F7FF';
+    cx.fillText(p.txt, p.x, p.y - rise);
+  }
+  cx.globalAlpha = 1;
 
   // ---- 环境色调和层（治"三层素材不融合"·Ron 反馈③合成侧）：把单位/特效/背景
   //      泡进同一环境色汤——星盗地盘=玫红环境光 + 顶部冷紫；成熟游戏融合感的合成层部分 ----

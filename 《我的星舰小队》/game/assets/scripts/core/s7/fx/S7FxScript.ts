@@ -41,7 +41,8 @@ export type S7FxCommand =
   | { tSec: number; kind: 'impact'; at: S7FxPoint; impact: { kind: S7FxImpactKind; size: number; durationSec?: number }; color: string; vLevel: 1 | 2 }
   | { tSec: number; kind: 'unit_flash'; unitId: string; crit: boolean }
   | { tSec: number; kind: 'unit_shake'; unitId: string }
-  | { tSec: number; kind: 'hp_change'; unitId: string; hpPct: number }
+  /** delta=本次血量变化（负=伤害·渲染壳浮动伤害数字用）；crit 随击暴击标记。 */
+  | { tSec: number; kind: 'hp_change'; unitId: string; hpPct: number; delta?: number; crit?: boolean }
   | { tSec: number; kind: 'death_burst'; unitId: string; at: S7FxPoint }
   | { tSec: number; kind: 'recoil'; unitId: string }
   | { tSec: number; kind: 'darken'; durationSec: number };
@@ -281,7 +282,7 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
     for (const hit of frame.hits) {
       cmds.push({ tSec: frameArrival, kind: 'unit_flash', unitId: hit.targetId, crit: hit.crit });
       cmds.push({ tSec: frameArrival, kind: 'unit_shake', unitId: hit.targetId });
-      cmds.push({ tSec: frameArrival, kind: 'hp_change', unitId: hit.targetId, hpPct: pctOf(hit.hpAfter, byId.get(hit.targetId)) });
+      cmds.push({ tSec: frameArrival, kind: 'hp_change', unitId: hit.targetId, hpPct: pctOf(hit.hpAfter, byId.get(hit.targetId)), delta: -hit.amount, crit: hit.crit });
     }
     for (const dead of frame.deaths) {
       const dt = frameArrival + DEATH_LAG_SEC;
