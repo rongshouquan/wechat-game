@@ -287,13 +287,42 @@ function drawShip(u) {
     cx.fill();
   }
   cx.restore();
-  // 血条（细线化=对标验收尺：高≤单位高 8%）
+  // 血条（细线化=对标验收尺）；我方=驾驶员头像在左+血条在右（GDD§4 UI 三条·Ron 反馈②）
   if (u.alive) {
-    const bw = w * 1.05, bh = 4, bx = u.x - bw / 2, by = u.y - u.h / 2 - 10 + oy;
-    cx.fillStyle = 'rgba(20,22,30,.6)';
-    cx.fillRect(bx, by, bw, bh);
-    cx.fillStyle = u.side === 'player' ? '#5BE06B' : '#E5484D';
-    cx.fillRect(bx, by, bw * (u.hpPct / 100), bh);
+    const isP2 = u.side === 'player';
+    const bh = 4.5, by = u.y - u.h / 2 - 11 + oy;
+    if (isP2) {
+      const av = 17; // 头像直径
+      const bw = w * 0.92;
+      const ax = u.x - (bw + av + 3) / 2 + av / 2;
+      const bx = ax + av / 2 + 3;
+      // 头像：圆形裁剪的驾驶员图（缺图=舰色底占位）+ 亲和组徽记色环
+      const pil = PILOT_OF_SHIP[u.unitRef];
+      const avImg = pil ? AVATARS[pil] : null;
+      cx.save();
+      cx.beginPath(); cx.arc(ax, by + bh / 2, av / 2, 0, Math.PI * 2); cx.clip();
+      if (avImg && ok(avImg)) {
+        cx.drawImage(avImg, ax - av / 2, by + bh / 2 - av / 2, av, av);
+      } else {
+        cx.fillStyle = u.color;
+        cx.fillRect(ax - av / 2, by + bh / 2 - av / 2, av, av);
+      }
+      cx.restore();
+      cx.strokeStyle = GROUP_RING[u.unitRef] || '#FFFFFF';
+      cx.lineWidth = 1.8;
+      cx.beginPath(); cx.arc(ax, by + bh / 2, av / 2, 0, Math.PI * 2); cx.stroke();
+      // 血条
+      cx.fillStyle = 'rgba(20,22,30,.6)';
+      cx.fillRect(bx, by, bw, bh);
+      cx.fillStyle = '#5BE06B';
+      cx.fillRect(bx, by, bw * (u.hpPct / 100), bh);
+    } else {
+      const bw = w * 1.05, bx = u.x - bw / 2;
+      cx.fillStyle = 'rgba(20,22,30,.6)';
+      cx.fillRect(bx, by, bw, bh);
+      cx.fillStyle = '#E5484D';
+      cx.fillRect(bx, by, bw * (u.hpPct / 100), bh);
+    }
   }
 }
 
@@ -301,6 +330,17 @@ function hash01seed(v) {
   const x = Math.sin(v * 12.9898) * 43758.5453;
   return (x - Math.floor(x)) * Math.PI * 2;
 }
+
+function hexRgb(hex) {
+  const h = (hex || '#FFFFFF').replace('#', '');
+  return [parseInt(h.slice(0, 2), 16) || 255, parseInt(h.slice(2, 4), 16) || 255, parseInt(h.slice(4, 6), 16) || 255];
+}
+
+// 亲和组徽记色（驾驶员真源 §0③：人-舰-弹三层同色系互认·头像底环用）
+const GROUP_RING = { shp03: '#FFA94D', shp06: '#63B8FF', shp09: '#FFE066', shp13: '#7FE7D0', shp20: '#B78CF0' };
+const PILOT_OF_SHIP = { shp03: 'pil03', shp06: 'pil06', shp09: 'pil09', shp13: 'pil13', shp20: 'pil20' };
+const AVATARS = {};
+for (const pil of Object.values(PILOT_OF_SHIP)) { const im = new Image(); im.src = `sprites/avatars/${pil}.png`; AVATARS[pil] = im; }
 
 function arcPos(c, k) {
   const x0 = c.from.x * W, y0 = c.from.y * H, x1 = c.to.x * W, y1 = c.to.y * H;
@@ -380,14 +420,26 @@ function drawImpact(im) {
     }
     case 'ring_expand': cx.lineWidth = 4 * (1 - k) + 1; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 8 + k * 46 * im.size, 0, Math.PI * 2); cx.stroke(); break;
     case 'bubble_pop': {
-      // 长持续=护罩呼吸（罩住不盖脸：低填充+亮边）；短持续=泡闪
+      // 护盾=玻璃球面感（Ron 反馈①"圈框住不像护盾"）：菲涅尔渐变（中心透、边缘色浓）
+      // + 顶部高光弧 + 细亮边——读作"罩着一层能量玻璃"而非"画了个圈"。
       const breathe = 1 + Math.sin(im.age * 5) * 0.06;
-      cx.globalAlpha = env * 0.22;
-      cx.fillStyle = col;
-      cx.beginPath(); cx.arc(0, 0, 17 * im.size * breathe, 0, Math.PI * 2); cx.fill();
-      cx.globalAlpha = env * 0.85;
-      cx.strokeStyle = 'rgba(255,255,255,.9)'; cx.lineWidth = 2;
-      cx.beginPath(); cx.arc(0, 0, 17 * im.size * breathe, 0, Math.PI * 2); cx.stroke();
+      const r = 17 * im.size * breathe;
+      const [cr, cg2, cb] = hexRgb(col);
+      const g = cx.createRadialGradient(0, 0, r * 0.35, 0, 0, r);
+      g.addColorStop(0, `rgba(${cr},${cg2},${cb},0.04)`);
+      g.addColorStop(0.72, `rgba(${cr},${cg2},${cb},0.14)`);
+      g.addColorStop(0.95, `rgba(${cr},${cg2},${cb},0.42)`);
+      g.addColorStop(1, `rgba(255,255,255,0.5)`);
+      cx.globalAlpha = env;
+      cx.fillStyle = g;
+      cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.fill();
+      cx.globalAlpha = env * 0.75;
+      cx.strokeStyle = 'rgba(255,255,255,.75)'; cx.lineWidth = 1.4;
+      cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke();
+      // 顶部高光弧（玻璃反光）
+      cx.globalAlpha = env * 0.8;
+      cx.strokeStyle = 'rgba(255,255,255,.95)'; cx.lineWidth = 2.2;
+      cx.beginPath(); cx.arc(0, 0, r * 0.72, -2.3, -1.35); cx.stroke();
       break;
     }
     case 'cage_ring': {
@@ -468,6 +520,16 @@ function frame(ts) {
   for (const im of impacts) drawImpact(im);
   bursts = bursts.filter((b) => (b.age += dt) < b.life);
   for (const b of bursts) { b.x += b.vx * dt; b.y += b.vy * dt; cx.globalAlpha = 1 - b.age / b.life; cx.fillStyle = b.color; cx.beginPath(); cx.arc(b.x, b.y, 3.4, 0, Math.PI * 2); cx.fill(); cx.globalAlpha = 1; }
+
+  // ---- 环境色调和层（治"三层素材不融合"·Ron 反馈③合成侧）：把单位/特效/背景
+  //      泡进同一环境色汤——星盗地盘=玫红环境光 + 顶部冷紫；成熟游戏融合感的合成层部分 ----
+  cx.fillStyle = 'rgba(216,108,128,0.055)';
+  cx.fillRect(0, 0, W, H);
+  const envG = cx.createLinearGradient(0, 0, 0, H * 0.5);
+  envG.addColorStop(0, 'rgba(64,44,110,0.10)');
+  envG.addColorStop(1, 'rgba(64,44,110,0)');
+  cx.fillStyle = envG;
+  cx.fillRect(0, 0, W, H * 0.5);
 
   // ---- UI 层（占位）：顶部倒计时 + 右下暂停 ----
   cx.fillStyle = 'rgba(22,26,40,.8)';
