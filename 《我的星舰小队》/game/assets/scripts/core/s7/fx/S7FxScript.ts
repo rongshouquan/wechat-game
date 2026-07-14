@@ -141,7 +141,10 @@ function layoutEnemies(roster: S7PlaybackUnit[], bossId: string): Map<string, S7
         x = 0.5 + (i - (m - 1) / 2) * SPACING + offset;
       }
       x = clamp01x(x + (hash01(u.unitId, 7) - 0.5) * 2 * 0.016);
-      const y = rowY[ri] + (hash01(u.unitId, 13) - 0.5) * 2 * 0.014;
+      // V 字编队微弯（飞行编队基因·敌上我下=空战阵型语言）：中央向我方微凸、
+      // 两翼向后掠——队列感强且天然不呆板。
+      const vBend = (0.28 - Math.abs(x - 0.5)) * 0.16;
+      const y = rowY[ri] + vBend + (hash01(u.unitId, 13) - 0.5) * 2 * 0.014;
       map.set(u.unitId, { x, y });
     });
   });
