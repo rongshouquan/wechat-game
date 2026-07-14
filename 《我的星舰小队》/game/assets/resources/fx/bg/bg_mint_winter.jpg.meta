@@ -1,11 +1,11 @@
 {
-  "ver": "1.0.26",
+  "ver": "1.0.27",
   "importer": "image",
   "imported": true,
   "uuid": "8546f9f5-621d-4dfc-b6f0-c2aafa68cbfa",
   "files": [
-    ".json",
-    ".jpg"
+    ".jpg",
+    ".json"
   ],
   "subMetas": {
     "6c48a": {
@@ -24,7 +24,13 @@
         "magfilter": "linear",
         "mipfilter": "none",
         "anisotropy": 0
-      }
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
     },
     "f9941": {
       "importer": "sprite-frame",
@@ -53,17 +59,20 @@
         "pivotX": 0.5,
         "pivotY": 0.5,
         "meshType": 0,
-        "vertices": null,
         "isUuid": true,
         "imageUuidOrDatabaseUri": "8546f9f5-621d-4dfc-b6f0-c2aafa68cbfa@6c48a",
         "atlasUuid": ""
-      }
+      },
+      "ver": "1.0.12",
+      "imported": false,
+      "files": [],
+      "subMetas": {}
     }
   },
   "userData": {
     "type": "sprite-frame",
     "hasAlpha": false,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "8546f9f5-621d-4dfc-b6f0-c2aafa68cbfa@f9941"
+    "redirect": "8546f9f5-621d-4dfc-b6f0-c2aafa68cbfa@6c48a"
   }
 }
