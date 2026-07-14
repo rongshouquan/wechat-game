@@ -1,0 +1,69 @@
+{
+  "ver": "1.0.26",
+  "importer": "image",
+  "imported": true,
+  "uuid": "b7710610-0804-4df7-9ac3-9b1fcec73c04",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "b7710610-0804-4df7-9ac3-9b1fcec73c04@6c48a",
+      "displayName": "grad_sky",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "imageUuidOrDatabaseUri": "b7710610-0804-4df7-9ac3-9b1fcec73c04",
+        "isUuid": true,
+        "visible": false,
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0
+      }
+    },
+    "f9941": {
+      "importer": "sprite-frame",
+      "uuid": "b7710610-0804-4df7-9ac3-9b1fcec73c04@f9941",
+      "displayName": "grad_sky",
+      "id": "f9941",
+      "name": "spriteFrame",
+      "userData": {
+        "trimType": "none",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 4,
+        "height": 128,
+        "rawWidth": 4,
+        "rawHeight": 128,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": null,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "b7710610-0804-4df7-9ac3-9b1fcec73c04@6c48a",
+        "atlasUuid": ""
+      }
+    }
+  },
+  "userData": {
+    "type": "sprite-frame",
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": true,
+    "redirect": "b7710610-0804-4df7-9ac3-9b1fcec73c04@f9941"
+  }
+}

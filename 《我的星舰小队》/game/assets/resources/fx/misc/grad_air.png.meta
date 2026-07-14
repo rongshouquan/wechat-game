@@ -1,0 +1,69 @@
+{
+  "ver": "1.0.26",
+  "importer": "image",
+  "imported": true,
+  "uuid": "2925a934-54c7-4b3b-bf75-12c2e4de7f5c",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "2925a934-54c7-4b3b-bf75-12c2e4de7f5c@6c48a",
+      "displayName": "grad_air",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "imageUuidOrDatabaseUri": "2925a934-54c7-4b3b-bf75-12c2e4de7f5c",
+        "isUuid": true,
+        "visible": false,
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0
+      }
+    },
+    "f9941": {
+      "importer": "sprite-frame",
+      "uuid": "2925a934-54c7-4b3b-bf75-12c2e4de7f5c@f9941",
+      "displayName": "grad_air",
+      "id": "f9941",
+      "name": "spriteFrame",
+      "userData": {
+        "trimType": "none",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 4,
+        "height": 128,
+        "rawWidth": 4,
+        "rawHeight": 128,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": null,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "2925a934-54c7-4b3b-bf75-12c2e4de7f5c@6c48a",
+        "atlasUuid": ""
+      }
+    }
+  },
+  "userData": {
+    "type": "sprite-frame",
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": true,
+    "redirect": "2925a934-54c7-4b3b-bf75-12c2e4de7f5c@f9941"
+  }
+}

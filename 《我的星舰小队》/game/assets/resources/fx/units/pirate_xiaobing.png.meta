@@ -1,0 +1,69 @@
+{
+  "ver": "1.0.26",
+  "importer": "image",
+  "imported": true,
+  "uuid": "74c32f4b-d7e7-4a14-86f5-9679b9333b1d",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "74c32f4b-d7e7-4a14-86f5-9679b9333b1d@6c48a",
+      "displayName": "pirate_xiaobing",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "imageUuidOrDatabaseUri": "74c32f4b-d7e7-4a14-86f5-9679b9333b1d",
+        "isUuid": true,
+        "visible": false,
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0
+      }
+    },
+    "f9941": {
+      "importer": "sprite-frame",
+      "uuid": "74c32f4b-d7e7-4a14-86f5-9679b9333b1d@f9941",
+      "displayName": "pirate_xiaobing",
+      "id": "f9941",
+      "name": "spriteFrame",
+      "userData": {
+        "trimType": "none",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 192,
+        "height": 192,
+        "rawWidth": 192,
+        "rawHeight": 192,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": null,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "74c32f4b-d7e7-4a14-86f5-9679b9333b1d@6c48a",
+        "atlasUuid": ""
+      }
+    }
+  },
+  "userData": {
+    "type": "sprite-frame",
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": true,
+    "redirect": "74c32f4b-d7e7-4a14-86f5-9679b9333b1d@f9941"
+  }
+}

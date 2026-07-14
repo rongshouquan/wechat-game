@@ -1,0 +1,69 @@
+{
+  "ver": "1.0.26",
+  "importer": "image",
+  "imported": true,
+  "uuid": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77@6c48a",
+      "displayName": "avatar_pil13",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "imageUuidOrDatabaseUri": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77",
+        "isUuid": true,
+        "visible": false,
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0
+      }
+    },
+    "f9941": {
+      "importer": "sprite-frame",
+      "uuid": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77@f9941",
+      "displayName": "avatar_pil13",
+      "id": "f9941",
+      "name": "spriteFrame",
+      "userData": {
+        "trimType": "none",
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": 0,
+        "offsetY": 0,
+        "trimX": 0,
+        "trimY": 0,
+        "width": 96,
+        "height": 96,
+        "rawWidth": 96,
+        "rawHeight": 96,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": null,
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77@6c48a",
+        "atlasUuid": ""
+      }
+    }
+  },
+  "userData": {
+    "type": "sprite-frame",
+    "hasAlpha": false,
+    "fixAlphaTransparencyArtifacts": false,
+    "redirect": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77@f9941"
+  }
+}

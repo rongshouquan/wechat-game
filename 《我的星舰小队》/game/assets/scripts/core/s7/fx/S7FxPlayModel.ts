@@ -1,0 +1,415 @@
+// S7 战斗演出播放模型（纯 TS · 不 import cc · Cocos 壳批 2026-07-14）。
+//
+// 职责：把 S7FxTimeline 指令流播成**逐帧可渲染状态**——单位运行态（位置/血量/受击
+//   白闪/施法泛光等计时器）+ 弹体/爆点/余烬/伤害数字四池 + V3 压暗。渲染层
+//   （Cocos S7BattleFxLayer / HTML 预览壳）只读状态画图，不理解战斗语义。
+//   逻辑与视觉蓝本 = tools/fx-preview/index.html（组装 v8 定案·总谱 §4a），此处为其
+//   引擎无关移植；坐标系 = 参考画布 464×825 像素（与预览壳同幅面、同纵横比
+//   0.5624≈720/1280），渲染层按 viewW/REF_W 等比放大。
+//
+// 红线（总谱 §7）：弹体上限 48（超发丢最旧）；余烬 ≤90、伤害数字 ≤26；本层零分配
+//   热路径外移（数组复用·渲染层负责节点池）。微信兼容：不展开 Set/Map。
+
+import { S7FxCommand, S7FxTimeline } from './S7FxScript';
+import { S7FxImpactKind, S7FxProjectileSpec } from './S7FxCatalog';
+
+/** 参考画布（预览壳同幅面；渲染层等比缩放）。 */
+export const S7FX_REF_W = 464;
+export const S7FX_REF_H = 825;
+
+/** 五舰签名色 + 敌方族色（预览壳同表）。 */
+export const S7FX_SHIP_COLOR: Record<string, string> = {
+  shp03: '#4FC3F7', shp06: '#3BA8A0', shp09: '#FF8A3D', shp13: '#F5A8C0', shp20: '#B05CE0',
+};
+export const S7FX_ENEMY_COLOR = '#C4453F';
+/** 亲和组徽记色（驾驶员真源 §0③·头像底环）。 */
+export const S7FX_GROUP_RING: Record<string, string> = {
+  shp03: '#FFA94D', shp06: '#63B8FF', shp09: '#FFE066', shp13: '#7FE7D0', shp20: '#B78CF0',
+};
+export const S7FX_PILOT_OF_SHIP: Record<string, string> = {
+  shp03: 'pil03', shp06: 'pil06', shp09: 'pil09', shp13: 'pil13', shp20: 'pil20',
+};
+
+/** 发射锚点表（L75 母版实测件位·[dx,dy]=占本舰绘制框比例·y 负=机头向；多锚按 shotIdx 轮转）。 */
+export const S7FX_MUZZLES: Record<string, ReadonlyArray<readonly [number, number]>> = {
+  shp03: [[0, -0.41], [-0.354, 0], [0.354, 0]],
+  shp06: [[0, -0.35]],
+  shp09: [[-0.05, -0.44], [0.06, -0.44]],
+  shp13: [[0, -0.36]],
+  shp20: [[-0.27, -0.043], [0.27, -0.043]],
+};
+const MUZZLE_PLAYER_DEFAULT: ReadonlyArray<readonly [number, number]> = [[0, -0.38]];
+const MUZZLE_ENEMY_DEFAULT: ReadonlyArray<readonly [number, number]> = [[0, 0.36]];
+
+/** 切件驱动规格（L75 母版 1024² 件位；渲染层据此摆部件节点）。 */
+export interface S7FxPartRig {
+  /** 资源名（resources/fx/units/ 下）。 */
+  sprite: string;
+  /** 件矩形 [x0,y0,x1,y1]（母版 1024² 像素空间）。 */
+  rect: readonly [number, number, number, number];
+  /** 旋转/后坐轴心（同空间）。 */
+  axis: readonly [number, number];
+  /** 动法：halo=悬浮轻转+上下浮 / spin=来回转 / spin2=反相来回转 / recoil=开火后坐 / flag=迎风摆。 */
+  mode: 'halo' | 'spin' | 'spin2' | 'recoil' | 'flag';
+}
+export const S7FX_MASTER_SIZE = 1024;
+export const S7FX_PART_RIGS: Record<string, S7FxPartRig[]> = {
+  shp09: [{ sprite: 'ship_lieyang_part0', rect: [410, 50, 625, 270], axis: [515, 265], mode: 'recoil' }],
+  shp13: [{ sprite: 'ship_chenxi_part0', rect: [385, 125, 630, 350], axis: [508, 345], mode: 'halo' }],
+  shp20: [
+    { sprite: 'ship_suolian_part0', rect: [140, 395, 335, 550], axis: [233, 468], mode: 'spin' },
+    { sprite: 'ship_suolian_part1', rect: [690, 395, 885, 550], axis: [790, 468], mode: 'spin2' },
+  ],
+};
+/** 星盗船长旗（按 body 资源名挂靠·敌方无 unitRef）。 */
+export const S7FX_PIRATE_FLAG_RIG: S7FxPartRig = {
+  sprite: 'pirate_chuanzhang_flag', rect: [475, 40, 725, 210], axis: [515, 208], mode: 'flag',
+};
+
+/** 弹体贴图选择（功能绿>敌红>形状；baseAngle=素材自带朝向）。 */
+export function s7FxVfxForProjectile(spec: S7FxProjectileSpec): { name: string; baseAngle: number } | null {
+  if (spec.color === '#7ED957') return { name: 'vfx_heal_orb', baseAngle: 0 };
+  switch (spec.shape) {
+    case 'bolt':
+      return spec.color === '#D94A4A'
+        ? { name: 'vfx_bolt_red', baseAngle: Math.PI }
+        : { name: 'vfx_bolt_cyan', baseAngle: Math.PI };
+    case 'shell': return { name: 'vfx_shell_orange', baseAngle: 0 };
+    case 'ring': return { name: 'vfx_ring_teal', baseAngle: 0 };
+    case 'orb': return { name: 'vfx_orb_purple', baseAngle: 0 };
+    case 'bubble': return { name: 'vfx_bubble_blue', baseAngle: 0 };
+    case 'blade': return { name: 'vfx_blade_cyan', baseAngle: 0 };
+    default: return null;
+  }
+}
+
+/** 花名册行（Cocos 侧从 playback.roster + resolveRef 拼出）。 */
+export interface S7FxRosterEntry {
+  unitId: string;
+  side: string;
+  unitRef: string;
+  roleTag: string;
+  maxHp: number;
+}
+
+/** 单位运行态（参考像素空间；渲染层直接消费）。 */
+export interface S7FxUnitState {
+  unitId: string;
+  side: string;
+  unitRef: string;
+  color: string;
+  /** 参考像素坐标（464×825 空间·中心点）。 */
+  x: number;
+  y: number;
+  /** 绘制框（参考像素）。 */
+  w: number;
+  h: number;
+  isBoss: boolean;
+  hpPct: number;
+  alive: boolean;
+  present: boolean;
+  /** 事件计时器（秒·渲染层读值做白闪/抖动/后坐/点头/入场/施法泛光/死亡淡出）。 */
+  flashT: number;
+  shakeT: number;
+  recoilT: number;
+  lungeT: number;
+  spawnT: number;
+  castGlowT: number;
+  deadT: number;
+  /** 相位（确定性哈希·渲染层做悬浮/摇摆错拍）。 */
+  phase: number;
+}
+
+export interface S7FxProjState {
+  spec: S7FxProjectileSpec;
+  fromX: number; fromY: number;
+  toX: number; toY: number;
+  flightSec: number;
+  age: number;
+  /** 发射锚点偏移（参考像素·已含）。 */
+  ox: number; oy: number;
+  vLevel: number;
+}
+
+export interface S7FxImpactState {
+  x: number; y: number;
+  kind: S7FxImpactKind | 'muzzle';
+  size: number;
+  color: string;
+  age: number;
+  life: number;
+}
+
+export interface S7FxParticleState {
+  x: number; y: number; vx: number; vy: number;
+  age: number; life: number; color: string; size: number;
+}
+
+export interface S7FxPopState {
+  x: number; y: number; txt: string; crit: boolean; age: number; life: number;
+}
+
+const PROJ_CAP = 48; // 总谱 §7 弹体红线
+const EMBER_CAP = 90;
+const POP_CAP = 26;
+
+function hash01(s: string, salt: number): number {
+  let h = 2166136261 ^ salt;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 1000) / 1000;
+}
+
+/** 确定性伪随机（避免 Math.random——微信/回放一致性；按调用序推进）。 */
+function makeRng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+export class S7FxPlayModel {
+  readonly units: Record<string, S7FxUnitState> = {};
+  readonly unitList: S7FxUnitState[] = [];
+  readonly projs: S7FxProjState[] = [];
+  readonly impacts: S7FxImpactState[] = [];
+  readonly bursts: S7FxParticleState[] = [];
+  readonly embers: S7FxParticleState[] = [];
+  readonly pops: S7FxPopState[] = [];
+
+  t = 0;
+  darkenT = 0;
+  darkenDur = 0;
+  finished = false;
+
+  private cmdIdx = 0;
+  private readonly cmds: S7FxCommand[];
+  private readonly endT: number;
+  private rng = makeRng(0x53375);
+
+  constructor(timeline: S7FxTimeline, roster: S7FxRosterEntry[]) {
+    this.cmds = timeline.commands;
+    this.endT = timeline.durationSec + 1.5;
+    // 敌方尺寸阶（对标验收尺②）：最大 maxHp=船长档 150 / ≥35% 分位=大副档 78 / 其余=小兵档 54；我方 92。
+    let maxEnemyHp = 1;
+    for (const r of roster) if (r.side === 'enemy' && r.maxHp > maxEnemyHp) maxEnemyHp = r.maxHp;
+    for (const r of roster) {
+      const lay = timeline.layout[r.unitId];
+      const isP = r.side === 'player';
+      let size = 92;
+      let isBoss = false;
+      if (!isP) {
+        const ratio = r.maxHp / maxEnemyHp;
+        if (ratio >= 0.999) { size = 150; isBoss = true; }
+        else if (ratio >= 0.35) size = 78;
+        else size = 54;
+      }
+      const u: S7FxUnitState = {
+        unitId: r.unitId,
+        side: r.side,
+        unitRef: r.unitRef,
+        color: isP ? (S7FX_SHIP_COLOR[r.unitRef] ?? '#FFE066') : S7FX_ENEMY_COLOR,
+        x: (lay ? lay.at.x : 0.5) * S7FX_REF_W,
+        y: (lay ? lay.at.y : 0.5) * S7FX_REF_H,
+        w: size, h: size, isBoss,
+        hpPct: 100, alive: true, present: isP,
+        flashT: 0, shakeT: 0, recoilT: 0, lungeT: 0, spawnT: 0, castGlowT: 0, deadT: 0,
+        phase: hash01(r.unitId, 31) * Math.PI * 2,
+      };
+      this.units[r.unitId] = u;
+      this.unitList.push(u);
+    }
+  }
+
+  restart(): void {
+    this.t = 0;
+    this.cmdIdx = 0;
+    this.darkenT = 0;
+    this.darkenDur = 0;
+    this.finished = false;
+    this.projs.length = 0;
+    this.impacts.length = 0;
+    this.bursts.length = 0;
+    this.embers.length = 0;
+    this.pops.length = 0;
+    this.rng = makeRng(0x53375);
+    for (const u of this.unitList) {
+      u.hpPct = 100; u.alive = true; u.present = u.side === 'player';
+      u.flashT = 0; u.shakeT = 0; u.recoilT = 0; u.lungeT = 0; u.spawnT = 0; u.castGlowT = 0; u.deadT = 0;
+    }
+  }
+
+  /** 跳到结尾（跳过键）：快进执行全部剩余指令、清飞行物，保留终局单位态。 */
+  skipToEnd(): void {
+    while (this.cmdIdx < this.cmds.length) {
+      this.exec(this.cmds[this.cmdIdx]);
+      this.cmdIdx += 1;
+    }
+    this.t = this.endT;
+    this.projs.length = 0;
+    this.impacts.length = 0;
+    this.bursts.length = 0;
+    this.embers.length = 0;
+    this.pops.length = 0;
+    this.darkenT = 0;
+    for (const u of this.unitList) { u.spawnT = 0; if (!u.alive) u.deadT = 0; }
+    this.finished = true;
+  }
+
+  /** 推进 dt 秒（渲染层每帧调用；speed 由调用方乘进 dt）。 */
+  step(dt: number): void {
+    if (dt < 0) dt = 0;
+    if (dt > 0.05) dt = 0.05; // 防真假时钟混用大跳帧（预览壳同款钳制）
+    this.t += dt;
+    while (this.cmdIdx < this.cmds.length && this.cmds[this.cmdIdx].tSec <= this.t) {
+      this.exec(this.cmds[this.cmdIdx]);
+      this.cmdIdx += 1;
+    }
+    // 池老化（回收由过滤完成——渲染层按 age<life 同步节点池）
+    for (let i = this.projs.length - 1; i >= 0; i -= 1) {
+      const p = this.projs[i];
+      p.age += dt;
+      if (p.age >= p.flightSec + 0.02) this.projs.splice(i, 1);
+    }
+    for (let i = this.impacts.length - 1; i >= 0; i -= 1) {
+      const im = this.impacts[i];
+      im.age += dt;
+      if (im.age >= im.life) this.impacts.splice(i, 1);
+    }
+    for (let i = this.bursts.length - 1; i >= 0; i -= 1) {
+      const b = this.bursts[i];
+      b.age += dt;
+      if (b.age >= b.life) { this.bursts.splice(i, 1); continue; }
+      b.x += b.vx * dt; b.y += b.vy * dt;
+    }
+    for (let i = this.embers.length - 1; i >= 0; i -= 1) {
+      const e = this.embers[i];
+      e.age += dt;
+      if (e.age >= e.life) { this.embers.splice(i, 1); continue; }
+      e.vy += 150 * dt; e.x += e.vx * dt; e.y += e.vy * dt;
+    }
+    for (let i = this.pops.length - 1; i >= 0; i -= 1) {
+      const p = this.pops[i];
+      p.age += dt;
+      if (p.age >= p.life) this.pops.splice(i, 1);
+    }
+    for (const u of this.unitList) {
+      if (u.flashT > 0) u.flashT = Math.max(0, u.flashT - dt);
+      if (u.shakeT > 0) u.shakeT = Math.max(0, u.shakeT - dt);
+      if (u.recoilT > 0) u.recoilT = Math.max(0, u.recoilT - dt);
+      if (u.lungeT > 0) u.lungeT = Math.max(0, u.lungeT - dt);
+      if (u.spawnT > 0) u.spawnT = Math.max(0, u.spawnT - dt);
+      if (u.castGlowT > 0) u.castGlowT = Math.max(0, u.castGlowT - dt);
+      if (!u.alive && u.deadT > 0) u.deadT = Math.max(0, u.deadT - dt);
+    }
+    if (this.darkenT > 0) this.darkenT = Math.max(0, this.darkenT - dt);
+    if (this.t >= this.endT) this.finished = true;
+  }
+
+  /** V3 压暗当前 alpha（0-0.42·渲染层直接用）。 */
+  darkenAlpha(): number {
+    if (this.darkenT <= 0 || this.darkenDur <= 0) return 0;
+    const dk = Math.min(1, (this.darkenDur - this.darkenT) / 0.25, this.darkenT / 0.35);
+    return 0.42 * Math.max(0, dk);
+  }
+
+  /** 弹体当前位置+朝向（参考像素；含发射锚点与高抛弧）。 */
+  projPose(p: S7FxProjState): { x: number; y: number; angle: number } {
+    const k = Math.min(1, p.age / p.flightSec);
+    const x0 = p.fromX + p.ox, y0 = p.fromY + p.oy;
+    const x = x0 + (p.toX - x0) * k;
+    const lift = (p.spec.arc || 0) * 120 * Math.sin(Math.PI * k);
+    const y = y0 + (p.toY - y0) * k - lift;
+    const angle = Math.atan2(p.toY - p.fromY, p.toX - p.fromX) + Math.PI / 2;
+    return { x, y, angle };
+  }
+
+  private muzzleOffset(unitId: string, shotIdx: number): readonly [number, number] {
+    const u = this.units[unitId];
+    if (!u) return [0, 0];
+    const anchors = S7FX_MUZZLES[u.unitRef]
+      ?? (u.side === 'player' ? MUZZLE_PLAYER_DEFAULT : MUZZLE_ENEMY_DEFAULT);
+    const a = anchors[(shotIdx || 0) % anchors.length];
+    return [a[0] * u.w, a[1] * u.h];
+  }
+
+  private exec(c: S7FxCommand): void {
+    const u = 'unitId' in c ? this.units[c.unitId] : undefined;
+    switch (c.kind) {
+      case 'spawn':
+        if (u) { u.present = true; u.spawnT = 0.4; }
+        break;
+      case 'muzzle': {
+        const m = this.muzzleOffset(c.unitId, 0);
+        this.impacts.push({ x: c.at.x * S7FX_REF_W + m[0], y: c.at.y * S7FX_REF_H + m[1], kind: 'muzzle', size: 0.5, color: c.color, age: 0, life: 0.1 });
+        if (u) u.lungeT = 0.14;
+        break;
+      }
+      case 'projectile': {
+        if (this.projs.length >= PROJ_CAP) this.projs.shift(); // 红线：超发丢最旧
+        const m = c.srcId !== undefined ? this.muzzleOffset(c.srcId, c.shotIdx ?? 0) : ([0, 0] as const);
+        this.projs.push({
+          spec: c.spec,
+          fromX: c.from.x * S7FX_REF_W, fromY: c.from.y * S7FX_REF_H,
+          toX: c.to.x * S7FX_REF_W, toY: c.to.y * S7FX_REF_H,
+          flightSec: c.flightSec, age: 0, ox: m[0], oy: m[1], vLevel: c.vLevel,
+        });
+        break;
+      }
+      case 'impact': {
+        const dflt = c.impact.kind === 'ring_expand' || c.impact.kind === 'cage_ring' ? 0.42
+          : c.impact.kind === 'bubble_pop' ? 0.35 : 0.26;
+        const life = c.impact.durationSec || dflt;
+        const x = c.at.x * S7FX_REF_W, y = c.at.y * S7FX_REF_H;
+        this.impacts.push({ x, y, kind: c.impact.kind, size: c.impact.size, color: c.color, age: 0, life });
+        if (c.impact.kind === 'burst_small' || c.impact.kind === 'burst_mid' || c.impact.kind === 'burst_big') {
+          const n = c.impact.kind === 'burst_big' ? 9 : c.impact.kind === 'burst_mid' ? 6 : 3;
+          for (let i = 0; i < n; i += 1) {
+            const a = this.rng() * Math.PI * 2, sp = 30 + this.rng() * 70;
+            this.embers.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 36, age: 0, life: 0.45 + this.rng() * 0.3, color: c.color, size: 1.2 + this.rng() * 1.6 });
+          }
+          if (this.embers.length > EMBER_CAP) this.embers.splice(0, this.embers.length - EMBER_CAP);
+        }
+        break;
+      }
+      case 'unit_flash':
+        if (u) u.flashT = 0.12;
+        break;
+      case 'unit_shake':
+        if (u) u.shakeT = 0.1;
+        break;
+      case 'hp_change': {
+        if (u) u.hpPct = c.hpPct;
+        if (u && typeof c.delta === 'number' && c.delta < 0) {
+          this.pops.push({
+            x: u.x + (this.rng() - 0.5) * u.w * 0.4, y: u.y - u.h * 0.55,
+            txt: String(-c.delta), crit: !!c.crit, age: 0, life: 0.8,
+          });
+          if (this.pops.length > POP_CAP) this.pops.splice(0, this.pops.length - POP_CAP);
+        }
+        break;
+      }
+      case 'death_burst': {
+        if (u) { u.alive = false; u.deadT = 0.4; }
+        const colors = ['#FFD93D', '#FF8A3D', '#F5A8C0', '#4FC3F7', '#7ED957'];
+        for (let i = 0; i < 5; i += 1) {
+          const a = (i / 5) * Math.PI * 2 + this.rng() * 0.5;
+          this.bursts.push({ x: c.at.x * S7FX_REF_W, y: c.at.y * S7FX_REF_H, vx: Math.cos(a) * 70, vy: Math.sin(a) * 70, age: 0, life: 0.4, color: colors[i % 5], size: 3.4 });
+        }
+        break;
+      }
+      case 'recoil':
+        if (u) { u.recoilT = 0.15; u.castGlowT = 0.55; }
+        break;
+      case 'darken':
+        this.darkenT = c.durationSec;
+        this.darkenDur = c.durationSec;
+        break;
+      default:
+        break;
+    }
+  }
+}

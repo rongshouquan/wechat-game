@@ -54,6 +54,9 @@ import { S7AnecdoteBubbleView } from './S7AnecdoteBubbleView';
 // 界面在独立 view 文件 S7BountyBoardView（守工作流程⑧）；本控制器只做"挂 view + 悬赏战斗编排"。
 import { S7BountyHost } from './S7BountyBoardView'; // view 本体现由 S7CombatHallView 持有（块4·作战大厅）
 import { S7CorridorTowerView, S7CorridorHost, S7CorridorLayerCard, S7CorridorMilestoneCard } from './S7CorridorTowerView';
+// Cocos 壳批（2026-07-14 Ron 开工令）：战斗演出层——真皮肤/签名弹道/伤害数字，
+// 消费与色块回放同一份 playback；资源未就绪时自动落回色块路径（演出不许断流程）。
+import { S7BattleFxLayer } from './fx/S7BattleFxLayer';
 // 块4 每日推演（作战大厅容器·Ron 2026-07-05 hub 架构）：独立 view + 纯逻辑 + 战斗服务（守工作流程⑧）。
 import { S7CombatHallView, S7CombatHallHost, S7CombatHallTab } from './S7CombatHallView';
 import { S7DailyPuzzleHost, S7DailyPuzzleViewData, S7PuzzlePackView, S7PuzzleEnemyCell } from './S7DailyPuzzleView';
@@ -382,6 +385,9 @@ export class S7DemoController extends Component {
   private squad: S7SquadState | null = null;
   private prebattleNode: Node | null = null;
   private prebattleGfx: Graphics | null = null;     // 画底板 + 敌情预览 + 九宫格（也用于"战斗即战前"的就地演出）
+  private fxLayer: S7BattleFxLayer | null = null;   // Cocos 壳批：战斗演出层（资源就绪时取代色块回放）
+  private fxActive = false;                          // 本场走演出层（跳过/倍速/收尾分流用）
+  private readonly fxRefMap = new Map<string, { unitRef: string; roleTag: string }>();
   private prebattleInfoLabel: Label | null = null;  // 节点名 + 我方VS推荐战力 + 敌情概要
   private prebattleCellLabels: Label[] = [];        // 9 格文字(与 SLOTS 平行)
   private prebattleCellNodes: Map<string, Node> = new Map(); // 9 格真节点(键=slotRef如"p0c0")——教程锁步定位高亮/挖洞用
@@ -666,6 +672,18 @@ export class S7DemoController extends Component {
   init(runtime: S7ConfigRuntime, adapter: SaveStorageAdapter): void {
     this.adapter = adapter;
     this.runtime = runtime;
+    // 演出层资源预载（异步幂等）+ unitStatRef→{unitRef,roleTag} 解析表（演出签名查表键）。
+    S7BattleFxLayer.preload();
+    this.fxRefMap.clear();
+    runtime.getAll<S7BattleUnitStatParam>('battle_unit_stat_param').forEach((row) => {
+      const r = row as unknown as { rowId?: string; unitRef?: unknown; roleTag?: unknown };
+      if (typeof r.rowId === 'string') {
+        this.fxRefMap.set(r.rowId, {
+          unitRef: typeof r.unitRef === 'string' ? r.unitRef : '',
+          roleTag: typeof r.roleTag === 'string' ? r.roleTag : '',
+        });
+      }
+    });
     const model = S7MainlineModel.fromRuntime(runtime);
     this.model = model;
     this.growthBands = runtime.getAll<S7GrowthBandParam>('growth_band_param');
@@ -2117,6 +2135,8 @@ export class S7DemoController extends Component {
     if (this.resultPopupNode) this.resultPopupNode.active = false;
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = false;
     if (this.prebattleUiNode) this.prebattleUiNode.active = true; // 复位（下次进备战正常显示）
+    if (this.fxLayer) { this.fxLayer.stopAndClear(); this.fxLayer.node.active = false; } // 演出层收场（下次开播重建舞台）
+    this.fxActive = false;
     if (this.prebattleNode) this.prebattleNode.active = false;
     if (this.pendingResult) this.setResult(this.pendingResult.text, this.pendingResult.color);
     this.refresh();
@@ -3560,6 +3580,7 @@ export class S7DemoController extends Component {
   private onCycleSpeed(): void {
     this.playbackSpeed = this.playbackSpeed >= 3 ? 1 : this.playbackSpeed + 1;
     if (this.speedBtnLabel) this.speedBtnLabel.string = `${this.playbackSpeed}x ▶`;
+    if (this.fxActive && this.fxLayer) this.fxLayer.setSpeed(this.playbackSpeed);
   }
 
   /** 搭"基地建筑"面板叠加层（默认隐藏）：底板 + 标题 + 7 行(点行=升该建筑) + 关闭。行文案在 refreshBasePanel 填。 */
@@ -4601,6 +4622,27 @@ export class S7DemoController extends Component {
   /** 开播（就地·在备战界面演）：隐藏备战可交互 UI、亮「跳过」，从第 0 帧起逐帧推进（update 驱动）。 */
   private startPlayback(pb: S7BattlePlayback): void {
     if (!this.prebattleNode || !this.prebattleGfx) return;
+    // Cocos 壳批：资源就绪走演出层（真皮肤/签名弹道/伤害数字）；未就绪落回色块。
+    if (S7BattleFxLayer.assetsReady) {
+      this.playback = pb;
+      this.playing = false; // 旧 update 逐帧驱动关闭（演出层自驱）
+      this.fxActive = true;
+      if (!this.fxLayer) {
+        this.fxLayer = S7BattleFxLayer.mount(this.prebattleNode);
+        this.fxLayer.node.setSiblingIndex(0); // 压底板之上、pbUi/跳过/倍速按钮之下
+      }
+      this.fxLayer.node.active = true;
+      if (this.prebattleUiNode) this.prebattleUiNode.active = false;
+      if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = true;
+      if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = true;
+      this.prebattleGfx.clear(); // 底板交给演出层的背景板
+      this.fxLayer.play(pb, (ref) => this.fxRefMap.get(ref) ?? { unitRef: '', roleTag: '' }, {
+        speed: this.playbackSpeed,
+        onFinish: () => this.finishPlayback(),
+      });
+      return;
+    }
+    this.fxActive = false;
     this.playback = pb;
     this.frameIdx = 0;
     this.stepClock = 0;
@@ -4656,6 +4698,10 @@ export class S7DemoController extends Component {
 
   /** 点「跳过」：直接跳到最后一帧并收尾。 */
   private onSkip(): void {
+    if (this.fxActive && this.fxLayer) { // 演出层路径：快进指令流到终局（onFinish→finishPlayback）
+      this.fxLayer.skipToEnd();
+      return;
+    }
     if (!this.playing || !this.playback) return;
     this.introSec = 0; this.introYOffset = 0; // L：跳过时结束入场（避免残留偏移）
     this.frameIdx = this.playback.frames.length - 1;
