@@ -5,7 +5,7 @@
 // 零回写：只写 tools/fx-preview/timeline-sample.json 一个产物文件；不动配置/存档。
 import { writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { loadBundle, loadMilestones, loadPressure, genLineupCustom, mapPressureToEnemies } from './s7-battles-entry';
+import { loadBundle, loadMilestones, loadPressure, genLineupCustom, genLineupFromMains, mapPressureToEnemies } from './s7-battles-entry';
 import { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
 import { S7BattleUnitStatParam } from '../assets/scripts/config/s7/ConfigTypesS7';
 import { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService';
@@ -49,7 +49,24 @@ export async function main(argv: string[]): Promise<number> {
     if (r) Object.assign(r, attrs);
   }
 
-  const { lineup, teamPower } = genLineupCustom({ ships: SIGNATURE_SHIPS, targetTeamPower: targetPower });
+  // 烈阳配陨星弹核（core07=唯一真核）——V3 质变排场演示。星核槽需 S 阶：战力反解
+  // 常解出 <S 导致核被忽略（实测 n030 局 darken=0），改显式阶级组队（首舰=烈阳置
+  // mains 首位拿核）。--lineup=custom 可切回反解模式。
+  let lineup: ReturnType<typeof genLineupCustom>['lineup'];
+  let teamPower: number;
+  if (arg('lineup', 'mains') === 'mains') {
+    const r0 = genLineupFromMains({
+      ships: ['shp09', 'shp03', 'shp06', 'shp13', 'shp20'], // 烈阳首位=S 阶拿核
+      mains: [['S', 35, 3, 35], ['S', 33, 3, 33], ['S', 33, 3, 33], ['S', 32, 3, 32], ['S', 32, 3, 32]],
+      coreId: 'core07',
+    });
+    lineup = r0.lineup;
+    teamPower = r0.teamPower;
+  } else {
+    const r1 = genLineupCustom({ ships: SIGNATURE_SHIPS, targetTeamPower: targetPower, coreMap: { shp09: 'core07' } });
+    lineup = r1.lineup;
+    teamPower = r1.teamPower;
+  }
   const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(bundle));
   const service = new S7BattleRunService();
   const r = service.run({

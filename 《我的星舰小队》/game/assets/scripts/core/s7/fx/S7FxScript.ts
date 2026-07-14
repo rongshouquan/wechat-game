@@ -39,7 +39,8 @@ export type S7FxCommand =
   | { tSec: number; kind: 'unit_shake'; unitId: string }
   | { tSec: number; kind: 'hp_change'; unitId: string; hpPct: number }
   | { tSec: number; kind: 'death_burst'; unitId: string; at: S7FxPoint }
-  | { tSec: number; kind: 'recoil'; unitId: string };
+  | { tSec: number; kind: 'recoil'; unitId: string }
+  | { tSec: number; kind: 'darken'; durationSec: number };
 
 /** 一场战斗的演出时间轴。 */
 export interface S7FxTimeline {
@@ -53,6 +54,12 @@ export interface S7FxTimeline {
 export type S7FxRefResolver = (unitStatRef: string) => { unitRef: string; roleTag: string };
 
 const EMPTY_REF: { unitRef: string; roleTag: string } = { unitRef: '', roleTag: '' };
+
+/** 治疗/回复类 effectType（V3 天降排场只给伤害类核；与 Catalog HEAL_TYPES 口径一致）。 */
+const HEAL_LIKE = new Set(['heal', 'regen']);
+
+/** 改写型星核的 V3 效果 id 表（总谱 §2b 专属件五颗随接入扩充；陨星弹=首件）。 */
+const CORE_V3_EFFECT_REFS = new Set(['eff_atomic_cannon']);
 
 /** 敌上我下版位（拍板定死）+ 对峙带：敌三排 y=0.20/0.29/0.38（layoutEnemies）/
  *  对峙带 0.42-0.60（全空）/ 我 y 0.60-0.86。 */
@@ -214,6 +221,23 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
         if (castColor) {
           cmds.push({ tSec: t, kind: 'impact', at: from, impact: { kind: 'ring_expand', size: 1.3 }, color: castColor, vLevel: 2 });
         }
+      }
+
+      // 星核 V3 质变排场（总谱 §1/§2b·陨星弹型）：全场压暗 + 陨星自天顶轰落 + 大爆
+      // ——不震屏（震屏白名单外·总谱 07-10 修订）。两类入口：①触发型核（core_trigger 事件）
+      // ②改写型核（陨星弹=普攻变原子炮，按 effectRef 识别）。非伤害核保持 V2 强调。
+      const isV3 = (atk.isCore || CORE_V3_EFFECT_REFS.has(atk.effectRef)) && atk.targetIds.length > 0 && !HEAL_LIKE.has(atk.effectType);
+      if (isV3) {
+        cmds.push({ tSec: t, kind: 'darken', durationSec: 1.5 });
+        for (const tg of atk.targetIds) {
+          const to = posOf(tg);
+          const skyFrom = { x: to.x, y: -0.08 }; // 天顶画外
+          const meteor: S7FxProjectileSpec = { shape: 'shell', count: 1, intervalSec: 0, flightSec: 0.5, size: 4, arc: 0, color: '#FF8A3D' };
+          cmds.push({ tSec: t + 0.15, kind: 'projectile', from: skyFrom, to, spec: meteor, flightSec: 0.5, vLevel: 2 });
+          cmds.push({ tSec: t + 0.65, kind: 'impact', at: to, impact: { kind: 'burst_big', size: 3 }, color: '#FF8A3D', vLevel: 2 });
+        }
+        maxT = Math.max(maxT, t + 0.7);
+        continue; // V3 排场替代常规弹道（不再走签名弹）
       }
 
       if (!sign.projectile) {

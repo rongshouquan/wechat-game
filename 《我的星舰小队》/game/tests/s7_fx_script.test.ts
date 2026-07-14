@@ -15,7 +15,7 @@ function miniPlayback(): S7BattlePlayback {
       { timeSec: 0, attacks: [], hits: [], deaths: [], spawnedIds: ['E1'], units: {} },
       {
         timeSec: 1,
-        attacks: [{ actorId: 'A', side: 'player', targetIds: ['E1'], isUltimate: false, effectType: 'damage' }],
+        attacks: [{ actorId: 'A', side: 'player', targetIds: ['E1'], isUltimate: false, isCore: false, effectType: 'damage', effectRef: 'eff_x' }],
         hits: [{ targetId: 'E1', amount: 30, crit: false, hpAfter: 20 }],
         deaths: [],
         spawnedIds: [],
@@ -23,7 +23,7 @@ function miniPlayback(): S7BattlePlayback {
       },
       {
         timeSec: 2,
-        attacks: [{ actorId: 'A', side: 'player', targetIds: ['E1'], isUltimate: false, effectType: 'damage' }],
+        attacks: [{ actorId: 'A', side: 'player', targetIds: ['E1'], isUltimate: false, isCore: false, effectType: 'damage', effectRef: 'eff_x' }],
         hits: [{ targetId: 'E1', amount: 20, crit: true, hpAfter: 0 }],
         deaths: ['E1'],
         spawnedIds: [],
@@ -117,6 +117,23 @@ describe('S7FxScript 指令流', () => {
   it('无 resolver 也能跑（全兜底签名，不炸）', () => {
     const tl = buildS7FxScript(miniPlayback());
     expect(tl.commands.length).toBeGreaterThan(0);
+  });
+
+  it('星核 V3 排场：isCore 伤害触发=全场压暗+陨星天降+大爆（不走常规签名弹）', () => {
+    const pb = miniPlayback();
+    pb.frames[1].attacks = [{ actorId: 'A', side: 'player', targetIds: ['E1'], isUltimate: true, isCore: true, effectType: 'damage', effectRef: 'eff_core' }] as typeof pb.frames[1]['attacks'];
+    const tl = buildS7FxScript(pb, RESOLVE);
+    const f1 = tl.commands.filter((c) => c.tSec >= 1 && c.tSec < 2);
+    const darken = f1.find((c) => c.kind === 'darken');
+    expect(darken).toBeTruthy();
+    const meteor = f1.find((c) => c.kind === 'projectile');
+    expect(meteor).toBeTruthy();
+    if (meteor && meteor.kind === 'projectile') {
+      expect(meteor.from.y).toBeLessThan(0); // 天顶画外落下
+      expect(meteor.spec.size).toBeGreaterThan(3);
+    }
+    const bigBurst = f1.find((c) => c.kind === 'impact' && c.impact.kind === 'burst_big');
+    expect(bigBurst).toBeTruthy();
   });
 
   it('敌方三排楔形阵：前中后排都有人、Boss 居中排中心、前排厚于后排（Ron 阵型三调）', () => {

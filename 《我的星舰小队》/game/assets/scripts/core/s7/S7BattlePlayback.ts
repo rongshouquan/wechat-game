@@ -43,7 +43,12 @@ export interface S7PlaybackAttack {
   targetIds: string[];
   /** 大招/星核施法（true）还是普攻（false），供渲染区分表现强度。 */
   isUltimate: boolean;
+  /** 星核触发（core_trigger）标记——演出层 V3 质变排场依据（总谱 §1·2026-07-14 演出线补）。 */
+  isCore: boolean;
   effectType: string;
+  /** 效果行 id（如 eff_atomic_cannon）——改写型星核（陨星弹=普攻变形，无 core_trigger 事件）
+   *  的演出识别键（2026-07-14 演出线补·只透传不改语义）。 */
+  effectRef: string;
 }
 
 /** 某单位在某帧的瞬时状态。 */
@@ -173,7 +178,9 @@ export function buildS7BattlePlayback(result: S7AutoBattleResult): S7BattlePlayb
               side: e.side,
               targetIds: e.targetIds ? [...e.targetIds] : [],
               isUltimate: ULTIMATE_TYPES.has(e.type),
+              isCore: e.type === 'core_trigger',
               effectType: typeof e.effectType === 'string' ? e.effectType : '',
+              effectRef: typeof e.effectRef === 'string' ? e.effectRef : '',
             });
           }
           break;

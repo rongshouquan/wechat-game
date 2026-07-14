@@ -105,12 +105,13 @@ const flakes = Array.from({ length: 26 }, () => ({ x: Math.random() * W, y: Math
 
 // ---- 演出运行池 ----
 let projs = [], impacts = [], bursts = [];
+let darkenT = 0, darkenDur = 0; // V3 全场压暗
 let t = 0, speed = 1, lastTs = 0, cmdIdx = 0;
 const CMDS = DATA.commands;
 const END_T = DATA.fxDurationSec + 1.5;
 
 function restart() {
-  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = [];
+  t = 0; cmdIdx = 0; projs = []; impacts = []; bursts = []; darkenT = 0; darkenDur = 0;
   for (const u of Object.values(units)) { u.hpPct = 100; u.alive = true; u.flashT = u.shakeT = u.recoilT = u.deadT = 0; }
   for (const ru of DATA.roster) units[ru.unitId].present = ru.side === 'player';
 }
@@ -146,6 +147,7 @@ function exec(c) {
       break;
     }
     case 'recoil': if (u) { u.recoilT = 0.15; u.castGlowT = 0.55; } break; // 施法=后坐+泛光（横幅已撤·纯视觉）
+    case 'darken': darkenT = c.durationSec; darkenDur = c.durationSec; break; // V3 全场压暗（星核质变头部空间）
   }
 }
 
@@ -378,14 +380,14 @@ function drawImpact(im) {
     }
     case 'ring_expand': cx.lineWidth = 4 * (1 - k) + 1; cx.strokeStyle = col; cx.beginPath(); cx.arc(0, 0, 8 + k * 46 * im.size, 0, Math.PI * 2); cx.stroke(); break;
     case 'bubble_pop': {
-      // 长持续=护罩呼吸；短持续=泡闪
+      // 长持续=护罩呼吸（罩住不盖脸：低填充+亮边）；短持续=泡闪
       const breathe = 1 + Math.sin(im.age * 5) * 0.06;
-      cx.globalAlpha = env * 0.55;
+      cx.globalAlpha = env * 0.22;
       cx.fillStyle = col;
-      cx.beginPath(); cx.arc(0, 0, 15 * im.size * breathe, 0, Math.PI * 2); cx.fill();
-      cx.globalAlpha = env * 0.9;
-      cx.strokeStyle = '#fff'; cx.lineWidth = 2;
-      cx.beginPath(); cx.arc(0, 0, 15 * im.size * breathe, 0, Math.PI * 2); cx.stroke();
+      cx.beginPath(); cx.arc(0, 0, 17 * im.size * breathe, 0, Math.PI * 2); cx.fill();
+      cx.globalAlpha = env * 0.85;
+      cx.strokeStyle = 'rgba(255,255,255,.9)'; cx.lineWidth = 2;
+      cx.beginPath(); cx.arc(0, 0, 17 * im.size * breathe, 0, Math.PI * 2); cx.stroke();
       break;
     }
     case 'cage_ring': {
@@ -449,6 +451,14 @@ function frame(ts) {
     u.castGlowT = Math.max(0, (u.castGlowT || 0) - dt);
     if (!u.alive) u.deadT = Math.max(0, u.deadT - dt);
     drawShip(u);
+  }
+
+  // ---- V3 压暗膜（星核质变头部空间·总谱§1）：盖场景不盖特效与 UI ----
+  if (darkenT > 0) {
+    darkenT = Math.max(0, darkenT - dt);
+    const dk = Math.min(1, (darkenDur - darkenT) / 0.25, darkenT / 0.35);
+    cx.fillStyle = `rgba(10,8,20,${0.42 * Math.max(0, dk)})`;
+    cx.fillRect(0, 0, W, H);
   }
 
   // ---- 特效层 ----
