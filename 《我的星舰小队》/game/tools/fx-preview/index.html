@@ -106,7 +106,7 @@ const flakes = Array.from({ length: 26 }, () => ({ x: Math.random() * W, y: Math
 // ---- 演出运行池 ----
 let projs = [], impacts = [], bursts = [];
 let darkenT = 0, darkenDur = 0; // V3 全场压暗
-let t = 0, speed = 1, lastTs = 0, cmdIdx = 0;
+let t = 0, speed = 1, lastTs = 0, cmdIdx = 0, lastFrameAt = 0;
 const CMDS = DATA.commands;
 const END_T = DATA.fxDurationSec + 1.5;
 
@@ -234,8 +234,8 @@ function drawShip(u) {
     if (flip) cx.rotate(Math.PI);
     // 素材版：真 sprite；受击白闪用叠加高亮近似
     cx.drawImage(u.sprite, -w / 2, -h / 2, w, h);
-    // 分件动画（省做法#10·Ron 拍"性价比拉满"）：
-    const k = w / 1328;
+    // 分件动画（省做法#10·Ron 拍"性价比拉满"）：坐标空间=L75 滤镜v5 母版 1024²
+    const k = w / 1024;
     const drawPart = (img, rx0, ry0, rx1, ry1, ax, ay, rot, dx, dy) => {
       if (!ok(img)) return;
       cx.save();
@@ -245,20 +245,20 @@ function drawShip(u) {
       cx.restore();
     };
     if (u.unitRef === 'shp13') {
-      // 晨曦金环+冠：悬浮轻转+上下浮（"天使环"活感）——坐标=L71-抽4 新母版件位
-      drawPart(IMGS.shp13_p0, 495, 160, 810, 440, 652, 300, Math.sin(t * 1.8 + u.phase) * 0.07, 0, Math.sin(t * 2.3 + u.phase) * 1.6);
+      // 晨曦金环+冠：悬浮轻转+上下浮（"天使环"活感）——坐标=L75-晨曦-抽3 母版件位
+      drawPart(IMGS.shp13_p0, 385, 125, 630, 350, 508, 345, Math.sin(t * 1.8 + u.phase) * 0.07, 0, Math.sin(t * 2.3 + u.phase) * 1.6);
     } else if (u.unitRef === 'shp20') {
-      // 锁链双线轴：来回转（收放线作业感）——坐标=L70-A3 新母版件位
+      // 锁链双线轴：来回转（收放线作业感）——坐标=L75-锁链-抽1 母版件位
       const spin = Math.sin(t * 4.2 + u.phase) * 0.12;
-      drawPart(IMGS.shp20_p0, 175, 425, 400, 630, 287, 527, spin);
-      drawPart(IMGS.shp20_p1, 930, 425, 1160, 630, 1045, 527, -spin);
+      drawPart(IMGS.shp20_p0, 140, 395, 335, 550, 233, 468, spin);
+      drawPart(IMGS.shp20_p1, 690, 395, 885, 550, 790, 468, -spin);
     } else if (u.unitRef === 'shp09') {
-      // 烈阳双联炮管：开火后坐（沿舰轴缩回弹回·与开火点头联动）——坐标=L71-抽4 甲虫壳件位
+      // 烈阳双联炮管：开火后坐（沿舰轴缩回弹回·与开火点头联动）——坐标=L75-烈阳-抽5 母版件位
       const rec = u.lungeT > 0 ? Math.sin((u.lungeT / 0.14) * Math.PI) * 7 : 0;
-      drawPart(IMGS.shp09_p0, 500, 80, 850, 315, 672, 300, 0, 0, rec);
+      drawPart(IMGS.shp09_p0, 410, 50, 625, 270, 515, 265, 0, 0, rec);
     } else if (u.sprite === IMGS.pirate_l) {
-      // 船长骷髅旗：迎风摆 ±5°——坐标=L72-抽5 新母版件位（杆底连警灯上方）
-      drawPart(IMGS.pirate_l_flag, 640, 70, 880, 240, 660, 240, Math.sin(t * 2.1 + u.phase) * 0.09);
+      // 船长骷髅旗：迎风摆 ±5°——坐标=L75-船长-抽6 母版件位（杆底连警灯上方）
+      drawPart(IMGS.pirate_l_flag, 475, 40, 725, 210, 515, 208, Math.sin(t * 2.1 + u.phase) * 0.09);
     }
     if (u.flashT > 0) {
       cx.globalAlpha = alpha * 0.75;
@@ -272,7 +272,7 @@ function drawShip(u) {
       const pulse = 0.5 + 0.5 * Math.sin(t * 3.6 + u.phase);
       cx.globalAlpha = alpha * (0.25 + pulse * 0.45);
       cx.fillStyle = '#BFF3FF';
-      for (const [px, py] of [[0, -h * 0.44], [-w * 0.42, -h * 0.05], [w * 0.42, -h * 0.05]]) {
+      for (const [px, py] of [[0, h * 0.05], [-w * 0.354, 0], [w * 0.354, 0]]) { // L75 母版三球位=腹心+双翼尖
         cx.beginPath();
         cx.arc(px, py, 3 + pulse * 1.5, 0, Math.PI * 2);
         cx.fill();
@@ -353,11 +353,12 @@ function hexRgb(hex) {
 // 每舰 1-N 个锚点，[dx,dy]=占本舰绘制框的比例（y 负=朝机头）；多锚点按 shotIdx 轮转
 // ——锋矢三连=鼻尖+双翼光球各一发，烈阳/锁链双管左右交替。敌方/未精雕舰走通用鼻口。
 const MUZZLES = {
-  shp03: [[0, -0.42], [-0.36, -0.06], [0.36, -0.06]],
-  shp06: [[0, -0.30]],
-  shp09: [[-0.06, -0.43], [0.06, -0.43]],
-  shp13: [[0, -0.40]],
-  shp20: [[-0.29, -0.11], [0.29, -0.11]],
+  // 锚点值=L75 滤镜v5 母版实测件位（比例=件坐标/1024-0.5）
+  shp03: [[0, -0.41], [-0.354, 0], [0.354, 0]],
+  shp06: [[0, -0.35]],
+  shp09: [[-0.05, -0.44], [0.06, -0.44]],
+  shp13: [[0, -0.36]],
+  shp20: [[-0.27, -0.043], [0.27, -0.043]],
 };
 const MUZZLE_PLAYER_DEFAULT = [[0, -0.38]];
 const MUZZLE_ENEMY_DEFAULT = [[0, 0.36]];
@@ -505,7 +506,8 @@ function frame(ts) {
   const dt = Math.max(0, Math.min(0.05, (ts - lastTs) / 1000)) * speed; // dt 钳非负：防真假时钟混用倒流
   lastTs = ts;
   t += dt;
-  if (t > END_T) { restart(); requestAnimationFrame(frame); return; }
+  lastFrameAt = performance.now();
+  if (t > END_T) { restart(); scheduleRaf(); return; }
 
   while (cmdIdx < CMDS.length && CMDS[cmdIdx].tSec <= t) { exec(CMDS[cmdIdx]); cmdIdx++; }
 
@@ -576,18 +578,18 @@ function frame(ts) {
   cx.beginPath(); cx.arc(W - 32, H - 32, 17, 0, Math.PI * 2); cx.fill();
   cx.fillStyle = '#fff'; cx.fillRect(W - 38, H - 40, 4.5, 16); cx.fillRect(W - 30, H - 40, 4.5, 16);
 
-  if (!usingTimer) requestAnimationFrame(frame);
+  scheduleRaf();
 }
-// rAF 驱动为主；后台标签/嵌入式 WebView 下 rAF 可能挂起 → 800ms 未起步则切 setInterval 兜底。
-let usingTimer = false;
-requestAnimationFrame((ts) => { lastTs = ts; requestAnimationFrame(frame); });
-setTimeout(() => {
-  if (t === 0 && cmdIdx === 0) {
-    usingTimer = true;
-    lastTs = performance.now();
-    setInterval(() => frame(performance.now()), 33);
-  }
-}, 800);
+// rAF 驱动为主 + 33ms 看门狗兜底（后台标签/失焦/嵌入 WebView 下 rAF 会挂起——
+// 看门狗见 40ms 没出帧就接管驱动，rAF 恢复后自动空转；rafPending 保证永远单链）。
+let rafPending = false;
+function scheduleRaf() {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame((ts) => { rafPending = false; frame(ts); });
+}
+requestAnimationFrame((ts) => { lastTs = ts; scheduleRaf(); });
+setInterval(() => { if (performance.now() - lastFrameAt > 40) frame(performance.now()); }, 33);
 </script>
 </body>
 </html>
