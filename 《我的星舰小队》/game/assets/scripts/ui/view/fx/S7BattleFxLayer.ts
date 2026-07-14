@@ -115,6 +115,7 @@ export class S7BattleFxLayer extends Component {
   /** 在父节点下挂一层演出（占满 viewW×viewH·锚中心）。 */
   static mount(parent: Node): S7BattleFxLayer {
     const n = new Node('S7BattleFxLayer');
+    n.layer = parent.layer; // UI 相机按 layer 位剔除——不继承=整层隐身（07-14 真机课）
     const uit = n.addComponent(UITransform);
     const vs = view.getVisibleSize();
     uit.setContentSize(vs.width, vs.height);
@@ -215,6 +216,11 @@ export class S7BattleFxLayer extends Component {
     this.k = this.viewW / S7FX_REF_W;
     this.getComponent(UITransform)?.setContentSize(this.viewW, this.viewH);
 
+    // 舞台底（常驻深色底板：背景图万一缺失也不透出主界面）
+    const baseG = this.child('base').addComponent(Graphics);
+    baseG.fillColor = new Color(16, 12, 26, 255);
+    baseG.rect(-this.viewW / 2, -this.viewH / 2, this.viewW, this.viewH);
+    baseG.fill();
     // 背景板（轨道俯瞰·静态=总谱§4a）
     const bgN = this.child('bg');
     this.bgSprite = bgN.addComponent(Sprite);
@@ -271,6 +277,7 @@ export class S7BattleFxLayer extends Component {
 
   private child(name: string): Node {
     const n = new Node(name);
+    n.layer = this.node.layer;
     n.addComponent(UITransform).setContentSize(this.viewW, this.viewH);
     this.node.addChild(n);
     return n;
@@ -290,10 +297,12 @@ export class S7BattleFxLayer extends Component {
 
   private buildUnitRig(u: S7FxUnitState): UnitNodeRig {
     const root = new Node(`u_${u.unitId}`);
+    root.layer = this.node.layer;
     root.addComponent(UITransform);
     root.addComponent(UIOpacity);
     this.unitLayer!.addChild(root);
     const bodyN = new Node('body');
+    bodyN.layer = this.node.layer;
     bodyN.addComponent(UITransform);
     const body = bodyN.addComponent(Sprite);
     body.sizeMode = Sprite.SizeMode.CUSTOM;
@@ -315,6 +324,7 @@ export class S7BattleFxLayer extends Component {
     if (hasSprite) {
       parts = rigs.map((rig) => {
         const pn = new Node(rig.sprite);
+        pn.layer = this.node.layer;
         const put = pn.addComponent(UITransform);
         const ps = pn.addComponent(Sprite);
         ps.sizeMode = Sprite.SizeMode.CUSTOM;
@@ -340,6 +350,7 @@ export class S7BattleFxLayer extends Component {
       const pil = S7FX_PILOT_OF_SHIP[u.unitRef];
       if (!pil) continue;
       const n = new Node(`av_${u.unitId}`);
+      n.layer = this.node.layer;
       n.addComponent(UITransform).setContentSize(26 * this.k * 0.5, 26 * this.k * 0.5);
       const sp = n.addComponent(Sprite);
       sp.sizeMode = Sprite.SizeMode.CUSTOM;
@@ -482,6 +493,7 @@ export class S7BattleFxLayer extends Component {
   private takeNode(pool: Node[], parent: Node, idx: number, name: string): Node {
     while (pool.length <= idx) {
       const n = new Node(`${name}_${pool.length}`);
+      n.layer = this.node.layer;
       n.addComponent(UITransform);
       const sp = n.addComponent(Sprite);
       sp.sizeMode = Sprite.SizeMode.CUSTOM;
@@ -652,6 +664,7 @@ export class S7BattleFxLayer extends Component {
       const pop = m.pops[i];
       while (this.popPool.length <= i) {
         const n = new Node(`pop_${this.popPool.length}`);
+        n.layer = this.node.layer;
         n.addComponent(UITransform);
         const lb = n.addComponent(Label);
         lb.fontSize = 12;
