@@ -1178,6 +1178,24 @@ describe('S7 经济尺 · 建筑细案入尺批（八栋九件·手推期望值 
   });
 });
 
+describe('S7 经济尺 · 核数带守卫（收口尾批·Ron 拍"认"·候拍③销案）', () => {
+  it('60 天口径核数带：肝 21/重 21/普 20/轻 14 各 ±1（runFullDays·maxDays=60 期望值口径）', () => {
+    // 收口尾批钉值（旧→新→为什么对）：N1 旧带（19-21/16-18）定于钥匙机制前·作废；新带=
+    // 候拍③查证令三层产出后 Ron 拍"认"的冻结态实测（构成账=§16h R22 尾批：扩张 7.68+陨星弹
+    // +毕业核封顶 2=锁死渠道 ~11 颗＋商店彩蛋反向对冲→三档差收敛 1 颗=结构事实非病）。
+    // 口径=真 60 天（R13 定义：runFullDays 全速跑·maxDays=60 截·期望值含小数渠道）——
+    // 毕业日截断口径（13.3/16.5/19.7/21.5=通关导向）为观察口不进守卫；两口径注档 §16h。
+    const bands: Record<string, [number, number]> = { 肝档: [20, 22], 重度: [20, 22], 普通: [19, 21], 轻度: [13, 15] };
+    for (const [t, [lo, hi]] of Object.entries(bands)) {
+      const P60 = structuredClone(PARAMS);
+      P60.maxDays = 60;
+      const n60 = simulateEconomyTier(t, pressure, { runFullDays: true }, P60).coresOwned;
+      expect(n60, `${t} 60d 核数（期望值口径）`).toBeGreaterThanOrEqual(lo);
+      expect(n60, `${t} 60d 核数（期望值口径）`).toBeLessThanOrEqual(hi);
+    }
+  });
+});
+
 describe('S7 经济尺 · 任务单⑧ 逐关养成态导出口（⑥第三段接口）', () => {
   it('普通档 milestones=450 条、节点升序、字段完备（5 主力四元组/插件/核/战力>0）', () => {
     // 收口批重定基：150→450（450 关新世界）；教程段交叉点随新首Boss挪 n054（旧 n030/n040）。
