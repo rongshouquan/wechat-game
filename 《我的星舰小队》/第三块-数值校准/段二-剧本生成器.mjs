@@ -558,6 +558,7 @@ validate(days);
 const wallDays = computeWallDays();
 const audit = buildBigItemAudit();
 if (CHECK_ONLY) {
+  console.log('[⚠️ 口径横幅·2b 收口批 07-14] 本生成器内嵌数据＝剧本 v1.2 设计骨架冻结版（渠道账 27 颗/蛋 12/宝库旧价 120/200 等）——收口终值以剧本 v1.3 注记层＋经济尺 simulate-s7-economy.mjs 为准（实测核数 21/21/21/14·宝库 330/490·新靶 40/51/57/83）；生成器全量重铺＝2c 机器对照线批。');
   console.log('[校验器 M1-M10] 全部约束通过（--check 模式·不写盘）');
   console.log(`[累计卡墙] ${wallDays.total} 天（${wallDays.per.join(' ')}）`);
   console.log(`[星核渠道账 R15①] 总 ${CORE_LEDGER.length} 颗＝陨星弹 1＋扩张 8＋蛋 12（推导日=${EGG_DAYS.join('/')}·核碎尾量 ${FRAG_TAIL}）＋宝库 5＋黑市 1`);
