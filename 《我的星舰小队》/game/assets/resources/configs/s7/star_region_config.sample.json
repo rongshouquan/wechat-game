@@ -2,7 +2,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "starfieldId": "sf01",
-    "nodeRangeTag": "n001_n060",
+    "nodeRangeTag": "n001_n104",
     "mainProblemTags": [
       "swarm"
     ],
@@ -13,41 +13,41 @@
   {
     "schemaVersion": "s7-0.1.0",
     "starfieldId": "sf02",
-    "nodeRangeTag": "n061_n084",
-    "mainProblemTags": [
-      "shield"
-    ],
-    "reuseProblemTags": [
-      "swarm"
-    ],
-    "bossValidationTag": "shield",
-    "fallback70Policy": "keep_all"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "starfieldId": "sf03",
-    "nodeRangeTag": "n085_n102",
+    "nodeRangeTag": "n105_n176",
     "mainProblemTags": [
       "backline"
     ],
     "reuseProblemTags": [
-      "swarm",
-      "shield"
+      "swarm"
     ],
     "bossValidationTag": "backline",
     "fallback70Policy": "keep_all"
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n177_n250",
+    "mainProblemTags": [
+      "shield"
+    ],
+    "reuseProblemTags": [
+      "swarm",
+      "backline"
+    ],
+    "bossValidationTag": "shield",
+    "fallback70Policy": "keep_all"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "starfieldId": "sf04",
-    "nodeRangeTag": "n103_n120",
+    "nodeRangeTag": "n251_n312",
     "mainProblemTags": [
       "summon"
     ],
     "reuseProblemTags": [
       "swarm",
-      "shield",
-      "backline"
+      "backline",
+      "shield"
     ],
     "bossValidationTag": "summon",
     "fallback70Policy": "keep_all"
@@ -55,31 +55,49 @@
   {
     "schemaVersion": "s7-0.1.0",
     "starfieldId": "sf05",
-    "nodeRangeTag": "n121_n138",
+    "nodeRangeTag": "n313_n368",
+    "mainProblemTags": [
+      "berserk"
+    ],
+    "reuseProblemTags": [
+      "swarm",
+      "backline",
+      "shield",
+      "summon"
+    ],
+    "bossValidationTag": "berserk",
+    "fallback70Policy": "keep_all"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n369_n400",
     "mainProblemTags": [
       "burst"
     ],
     "reuseProblemTags": [
       "swarm",
-      "shield",
       "backline",
-      "summon"
+      "shield",
+      "summon",
+      "berserk"
     ],
     "bossValidationTag": "burst",
     "fallback70Policy": "keep_all"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "starfieldId": "sf06",
-    "nodeRangeTag": "n139_n150",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n401_n450",
     "mainProblemTags": [
       "berserk"
     ],
     "reuseProblemTags": [
       "swarm",
-      "shield",
       "backline",
+      "shield",
       "summon",
+      "berserk",
       "burst"
     ],
     "bossValidationTag": "berserk",

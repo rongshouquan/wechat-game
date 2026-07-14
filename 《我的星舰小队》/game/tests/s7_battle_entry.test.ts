@@ -1,6 +1,6 @@
 // CC-07D: S7 战斗入口上下文层测试。
-// 覆盖：current-node context（n001 normal / n084·n150 boss / 一个 elite）、守卫（unknown/out_of_order/
-// not_battle_node）、boss 不叠加 template_modifier 且 n150 推荐战力=v0.9 快照 12080、构建不改 progress、
+// 覆盖：current-node context（n001 normal / n104·n450 boss / n007 elite·450 关世界载体）、守卫（unknown/
+// out_of_order/not_battle_node）、boss 不叠加 template_modifier 且 n450 推荐战力=450 关首导快照 17890、构建不改 progress、
 // 以及静态隔离（不 import 流程版战斗/流程引擎模块）。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -55,58 +55,57 @@ describe('s7 battle entry - current node context', () => {
   });
 
   it('resolves an elite node with elite-scope pressure and secondaryTagCap=1', async () => {
+    // 段二战斗批重定基：精英载体 n006→n007（450 关世界精英首位=n007·剧本 v1.3 表·n006 回归 normal）。
     const entry = await buildEntry();
-    const res = entry.resolveContext(progressAt('n006'), 'n006');
+    const res = entry.resolveContext(progressAt('n007'), 'n007');
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const c = res.context;
     expect(c.stageType).toBe('elite');
     expect(c.pressure.scope).toBe('elite');
     expect(c.pressure.pressureRefKey).toBe('sf01');
-    // 对锚与阶梯批重定基（同上·拍板⑦）：n006 精英逐节点行 min=max=压力真值。
-    // 定价重锚 v1 二次重定基：91→89（v0.9 快照·刻度 v1 教学段钳制微移）。
-    expect(c.pressure.min).toBe(89);
-    expect(c.pressure.max).toBe(89);
+    // n007 精英逐节点行 min=max=压力真值（450 关首导快照 pressure[7]=98）。
+    expect(c.pressure.min).toBe(98);
+    expect(c.pressure.max).toBe(98);
     expect(c.pressure.recommend).toBeNull();
     expect(c.pressure.secondaryPressureCap).toBe(1);
   });
 
-  it('resolves n084 as a boss context (boss view + boss-scope pressure, no template_modifier)', async () => {
+  it('resolves n104 as a boss context (boss view + boss-scope pressure, no template_modifier)', async () => {
+    // 段二战斗批重定基：Boss 载体 n084（150 关世界 sf02 尾）→n104（450 关世界墙①·sf01 尾）。
     const entry = await buildEntry();
-    const res = entry.resolveCurrentContext(progressAt('n084'));
+    const res = entry.resolveCurrentContext(progressAt('n104'));
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const c = res.context;
     expect(c.stageType).toBe('boss');
     expect(c.boss).not.toBeNull();
-    expect(c.boss?.bossNodeId).toBe('n084');
-    expect(c.boss?.mainProblemTag).toBe('shield');
-    expect(c.templateId).toBe('t04');
-    expect(c.secondaryPressure).toBe('swarm_low');
+    expect(c.boss?.bossNodeId).toBe('n104');
+    expect(c.boss?.mainProblemTag).toBe('swarm');
+    expect(c.templateId).toBe('t02');
+    expect(c.secondaryPressure).toBeNull(); // n104 secondary=none → context 归一为 null（旧载体 n084=swarm_low 有值）
     expect(c.pressure.scope).toBe('boss');
-    expect(c.pressure.pressureRefKey).toBe('n084');
-    // 定价重锚 v1 重定基：6113（v0.7 旧刻度快照）→3508（v0.9 快照——刻度实测重标后 n084 到达期
-    // 望战力的诚实读数·整表规模缩水≈×0.4 的一环·apply-pressure-display 幂等重落）。
-    expect(c.pressure.recommend).toBe(3508);
+    expect(c.pressure.pressureRefKey).toBe('n104');
+    // 450 关首导快照：pressure[104]=1726（墙① 推荐=真实需求·拍板⑦）。
+    expect(c.pressure.recommend).toBe(1726);
     expect(c.pressure.templateModifier).toBeNull(); // boss 不叠加 template_modifier
   });
 
-  it('resolves n150 as boss with v0.9 snapshot pressure and no modifier stacking', async () => {
+  it('resolves n450 as boss with 450-world snapshot pressure and no modifier stacking', async () => {
+    // 段二战斗批重定基：终Boss n150（12080±10%）→n450（17890±10%=毕业战·450 关首导快照）。
     const entry = await buildEntry();
-    const res = entry.resolveCurrentContext(progressAt('n150'));
+    const res = entry.resolveCurrentContext(progressAt('n450'));
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     const c = res.context;
     expect(c.stageType).toBe('boss');
     expect(c.templateId).toBe('t10');
     expect(c.mainProblemTag).toBe('berserk');
-    // 定价重锚 v1 重定基：32094±10%（v0.7 旧刻度）→12080±10%（v0.9 快照·刻度实测重标——
-    // 毕业墙推荐战力=真实毕业构成的诚实纸面·发现1"同 24.5k 两个世界"随秤修准而消失）。
-    expect(c.pressure.min).toBe(10872);
-    expect(c.pressure.max).toBe(13288);
-    expect(c.pressure.recommend).toBe(12080); // 对表守卫同款：==v0.9 快照
+    expect(c.pressure.min).toBe(16101);
+    expect(c.pressure.max).toBe(19679);
+    expect(c.pressure.recommend).toBe(17890); // 对表守卫同款：==450 关首导快照
     expect(c.pressure.templateModifier).toBeNull();
-    expect(c.noAdCheckTag).toBe('no_ad_boss6_check');
+    expect(c.noAdCheckTag).toBe('no_ad_boss9_check');
   });
 });
 

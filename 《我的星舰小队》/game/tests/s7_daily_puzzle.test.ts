@@ -83,11 +83,11 @@ describe('S7 每日推演·刷新 / 已解 / 尝试（跨天自动重置）', ()
 });
 
 describe('S7 每日推演·解锁门控 + 发奖', () => {
-  it('解锁 = n040 已通关（沿用回廊通关节点检查）', () => {
-    expect(DAILY_PUZZLE_UNLOCK_NODE).toBe('n040');
+  it('解锁 = n064 已通关（沿用回廊通关节点检查·450 关世界=新首Boss n054+10·重映射表一）', () => {
+    expect(DAILY_PUZZLE_UNLOCK_NODE).toBe('n064');
     expect(dailyPuzzleUnlocked([])).toBe(false);
-    expect(dailyPuzzleUnlocked(['n030', 'n039'])).toBe(false);
-    expect(dailyPuzzleUnlocked(['n038', 'n040', 'n041'])).toBe(true);
+    expect(dailyPuzzleUnlocked(['n054', 'n063'])).toBe(false);
+    expect(dailyPuzzleUnlocked(['n062', 'n064', 'n065'])).toBe(true);
   });
   it('首胜发奖 = 星贝 + 通用星舰碎片（占位·非负）', () => {
     const r = dailyPuzzleFirstWinReward();

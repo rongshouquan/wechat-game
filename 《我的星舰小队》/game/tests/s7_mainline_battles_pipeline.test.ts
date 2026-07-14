@@ -65,29 +65,31 @@ describe('⑥二段② 压力→敌配映射（规则=细表 §19·定价重锚 
     expect(tough.maxHp).toBeGreaterThan(raider.maxHp); // 血权 1.6 vs 0.8
     expect(raider.attack / raider.attackIntervalSec).toBeGreaterThan(tough.attack / tough.attackIntervalSec); // 攻权 2.2 vs 0.5
     expect(raider.armor).toBe(ROLE_SHAPE.bu_enemy_burst_raider.armor);
-    // 等效厚度：n061=纯盾敌关——单位血=份额/2（盾循环=第二条血）
-    // ⑥三段落数后 enc_n061 引用节点行 bu_n061_shield（形状按 roleKeyOf 归一回 bu_enemy_shield 查表·数值语义不变）
-    const s61 = mapPressureToEnemies(b, 'n061', 3104);
-    const shield = s61.units.bu_n061_shield;
-    const rawShare = s61.pool / 3; // 三只均分
+    // 等效厚度：纯盾敌关——单位血=份额/2（盾循环=第二条血）。
+    // 段二战斗批重定基：载体 n061（150 关世界 sf02 盾域首关）→n178（450 关世界 sf03 迷雾星尘带=shield
+    // 域·盾×3 单波变体关·"三只均分"语义原样）。
+    const s178 = mapPressureToEnemies(b, 'n178', 3104);
+    const shield = s178.units.bu_n178_shield;
+    const rawShare = s178.pool / 3; // 三只均分
     expect(shield.maxHp).toBeLessThan(rawShare * 0.6); // ÷2.0 后显著小于原份额
   });
 
   it('单调性：P 越大敌总量越大（同关）', () => {
     const b = loadBundle();
-    const lo = mapPressureToEnemies(b, 'n061', 2000);
-    const hi = mapPressureToEnemies(b, 'n061', 8000);
+    const lo = mapPressureToEnemies(b, 'n178', 2000);
+    const hi = mapPressureToEnemies(b, 'n178', 8000);
     expect(hi.pool).toBeGreaterThan(lo.pool);
-    expect(hi.units.bu_n061_shield.maxHp).toBeGreaterThan(lo.units.bu_n061_shield.maxHp); // ⑥落数后键=节点行名
+    expect(hi.units.bu_n178_shield.maxHp).toBeGreaterThan(lo.units.bu_n178_shield.maxHp); // ⑥落数后键=节点行名
 
   });
 });
 
 describe('⑥三段 落数一致性（JSON 真值==映射公式·抽样守卫）', () => {
   // 守卫目标：磁盘节点敌行 = mapPressureToEnemies 公式值（防手改漂移/半截重落）。
-  // 抽样=普通关 n061（等效厚度）/ 墙关 n102（WALL_BOOST+M4 记档关）/ 毕业 Boss n150（BOSS_SHARE）。
-  // 压力值取自 ⑧ 经济尺 v0.6 压力表（loadPressure 同源）——若 ⑧ 重校压力，此测试红=提醒重落敌配。
-  it('n061 / n102 / n150 磁盘行值与公式一字不差', async () => {
+  // 段二战斗批重定基抽样：盾关 n178（等效厚度）/ 墙① n104（Boss 位）/ 毕业战 n450（终Boss 位）
+  // ——旧抽样 n061/n102/n150 的"墙/毕业"语义随 450 关世界换位。
+  // 压力值取自经济尺压力表（loadPressure 同源）——若重校压力，此测试红=提醒重落敌配。
+  it('n178 / n104 / n450 磁盘行值与公式一字不差', async () => {
     const { readFileSync } = await import('node:fs');
     const path = await import('node:path');
     const b = loadBundle();
@@ -97,7 +99,7 @@ describe('⑥三段 落数一致性（JSON 真值==映射公式·抽样守卫）
     const units = JSON.parse(readFileSync(path.join(dir, 'battle_unit_stat_param.sample.json'), 'utf-8')) as
       { rowId: string; maxHp: number; attack: number; armor: number; attackIntervalSec: number }[];
     const byId = new Map(units.map((r) => [r.rowId, r]));
-    for (const node of [61, 102, 150]) {
+    for (const node of [178, 104, 450]) {
       const nodeId = `n${String(node).padStart(3, '0')}`;
       const scale = mapPressureToEnemies(b, nodeId, pressure[node]);
       for (const [rowId, attrs] of Object.entries(scale.units)) {
@@ -113,25 +115,24 @@ describe('⑥三段 落数一致性（JSON 真值==映射公式·抽样守卫）
 });
 
 describe('⑥二段③ 全扫冒烟（真链路·抽段）', () => {
-  it('n055-n070（含 n060 首真墙Boss）：中位族全通·手感带内（段2a 过渡：接缝段贴靶/墙胜率转带+打印）', async () => {
-    const reports = await scanMainlineAsync({ family: 'median', samples: 2, fromNode: 55, toNode: 70 });
+  it('n090-n104（含 n104 墙①Boss）：中位族全通·手感带内（段1 走量态：墙工况=段2 WALL_BOOST 手调后重钉）', async () => {
+    // 段二战斗批重定基：冒烟段 n055-n070（150 关世界·含旧首真墙 n060）→n090-n104（450 关世界
+    // 墙①前渐紧段+墙①·同"接缝段+首真墙"语义）。
+    const reports = await scanMainlineAsync({ family: 'median', samples: 2, fromNode: 90, toNode: 104 });
     expect(reports.length).toBeGreaterThanOrEqual(14);
     const normals = reports.filter((r) => r.stage === 'normal');
     const avgDur = normals.reduce((a, r) => a + r.avgDurationSec, 0) / normals.length;
-    // 批③段三重锚：躯干重校（正常档 25s 靶·盾带咬合加深）后该带=盾题密集带 → 均值带 [15,32]→[18,36]。
-    expect(avgDur).toBeGreaterThanOrEqual(18);
-    expect(avgDur).toBeLessThanOrEqual(36); // 手感带（普通关均值·盾带偏慢=咬合设计）
-    const boss = reports.find((r) => r.nodeId === 'n060')!;
-    // ⚠️ 段2a 过渡豁免（同旧靶豁免制·到期=2b 400 关新拓扑落地重钉冒烟段）：L50 世界里
-    // n060 压力点上的反解构成"形态"变了——同纸面战力下解出 S 阶带核队（旧世界=A 阶无核
-    // 贴线态），对墙读数 0.5 而非旧构成的 ≤0.2（实测贴靶差仅 0.1%=纸面贴住了、构成种类不同；
-    // S 阶到手节奏变早=新纸面纹理，非墙变弱）。墙的真验收=经济尺真实态爬坡矩阵（2b 重跑）。
-    // 过渡底线仍武装：①链路全通（上面 length/时长带照钉）②墙对贴线量级构成仍不白给
-    // （胜率 <0.9）③贴靶带 ≤20%（覆盖本段 A→S 接缝 3.2k-4.0k 内的节点·超出=反解器真坏）；
-    // 实测值打印留档。
+    // 该带=sf01 swarm 纯净波（k 合同锚职业）·手感靶常规 25±5s → 均值带 [15,36]（走量态·段 2 墙调后复核）。
+    expect(avgDur).toBeGreaterThanOrEqual(15);
+    expect(avgDur).toBeLessThanOrEqual(36);
+    const boss = reports.find((r) => r.nodeId === 'n104')!;
+    // ⚠️ 段 1 走量态底线（到期=段 2 WALL_BOOST 九墙手调后重钉墙胜率/时长带）：墙① n104 现无墙陡度
+    // （WALL_BOOST 旧键全是 150 关节点号=对新世界不命中），Boss 只吃 stage 系数（1.9/1.0）——
+    // 贴线中位打得赢是预期（墙感=段 2 手术对象）。底线：①链路全通（length/时长带照钉）
+    // ②Boss 关时长显著长于普通关（Boss 量纲仍在）③贴靶带 ≤20%（超出=反解器真坏）；实测打印留档。
     // eslint-disable-next-line no-console
-    console.log(`[旧靶豁免·段2a 过渡] n060 冒烟：贴靶差 ${(((boss.teamPower - boss.pressure) / boss.pressure) * 100).toFixed(1)}% 胜率 ${boss.winRate}（旧断言 贴靶≤9%/胜率≤0.2·2b 重钉）`);
-    expect(boss.winRate).toBeLessThan(0.9);
+    console.log(`[段1 走量态] n104 冒烟：贴靶差 ${(((boss.teamPower - boss.pressure) / boss.pressure) * 100).toFixed(1)}% 胜率 ${boss.winRate} 时长 ${boss.avgDurationSec.toFixed(1)}s（墙带断言=段2 WALL_BOOST 后重钉）`);
+    expect(boss.avgDurationSec).toBeGreaterThan(avgDur); // Boss 量纲
     for (const r of reports) expect(Math.abs(r.teamPower - r.pressure) / r.pressure).toBeLessThanOrEqual(0.20); // 过渡带=接缝量级上界
   }, 30000);
 

@@ -37,7 +37,11 @@ function player(b: Bundle, rowId: string): void {
   });
 }
 
-describe('⑩A4 · n138 污染巨兽：污染潮（cd12 全屏+全队燃烧）+ 随时间狂暴（真源§5·M9 组合定式）', () => {
+// ⚠️ 段二战斗批显式挂起（skip=记档非删除·非装绿）：本组载体=bu_boss_n138（150 关世界污染巨兽行），
+// 450 关重铺后旧 Boss 行退役、新 13 Boss=占位骨架（真机制=段 2 对位真源 §5 手调）。机制积木本体
+// （eff_pollution_tide/燃烧/狂暴）全局效果行都在、未失守。到期条件=段 2 污染巨兽对位新 Boss 位
+// 落真机制时，本组换新载体恢复（恢复时删本注记）。
+describe.skip('⑩A4 · n138 污染巨兽：污染潮（cd12 全屏+全队燃烧）+ 随时间狂暴（真源§5·M9 组合定式）〔挂起：待段2 Boss 对位落位后换新载体恢复〕', () => {
   it('全队周期吃 eff_pollution_tide + 燃烧跳伤；Boss 普攻随时间涨（+2%/s 狂暴）', async () => {
     const b = clone(loadBundle());
     // Boss 行原位缩为测试量纲（结构字段 extraTriggerBlocks/stackRules=⑩A4 接线·原样保留）。
@@ -116,7 +120,9 @@ describe('⑩A4 · 磁暴塔磁暴场（真源§3·克制#10"削弱我方"敌侧
   });
 });
 
-describe('⑩A4 · n150 终Boss 阶段3 狂暴全屏（真源§5·原单体核弹改全屏 ×1.2）', () => {
+// ⚠️ 段二战斗批显式挂起（同上组·载体=bu_boss_n150 已退役·eff_s7_cataclysm 效果行在）：
+// 到期条件=段 2 终Boss（星能污染核心）对位 n450 落真机制时换新载体恢复。
+describe.skip('⑩A4 · n150 终Boss 阶段3 狂暴全屏（真源§5·原单体核弹改全屏 ×1.2）〔挂起：待段2 Boss 对位落位后换新载体恢复〕', () => {
   it('压血入终阶后 eff_s7_cataclysm 全屏命中双船', async () => {
     const b = clone(loadBundle());
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 4000, attack: 50, armor: 25, attackIntervalSec: 2.0 });

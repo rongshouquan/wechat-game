@@ -7198,7 +7198,7 @@ export class S7DemoController extends Component {
   /** hub「回廊」入口：解锁校验 → 开塔页 view。 */
   private openCorridor(): void {
     if (this.playing || !this.corridorView || !this.playerState || !this.session || !this.model) return;
-    if (!this.corridorUnlockedNow()) { this.hubToast('通关首个 Boss（n030）后解锁深空回廊'); return; }
+    if (!this.corridorUnlockedNow()) { this.hubToast('通关首个 Boss 后解锁深空回廊'); return; }
     this.corridorView.open();
   }
 

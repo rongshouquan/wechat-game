@@ -36,9 +36,10 @@ export const MAINLINE_FIXED_BASE = { hullAlloy: 55, pilotToken: 36, starCargo: 2
 export const MAINLINE_STAGE_MULT = { normal: 1, elite: 1.6, boss: 2.6, storyBoss: 2.0 } as const;
 /** 剧情首Boss 的奖励锚 id（数据驱动标记·firstBossNodeId 同源）。 */
 export const FIRST_BOSS_REWARD_ANCHOR = 'reward_first_boss';
-/** 教程期定向投放：n001-n030 每关首通给起手舰专属碎片（GDD-M S 阶承诺的经济面）。 */
+/** 教程期定向投放：n001-首Boss 每关首通给起手舰专属碎片（GDD-M S 阶承诺的经济面）。
+ *  450 关新世界首Boss=n054（旧 n030）·与经济尺 PARAMS.tutorialGrant.untilNode=54 对表。 */
 export const TUTORIAL_GRANT_MAIN_SHARD_PER_NODE = 13;
-export const TUTORIAL_GRANT_UNTIL_NODE = 30;
+export const TUTORIAL_GRANT_UNTIL_NODE = 54;
 export const TUTORIAL_GRANT_SHIP_ID = 'shp01';
 
 /** 节点 → 固定奖励档（nodeTypeTag 非 elite/boss 的一律 normal·与经济尺 nodeStage 同口径）。 */

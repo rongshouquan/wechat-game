@@ -114,12 +114,12 @@ describe('s7 tier b economy params', () => {
     expect(Number(floor.fullCore)).toBeLessThanOrEqual(Number(exp.fullCore));
   });
 
-  it('pins N150（终Boss）pressure to v0.9 snapshot and keeps min<=max', () => {
-    // 步5 重定基：旧'≤14500'=B1 旧刻度护栏 → v0.7 快照 32094；定价重锚 v1 再重定基：32094=旧刻度
-    // 读数 → 12080=刻度实测重标后同一到达期望的诚实读数（绊线哲学不变：压力表重校→红=提醒重落显示带）。
+  it('pins N450（毕业战终Boss）pressure to 450-world snapshot and keeps min<=max', () => {
+    // 段二战斗批重定基：bp_n150=12080（150 关世界 v0.9）→ bp_n450=17890（450 关新世界首导快照
+    // pressure[450]·绊线哲学不变：压力表重校→红=提醒重落显示带）。
     const rows = readSample<Array<{ rowId: string; scope: string; refKey: string; pressureMax: number; pressureRecommend?: number; appliesToBoss?: boolean }>>('pressure_param');
-    const finalBoss = rows.find((r) => r.rowId === 'bp_n150')!;
-    expect(finalBoss.pressureRecommend).toBe(12080);
+    const finalBoss = rows.find((r) => r.rowId === 'bp_n450')!;
+    expect(finalBoss.pressureRecommend).toBe(17890);
     for (const r of rows.filter((x) => x.scope === 'template_modifier')) expect(r.appliesToBoss).toBe(false);
   });
 
@@ -267,25 +267,31 @@ describe('s7 tier b building configs', () => {
 });
 
 describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
-  it('covers all 150 mainline nodes N001-N150（2026-07-02 拓扑改造）', () => {
+  it('covers all 450 mainline nodes N001-N450（段二战斗批 450 关新世界）', () => {
     const rows = readSample<Array<{ nodeId: string }>>('mainline_node_config');
-    expect(rows).toHaveLength(150);
+    expect(rows).toHaveLength(450);
     const ids = rows.map((r) => r.nodeId).sort();
-    const expected = Array.from({ length: 150 }, (_, i) => `n${String(i + 1).padStart(3, '0')}`);
+    const expected = Array.from({ length: 450 }, (_, i) => `n${String(i + 1).padStart(3, '0')}`);
     expect(ids).toEqual(expected);
   });
 
-  it('covers 25 chapters, 6 star regions and 7 boss nodes (6墙+n030剧情首Boss) with correct boss bindings', () => {
+  it('covers 79 chapters, 7 star regions and 13 boss nodes (9墙+3高潮+前哨) with correct boss bindings', () => {
     const chapters = readSample<Array<{ chapterId: string; bossRef: string }>>('chapter_config');
-    expect(chapters).toHaveLength(25);
+    expect(chapters).toHaveLength(79);
     const starRegions = readSample<Array<{ starfieldId: string }>>('star_region_config');
-    expect(starRegions).toHaveLength(6);
+    expect(starRegions).toHaveLength(7);
     const bosses = readSample<Array<{ bossNodeId: string }>>('boss_node_config');
-    // n030=第5章章末剧情首Boss（Ron 2026-07-03），6 墙(n060/084/102/120/138/150) 数量不变 → 7 个 boss 节点。
-    expect(bosses.map((r) => r.bossNodeId).sort()).toEqual(['n030', 'n060', 'n084', 'n102', 'n120', 'n138', 'n150']);
+    // 旧→新→为什么对：7 Boss（150 关）→ 13 Boss=9 墙（n104/140/176/250/282/312/368/400/450）
+    // +首Boss n054+高潮 n214/n340+前哨 n384（剧本 v1.3 拍死·与经济尺 TRUTHS 一字对齐）。
+    expect(bosses.map((r) => r.bossNodeId).sort()).toEqual(
+      ['n054', 'n104', 'n140', 'n176', 'n214', 'n250', 'n282', 'n312', 'n340', 'n368', 'n384', 'n400', 'n450'],
+    );
     const bossChapters = chapters.filter((c) => c.bossRef !== 'none');
-    // ch05 挂 n030；6 区域末尾章节(ch10/14/17/20/23/25) 不变 → 7 个 boss 章节。
-    expect(bossChapters.map((c) => c.chapterId).sort()).toEqual(['ch05', 'ch10', 'ch14', 'ch17', 'ch20', 'ch23', 'ch25']);
+    // 13 Boss 所在章：n054=ch09/n104=ch18/n140=ch24/n176=ch30/n214=ch37/n250=ch43/n282=ch49/
+    // n312=ch54/n340=ch59/n368=ch64/n384=ch67/n400=ch70/n450=ch79（生成器按域切块实测·含中段墙章挂接修复）。
+    expect(bossChapters.map((c) => c.chapterId).sort()).toEqual(
+      ['ch09', 'ch18', 'ch24', 'ch30', 'ch37', 'ch43', 'ch49', 'ch54', 'ch59', 'ch64', 'ch67', 'ch70', 'ch79'],
+    );
   });
 
   it('marks the protection-period turning point at N018/N019（原N038/N039前移）', () => {
@@ -355,9 +361,9 @@ describe('s7 tier c mainline / chapter / tutorial / unlock configs', () => {
     expect(n019.irreversibleWarningFlag).toBe(true);
   });
 
-  it('keeps N150（终Boss）template at t10 and rejects any cut_70 (whitelist已清空)', () => {
+  it('keeps N450（毕业战终Boss）template at t10 and rejects any cut_70 (whitelist已清空)', () => {
     const bosses = readSample<Array<{ bossNodeId: string; templateRef: string }>>('boss_node_config');
-    const finalBoss = bosses.find((r) => r.bossNodeId === 'n150')!;
+    const finalBoss = bosses.find((r) => r.bossNodeId === 'n450')!;
     expect(finalBoss.templateRef).toBe('t10');
 
     const b = loadS7Bundle();
@@ -371,20 +377,21 @@ describe('s7 tier d bridge configs', () => {
   const EXPECTED_NO_AD_CHECK_TAGS = [
     'no_ad_boss1_check', 'no_ad_boss2_check', 'no_ad_boss3_check',
     'no_ad_boss4_check', 'no_ad_boss5_check', 'no_ad_boss6_check',
+    'no_ad_boss7_check', 'no_ad_boss8_check', 'no_ad_boss9_check',
   ];
 
-  it('covers all 10 reward pool anchors bidirectionally with mainline rewardAnchorRef, full 150-node coverage', () => {
+  it('covers all 16 reward pool anchors bidirectionally with mainline rewardAnchorRef, full 450-node coverage', () => {
     const rows = readSample<Array<{ rewardAnchorRef: string; nodeRefs: string[] }>>('reward_pool_ref_config');
-    // 9 个基础锚点 + reward_first_boss(n030 剧情首Boss) = 10（Ron 2026-07-03）。150 节点全覆盖不变（n030 从 basic 挪到 first_boss 锚点）。
-    expect(rows).toHaveLength(10);
+    // 450 关世界=16 锚：basic/elite/cargo 3 + first_boss 1 + climax 3 + 墙 boss_1..8 + final 1（旧世界 10）。
+    expect(rows).toHaveLength(16);
     const mainline = readSample<Array<{ nodeId: string; rewardAnchorRef: string }>>('mainline_node_config');
 
     const anchorsFromMainline = new Set(mainline.map((r) => r.rewardAnchorRef));
     expect(new Set(rows.map((r) => r.rewardAnchorRef))).toEqual(anchorsFromMainline);
 
     const allNodeRefs = rows.flatMap((r) => r.nodeRefs);
-    expect(allNodeRefs.length).toBe(150);
-    expect(new Set(allNodeRefs).size).toBe(150);
+    expect(allNodeRefs.length).toBe(450);
+    expect(new Set(allNodeRefs).size).toBe(450);
     for (const ref of allNodeRefs) {
       const m = mainline.find((r) => r.nodeId === ref)!;
       const owner = rows.find((r) => r.nodeRefs.includes(ref))!;
@@ -392,9 +399,9 @@ describe('s7 tier d bridge configs', () => {
     }
   });
 
-  it('covers all 6 no-ad path check tags bidirectionally with mainline noAdCheckTag（每个大Boss一个检查点）', () => {
+  it('covers all 9 no-ad path check tags bidirectionally with mainline noAdCheckTag（每个墙 Boss 一个检查点·450 关=9 墙）', () => {
     const rows = readSample<Array<{ checkTag: string; nodeId: string; forbiddenDependencyTag: string[] }>>('no_ad_path_check_config');
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(9);
     expect([...rows.map((r) => r.checkTag)].sort()).toEqual([...EXPECTED_NO_AD_CHECK_TAGS].sort());
 
     const mainline = readSample<Array<{ nodeId: string; noAdCheckTag: string }>>('mainline_node_config');

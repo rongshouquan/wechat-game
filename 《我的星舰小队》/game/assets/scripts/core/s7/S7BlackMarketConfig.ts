@@ -7,8 +7,9 @@
 //   货架 = 2 大件（固定轮换·日程公示）+ 4 小件坑（每日随机 8 品类加权·各限购 1/日）+ 宝箱位（价 10 日 1）；
 //   黑市内可连看广告（纯计数无其他奖励）；入口低调无红点；解锁 = n060 首通（Ron 拍板"打赢难 Boss 解锁"）。
 
-/** 解锁节点（n060 首通后·Ron 2026-07-07 拍板）。 */
-export const BLACK_MARKET_UNLOCK_NODE = 'n060';
+/** 解锁节点（第一堵真墙 Boss 首通后·Ron 2026-07-07 拍板"打赢难 Boss 解锁"=语义保持；
+ *  450 关新世界墙①=n104（旧 n060·重映射表一）·与经济尺 PARAMS.blackMarket.unlockNode=104 对表。 */
+export const BLACK_MARKET_UNLOCK_NODE = 'n104';
 /** 日计数上限（三道闸①：护 eCPM/防无脑刷）。 */
 export const BLACK_MARKET_DAILY_VIEW_CAP = 30;
 /** 每次激励视频观看 +1 计数（全渠道通吃）。 */

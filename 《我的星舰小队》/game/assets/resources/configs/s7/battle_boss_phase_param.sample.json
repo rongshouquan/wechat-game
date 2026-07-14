@@ -1,100 +1,22 @@
 [
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n030_start",
-    "bossNodeId": "n030",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
-    "effectRefs": [
-      "eff_ult_clear_barrage"
-    ],
-    "summonUnitRefs": [
-      "bu_n030_swarm"
-    ],
-    "summonCountCap": 3,
-    "note": "n030 首Boss开场：召唤星盗船长铺场(3只·比 n060 少)+清场弹幕（占位·1艘S阶可胜）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n030_mid",
-    "bossNodeId": "n030",
+    "rowId": "phase_n054_mid",
+    "bossNodeId": "n054",
     "phaseTag": "mid",
     "triggerType": "hp_pct_below",
     "triggerValue": 50,
-    "effectRefs": [
-      "eff_ult_clear_barrage"
-    ],
-    "summonUnitRefs": [
-      "bu_n030_swarm"
-    ],
-    "summonCountCap": 4,
-    "note": "n030 血量50%：补召星盗船长(4只·累计不超10)+清场弹幕（占位）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n030_final",
-    "bossNodeId": "n030",
-    "phaseTag": "final",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 25,
     "effectRefs": [
       "eff_state_vulnerable"
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "n030 残血(25%)：目标易伤，打输出窗口收尾（占位）"
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n060_final",
-    "bossNodeId": "n060",
-    "phaseTag": "final",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 20,
-    "effectRefs": [
-      "eff_state_vulnerable"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "残血：目标易伤，打输出窗口"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n060_mid",
-    "bossNodeId": "n060",
-    "phaseTag": "mid",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 50,
-    "effectRefs": [
-      "eff_ult_clear_barrage"
-    ],
-    "summonUnitRefs": [
-      "bu_n060_swarm"
-    ],
-    "summonCountCap": 8,
-    "note": "血量50%：召唤星盗艇加量(8只，累计不超10)+清场弹幕爆发"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n060_start",
-    "bossNodeId": "n060",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
-    "effectRefs": [
-      "eff_ult_clear_barrage"
-    ],
-    "summonUnitRefs": [
-      "bu_n060_swarm"
-    ],
-    "summonCountCap": 6,
-    "note": "开场先召唤星盗艇铺场(6只)，配合清场弹幕"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n084_final",
-    "bossNodeId": "n084",
+    "rowId": "phase_n054_final",
+    "bossNodeId": "n054",
     "phaseTag": "final",
     "triggerType": "hp_pct_below",
     "triggerValue": 20,
@@ -103,130 +25,26 @@
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "残血爆发窗口"
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n084_mid",
-    "bossNodeId": "n084",
+    "rowId": "phase_n104_mid",
+    "bossNodeId": "n104",
     "phaseTag": "mid",
     "triggerType": "hp_pct_below",
     "triggerValue": 50,
-    "effectRefs": [
-      "eff_state_shield_break",
-      "eff_state_vulnerable"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "中段破盾窗口（真源f8c6ae75阶段2=破盾后狂暴·段二H1：旧盾仔阶段召唤×3退役——召唤改由Boss本体周期大招承担·开局盾仔adds波=池结构件保留）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n084_start",
-    "bossNodeId": "n084",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
-    "effectRefs": [
-      "eff_state_shield"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "开场开盾（真源阶段1=护盾+周期召唤无人机+点名后排：周期召唤=Boss本体eff_n084_summon cd12·点名后排=Boss行targetingTag backline_first·段二H1对齐）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n102_final",
-    "bossNodeId": "n102",
-    "phaseTag": "final",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 20,
     "effectRefs": [
       "eff_state_vulnerable"
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "残血：目标易伤，打输出窗口"
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n102_mid",
-    "bossNodeId": "n102",
-    "phaseTag": "mid",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 50,
-    "effectRefs": [
-      "eff_ult_backline_strike"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "血量50%：打后排重击窗口"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n102_start",
-    "bossNodeId": "n102",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
-    "effectRefs": [
-      "eff_state_mark"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "开场先点名标记我方目标"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n120_final",
-    "bossNodeId": "n120",
-    "phaseTag": "final",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 20,
-    "effectRefs": [
-      "eff_state_summon"
-    ],
-    "summonUnitRefs": [
-      "bu_n120_add"
-    ],
-    "summonCountCap": 8,
-    "note": "残血：召唤无人机加量(8只，累计不超10)兜底"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n120_mid",
-    "bossNodeId": "n120",
-    "phaseTag": "mid",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 50,
-    "effectRefs": [
-      "eff_state_mark",
-      "eff_ult_backline_strike"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "血量50%：转打后排点名(标记+后排重击)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n120_start",
-    "bossNodeId": "n120",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
-    "effectRefs": [
-      "eff_state_summon"
-    ],
-    "summonUnitRefs": [
-      "bu_n120_add"
-    ],
-    "summonCountCap": 6,
-    "note": "开场先召唤无人机铺场(6只)"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n138_final",
-    "bossNodeId": "n138",
+    "rowId": "phase_n104_final",
+    "bossNodeId": "n104",
     "phaseTag": "final",
     "triggerType": "hp_pct_below",
     "triggerValue": 20,
@@ -235,83 +53,314 @@
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "残血：爆发核弹收尾"
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n138_mid",
-    "bossNodeId": "n138",
+    "rowId": "phase_n140_mid",
+    "bossNodeId": "n140",
     "phaseTag": "mid",
     "triggerType": "hp_pct_below",
     "triggerValue": 50,
     "effectRefs": [
-      "eff_ult_burst_nuke",
       "eff_state_vulnerable"
     ],
-    "summonUnitRefs": [
-      "bu_n138_pollution"
-    ],
-    "summonCountCap": 4,
-    "note": "血量50%：召唤污染体(4只·⑩A4 真载体=喷毒+受击狂暴)+爆发核弹+目标易伤叠加"
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n138_start",
-    "bossNodeId": "n138",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
+    "rowId": "phase_n140_final",
+    "bossNodeId": "n140",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
     "effectRefs": [
       "eff_ult_burst_nuke"
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "开场先放爆发核弹窗口"
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n150_final",
-    "bossNodeId": "n150",
-    "phaseTag": "final",
-    "triggerType": "hp_pct_below",
-    "triggerValue": 20,
-    "effectRefs": [
-      "eff_state_berserk",
-      "eff_s7_cataclysm"
-    ],
-    "summonUnitRefs": [],
-    "summonCountCap": 0,
-    "note": "阶段3 狂暴全屏：狂暴+全屏 ×1.2（真源§5 终Boss·⑩A4·原单体核弹改全屏）"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n150_mid",
-    "bossNodeId": "n150",
+    "rowId": "phase_n176_mid",
+    "bossNodeId": "n176",
     "phaseTag": "mid",
     "triggerType": "hp_pct_below",
     "triggerValue": 50,
     "effectRefs": [
-      "eff_state_summon",
-      "eff_ult_short_circuit_pulse"
-    ],
-    "summonUnitRefs": [
-      "bu_n150_add"
-    ],
-    "summonCountCap": 10,
-    "note": "中段召唤压场（上限 10）+ 短路窗口"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "rowId": "phase_n150_start",
-    "bossNodeId": "n150",
-    "phaseTag": "start",
-    "triggerType": "battle_start",
-    "triggerValue": 0,
-    "effectRefs": [
-      "eff_state_shield"
+      "eff_state_vulnerable"
     ],
     "summonUnitRefs": [],
     "summonCountCap": 0,
-    "note": "开场开盾"
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n176_final",
+    "bossNodeId": "n176",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n214_mid",
+    "bossNodeId": "n214",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n214_final",
+    "bossNodeId": "n214",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n250_mid",
+    "bossNodeId": "n250",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n250_final",
+    "bossNodeId": "n250",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n282_mid",
+    "bossNodeId": "n282",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n282_final",
+    "bossNodeId": "n282",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n312_mid",
+    "bossNodeId": "n312",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n312_final",
+    "bossNodeId": "n312",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n340_mid",
+    "bossNodeId": "n340",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n340_final",
+    "bossNodeId": "n340",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n368_mid",
+    "bossNodeId": "n368",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n368_final",
+    "bossNodeId": "n368",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n384_mid",
+    "bossNodeId": "n384",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n384_final",
+    "bossNodeId": "n384",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n400_mid",
+    "bossNodeId": "n400",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n400_final",
+    "bossNodeId": "n400",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n450_mid",
+    "bossNodeId": "n450",
+    "phaseTag": "mid",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 50,
+    "effectRefs": [
+      "eff_state_vulnerable"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "中段易伤窗占位（450 关走量·真阶段=段2 对位手调）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "phase_n450_final",
+    "bossNodeId": "n450",
+    "phaseTag": "final",
+    "triggerType": "hp_pct_below",
+    "triggerValue": 20,
+    "effectRefs": [
+      "eff_ult_burst_nuke"
+    ],
+    "summonUnitRefs": [],
+    "summonCountCap": 0,
+    "note": "残血爆发窗占位（450 关走量·真阶段=段2 对位手调）"
   }
 ]

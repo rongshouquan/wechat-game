@@ -246,42 +246,30 @@ describe('S7 经济尺 · 尺子诚实性（对输入敏感·不为绿而绿）'
 });
 
 describe('S7 经济尺 · 显示推荐值==压力表（对锚批拍板⑦守卫）', () => {
-  // 收口批处置（旧→新→为什么对）：盘上 pressure_param.sample.json=150 关旧世界落数（143 行·
-  // n030/n060 节点系），校准压力表已是 450 关新世界——两者物理不可比（节点号/行数/量纲全变），
-  // "≤18% 过渡漂移带"失去被测对象。json 重生成=拓扑 WORLD_450 填位批（§16h 待办④·本收口批
-  // 授权外），故本测试显式挂起（skip=记档非删除·非装绿）；到期条件=拓扑批重落 json 时恢复
-  // 精确钉（拍板⑦"显示推荐=真实需求"职责随批移交，恢复时删本注记）。
-  it.skip('pressure_param 逐节点行与校准压力表逐点一致（挂起：待拓扑批重落 450 关 json 后恢复精确钉）', () => {
+  // 挂起恢复（段二战斗批 2026-07-14·旧→新→为什么对）：2b 收口批显式挂起（skip）——盘上 json
+  // 是 150 关旧世界落数、与 450 关校准压力表物理不可比；本批拓扑 WORLD_450 填位+apply-pressure-display
+  // 重落 450 关显示行=到期条件成立，按恢复条款回精确钉（拍板⑦"显示推荐=真实需求"·过渡漂移带退役）。
+  it('pressure_param 逐节点行与校准压力表逐点一致（450 关精确钉）', () => {
     // 为什么对：拍板⑦"显示推荐=真实需求"——逐节点行由 apply-pressure-display.mjs 落数；本守卫
-    // 防"压力表重校后显示行忘记重落"。
-    // ⚠️ 段2a 过渡豁免（同 07-11 旧靶豁免制·到期条件=段二 2b 400 关压力表+显示行整体重落时恢复
-    // 精确钉）：A3 等级上限 100→50＋R1 五档平移（LF 中段 +10~16.6%）两次授权重标使校准器连续自愈
-    // 重校，150 关旧显示行=旧世界落数，全量重落被任务单明排在 2b（400 关一次重铺·不重落两遍）。
-    // 过渡期底线仍武装：逐点漂移必须 ≤18%（=R1 门位平移理论峰 16.6%+采样余量·实测峰 16.5% @n134）——倍级漂移=真 bug
-    // 照红；漂移条目打印留档（同豁免制打印纪律）。
+    // 防"压力表重校后显示行忘记重落"。精确钉：np/ep 行 min==max==校准值、bp 行 recommend==校准值。
     const fs = require('node:fs') as typeof import('node:fs');
     const rows = JSON.parse(fs.readFileSync(
       require('node:path').resolve(__dirname, '..', 'assets', 'resources', 'configs', 's7', 'pressure_param.sample.json'), 'utf-8',
     )) as Array<{ rowId: string; scope: string; refKey: string; pressureMin?: number; pressureMax?: number; pressureRecommend?: number }>;
     const nodeRows = rows.filter((r) => (r.scope === 'normal' || r.scope === 'elite') && /^n\d{3}$/.test(r.refKey));
-    expect(nodeRows.length).toBe(143); // 150 - 7 boss 类节点
-    const drifts: string[] = [];
-    const check = (label: string, disk: number | undefined, live: number) => {
-      const d = typeof disk === 'number' ? disk : NaN;
-      if (d !== live) drifts.push(`${label} 盘=${d} 校=${live} 漂=${(((live - d) / d) * 100).toFixed(1)}%`);
-      expect(Math.abs(live - d) / d, `${label} 超过渡漂移带 18%`).toBeLessThanOrEqual(0.18);
-    };
+    expect(nodeRows.length).toBe(437); // 450 - 13 boss 类节点（含 n018/n019 非战斗节点的展示行·无害）
     for (const r of nodeRows) {
       const n = Number(r.refKey.slice(1));
-      check(`${r.rowId} min`, r.pressureMin, pressure[n]);
-      check(`${r.rowId} max`, r.pressureMax, pressure[n]);
+      expect(r.pressureMin, `${r.rowId} min`).toBe(pressure[n]);
+      expect(r.pressureMax, `${r.rowId} max`).toBe(pressure[n]);
     }
-    for (const n of [30, 60, 102, 120, 150]) {
-      const b = rows.find((r) => r.scope === 'boss' && r.refKey === `n${String(n).padStart(3, '0')}`)!;
-      check(`boss n${n} recommend`, b.pressureRecommend, pressure[n]);
+    const bossRows = rows.filter((r) => r.scope === 'boss' && /^n\d{3}$/.test(r.refKey));
+    expect(bossRows.map((r) => r.refKey).sort()).toEqual(
+      ['n054', 'n104', 'n140', 'n176', 'n214', 'n250', 'n282', 'n312', 'n340', 'n368', 'n384', 'n400', 'n450'],
+    );
+    for (const b of bossRows) {
+      expect(b.pressureRecommend, `${b.rowId} recommend`).toBe(pressure[Number(b.refKey.slice(1))]);
     }
-    // eslint-disable-next-line no-console
-    if (drifts.length) console.log(`[旧靶豁免·段2a 过渡] 显示对表漂移 ${drifts.length} 条（L50 重校 vs 150关旧落数·2b 重落收账）：\n  ${drifts.slice(0, 8).join('\n  ')}${drifts.length > 8 ? `\n  …共 ${drifts.length} 条` : ''}`);
   });
 });
 

@@ -104,18 +104,83 @@ const WORLD_150 = {
 };
 
 /**
- * 段二 400 关世界（骨架待填·总控补充指令一：**具体落位=剧本过 Ron 后落**）。
- * 结构口径（Ron 07-12 已拍）：400 关＝约 350 普通＋38 精英＋12 Boss（每星域中段 1＋末尾 1）；
- * 12 Boss＝9 墙＋3 高潮（含首Boss·初见约 10%）；精英≈每 10 关 1 个（新手段稀·首个第 6-8 关）；
- * 开局零墙直道 55-60 关、首墙 D2 中段。填法：regions 六段 spans＋climaxBossNodes（首Boss+2 高潮位）
- * ＋区域中段 Boss 号并入 climax 或墙（不在 to 位的 Boss 一律显式列进 climaxBossNodes 或 midWallBossNodes——
- * 生成器按"to 位=墙、climax=高潮、其余中段 Boss=墙"落 nodeTypeTag 与奖励锚）＋38 精英位清单＋
- * 解锁节点按重映射表（语义保持）重排。
+ * 段二 450 关世界（战斗批填位 2026-07-14·剧本 v1.3 拍死骨架＝七域 spans 104/72/74/62/56/32/50、
+ * 13 Boss＝9 墙＋3 高潮＋前哨 n384、38 精英位；与经济尺 TRUTHS（regionSpans/wallNodes/climaxNodes/
+ * eliteNodes/storyBossNode 54）一字对齐——两处同改，对表守卫=经济尺测试）。
+ * 域威胁主题（problemTag 从 6 枚举选最贴近·域规则本体走 star_region_config ruleKind 另一层）：
+ *   sf01 星港边域=swarm（星盗数量题）｜sf02 废铁坟场=backline（修理机/磁暴塔躲后排=点治疗源题）
+ *   sf03 迷雾星尘带=shield（星尘里藏盾卫）｜sf04 母舰工业区=summon（量产母舰=剧本原文点名）
+ *   sf05 污染之海=berserk（污染体"越受击越狂暴"=真源原文）｜sf06 风暴核心=burst（增幅域敌高攻）
+ *   sf07 风暴之眼=berserk（终域沿旧例）＋模板全轮换（前六域组合递进的敌配层呼应）。
+ * ——域族/Boss 对位提案表随段 1 交付呈总控核，否了改此块重跑（幂等零成本）。
  */
-// eslint-disable-next-line no-unused-vars
-const WORLD_400_PENDING = null; // 剧本拍板后按上注填 WORLD_400 并把下行切过去
+const WORLD_450 = {
+  N: 450,
+  regions: [
+    { sf: 'sf01', from: 1, to: 104, tag: 'swarm', template: ['t01', 't02'], bossTemplate: 't02' },
+    { sf: 'sf02', from: 105, to: 176, tag: 'backline', template: ['t05', 't06'], bossTemplate: 't06' },
+    { sf: 'sf03', from: 177, to: 250, tag: 'shield', template: ['t03', 't04'], bossTemplate: 't04' },
+    { sf: 'sf04', from: 251, to: 312, tag: 'summon', template: ['t09'], bossTemplate: 't09' },
+    { sf: 'sf05', from: 313, to: 368, tag: 'berserk', template: ['t07', 't08'], bossTemplate: 't08' }, // 无常规 berserk 模板，普通关混 burst 系（沿 WORLD_150 sf06 先例）
+    { sf: 'sf06', from: 369, to: 400, tag: 'burst', template: ['t07', 't08'], bossTemplate: 't08' },
+    { sf: 'sf07', from: 401, to: 450, tag: 'berserk', template: ['t02', 't04', 't06', 't08', 't09'], bossTemplate: 't10' }, // 眼段=模板全轮换·n450 终Boss=t10（validator 铁则）
+  ],
+  // 9 墙（显式清单·含域中段墙 n140/n282——"to 位=墙"推导对新世界不成立）：
+  // n104 墙①战力 / n140 墙②机制 / n176 墙③解题 / n250 墙④连战 / n282 墙⑤战+机 /
+  // n312 墙⑥解+连 / n368 墙⑦机+解 / n400 墙⑧战+连 / n450 墙⑨毕业战（六规则全叠）。
+  wallBossNodes: [104, 140, 176, 250, 282, 312, 368, 400, 450],
+  // 高潮/前哨（boss 类型·非墙·经济口径"不卡天"）：n054=剧情首Boss（掉陨星弹·storyBoss）、
+  // n214/n340=高潮仗、n384=风暴前哨硬仗（毕业核货架进度闩位·经济尺 vaultGradUnlockNode 384）。
+  climaxBossNodes: [54, 214, 340, 384],
+  // 38 精英位＝剧本 v1.3 表（=经济尺 TRUTHS.eliteNodes 一字对齐）。
+  eliteNodes: [7, 18, 33, 68, 88, 116, 122, 128, 142, 150, 165, 168, 186, 192, 198, 208, 224, 232, 238, 244, 258, 266, 274, 284, 290, 298, 306, 320, 330, 336, 344, 348, 356, 362, 372, 378, 390, 396],
+  chapterSize: 6,
+  tutorialMaxNode: 5,
+  protectionGates: { resetNode: 18, noticeNode: 19 }, // 绝对保持族（重映射表一）
+  cargoIntroNode: 9,
+  // 前 15 关快解锁族＝绝对保持（重映射表一：强引导步序绑定）。
+  fastNodeUnlocks: WORLD_150.fastNodeUnlocks,
+  // 核节奏中段提示位：旧 n070/n095/n125 按 150→450 等比（0.47/0.63/0.83）取非 Boss/精英位。
+  corePathUnlocks: [
+    ['unlock_core_path_mid', 210, 'core'],
+    ['unlock_core_3_path_check', 285, 'core'],
+    ['unlock_late_core_path_check', 375, 'core'],
+  ],
+  finalUnlocks: [
+    ['unlock_final_boss_ready', 448, 'final_check'],
+    ['unlock_mainline_clear', 450, 'final_check'],
+  ],
+  // 13 Boss 奖励行阶梯（reward_param 占位·真实结算=S7NodeSettlement 公式驱动＋resolveBossGrand 箱）：
+  // 墙①-⑧=boss_1..8、毕业战=boss_final、首Boss=boss_story、高潮/前哨=boss_climax_1..3。
+  bossRewardSteps: [
+    { id: 'boss_story', min: 200, max: 300 },
+    { id: 'boss_climax_1', min: 550, max: 800 },
+    { id: 'boss_climax_2', min: 950, max: 1400 },
+    { id: 'boss_climax_3', min: 1100, max: 1600 },
+    { id: 'boss_1', min: 300, max: 450 },
+    { id: 'boss_2', min: 420, max: 630 },
+    { id: 'boss_3', min: 520, max: 780 },
+    { id: 'boss_4', min: 650, max: 980 },
+    { id: 'boss_5', min: 780, max: 1170 },
+    { id: 'boss_6', min: 900, max: 1350 },
+    { id: 'boss_7', min: 1050, max: 1550 },
+    { id: 'boss_8', min: 1200, max: 1750 },
+    { id: 'boss_final', min: 1300, max: 1900 },
+  ],
+  // 教学段真机原型覆盖面（n001-n007=强引导真实内容·绝对保持）；旧 n084/n150 搬迁注记
+  // 属 150 关世界遗产（新世界该两位=普通/精英关走公式），不再覆盖。
+  encounterOverrides: {
+    1: WORLD_150.encounterOverrides[1],
+    2: WORLD_150.encounterOverrides[2],
+    3: WORLD_150.encounterOverrides[3],
+    4: WORLD_150.encounterOverrides[4],
+    5: WORLD_150.encounterOverrides[5],
+    6: WORLD_150.encounterOverrides[6],
+    7: WORLD_150.encounterOverrides[7],
+  },
+};
 
-const WORLD = WORLD_150;
+const WORLD = WORLD_450; // 段二战斗批切换（2026-07-14）；WORLD_150 保留=历史世界参照。
 
 // ============================================================================
 // 生成逻辑（只吃 WORLD·不再包含世界数字）
@@ -127,8 +192,9 @@ function reuseTagsBefore(sf) {
   const idx = REGIONS.findIndex((r) => r.sf === sf);
   return ALL_TAGS_IN_ORDER.slice(0, idx);
 }
-const BOSS_NODES = REGIONS.map((r) => r.to); // 区域末墙 Boss
-const STORY_BOSS_NODES = WORLD.climaxBossNodes; // 高潮 Boss（非墙）
+// 墙 Boss：wallBossNodes 显式清单优先（450 关世界含域中段墙 n140/n282）；未填=旧"域末位=墙"推导（WORLD_150 兼容）。
+const BOSS_NODES = WORLD.wallBossNodes ?? REGIONS.map((r) => r.to);
+const STORY_BOSS_NODES = WORLD.climaxBossNodes; // 高潮/前哨 Boss（非墙·首位=剧情首Boss 掉陨星弹）
 const ALL_BOSS_NODES = [...BOSS_NODES, ...STORY_BOSS_NODES]; // 所有 boss 类型节点（nodeTypeTag='boss'）
 const ELITE_NODES = WORLD.eliteNodes;
 
@@ -169,8 +235,9 @@ writeJson('star_region_config', REGIONS.map((r) => ({
 // ===== 3. chapter_config =====
 writeJson('chapter_config', CHAPTERS.map((c) => {
   const region = REGIONS.find((r) => r.sf === c.starfieldId);
-  const isBossChapter = c.to === region.to;
-  const storyBossInChapter = STORY_BOSS_NODES.find((n) => n >= c.from && n <= c.to);
+  // 章内 Boss 挂接：墙（含域中段墙 n140/n282——旧"域尾=墙"推导漏挂中段墙章）与高潮/前哨统一按
+  // "Boss 节点落在本章区间"判定；一章至多一个 Boss（450 关布局下天然成立）。
+  const bossInChapter = ALL_BOSS_NODES.find((n) => n >= c.from && n <= c.to);
   return {
     schemaVersion: SCHEMA,
     chapterId: c.chapterId,
@@ -178,7 +245,7 @@ writeJson('chapter_config', CHAPTERS.map((c) => {
     nodeRangeTag: `${pad3(c.from)}_${pad3(c.to)}`,
     primaryTemplateTags: region.template,
     tutorialGoalTag: c.chapterId === 'ch01' ? 'first_battle_formation_clear' : 'none',
-    bossRef: isBossChapter ? pad3(region.to) : storyBossInChapter ? pad3(storyBossInChapter) : 'none',
+    bossRef: bossInChapter !== undefined ? pad3(bossInChapter) : 'none',
   };
 }));
 
@@ -191,29 +258,22 @@ const FORBIDDEN_MECHANIC_BY_INDEX = [
   'no_berserk',
   'all_mechanics_allowed',
 ];
-writeJson('boss_node_config', [
-  ...REGIONS.map((r, i) => ({
+// 墙/高潮 Boss 行统一按"所在星域"取主题模板与机制禁用档（域中段墙 n140/n282 同域尾口径）。
+function bossRowOf(n) {
+  const idx = REGIONS.findIndex((r) => n >= r.from && n <= r.to);
+  return {
     schemaVersion: SCHEMA,
-    bossNodeId: pad3(r.to),
-    mainProblemTag: r.tag,
-    templateRef: r.bossTemplate,
+    bossNodeId: pad3(n),
+    mainProblemTag: REGIONS[idx].tag,
+    templateRef: REGIONS[idx].bossTemplate,
     secondaryPressureTag: 'none',
     previewTagRefs: [],
-    forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[Math.min(i, FORBIDDEN_MECHANIC_BY_INDEX.length - 1)],
-  })),
-  // 高潮 Boss（如 n030 剧情首Boss）：机制禁用表按其所在星域序（最早期=最严格）。
-  ...STORY_BOSS_NODES.map((n) => {
-    const idx = REGIONS.findIndex((r) => n >= r.from && n <= r.to);
-    return {
-      schemaVersion: SCHEMA,
-      bossNodeId: pad3(n),
-      mainProblemTag: REGIONS[idx].tag,
-      templateRef: REGIONS[idx].bossTemplate,
-      secondaryPressureTag: 'none',
-      previewTagRefs: [],
-      forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[Math.min(idx, FORBIDDEN_MECHANIC_BY_INDEX.length - 1)],
-    };
-  }),
+    forbiddenMechanicTag: FORBIDDEN_MECHANIC_BY_INDEX[Math.min(idx, FORBIDDEN_MECHANIC_BY_INDEX.length - 1)],
+  };
+}
+writeJson('boss_node_config', [
+  ...BOSS_NODES.map(bossRowOf),
+  ...STORY_BOSS_NODES.map(bossRowOf),
 ]);
 
 // ===== 5. tutorial_trigger_config（保留真实强引导覆盖的 n001-n005，不再铺到后面）=====
@@ -294,26 +354,38 @@ writeJson('reward_pool_ref_config', [
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_mainline_basic', nodeRefs: basicNodes, sourceTag: 'source_mainline', poolRoleTag: 'mainline_basic', rewardParamRef: ['mainline_sf01_normal'], goodItemTag: 'none', noAdRequiredTag: true, notes: '基础主线包沿用既有普通节点参数行占位，精确逐节点数值留数值校准阶段。' },
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_elite_basic', nodeRefs: ELITE_NODES.map(pad3), sourceTag: 'source_mainline', poolRoleTag: 'elite_basic', rewardParamRef: ['mainline_sf01_normal'], goodItemTag: 'none', noAdRequiredTag: true, notes: '精英节点沿用普通包口径占位，不提供唯一通关物。' },
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_cargo_free_good', nodeRefs: [pad3(WORLD.cargoIntroNode)], sourceTag: 'source_star_cargo', poolRoleTag: 'cargo_intro', rewardParamRef: ['cargo_early'], goodItemTag: 'cargo_early_good_item_optional', noAdRequiredTag: true, notes: '星辉货舱首触节点，沿用既有 cargo_early 好东西标准。' },
-  // 高潮 Boss（n030 剧情首Boss）基础成长奖励；特殊大奖陨星弹(core07)走 F 块 resolveBossGrand 的"首Boss"判定(按节点顺序自动=n030)，不在此 anchor。
-  ...STORY_BOSS_NODES.map((n) => ({
-    schemaVersion: SCHEMA, rewardAnchorRef: 'reward_first_boss', nodeRefs: [pad3(n)], sourceTag: 'source_boss', poolRoleTag: 'first_boss_clear', rewardParamRef: ['boss_story'], goodItemTag: 'no_unique_key_item', noAdRequiredTag: true, notes: `${pad3(n)} 剧情首Boss（第5章章末）基础成长奖励；陨星弹另经首Boss大奖判定发放，占位数值留数值校准阶段。`,
-  })),
-  ...BOSS_NODES.slice(0, REGIONS.length - 1).map((n, i) => ({
-    schemaVersion: SCHEMA,
-    rewardAnchorRef: `reward_boss_${i + 1}`,
-    nodeRefs: [pad3(n)],
-    sourceTag: 'source_boss',
-    poolRoleTag: `boss_${i + 1}_clear`,
-    rewardParamRef: [`boss_${i + 1}`],
-    goodItemTag: 'no_unique_key_item',
-    noAdRequiredTag: true,
-    notes: `进入 ${REGIONS[i + 1].sf} 的基础成长奖励，不绑定唯一通关物。`,
-  })),
+  // 高潮/前哨 Boss：首位=剧情首Boss（陨星弹大奖走 F 块 resolveBossGrand 数据驱动判定=按节点顺序自动），
+  // 其余高潮/前哨位各自独立锚（不能共用 first_boss 语义）。
+  ...STORY_BOSS_NODES.map((n, i) => (i === 0
+    ? {
+      schemaVersion: SCHEMA, rewardAnchorRef: 'reward_first_boss', nodeRefs: [pad3(n)], sourceTag: 'source_boss', poolRoleTag: 'first_boss_clear', rewardParamRef: ['boss_story'], goodItemTag: 'no_unique_key_item', noAdRequiredTag: true, notes: `${pad3(n)} 剧情首Boss（强引导收尾高潮）基础成长奖励；陨星弹另经首Boss大奖判定发放，具体数值=公式驱动结算。`,
+    }
+    : {
+      schemaVersion: SCHEMA, rewardAnchorRef: `reward_climax_${i}`, nodeRefs: [pad3(n)], sourceTag: 'source_boss', poolRoleTag: `climax_${i}_clear`, rewardParamRef: [`boss_climax_${i}`], goodItemTag: 'no_unique_key_item', noAdRequiredTag: true, notes: `${pad3(n)} 高潮/前哨硬仗（boss 类型·非墙·经济口径不卡天）基础成长奖励占位。`,
+    })),
+  ...BOSS_NODES.slice(0, -1).map((n, i) => {
+    // 墙位语义：域末墙破墙=开下一域；域中段墙（如 n140/n282）破墙=同域继续推进。
+    const nextRegion = REGIONS.find((r) => n + 1 >= r.from && n + 1 <= r.to);
+    const opensNewRegion = regionOf(n).sf !== nextRegion.sf;
+    return {
+      schemaVersion: SCHEMA,
+      rewardAnchorRef: `reward_boss_${i + 1}`,
+      nodeRefs: [pad3(n)],
+      sourceTag: 'source_boss',
+      poolRoleTag: `boss_${i + 1}_clear`,
+      rewardParamRef: [`boss_${i + 1}`],
+      goodItemTag: 'no_unique_key_item',
+      noAdRequiredTag: true,
+      notes: opensNewRegion
+        ? `墙${i + 1}（${pad3(n)}）破墙=进入 ${nextRegion.sf} 的基础成长奖励，不绑定唯一通关物。`
+        : `墙${i + 1}（${pad3(n)}·域中段墙）破墙=同域继续推进的基础成长奖励，不绑定唯一通关物。`,
+    };
+  }),
   { schemaVersion: SCHEMA, rewardAnchorRef: 'reward_final_boss_anchor', nodeRefs: [pad3(WORLD.N)], sourceTag: 'source_boss', poolRoleTag: 'final_boss_clear', rewardParamRef: ['boss_final', 'cargo_late'], goodItemTag: 'cargo_late_good_item_required', noAdRequiredTag: true, notes: '主线收束奖励，不做付费转化。' },
 ]);
 
 // ===== 11. reward_param：重写 Boss 奖励行（不动其余行）=====
-const rewardParam = readJson('reward_param').filter((r) => !/^boss_n0(18|37|56|75)$/.test(r.rowId) && !/^boss_[1-5]$/.test(r.rowId) && r.rowId !== 'boss_final' && r.rowId !== 'boss_story');
+const rewardParam = readJson('reward_param').filter((r) => !/^boss_n0(18|37|56|75)$/.test(r.rowId) && !/^boss_\d+$/.test(r.rowId) && !/^boss_climax_\d+$/.test(r.rowId) && r.rowId !== 'boss_final' && r.rowId !== 'boss_story');
 for (const step of WORLD.bossRewardSteps) {
   rewardParam.push({
     schemaVersion: SCHEMA,
@@ -362,10 +434,11 @@ for (let n = 1; n <= WORLD.N; n++) {
   const unlockRef = unlockEntry ? unlockEntry[0] : 'none';
   const noAdEntry = BOSS_NODES.indexOf(n);
   const noAdCheckTag = noAdEntry >= 0 ? NO_AD_CHECK_TAGS[noAdEntry] : 'none';
+  const climaxIdx = STORY_BOSS_NODES.indexOf(n);
   const rewardAnchorRef = n === WORLD.cargoIntroNode
     ? 'reward_cargo_free_good'
-    : STORY_BOSS_NODES.includes(n)
-      ? 'reward_first_boss' // 高潮 Boss（先于下面的 isBoss 区域墙分支，避免落进 reward_boss_0）
+    : climaxIdx >= 0
+      ? (climaxIdx === 0 ? 'reward_first_boss' : `reward_climax_${climaxIdx}`) // 高潮/前哨（先于墙分支，避免落进 reward_boss_0）
       : isBoss
         ? (n === WORLD.N ? 'reward_final_boss_anchor' : `reward_boss_${BOSS_NODES.indexOf(n) + 1}`)
         : isElite

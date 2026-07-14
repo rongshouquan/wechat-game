@@ -52,19 +52,21 @@ export const BOUNTY_COEF_POW = 0.6;
 /** 老档折算铜卡上限（迁移用·取基础容量 6）。 */
 export const LEGACY_MIGRATION_CAP = 6;
 
-/** 难度四档（总修订案 1a）：倍率 + 推荐战力（=v0.9 压力表 n10/n55/n98/n130 快照值·对表测试钉 json 一致·
- *  重定基：v0.7 快照 {140,2972,8443,17319}=旧刻度读数 → 定价重锚 v1 后同四锚点的诚实新读数）。 */
+/** 难度四档（总修订案 1a）：倍率 + 推荐战力（=压力表 recNodes 快照值·对表测试钉 json 一致·
+ *  段二战斗批重定基：150 关世界 {n10,n55,n98,n130}={136,1952,4500,6639} → 450 关新世界
+ *  {n10,n150,n300,n385}={138,2985,7294,11632}（经济尺 recNodes=普通档 D1/D8-9/D24-26/D38-40
+ *  碾日语义定点·§16h A.3·450 关首导快照读数）。 */
 export type S7BountyDifficulty = 'novice' | 'normal' | 'hard' | 'nightmare';
 export const S7_BOUNTY_DIFFICULTIES: readonly S7BountyDifficulty[] = Object.freeze(['novice', 'normal', 'hard', 'nightmare']);
 export const BOUNTY_DIFFICULTY_MULTS: Readonly<Record<S7BountyDifficulty, number>> = Object.freeze({
   novice: 0.7, normal: 1.0, hard: 1.5, nightmare: 2.2,
 });
 export const BOUNTY_DIFFICULTY_REC_POWER: Readonly<Record<S7BountyDifficulty, number>> = Object.freeze({
-  novice: 136, normal: 1952, hard: 4500, nightmare: 6639,
+  novice: 138, normal: 2985, hard: 7294, nightmare: 11632,
 });
 /** 难度→敌阵锚点节点（=经济尺 PARAMS.bounty.difficulty.recNodes 镜像·改任一侧必须同步·对表测试钉）。 */
 export const BOUNTY_DIFFICULTY_ANCHOR_NODES: Readonly<Record<S7BountyDifficulty, string>> = Object.freeze({
-  novice: 'n010', normal: 'n055', hard: 'n098', nightmare: 'n130',
+  novice: 'n010', normal: 'n150', hard: 'n300', nightmare: 'n385',
 });
 
 /** 基础产出/张（护航=合金+星贝·v0.7 终值 495/20；drill 行=老开发档积压消化用量·新卡不再生成演习）。 */

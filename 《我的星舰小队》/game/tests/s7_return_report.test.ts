@@ -78,9 +78,10 @@ describe('块1 · buildS7ReturnReport', () => {
     expect(rep.hasAny).toBe(true);
   });
 
-  it('星域档 1（n060 通关）：巡逻段 = 基础×1.7（v0.7 七档表）；离线星矿吃 ^0.5 开方衰减', () => {
+  it('星域档 1（n104 通关）：巡逻段 = 基础×1.7（v0.7 七档表）；离线星矿吃 ^0.5 开方衰减', () => {
+    // 段二战斗批重定基：sf01 尾节点 n060（150 关世界）→n104（450 关世界墙①·档位语义不变）。
     const rep = buildS7ReturnReport(
-      model, habitatAt(1), createDefaultS7Population(), progressWith(['n060']),
+      model, habitatAt(1), createDefaultS7Population(), progressWith(['n104']),
       createDefaultS7Salvage(), DEFAULT_S7_SALVAGE_CONFIG, NOW - HOUR_MS, NOW,
     );
     expect(rep.patrol.gains.hullAlloy).toBe(Math.floor(PATROL_BASE_RATE_PER_HOUR.hullAlloy * 1.7));
@@ -114,7 +115,7 @@ describe('块1 · buildS7ReturnReport', () => {
 describe('块1 · claimReturnReportCurrencies / removeClaimedSalvageMissions', () => {
   const buildTier1Report = () =>
     buildS7ReturnReport(
-      model, habitatAt(1), createDefaultS7Population(), progressWith(['n060']),
+      model, habitatAt(1), createDefaultS7Population(), progressWith(['n104']),
       createDefaultS7Salvage(), DEFAULT_S7_SALVAGE_CONFIG, NOW - HOUR_MS, NOW,
     );
 

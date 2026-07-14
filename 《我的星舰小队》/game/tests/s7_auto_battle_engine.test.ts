@@ -367,42 +367,51 @@ describe('S7AutoBattleEngine - 星核触发 (#14)', () => {
 });
 
 describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
-  // ⑥三段落数后主线敌行=节奏量纲（n084 boss 22750 血/280 攻、n150 boss 72671 血/721 攻+厚 adds）——
-  // FIVE 基础阵容打不动/活不过，机制断言会因数值漂移失真。#15/#16 只验阶段切换与召唤 cap 逻辑，
-  // 敌场钉回落数前手调量纲（HEAD 旧值），机制语义零变化。
-  const pinN084 = (b: Bundle): Bundle => {
-    // 批③段三重锚：波次行也钉回手调量纲（躯干重校后落数波次在 final 阶段前打死 FIVE 实证）。
-    // 定价重锚 v1 补钉：血量也钉——阶段召唤物走落地节点行（bu_n084_shield 等），只钉攻不钉血=
-    // 血随压力表重落漂移（新落地 2102 血把 FIVE 的输出全吸走·89s 团灭在 final 前=侥幸绿转真红）。
-    // 本测只验阶段时序，召唤面钉小血量=机制语义零变化。
+  // 段二战斗批重定基：载体 n084/n150（150 关旧世界 Boss 位）→n104/n450（450 关墙①/毕业战）。
+  // #15/#16 只验阶段切换与召唤 cap 逻辑——敌场钉手调量纲（同旧 fixture 手法），机制语义零变化。
+  // 450 关占位 Boss 仅 mid/final 两段（真阶段=段 2 对位手调）——#15 的三阶段时序覆盖靠 fixture
+  // 内存补一段 start（battle_start 触发·不动磁盘表），"start/mid/final 按序"引擎行为覆盖不缩水。
+  const pinN104 = (b: Bundle): Bundle => {
     for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
-      if (/^bu_n084_/.test(String(u.rowId))) { u.attack = 30; u.maxHp = 400; }
+      if (/^bu_n104_/.test(String(u.rowId))) { u.attack = 30; u.maxHp = 400; }
     }
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n084'), { maxHp: 6000, attack: 120 });
-    Object.assign(row(b, 'battle_spawn_param', 'spawn_n084_adds'), { unitStatRef: 'bu_enemy_shield' });
-    Object.assign(row(b, 'battle_encounter_param', 'enc_n084'), { enemyUnitStatRefs: ['bu_boss_n084', 'bu_enemy_shield'] });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n104'), { maxHp: 6000, attack: 120 });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n104_adds'), { unitStatRef: 'bu_enemy_shield' });
+    (b.battle_boss_phase_param as Array<Record<string, unknown>>).push({
+      schemaVersion: 's7-0.1.0', rowId: 'phase_n104_start', bossNodeId: 'n104', phaseTag: 'start',
+      triggerType: 'battle_start', triggerValue: 0, effectRefs: ['eff_state_shield'],
+      summonUnitRefs: [], summonCountCap: 0, note: 'fixture 补 start 段（三阶段时序覆盖）',
+    });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n104'), {
+      enemyUnitStatRefs: ['bu_boss_n104', 'bu_enemy_shield'],
+      bossPhaseRefs: ['phase_n104_start', 'phase_n104_mid', 'phase_n104_final'],
+    });
     return b;
   };
-  const pinN150 = (b: Bundle): Bundle => {
+  const pinN450 = (b: Bundle): Bundle => {
     for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
-      if (/^bu_n150_/.test(String(u.rowId))) u.attack = 30;
+      if (/^bu_n450_/.test(String(u.rowId))) u.attack = 30;
     }
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 14000, attack: 180 });
-    Object.assign(row(b, 'battle_spawn_param', 'spawn_n150_adds'), { unitStatRef: 'bu_enemy_boss_add' });
-    Object.assign(row(b, 'battle_encounter_param', 'enc_n150'), { enemyUnitStatRefs: ['bu_boss_n150', 'bu_enemy_boss_add'] });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180 });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n450_adds'), { unitStatRef: 'bu_enemy_boss_add' });
+    // 占位 phase 无召唤（真召唤=段 2 对位手调）——#16 验"召唤 cap"须 fixture 给 mid 段塞召唤面。
+    Object.assign(row(b, 'battle_boss_phase_param', 'phase_n450_mid'), {
+      summonUnitRefs: ['bu_enemy_boss_add', 'bu_enemy_boss_add'], summonCountCap: 10,
+    });
+    Object.assign(row(b, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
     return b;
   };
 
-  it('n084 Boss 触发 start / mid / final 三阶段 (#15)', async () => {
-    const engine = await engineOf(pinN084(cloneBundle(loadBundle())));
-    const r = engine.run({ encounterRef: 'enc_n084', battleSeed: 'n084', playerUnits: FIVE });
+  it('n104 Boss 触发 start / mid / final 三阶段 (#15)', async () => {
+    const engine = await engineOf(pinN104(cloneBundle(loadBundle())));
+    const r = engine.run({ encounterRef: 'enc_n104', battleSeed: 'n104', playerUnits: FIVE });
     const phases = ofType(r.log, 'boss_phase').map((e) => e.phaseTag);
     expect(phases).toEqual(['start', 'mid', 'final']);
   });
 
-  it('n150 Boss 召唤总量不超过 10 并记录 boss_phase (#16)', async () => {
-    const engine = await engineOf(pinN150(cloneBundle(loadBundle())));
-    const r = engine.run({ encounterRef: 'enc_n150', battleSeed: 'n150', playerUnits: FIVE });
+  it('n450 Boss 召唤总量不超过 10 并记录 boss_phase (#16)', async () => {
+    const engine = await engineOf(pinN450(cloneBundle(loadBundle())));
+    const r = engine.run({ encounterRef: 'enc_n450', battleSeed: 'n450', playerUnits: FIVE });
     expect(ofType(r.log, 'boss_phase').length).toBeGreaterThan(0);
     expect(summonedCount(r.log)).toBeLessThanOrEqual(10);
   });
@@ -571,31 +580,35 @@ describe('S7AutoBattleEngine - 日志 schema (#22)', () => {
 
 describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
   it('召唤受 summonCountCap 与空格双重约束：cap 触顶 / 满场少召 / 不报错', async () => {
+    // 段二战斗批重定基：载体 n150→n450（毕业战位）；占位 Boss=2x2，fixture pin 回 3x3
+    // （原格子算术 boss 占 9 格的布阵全部原样复用·尺寸也是 fixture 面=机制语义零变化）。
     // 23a：把 phase summonUnitRefs 加长到 12，cap=10；空格充裕时总召唤恰好触顶 cap。
-    // （⑥三段落数后 n150 敌场=节奏量纲——boss 攻/开场 adds 钉回手调量纲，FIVE 才能活到 mid·机制语义不变）
     const b1 = cloneBundle(loadBundle());
-    Object.assign(row(b1, 'battle_boss_phase_param', 'phase_n150_mid'), {
+    Object.assign(row(b1, 'battle_boss_phase_param', 'phase_n450_mid'), {
       summonUnitRefs: Array(12).fill('bu_enemy_boss_add'),
       summonCountCap: 10,
     });
-    Object.assign(row(b1, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 2500, attack: 180 }); // 确保打到 50% 触发 mid
-    Object.assign(row(b1, 'battle_spawn_param', 'spawn_n150_adds'), { unitStatRef: 'bu_enemy_boss_add' });
-    Object.assign(row(b1, 'battle_encounter_param', 'enc_n150'), { enemyUnitStatRefs: ['bu_boss_n150', 'bu_enemy_boss_add'] });
+    // 血 14000（=#16 已验证量纲·2500 被 FIVE 开局爆发同 tick 秒杀→phase 永不触发=DIAG 实证 0s 全灭）+关大招（隔离面同 affix 先例）。
+    Object.assign(row(b1, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180, sizeRows: 3, sizeCols: 3, ultimateEffectRef: 'none', ultimateCdSec: 0 });
+    // 走量 adds 格位=r2 行中心（r2c2-c4）——与 fixture pin 的 3x3 Boss 底行（r0c2 锚→r0-r2×c2-c4）撞格，
+    // Boss 会被静默跳过不生成（DIAG 实证 spawnWaves 无 boss 波）——adds 挪 r3 行避让。
+    Object.assign(row(b1, 'battle_spawn_param', 'spawn_n450_adds'), { unitStatRef: 'bu_enemy_boss_add', slotRefs: ['r3c2', 'r3c3', 'r3c4'] });
+    Object.assign(row(b1, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
     const e1 = await engineOf(b1);
-    const r1 = e1.run({ encounterRef: 'enc_n150', battleSeed: 'cap', playerUnits: FIVE });
+    const r1 = e1.run({ encounterRef: 'enc_n450', battleSeed: 'cap', playerUnits: FIVE });
     expect(ofType(r1.log, 'boss_phase').some((e) => e.phaseTag === 'mid')).toBe(true);
-    expect(summonedCount(r1.log)).toBe(10); // 触顶 cap（5×7=35 空格充裕：boss 9 + 2 开场附属，余 24）
+    expect(summonedCount(r1.log)).toBe(10); // 触顶 cap（5×7=35 空格充裕：boss 9 + 3 开场附属，余 23）
 
     // 23b：开场把敌方格子几乎填满（仅余 3 空格），mid 想召 12 但只能少召 3，不报错不无限刷。
     const b2 = cloneBundle(loadBundle());
-    Object.assign(row(b2, 'battle_boss_phase_param', 'phase_n150_mid'), {
+    Object.assign(row(b2, 'battle_boss_phase_param', 'phase_n450_mid'), {
       summonUnitRefs: Array(12).fill('bu_enemy_boss_add'),
       summonCountCap: 10,
     });
-    Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 2500, attack: 180 });
-    Object.assign(row(b2, 'battle_encounter_param', 'enc_n150'), { enemyUnitStatRefs: ['bu_boss_n150', 'bu_enemy_boss_add'] });
-    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n150_adds'), {
-      unitStatRef: 'bu_enemy_boss_add', // ⑥落数后为 bu_n150_add（厚）——钉回手调量纲
+    Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180, sizeRows: 3, sizeCols: 3, ultimateEffectRef: 'none', ultimateCdSec: 0 });
+    Object.assign(row(b2, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
+    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n450_adds'), {
+      unitStatRef: 'bu_enemy_boss_add', // 落数后为节点行（厚）——钉回手调量纲
 
       // 5×7=35 格：boss 占 9（r0c2..r2c4）+ 23 附属 = 32，仅余 3 空格（r4c4/r4c5/r4c6）。
       count: 23,
@@ -607,7 +620,7 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
       maxConcurrentOnField: 35,
     });
     const e2 = await engineOf(b2);
-    const r2 = e2.run({ encounterRef: 'enc_n150', battleSeed: 'cap2', playerUnits: FIVE });
+    const r2 = e2.run({ encounterRef: 'enc_n450', battleSeed: 'cap2', playerUnits: FIVE });
     const summoned2 = summonedCount(r2.log);
     expect(summoned2).toBeLessThanOrEqual(10);
     expect(summoned2).toBeLessThan(10); // 满场少召，未触顶 cap

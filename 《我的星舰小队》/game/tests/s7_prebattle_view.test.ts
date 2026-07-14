@@ -32,11 +32,13 @@ const squad2 = () => {
 };
 
 describe('A-step2a · buildPrebattleView', () => {
-  it('n006 精英：如实读出敌情(8 强化群怪 + 2 爆发兵=10·带站位)、stageType=elite、无Boss', () => {
+  it('n006 教学保留关：如实读出敌情(8 强化群怪 + 2 爆发兵=10·带站位)、stageType=normal（450 关世界精英位挪 n007）、无Boss', () => {
+    // 段二战斗批重定基：n006 旧世界=精英位、新世界=normal（剧本 v1.3 精英首位 n007）；
+    // 教学段 n001-n008=敌配保留面，内容（8+2 强化组合）一字未动，只有节点类型标签随新世界对齐。
     const r = buildPrebattleView(runtime, at('n006'), squad2());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.view.stageType).toBe('elite');
+    expect(r.view.stageType).toBe('normal');
     expect(r.view.hasEncounter).toBe(true);
     expect(r.view.enemyCount).toBe(10); // n006: spawn_n006_w1(8) + w2(2)
     expect(r.view.enemies.filter((e) => e.unitStatRef === 'bu_enemy_swarm_tough')).toHaveLength(8);
@@ -45,14 +47,15 @@ describe('A-step2a · buildPrebattleView', () => {
     expect(r.view.hasBoss).toBe(false);
   });
 
-  it('n084 Boss：hasBoss=true、含 boss 单位、stageType=boss、推荐战力取 boss recommend', () => {
-    const r = buildPrebattleView(runtime, at('n084'), squad2());
+  it('n104 Boss：hasBoss=true、含 boss 单位、stageType=boss、推荐战力取 boss recommend', () => {
+    // 段二战斗批重定基：Boss 载体 n084→n104（450 关世界墙①）·推荐战力=首导快照 pressure[104]=1726。
+    const r = buildPrebattleView(runtime, at('n104'), squad2());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.view.stageType).toBe('boss');
     expect(r.view.hasBoss).toBe(true);
-    expect(r.view.enemies.some((e) => e.unitStatRef === 'bu_boss_n084' && e.isBoss)).toBe(true);
-    expect(r.view.recommendedPower).toBe(3508); // 定价重锚 v1 重定基：6113（v0.7 旧刻度）→3508（v0.9 快照·实测重标后诚实读数）
+    expect(r.view.enemies.some((e) => e.unitStatRef === 'bu_boss_n104' && e.isBoss)).toBe(true);
+    expect(r.view.recommendedPower).toBe(1726);
   });
 
   it('n008 现在已有遭遇（2c批量生产覆盖）：hasEncounter=true、敌情如实读出', () => {

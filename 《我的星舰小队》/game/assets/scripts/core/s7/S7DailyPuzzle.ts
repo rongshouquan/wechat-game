@@ -15,8 +15,9 @@ import { s7DayKey } from './S7AdDailyCounter';
 export const PUZZLE_NORMALIZED_LEVEL = 10;
 /** 上阵格数（我方 3×3 选摆 5 舰）。作者解与玩家出战都恰好 5。 */
 export const PUZZLE_LINEUP_SIZE = 5;
-/** 解锁节点（Ron 2026-07-05 修订①：打通 n040 后解锁·替代原"第5关后"·沿用回廊的"通关节点检查"门控成例）。 */
-export const DAILY_PUZZLE_UNLOCK_NODE = 'n040';
+/** 解锁节点（Ron 2026-07-05 修订①"首Boss 后 ≈10 关"语义保持·沿用回廊的"通关节点检查"门控成例；
+ *  450 关新世界=n064（旧 n040=首Boss n030+10 → 新首Boss n054+10·重映射表一）。 */
+export const DAILY_PUZZLE_UNLOCK_NODE = 'n064';
 
 // ===== v0.7 校准终值（步5 回写·机器真源 PARAMS.puzzle：星贝 30/通碎 2.5——通碎按整数取上沿 3·推演敏感性 ±0 天=无感·记细表 §14）=====
 /** 每日首胜小奖：星贝 + 通用星舰碎片（GDD S10.9）。 */

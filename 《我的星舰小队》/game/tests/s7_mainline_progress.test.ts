@@ -1,5 +1,5 @@
 // CC-07C: S7 主线进度层测试。
-// 覆盖：拓扑计数（150/25/6，2026-07-02 拓扑改造后）、默认路线 n001-n150、
+// 覆盖：拓扑计数（450/79/7，段二战斗批 450 关新世界·剧本 v1.3 骨架）、默认路线 n001-n450、
 // 70 回退投影（机制已作废，恒为空/等于默认路线）、
 // 节点完成顺序推进 + 失败路径（未知/重复/越级不写脏状态）、n018/n019 保护期映射（原N038/N039前移），
 // 并经 CC-07A 运行时加载层（S7ConfigRuntime）构建模型验证端到端可用。
@@ -32,47 +32,49 @@ function buildModelFromFs(): S7MainlineModel {
 }
 
 describe('s7 mainline model - topology', () => {
-  it('reports 150 nodes, 25 chapters, 6 star regions', () => {
+  // 旧→新→为什么对（450 关重定基）：150/25/6=150 关旧世界 → 450/79/7=剧本 v1.3 世界骨架
+  // （七域 spans 104/72/74/62/56/32/50·章=每域按 6 切块 18+12+13+11+10+6+9=79·与生成器/经济尺 TRUTHS 一字对齐）。
+  it('reports 450 nodes, 79 chapters, 7 star regions', () => {
     const m = buildModelFromFs();
-    expect(m.nodeCount).toBe(150);
-    expect(m.chapterCount).toBe(25);
-    expect(m.starRegionCount).toBe(6);
+    expect(m.nodeCount).toBe(450);
+    expect(m.chapterCount).toBe(79);
+    expect(m.starRegionCount).toBe(7);
   });
 
-  it('default route spans n001..n150 in order', () => {
+  it('default route spans n001..n450 in order', () => {
     const m = buildModelFromFs();
     const route = m.defaultRoute;
-    expect(route).toHaveLength(150);
+    expect(route).toHaveLength(450);
     expect(route[0]).toBe('n001');
-    expect(route[route.length - 1]).toBe('n150');
-    const expected = Array.from({ length: 150 }, (_, i) => `n${String(i + 1).padStart(3, '0')}`);
+    expect(route[route.length - 1]).toBe('n450');
+    const expected = Array.from({ length: 450 }, (_, i) => `n${String(i + 1).padStart(3, '0')}`);
     expect(route).toEqual(expected);
   });
 
   it('node views expose 1-based order and cut70 flag', () => {
     const m = buildModelFromFs();
     expect(m.nodeView('n001')?.order).toBe(1);
-    expect(m.nodeView('n150')?.order).toBe(150);
+    expect(m.nodeView('n450')?.order).toBe(450);
     // 70回退机制已作废（2026-07-02），全部节点 fallback70Tag=keep_70，cut70 恒为 false。
-    expect(m.nodeView('n060')?.cut70).toBe(false);
+    expect(m.nodeView('n104')?.cut70).toBe(false);
     expect(m.nodeView('n999')).toBeUndefined();
   });
 
   it('clearedStarfieldTier：按各星域最后节点是否通关算最高通关星域（离线星域系数用）', () => {
     const m = buildModelFromFs();
-    // 星域最后节点（2026-07-02 拓扑改造）：sf01→n060 / sf02→n084 / sf03→n102 / sf04→n120 / sf05→n138 / sf06→n150
+    // 星域最后节点（450 关世界·域尾墙）：sf01→n104 / sf02→n176 / sf03→n250 / sf04→n312 / sf05→n368 / sf06→n400 / sf07→n450
     expect(m.clearedStarfieldTier([])).toBe(0); // 未通关任何星域
-    expect(m.clearedStarfieldTier(['n001', 'n059'])).toBe(0); // sf01 最后节点 n060 未过
-    expect(m.clearedStarfieldTier(['n001', 'n060'])).toBe(1); // sf01 通关
-    expect(m.clearedStarfieldTier(['n060', 'n084'])).toBe(2); // sf02 通关
-    expect(m.clearedStarfieldTier(['n060', 'n084', 'n102'])).toBe(3);
-    expect(m.clearedStarfieldTier(['n060', 'n084', 'n102', 'n120', 'n138', 'n150'])).toBe(6); // 全通关
+    expect(m.clearedStarfieldTier(['n001', 'n103'])).toBe(0); // sf01 最后节点 n104 未过
+    expect(m.clearedStarfieldTier(['n001', 'n104'])).toBe(1); // sf01 通关
+    expect(m.clearedStarfieldTier(['n104', 'n176'])).toBe(2); // sf02 通关
+    expect(m.clearedStarfieldTier(['n104', 'n176', 'n250'])).toBe(3);
+    expect(m.clearedStarfieldTier(['n104', 'n176', 'n250', 'n312', 'n368', 'n400', 'n450'])).toBe(7); // 全通关
   });
 
   it('70-fallback projection：机制已作废，无节点被砍，等于默认路线', () => {
     const m = buildModelFromFs();
     expect(m.cut70NodeIds).toEqual([]);
-    expect(m.fallback70Route).toHaveLength(150);
+    expect(m.fallback70Route).toHaveLength(450);
     expect(m.fallback70Route).toEqual(m.defaultRoute);
   });
 
@@ -101,8 +103,8 @@ describe('s7 mainline model - topology', () => {
       JSON.parse(readFileSync(path.join(S7_DIR, `${t}.sample.json`), 'utf-8')) as unknown[];
     const rt = await S7ConfigRuntime.load(fsReader);
     const m = S7MainlineModel.fromRuntime(rt);
-    expect(m.nodeCount).toBe(150);
-    expect(m.fallback70Route).toHaveLength(150);
+    expect(m.nodeCount).toBe(450);
+    expect(m.fallback70Route).toHaveLength(450);
   });
 });
 
@@ -113,7 +115,7 @@ describe('s7 mainline progress - advancement', () => {
     expect(p.clearedNodeIds).toEqual([]);
   });
 
-  it('advances sequentially from n001 to n150 and flags finished on the last node', () => {
+  it('advances sequentially from n001 to n450 and flags finished on the last node', () => {
     const m = buildModelFromFs();
     let state = createDefaultS7MainlineProgress();
     const route = m.defaultRoute;
@@ -125,8 +127,8 @@ describe('s7 mainline progress - advancement', () => {
       expect(res.finished).toBe(i === route.length - 1);
       state = res.state;
     }
-    expect(state.clearedNodeIds).toHaveLength(150);
-    expect(state.currentNodeId).toBe('n150'); // 终点完成后停留自身
+    expect(state.clearedNodeIds).toHaveLength(450);
+    expect(state.currentNodeId).toBe('n450'); // 终点完成后停留自身
   });
 
   it('rejects an unknown node without mutating state', () => {

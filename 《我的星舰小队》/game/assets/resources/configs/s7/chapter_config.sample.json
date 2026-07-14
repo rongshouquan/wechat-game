@@ -57,7 +57,7 @@
       "t02"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "n030"
+    "bossRef": "none"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -105,7 +105,7 @@
       "t02"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "none"
+    "bossRef": "n054"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -117,16 +117,16 @@
       "t02"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "n060"
+    "bossRef": "none"
   },
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch11",
-    "starfieldId": "sf02",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n061_n066",
     "primaryTemplateTags": [
-      "t03",
-      "t04"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -134,11 +134,11 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch12",
-    "starfieldId": "sf02",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n067_n072",
     "primaryTemplateTags": [
-      "t03",
-      "t04"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -146,11 +146,11 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch13",
-    "starfieldId": "sf02",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n073_n078",
     "primaryTemplateTags": [
-      "t03",
-      "t04"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -158,23 +158,23 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch14",
-    "starfieldId": "sf02",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n079_n084",
     "primaryTemplateTags": [
-      "t03",
-      "t04"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "n084"
+    "bossRef": "none"
   },
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch15",
-    "starfieldId": "sf03",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n085_n090",
     "primaryTemplateTags": [
-      "t05",
-      "t06"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -182,11 +182,11 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch16",
-    "starfieldId": "sf03",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n091_n096",
     "primaryTemplateTags": [
-      "t05",
-      "t06"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -194,33 +194,35 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch17",
-    "starfieldId": "sf03",
+    "starfieldId": "sf01",
     "nodeRangeTag": "n097_n102",
     "primaryTemplateTags": [
-      "t05",
-      "t06"
-    ],
-    "tutorialGoalTag": "none",
-    "bossRef": "n102"
-  },
-  {
-    "schemaVersion": "s7-0.1.0",
-    "chapterId": "ch18",
-    "starfieldId": "sf04",
-    "nodeRangeTag": "n103_n108",
-    "primaryTemplateTags": [
-      "t09"
+      "t01",
+      "t02"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "chapterId": "ch19",
-    "starfieldId": "sf04",
-    "nodeRangeTag": "n109_n114",
+    "chapterId": "ch18",
+    "starfieldId": "sf01",
+    "nodeRangeTag": "n103_n104",
     "primaryTemplateTags": [
-      "t09"
+      "t01",
+      "t02"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n104"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch19",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n105_n110",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -228,22 +230,23 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch20",
-    "starfieldId": "sf04",
-    "nodeRangeTag": "n115_n120",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n111_n116",
     "primaryTemplateTags": [
-      "t09"
+      "t05",
+      "t06"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "n120"
+    "bossRef": "none"
   },
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch21",
-    "starfieldId": "sf05",
-    "nodeRangeTag": "n121_n126",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n117_n122",
     "primaryTemplateTags": [
-      "t07",
-      "t08"
+      "t05",
+      "t06"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -251,11 +254,11 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch22",
-    "starfieldId": "sf05",
-    "nodeRangeTag": "n127_n132",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n123_n128",
     "primaryTemplateTags": [
-      "t07",
-      "t08"
+      "t05",
+      "t06"
     ],
     "tutorialGoalTag": "none",
     "bossRef": "none"
@@ -263,22 +266,383 @@
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch23",
-    "starfieldId": "sf05",
-    "nodeRangeTag": "n133_n138",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n129_n134",
     "primaryTemplateTags": [
-      "t07",
-      "t08"
+      "t05",
+      "t06"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "n138"
+    "bossRef": "none"
   },
   {
     "schemaVersion": "s7-0.1.0",
     "chapterId": "ch24",
-    "starfieldId": "sf06",
-    "nodeRangeTag": "n139_n144",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n135_n140",
     "primaryTemplateTags": [
-      "t04",
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n140"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch25",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n141_n146",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch26",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n147_n152",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch27",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n153_n158",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch28",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n159_n164",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch29",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n165_n170",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch30",
+    "starfieldId": "sf02",
+    "nodeRangeTag": "n171_n176",
+    "primaryTemplateTags": [
+      "t05",
+      "t06"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n176"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch31",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n177_n182",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch32",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n183_n188",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch33",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n189_n194",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch34",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n195_n200",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch35",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n201_n206",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch36",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n207_n212",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch37",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n213_n218",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n214"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch38",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n219_n224",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch39",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n225_n230",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch40",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n231_n236",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch41",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n237_n242",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch42",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n243_n248",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch43",
+    "starfieldId": "sf03",
+    "nodeRangeTag": "n249_n250",
+    "primaryTemplateTags": [
+      "t03",
+      "t04"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n250"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch44",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n251_n256",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch45",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n257_n262",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch46",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n263_n268",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch47",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n269_n274",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch48",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n275_n280",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch49",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n281_n286",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n282"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch50",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n287_n292",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch51",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n293_n298",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch52",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n299_n304",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch53",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n305_n310",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch54",
+    "starfieldId": "sf04",
+    "nodeRangeTag": "n311_n312",
+    "primaryTemplateTags": [
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n312"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch55",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n313_n318",
+    "primaryTemplateTags": [
+      "t07",
       "t08"
     ],
     "tutorialGoalTag": "none",
@@ -286,14 +650,317 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "chapterId": "ch25",
-    "starfieldId": "sf06",
-    "nodeRangeTag": "n145_n150",
+    "chapterId": "ch56",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n319_n324",
     "primaryTemplateTags": [
-      "t04",
+      "t07",
       "t08"
     ],
     "tutorialGoalTag": "none",
-    "bossRef": "n150"
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch57",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n325_n330",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch58",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n331_n336",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch59",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n337_n342",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n340"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch60",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n343_n348",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch61",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n349_n354",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch62",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n355_n360",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch63",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n361_n366",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch64",
+    "starfieldId": "sf05",
+    "nodeRangeTag": "n367_n368",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n368"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch65",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n369_n374",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch66",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n375_n380",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch67",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n381_n386",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n384"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch68",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n387_n392",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch69",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n393_n398",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch70",
+    "starfieldId": "sf06",
+    "nodeRangeTag": "n399_n400",
+    "primaryTemplateTags": [
+      "t07",
+      "t08"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n400"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch71",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n401_n406",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch72",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n407_n412",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch73",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n413_n418",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch74",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n419_n424",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch75",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n425_n430",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch76",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n431_n436",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch77",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n437_n442",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch78",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n443_n448",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "chapterId": "ch79",
+    "starfieldId": "sf07",
+    "nodeRangeTag": "n449_n450",
+    "primaryTemplateTags": [
+      "t02",
+      "t04",
+      "t06",
+      "t08",
+      "t09"
+    ],
+    "tutorialGoalTag": "none",
+    "bossRef": "n450"
   }
 ]

@@ -165,7 +165,12 @@ import { genLineupFromMains } from '../tools/s7-battles-entry';
 import { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService';
 import { S7_HARD_CONTROL_DIMINISH } from '../assets/scripts/core/s7/S7AutoBattleTypes';
 
-describe('定价重锚批 · 墙爬坡带守卫（普通档冻结态·v0.9）', () => {
+// ⚠️ 段二战斗批显式挂起（skip=记档非删除·非装绿）：本组=150 关旧世界墙工况守卫（n060/n120 冻结态
+// 爬坡带·v0.9 快照）——450 关重铺后 n060/n120=普通关、九墙挪 n104-n450、WALL_BOOST 旧键全不命中，
+// "卡墙/破墙"被测对象物理消失（红=真世界变化非引擎坏；绿=语义空转假绿，一并挂）。
+// 到期条件=段 2 WALL_BOOST 九墙手调+段 6 初见口径实测后，按新世界九墙+新冻结态快照重建本组守卫
+// （s7-wall-climb.mjs 复算口径不变·恢复时删本注记）。带宽中档基线组（上方）=引擎行为守卫，不受影响照跑。
+describe.skip('定价重锚批 · 墙爬坡带守卫（普通档冻结态·v0.9）〔挂起：待段2 WALL_BOOST+段6 实测后按 450 关九墙重建〕', () => {
   const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13'];
   // 经济尺 v0.9 校准态快照（普通档·mains=[阶,舰级,驾星,驾级]×5·主力序）。
   // 重定基（旧→新→为什么对）：v0.8 快照=旧刻度经济轨迹（D9 舰级 12/驾 13 等）——定价重锚 v1 后

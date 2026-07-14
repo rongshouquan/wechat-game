@@ -1,7 +1,7 @@
 [
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n060",
+    "bossNodeId": "n104",
     "mainProblemTag": "swarm",
     "templateRef": "t02",
     "secondaryPressureTag": "none",
@@ -10,25 +10,34 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n084",
-    "mainProblemTag": "shield",
-    "templateRef": "t04",
+    "bossNodeId": "n140",
+    "mainProblemTag": "backline",
+    "templateRef": "t06",
     "secondaryPressureTag": "none",
     "previewTagRefs": [],
     "forbiddenMechanicTag": "no_backline_summon_burst_berserk"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n102",
+    "bossNodeId": "n176",
     "mainProblemTag": "backline",
     "templateRef": "t06",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "no_backline_summon_burst_berserk"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n250",
+    "mainProblemTag": "shield",
+    "templateRef": "t04",
     "secondaryPressureTag": "none",
     "previewTagRefs": [],
     "forbiddenMechanicTag": "no_summon_burst_berserk"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n120",
+    "bossNodeId": "n282",
     "mainProblemTag": "summon",
     "templateRef": "t09",
     "secondaryPressureTag": "none",
@@ -37,8 +46,17 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n138",
-    "mainProblemTag": "burst",
+    "bossNodeId": "n312",
+    "mainProblemTag": "summon",
+    "templateRef": "t09",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "no_burst_berserk"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n368",
+    "mainProblemTag": "berserk",
     "templateRef": "t08",
     "secondaryPressureTag": "none",
     "previewTagRefs": [],
@@ -46,7 +64,16 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n150",
+    "bossNodeId": "n400",
+    "mainProblemTag": "burst",
+    "templateRef": "t08",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "all_mechanics_allowed"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n450",
     "mainProblemTag": "berserk",
     "templateRef": "t10",
     "secondaryPressureTag": "none",
@@ -55,11 +82,38 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "bossNodeId": "n030",
+    "bossNodeId": "n054",
     "mainProblemTag": "swarm",
     "templateRef": "t02",
     "secondaryPressureTag": "none",
     "previewTagRefs": [],
     "forbiddenMechanicTag": "no_shield_backline_summon_burst_berserk"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n214",
+    "mainProblemTag": "shield",
+    "templateRef": "t04",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "no_summon_burst_berserk"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n340",
+    "mainProblemTag": "berserk",
+    "templateRef": "t08",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "no_berserk"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "bossNodeId": "n384",
+    "mainProblemTag": "burst",
+    "templateRef": "t08",
+    "secondaryPressureTag": "none",
+    "previewTagRefs": [],
+    "forbiddenMechanicTag": "all_mechanics_allowed"
   }
 ]

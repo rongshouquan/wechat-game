@@ -2,7 +2,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "checkTag": "no_ad_boss1_check",
-    "nodeId": "n060",
+    "nodeId": "n104",
     "requiredStateTag": "boss1_clear_without_ad_ready",
     "forbiddenDependencyTag": [
       "ad",
@@ -13,7 +13,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "checkTag": "no_ad_boss2_check",
-    "nodeId": "n084",
+    "nodeId": "n140",
     "requiredStateTag": "boss2_clear_without_ad_ready",
     "forbiddenDependencyTag": [
       "ad",
@@ -24,7 +24,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "checkTag": "no_ad_boss3_check",
-    "nodeId": "n102",
+    "nodeId": "n176",
     "requiredStateTag": "boss3_clear_without_ad_ready",
     "forbiddenDependencyTag": [
       "ad",
@@ -35,7 +35,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "checkTag": "no_ad_boss4_check",
-    "nodeId": "n120",
+    "nodeId": "n250",
     "requiredStateTag": "boss4_clear_without_ad_ready",
     "forbiddenDependencyTag": [
       "ad",
@@ -46,7 +46,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "checkTag": "no_ad_boss5_check",
-    "nodeId": "n138",
+    "nodeId": "n282",
     "requiredStateTag": "boss5_clear_without_ad_ready",
     "forbiddenDependencyTag": [
       "ad",
@@ -57,8 +57,41 @@
   {
     "schemaVersion": "s7-0.1.0",
     "checkTag": "no_ad_boss6_check",
-    "nodeId": "n150",
+    "nodeId": "n312",
     "requiredStateTag": "boss6_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "checkTag": "no_ad_boss7_check",
+    "nodeId": "n368",
+    "requiredStateTag": "boss7_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "checkTag": "no_ad_boss8_check",
+    "nodeId": "n400",
+    "requiredStateTag": "boss8_clear_without_ad_ready",
+    "forbiddenDependencyTag": [
+      "ad",
+      "sponsor_supply",
+      "merchant_bought"
+    ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "checkTag": "no_ad_boss9_check",
+    "nodeId": "n450",
+    "requiredStateTag": "boss9_clear_without_ad_ready",
     "forbiddenDependencyTag": [
       "ad",
       "sponsor_supply",

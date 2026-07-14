@@ -59,7 +59,13 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     // 段二 H1（真源 f8c6ae75 召唤物对齐·旧→新→为什么对）：n084 失控母舰 Boss 本体挂周期召唤无人机
     //   （BOSS_PERIODIC_SUMMON 生产规则）→ +1 bu_n084_sadd（复用母舰单元召唤物·SADD 份额）
     //   +1 eff_n084_summon（生命周期包）；phase_n084_mid 旧盾仔阶段召唤×3 退役（行数不变·引用清空）。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(241); // 48 基础 + 193 节点敌行（+n084 sadd）
+    // 段二战斗批 450 关重定基（旧→新→为什么对）：150 关世界 241/305/148/216/21 → 450 关新世界——
+    //   单位行 860=54 全局（48 旧基础 −7 旧 Boss 行〔n030/060/084/102/120/138/150 不在新 13 位=删〕
+    //     +13 新 Boss 骨架行）+751 节点敌行+55 母舰 sadd 行（走量+apply 实测·工具输出对账）；
+    //   效果行 344=289 全局（305−16 旧节点召唤行）+55 eff_nXXX_summon（55 个母舰关）；
+    //   encounter 448=450−2 非战斗（n018/n019）；spawn 845=11 教学保留+834 走量；
+    //   phase 26=13 Boss×2 占位段（mid 易伤窗+final 爆发窗·真阶段=段 2 对位手调）。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(860);
     // ⑩A1：+50 驾驶员效果行（eff_pil_*·细表§13）；⑩A2：+8 星核效果行（eff_core_*·小太阳/星鲸/时光糖/护罩/战鼓/贪吃星/烟花·§15）→ 42+50+8+15=115。
     // ⑩A3：+18 舰装备行（张盾/怒吼/冲锋号/催进/微风/致盲领域/侵蚀/联防/普攻变体…）+14 插件行（cdr×5/净化/免疫/援护×4/自愈×3）；⑩A4：+5（污染体两件/污染潮/磁暴场/终Boss全屏）。
     // 机制批③段一：+5（曲率星门 rank_swap/彩虹棱镜弹跳普攻/全息镜召唤/群蜂饱和打击/影刃分裂普攻·6 深坑核+同族挂牌件接线）。
@@ -67,10 +73,10 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   沛L40回血+3★小盾/空3★清场/巡3★溅射无人机弹/护盾传奇自罩盾/小太阳后爆——驾驶员质变+插件传奇接线）。
     // 机制批③段二b：+132（20 舰大节点 L20-L100 档位行 + A/S/SS 质变行 + 蜂针延迟爆/迷雾普攻致盲接真件——
     //   舰侧阶/级装配通道 shipBlocks 的数据面·逐行注"批③2b"）。
-    expect(readTable('battle_effect_param')).toHaveLength(305); // 42+50+8+18+14+5+5+15+132 全局 + 16 节点召唤行（+eff_n084_summon=段二 H1）
-    expect(readTable('battle_encounter_param')).toHaveLength(148); // enc_n030 就地改Boss，encounter 总数不变
-    expect(readTable('battle_spawn_param')).toHaveLength(216); // spawn_n030_w1 → boss+adds 两行（净+1）
-    expect(readTable('battle_boss_phase_param')).toHaveLength(21); // 7个Boss x 3阶段（+n030 首Boss 三阶段）
+    expect(readTable('battle_effect_param')).toHaveLength(344);
+    expect(readTable('battle_encounter_param')).toHaveLength(448);
+    expect(readTable('battle_spawn_param')).toHaveLength(845);
+    expect(readTable('battle_boss_phase_param')).toHaveLength(26);
   });
 
   it('covers all 17 RT-01 effect types', () => {
@@ -78,36 +84,40 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     for (const t of EFFECT_TYPES) expect(got.has(t)).toBe(true);
   });
 
-  it('covers n001 (normal/t01/swarm), n084 (boss/t04/shield), n150 (boss/t10/berserk, pressure bp_n150)', () => {
+  it('covers n001 (normal/t01/swarm), n054 (首Boss), n104 (墙①), n450 (毕业战 boss/t10/berserk, pressure bp_n450)', () => {
+    // 旧钉 n084/n150（150 关世界 Boss 位）→ 新钉 n054/n104/n450（新世界代表位：首Boss/墙①/毕业战）。
     const enc = readTable<Record<string, unknown>>('battle_encounter_param');
     const n001 = enc.find((r) => r.nodeRef === 'n001')!;
-    const n084 = enc.find((r) => r.nodeRef === 'n084')!;
-    const n150 = enc.find((r) => r.nodeRef === 'n150')!;
+    const n054 = enc.find((r) => r.nodeRef === 'n054')!;
+    const n104 = enc.find((r) => r.nodeRef === 'n104')!;
+    const n450 = enc.find((r) => r.nodeRef === 'n450')!;
     expect(n001.stageType).toBe('normal');
     expect(n001.templateRef).toBe('t01');
     expect(n001.problemTagRef).toBe('swarm');
     expect(n001.bossPhaseRefs).toEqual([]);
-    expect(n084.stageType).toBe('boss');
-    expect(n084.templateRef).toBe('t04');
-    expect(n084.secondaryPressureTag).toBe('swarm_low');
-    expect(n150.stageType).toBe('boss');
-    expect(n150.templateRef).toBe('t10');
-    expect(n150.problemTagRef).toBe('berserk');
-    expect(n150.secondaryPressureTag).toBe('one_of_t03_t05_t08_t09');
-    expect(n150.pressureRef).toBe('bp_n150');
+    expect(n054.stageType).toBe('boss');
+    expect(n054.pressureRef).toBe('bp_n054');
+    expect(n104.stageType).toBe('boss');
+    expect(n104.templateRef).toBe('t02');
+    expect(n104.problemTagRef).toBe('swarm');
+    expect(n450.stageType).toBe('boss');
+    expect(n450.templateRef).toBe('t10');
+    expect(n450.problemTagRef).toBe('berserk');
+    expect(n450.pressureRef).toBe('bp_n450');
   });
 
-  it('pins n150 boss pressure to v0.9 snapshot (定价重锚 v1 重定基：32094/带 28885-35303=旧刻度读数 → 12080/带 10872-13288=实测重标后诚实读数)', () => {
-    const p = (readTable<Record<string, unknown>>('pressure_param')).find((r) => r.rowId === 'bp_n150') as unknown as { pressureRecommend: number; pressureMin: number; pressureMax: number };
-    expect(p.pressureRecommend).toBe(12080);
-    expect(p.pressureMin).toBe(10872);
-    expect(p.pressureMax).toBe(13288);
+  it('pins n450 boss pressure to 450-world snapshot (段二战斗批重定基：bp_n150 12080 → bp_n450 17890=首导快照 pressure[450]·带=±10%)', () => {
+    const p = (readTable<Record<string, unknown>>('pressure_param')).find((r) => r.rowId === 'bp_n450') as unknown as { pressureRecommend: number; pressureMin: number; pressureMax: number };
+    expect(p.pressureRecommend).toBe(17890);
+    expect(p.pressureMin).toBe(16101);
+    expect(p.pressureMax).toBe(19679);
   });
 
-  it('keeps n150 boss summon at most 10 per phase, n084/n150 at most 3 unique phases', () => {
+  it('keeps boss summon at most 10 per phase, every boss at most 3 unique phases', () => {
     const phases = readTable<{ bossNodeId: string; phaseTag: string; summonCountCap: number }>('battle_boss_phase_param');
     for (const r of phases) expect(r.summonCountCap).toBeLessThanOrEqual(10);
-    for (const boss of ['n084', 'n150']) {
+    // 13 Boss 全量查（旧钉 n084/n150 两位·新世界 Boss 位随拓扑换=全量更稳）。
+    for (const boss of new Set(phases.map((r) => r.bossNodeId))) {
       const tags = phases.filter((r) => r.bossNodeId === boss).map((r) => r.phaseTag);
       expect(tags.length).toBeLessThanOrEqual(3);
       expect(new Set(tags).size).toBe(tags.length);
@@ -148,7 +158,7 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects a multi-cell footprint that goes out of bounds', () => {
     const b = clone(loadBundle());
-    (rowOf(b, 'battle_spawn_param', 'spawn_n150_boss').slotRefs as string[])[0] = 'r0c5'; // 3x3 anchored at c5 -> c7
+    (rowOf(b, 'battle_spawn_param', 'spawn_n450_boss').slotRefs as string[])[0] = 'r0c6'; // 2x2 anchored at c6 -> c7 越界（450 关占位 Boss=2x2）
     expect(hasErr(b, 'battle_spawn_param')).toBe(true);
   });
 
@@ -160,13 +170,13 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects a spawn whose encounterRef breaks the encounter<->spawn closure', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_spawn_param', 'spawn_n001_w1').encounterRef = 'enc_n084';
+    rowOf(b, 'battle_spawn_param', 'spawn_n001_w1').encounterRef = 'enc_n104';
     expect(validateS7ConfigBundle(b).length).toBeGreaterThan(0);
   });
 
   it('rejects an invalid unitRef for the unit target type', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_unit_stat_param', 'bu_boss_n084').unitRef = 'n999';
+    rowOf(b, 'battle_unit_stat_param', 'bu_boss_n104').unitRef = 'n999';
     expect(hasErr(b, 'battle_unit_stat_param')).toBe(true);
   });
 
@@ -178,23 +188,24 @@ describe('s7 battle-rt validator blocks (BATTLE-RT-03)', () => {
 
   it('rejects summonCountCap > 10', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_boss_phase_param', 'phase_n150_mid').summonCountCap = 11;
+    rowOf(b, 'battle_boss_phase_param', 'phase_n450_mid').summonCountCap = 11;
     expect(hasErr(b, 'battle_boss_phase_param')).toBe(true);
   });
 
-  it('rejects more than 3 phases for one boss', () => {
+  it('rejects a duplicate phaseTag for one boss', () => {
+    // 450 关占位 Boss=mid/final 两段；追加重复 mid 段必须被拦（原 n084 三段用例同机理：tag 重复即红）。
     const b = clone(loadBundle());
     (b.battle_boss_phase_param as Array<Record<string, unknown>>).push({
-      schemaVersion: 's7-0.1.0', rowId: 'phase_n084_extra', bossNodeId: 'n084', phaseTag: 'mid',
+      schemaVersion: 's7-0.1.0', rowId: 'phase_n104_extra', bossNodeId: 'n104', phaseTag: 'mid',
       triggerType: 'time_elapsed_sec', triggerValue: 10, effectRefs: ['eff_ult_burst_nuke'],
       summonUnitRefs: [], summonCountCap: 0, note: 'x',
     });
     expect(hasErr(b, 'battle_boss_phase_param')).toBe(true);
   });
 
-  it('rejects an n150 encounter pressureRef other than bp_n150', () => {
+  it('rejects an n450 encounter pressureRef other than bp_n450', () => {
     const b = clone(loadBundle());
-    rowOf(b, 'battle_encounter_param', 'enc_n150').pressureRef = 'bp_n084';
+    rowOf(b, 'battle_encounter_param', 'enc_n450').pressureRef = 'bp_n104';
     expect(hasErr(b, 'battle_encounter_param')).toBe(true);
   });
 

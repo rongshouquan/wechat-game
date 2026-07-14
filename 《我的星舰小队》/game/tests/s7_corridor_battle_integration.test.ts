@@ -124,12 +124,13 @@ describe('回廊战斗服务 - 敌阵来源 / 阵容效果', () => {
     expect(r.result.finalState.enemies.length).toBeGreaterThan(0);
   });
 
-  it('回响Boss层：内联敌阵复用 Boss 节点(n030)的 spawn 形状', async () => {
+  it('回响Boss层：内联敌阵复用 Boss 节点(n054)的 spawn 形状', async () => {
+    // 段二战斗批重定基：首个回响Boss=首Boss n030（150 关世界）→n054（450 关世界·数据驱动自动跟随）。
     const runtime = await runtimeOf();
-    const fromNode = bossNodeInlineEnemies(runtime, 'n030');
+    const fromNode = bossNodeInlineEnemies(runtime, 'n054');
     expect(fromNode.length).toBeGreaterThan(0);
-    const plan = corridorLayerPlan(25, paletteOf(runtime), bossIdsOf(runtime)); // 层25=首个回响Boss=n030
-    expect(plan.echoBoss?.bossNodeId).toBe('n030');
+    const plan = corridorLayerPlan(25, paletteOf(runtime), bossIdsOf(runtime)); // 层25=首个回响Boss=n054
+    expect(plan.echoBoss?.bossNodeId).toBe('n054');
     const { inlineEnemyUnits, enemyEffectBlocks } = corridorInlineEnemies(plan, runtime);
     expect(inlineEnemyUnits).toEqual(fromNode); // 复用Boss配置
     expect(enemyEffectBlocks).toBe(plan.echoBoss!.enemyBlocks); // 轮次缩放积木

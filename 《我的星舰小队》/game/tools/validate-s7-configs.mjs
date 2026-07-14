@@ -223,9 +223,10 @@ for (const row of tables.pressure_param) {
   } else {
     const lo = num(row.pressureMin), hi = num(row.pressureMax);
     if (lo === null || hi === null || lo > hi) fail('pressure_param', row.rowId, 'pressureMin<=pressureMax 不成立');
-    // 对表守卫：n150 推荐战力钉快照精确值——压力表重校（json 再生）时此处红=提醒重落显示带（同敌配绊线哲学）。
+    // 对表守卫：终Boss 推荐战力钉快照精确值——压力表重校（json 再生）时此处红=提醒重落显示带（同敌配绊线哲学）。
+    // 旧→新→为什么对：n150=12080（v0.9 快照）→ n450=17890（450 关新世界首导快照·数值初值表-v0-数据.json pressure[450]）。
     // 重定基（定价重锚 v1）：32094（v0.7 快照·旧刻度）→ 12080（v0.9 快照·刻度实测重标后诚实读数·与 ConfigValidatorS7 同步）。
-    if (s === 'boss' && row.refKey === 'n150' && row.pressureRecommend !== 12080) fail('pressure_param', row.rowId, 'N150 推荐战力必须==v0.9 快照 12080（重校后同步重落）');
+    if (s === 'boss' && row.refKey === 'n450' && row.pressureRecommend !== 17890) fail('pressure_param', row.rowId, 'N450 推荐战力必须==450 关首导快照 17890（重校后同步重落）');
   }
 }
 for (const row of tables.reward_param) {
@@ -472,12 +473,15 @@ const TIER_C = {
   unlock_checkpoint_config: 'unlockRef',
   protection_reset_config: 'nodeId',
 };
-// 150关拓扑改造（2026-07-02，GDD-v2.0 S2/S14 毕业节奏建模确认）：6星域/25章节/6Boss/150节点。
-const S7_MAINLINE_NODE_IDS = seq3('n', 1, 150);
-const S7_CHAPTER_IDS = seq('ch', 1, 25);
-const S7_STARFIELD_IDS = seq('sf', 1, 6);
-// n030=第5章章末剧情首Boss（Ron 2026-07-03，掉陨星弹/解锁展厅+回廊）；6 墙(n060/084/102/120/138/150) 数量不变，n030 是第7个 boss 类型节点。
-const S7_BOSS_NODE_IDS = ['n030', 'n060', 'n084', 'n102', 'n120', 'n138', 'n150'];
+// 450 关新世界（段二战斗批 2026-07-14·剧本 v1.3 拍死骨架）：7 星域/79 章节/13 Boss/450 节点。
+// 旧→新→为什么对：150/25/6/7Boss=旧世界（2026-07-02 拓扑）→ 450/79/7域/13Boss=剧本 v1.3 世界骨架
+// （spans 104/72/74/62/56/32/50·13 Boss=9 墙+3 高潮+前哨 n384·与经济尺 TRUTHS 一字对齐）。
+const S7_MAINLINE_NODE_IDS = seq3('n', 1, 450);
+const S7_CHAPTER_IDS = seq('ch', 1, 79);
+const S7_STARFIELD_IDS = seq('sf', 1, 7);
+// n054=剧情首Boss（掉陨星弹·强引导收尾·storyBoss）；9 墙=n104/140/176/250/282/312/368/400/450；
+// 高潮/前哨=n214/n340/n384（boss 类型·非墙·经济口径"不卡天"）。
+const S7_BOSS_NODE_IDS = ['n054', 'n104', 'n140', 'n176', 'n214', 'n250', 'n282', 'n312', 'n340', 'n368', 'n384', 'n400', 'n450'];
 // 真实强引导教程只覆盖 n001-n005（见 S7DemoController runTutorialStep）。
 const S7_TUTORIAL_STEP_IDS = seq('tut', 1, 5);
 const S7_NODE_TYPE_TAGS = [
@@ -490,10 +494,11 @@ const S7_SECONDARY_PRESSURE_TAGS = [
   'low_shield', 'low_backline', 'summon_low', 'backline_low', 'swarm_low', 'berserk_preview', 'burst_low',
   'low_burst', 'berserk_low', 'shield_low', 'one_of_t03_t05_t08_t09',
 ];
-// 简化为每个大Boss一个不看广告检查点（2026-07-02 拓扑改造）。
+// 每个墙 Boss 一个不看广告检查点（450 关世界=9 墙·旧 6 墙口径重定基）。
 const S7_NO_AD_CHECK_TAGS = [
   'none', 'no_ad_boss1_check', 'no_ad_boss2_check', 'no_ad_boss3_check',
   'no_ad_boss4_check', 'no_ad_boss5_check', 'no_ad_boss6_check',
+  'no_ad_boss7_check', 'no_ad_boss8_check', 'no_ad_boss9_check',
 ];
 const S7_PROTECTION_TAGS = ['active', 'ending_notice', 'closed'];
 const S7_FALLBACK70_TAGS = ['keep_70', 'cut_70', 'merge_70_to_t01', 'merge_70_to_t05'];
@@ -551,7 +556,7 @@ for (const [name, idField] of Object.entries(TIER_D)) {
 
   // mainline_node_config：75 节点完整、字段枚举、70 回退白名单、N038/N039 转折
   const mainlineRows = tables.mainline_node_config;
-  if (mainlineRows.length !== 150) fail('mainline_node_config', '-', `主线节点必须为 150 行，实际 ${mainlineRows.length}`);
+  if (mainlineRows.length !== 450) fail('mainline_node_config', '-', `主线节点必须为 450 行，实际 ${mainlineRows.length}`);
   const mainlineById = new Map();
   const seenNodeIds = new Set();
   const cutNodes = [];
@@ -585,7 +590,7 @@ for (const [name, idField] of Object.entries(TIER_D)) {
     if (row && row.fallback70Tag !== 'cut_70') fail('mainline_node_config', id, `${id} 必须 fallback70Tag=cut_70`);
   }
 
-  // 保护期分布（2026-07-02 拓扑改造：转折点前移到 n018/n019）：N001-N017 active；N018 ending_notice；N019-N150 closed
+  // 保护期分布（转折点 n018/n019=绝对保持族）：N001-N017 active；N018 ending_notice；N019-N450 closed
   for (const id of S7_MAINLINE_NODE_IDS) {
     const row = mainlineById.get(id);
     if (!row) continue;
@@ -613,8 +618,8 @@ for (const [name, idField] of Object.entries(TIER_D)) {
     if (boss !== 'none' && !S7_BOSS_NODE_IDS.includes(boss)) fail('chapter_config', id, 'bossRef 非法');
   }
   for (const id of S7_CHAPTER_IDS) if (!seenChapters.has(id)) fail('chapter_config', id, `缺少章节 ${id}`);
-  // 6星域末尾章节（2026-07-02 拓扑改造：ch10/14/17/20/23/25，对应 n060/084/102/120/138/150）
-  for (const expected of ['ch10', 'ch14', 'ch17', 'ch20', 'ch23', 'ch25']) {
+  // 7 星域末尾章节（450 关世界·域尾墙：ch18/30/43/54/64/70/79 对应 n104/176/250/312/368/400/450）
+  for (const expected of ['ch18', 'ch30', 'ch43', 'ch54', 'ch64', 'ch70', 'ch79']) {
     const row = chapterRows.find((r) => r.chapterId === expected);
     if (!row || row.bossRef === 'none') fail('chapter_config', expected, `${expected} 必须设置 bossRef`);
   }
@@ -649,8 +654,8 @@ for (const [name, idField] of Object.entries(TIER_D)) {
     if (mline && mline.problemTagRef !== row.mainProblemTag) fail('boss_node_config', id, 'mainProblemTag 必须与 mainline_node_config 对应节点一致');
   }
   for (const id of S7_BOSS_NODE_IDS) if (!seenBoss.has(id)) fail('boss_node_config', id, `缺少 Boss 节点 ${id}`);
-  const finalBoss = bossRows.find((r) => r.bossNodeId === 'n150');
-  if (finalBoss && finalBoss.templateRef !== 't10') fail('boss_node_config', 'n150', 'N150（终Boss）templateRef 必须为 t10（Boss 狂暴主轴）');
+  const finalBoss = bossRows.find((r) => r.bossNodeId === 'n450');
+  if (finalBoss && finalBoss.templateRef !== 't10') fail('boss_node_config', 'n450', 'N450（毕业战终Boss）templateRef 必须为 t10（Boss 狂暴主轴）');
 
   // tutorial_trigger_config：5 步完整，结构字段与对应主线节点一致
   const tutRows = tables.tutorial_trigger_config;
@@ -751,7 +756,8 @@ for (const [name, idField] of Object.entries(TIER_D)) {
 
   // reward_pool_ref_config：10 个 rewardAnchorRef 与 mainline_node_config.rewardAnchorRef 双向覆盖（2026-07-02 简化 → 2026-07-03 +reward_first_boss=n030）
   const poolRows = tables.reward_pool_ref_config;
-  if (poolRows.length !== 10) fail('reward_pool_ref_config', '-', `必须为 10 行，实际 ${poolRows.length}`);
+  // 450 关世界=16 行：basic/elite/cargo 3 + first_boss 1 + climax 3 + 墙 boss_1..8 + final 1（旧世界 10 行）。
+  if (poolRows.length !== 16) fail('reward_pool_ref_config', '-', `必须为 16 行，实际 ${poolRows.length}`);
   const anchorRefsFromMainline = new Set(mainlineRows.map((r) => r.rewardAnchorRef));
   const seenAnchors = new Set();
   for (const row of poolRows) {
@@ -1349,9 +1355,10 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     if (Array.isArray(row.bossPhaseRefs)) for (const pref of row.bossPhaseRefs) { const ph = phaseMap.get(pref); if (ph && ph.bossNodeId !== row.nodeRef) fail('battle_encounter_param', id, `bossPhaseRefs 引用的 "${pref}" 不属于 boss 节点 ${row.nodeRef}（双向闭合失败）`); }
   }
   const coveredNodes = new Set(encounterRows.map((r) => r.nodeRef));
-  for (const need of ['n001', 'n084', 'n150']) if (!coveredNodes.has(need)) fail('battle_encounter_param', need, `必须覆盖节点 ${need} 的 encounter`);
-  const finalEnc = encounterRows.find((r) => r.nodeRef === 'n150');
-  if (finalEnc && finalEnc.pressureRef !== 'bp_n150') fail('battle_encounter_param', finalEnc.rowId, 'n150（终Boss）encounter 的 pressureRef 必须为 bp_n150');
+  // 覆盖钉：首关 + 全部 13 Boss 位（旧世界钉 n001/n084/n150——n084/n150 新世界已非 Boss 位，钉位随世界换）。
+  for (const need of ['n001', ...S7_BOSS_NODE_IDS]) if (!coveredNodes.has(need)) fail('battle_encounter_param', need, `必须覆盖节点 ${need} 的 encounter`);
+  const finalEnc = encounterRows.find((r) => r.nodeRef === 'n450');
+  if (finalEnc && finalEnc.pressureRef !== 'bp_n450') fail('battle_encounter_param', finalEnc.rowId, 'n450（毕业战终Boss）encounter 的 pressureRef 必须为 bp_n450');
 
   for (const row of spawnRows) {
     const id = row.rowId;

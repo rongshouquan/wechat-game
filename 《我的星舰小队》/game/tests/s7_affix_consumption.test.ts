@@ -36,14 +36,15 @@ async function engineOf(b: Bundle): Promise<S7AutoBattleEngine> {
 const affix = (a: S7AffixKey, value: number): S7EffectBlock[] => [{ kind: 'affix', affix: a, value, source: 'test' }];
 
 // 普攻枪手(攻=1000)打单个高血敌人；kind 控制目标是 小怪(非Boss) 还是 Boss。
-// Boss 用工程现成的 bu_boss_n084（targetType=boss、unitRef=n084 合法），关掉它的大招避免干扰首发观察。
+// Boss 用工程现成的 bu_boss_n104（targetType=boss、unitRef=n104 合法·段二战斗批：旧载体 bu_boss_n084
+// 随 450 关重铺退役——n084 新世界=普通关），关掉它的大招避免干扰首发观察。
 function dmgBundle(kind: 'enemy' | 'boss'): Bundle {
   const b = clone(loadBundle());
   Object.assign(row(b, 'battle_unit_stat_param', 'bu_ship_gunner'), {
     ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none', attackRangeCells: 7,
     maxHp: 1000000, armor: 500, attack: 1000,
   });
-  const enemyRef = kind === 'boss' ? 'bu_boss_n084' : 'bu_enemy_swarm';
+  const enemyRef = kind === 'boss' ? 'bu_boss_n104' : 'bu_enemy_swarm';
   Object.assign(row(b, 'battle_unit_stat_param', enemyRef), {
     maxHp: 100000000, attack: 1, armor: 1, ultimateEffectRef: 'none', ultimateCdSec: 0, coreEffectRef: 'none',
   });

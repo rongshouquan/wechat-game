@@ -101,7 +101,8 @@ describe('S7BattleEncounterAssembler - 装备星核解析为效果积木 (块3b)
   });
 });
 
-describe('S7BattleEncounterAssembler - n001/n084/n150 组装 (#1,#3,#4)', () => {
+// 段二战斗批重定基：Boss 载体 n084/n150（150 关世界）→n104/n450（450 关世界墙①/毕业战）。
+describe('S7BattleEncounterAssembler - n001/n104/n450 组装 (#1,#3,#4)', () => {
   it('n001 + [shp01,shp02,shp03] 组装出 enc_n001 (#1)', async () => {
     const asm = await assemblerOf(loadBundle());
     const out = asm.assemble({ progress: progressAt('n001'), runSeed: 'r1', lineup: TRIO });
@@ -111,22 +112,22 @@ describe('S7BattleEncounterAssembler - n001/n084/n150 组装 (#1,#3,#4)', () => 
     expect(out.request.playerUnits.map((u) => u.slotRef)).toEqual(['p0c2', 'p1c2', 'p2c2']);
   });
 
-  it('n084 trio 组装出 enc_n084，context 与 encounter 字段一致 (#3)', async () => {
+  it('n104 trio 组装出 enc_n104，context 与 encounter 字段一致 (#3)', async () => {
     const asm = await assemblerOf(loadBundle());
-    const out = asm.assemble({ progress: progressAt('n084'), runSeed: 7, lineup: TRIO });
-    expect(out.request.encounterRef).toBe('enc_n084');
+    const out = asm.assemble({ progress: progressAt('n104'), runSeed: 7, lineup: TRIO });
+    expect(out.request.encounterRef).toBe('enc_n104');
     expect(out.context.stageType).toBe('boss');
-    expect(out.context.templateId).toBe('t04');
-    expect(out.context.mainProblemTag).toBe('shield');
-    expect(out.request.battleSeed).toBe('n084:7');
+    expect(out.context.templateId).toBe('t02');
+    expect(out.context.mainProblemTag).toBe('swarm');
+    expect(out.request.battleSeed).toBe('n104:7');
   });
 
-  it('n150 trio 组装出 enc_n150，battleSeed 带 n150: 前缀 (#4)', async () => {
+  it('n450 trio 组装出 enc_n450，battleSeed 带 n450: 前缀 (#4)', async () => {
     const asm = await assemblerOf(loadBundle());
-    const out = asm.assemble({ progress: progressAt('n150'), runSeed: 'abc', lineup: TRIO });
-    expect(out.request.encounterRef).toBe('enc_n150');
-    expect(out.request.battleSeed).toBe('n150:abc');
-    expect(out.trace.battleSeed.startsWith('n150:')).toBe(true); // trace.battleSeed 为 string 类型
+    const out = asm.assemble({ progress: progressAt('n450'), runSeed: 'abc', lineup: TRIO });
+    expect(out.request.encounterRef).toBe('enc_n450');
+    expect(out.request.battleSeed).toBe('n450:abc');
+    expect(out.trace.battleSeed.startsWith('n450:')).toBe(true); // trace.battleSeed 为 string 类型
   });
 });
 

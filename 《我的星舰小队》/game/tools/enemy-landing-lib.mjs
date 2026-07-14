@@ -50,10 +50,12 @@ export const NODE_EFFECT_RE = /^eff_n\d+_summon$/;
  * （ultimateEffectRef=eff_<node>_summon 生命周期包·召唤单位=bu_<node>_sadd 无人机·SADD 份额），
  * 清土时把 Boss 大招指针回退到 cleanUltimate（保证"只清不落"的净土仍然引用闭合·validator 绿）。
  * ultimateCdSec=12 对齐母舰单元先例（真源"周期召唤"未给数·数值域定报备·2b 复测可调）。
+ *
+ * ⚠️ 450 关战斗批（2026-07-14）：旧键 n084=150 关世界的失控母舰位——新世界 n084=sf01 普通关，
+ * 规则语义**追随 Boss 身份（失控母舰）而非节点号**；段 2 的 13 Boss 对位表过总控后，
+ * 本表按失控母舰新位重挂（2a H1 成果=规则范式与生命周期包·原样复用）。段 1 暂空。
  */
-export const BOSS_PERIODIC_SUMMON = {
-  n084: { ultimateCdSec: 12, cleanUltimate: { ref: 'eff_ult_burst_nuke', cdSec: 10 } },
-};
+export const BOSS_PERIODIC_SUMMON = {};
 
 /** 节点行 → 全局职业行（roleKeyOf 同款反解·§20.1）：add/sadd 归 boss_add，其余按后缀。 */
 export function globalRowOf(rowId) {

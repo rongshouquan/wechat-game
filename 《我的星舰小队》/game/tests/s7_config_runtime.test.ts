@@ -60,14 +60,14 @@ describe('s7 config runtime loading layer (CC-07A)', () => {
     expect(rt.getAll('core_config')).toHaveLength(16); // 步5 收编：core07-22 真核 16 颗（core01-06 旧占位删除）
     expect(rt.getById<{ name: string }>('core_config', 'core07')?.name).toBe('陨星弹'); // ④块2真机：core07 显示名=陨星弹(真源§1·原"过载核心")，改回则变红
     expect(rt.getAll('plugin_config')).toHaveLength(30) /* ⑩A3 插件对齐真源 30 件（18 原位改名+12 新增·发放路径泛化读表） */;
-    expect(rt.getAll('mainline_node_config')).toHaveLength(150);
+    expect(rt.getAll('mainline_node_config')).toHaveLength(450); // 段二战斗批：450 关新世界（剧本 v1.3 骨架）
   });
 
   it('indexes rows by id for getById / has via the runtime facade', async () => {
     const rt = await S7ConfigRuntime.load(fsReader);
     expect(rt.getById<{ name: string }>('ship_config', 'shp01')?.name).toBe('极焰号'); // ⑥第一段重定基：真源名映射（细表§12）
     expect(rt.getById<{ rowId: string }>('power_reference_param', 'd28')?.rowId).toBe('d28');
-    expect(rt.has('boss_node_config', 'n150')).toBe(true);
+    expect(rt.has('boss_node_config', 'n450')).toBe(true); // 段二战斗批：毕业战终Boss=n450（旧 n150）
     expect(rt.has('ship_config', 'shp_nonexistent')).toBe(false);
     expect(rt.getById('ship_config', 'shp_nonexistent')).toBeUndefined();
   });

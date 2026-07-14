@@ -146,7 +146,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_region_2",
-    "nodeId": "n061",
+    "nodeId": "n105",
     "systemTag": "region_gate",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
@@ -155,7 +155,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_region_3",
-    "nodeId": "n085",
+    "nodeId": "n177",
     "systemTag": "region_gate",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
@@ -164,7 +164,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_region_4",
-    "nodeId": "n103",
+    "nodeId": "n251",
     "systemTag": "region_gate",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
@@ -173,7 +173,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_region_5",
-    "nodeId": "n121",
+    "nodeId": "n313",
     "systemTag": "region_gate",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
@@ -182,7 +182,16 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_region_6",
-    "nodeId": "n139",
+    "nodeId": "n369",
+    "systemTag": "region_gate",
+    "requiredForMainlineTag": true,
+    "noAdRequiredTag": true,
+    "buildingUnlockRef": "none"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "unlockRef": "unlock_region_7",
+    "nodeId": "n401",
     "systemTag": "region_gate",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
@@ -191,7 +200,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_core_path_mid",
-    "nodeId": "n070",
+    "nodeId": "n210",
     "systemTag": "core",
     "requiredForMainlineTag": false,
     "noAdRequiredTag": true,
@@ -200,7 +209,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_core_3_path_check",
-    "nodeId": "n095",
+    "nodeId": "n285",
     "systemTag": "core",
     "requiredForMainlineTag": false,
     "noAdRequiredTag": true,
@@ -209,7 +218,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_late_core_path_check",
-    "nodeId": "n125",
+    "nodeId": "n375",
     "systemTag": "core",
     "requiredForMainlineTag": false,
     "noAdRequiredTag": true,
@@ -218,7 +227,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_final_boss_ready",
-    "nodeId": "n148",
+    "nodeId": "n448",
     "systemTag": "final_check",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
@@ -227,7 +236,7 @@
   {
     "schemaVersion": "s7-0.1.0",
     "unlockRef": "unlock_mainline_clear",
-    "nodeId": "n150",
+    "nodeId": "n450",
     "systemTag": "final_check",
     "requiredForMainlineTag": true,
     "noAdRequiredTag": true,
