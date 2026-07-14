@@ -106,6 +106,8 @@ for (const u of DATA.roster) {
 const stars = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 0.5 + Math.random() * 1.5, v: 18 + Math.random() * 30 }));
 // 飘雪（世界氛围）
 const flakes = Array.from({ length: 26 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 1 + Math.random() * 2, v: 8 + Math.random() * 12, drift: Math.random() * 2 - 1 }));
+// 云絮层（高空对打的中景：飘在舰队与远地之间·比地表流速快=视差纵深）
+const clouds = Array.from({ length: 3 }, (_, i) => ({ x: Math.random() * W, y: (i / 3) * H + Math.random() * 90, s: 58 + Math.random() * 46, v: 26 + Math.random() * 14 }));
 
 // ---- 演出运行池 ----
 let projs = [], impacts = [], bursts = [], embers = [], pops = [];
@@ -199,21 +201,14 @@ function drawShip(u) {
   cx.translate(u.x + drift, u.y); // 地面锚（悬浮/后坐/入场不带进来）
   const w = u.w, h = u.h;
   if (u.spawnT <= 0) {
-    // 接地影（贴纸感解药之二）：船升影缩淡、船落影大实=光影跟地面呼吸
-    const bobK = (bob / 1.9 + 1) / 2; // 0=最低 1=最高
-    cx.globalAlpha = alpha * (0.30 - bobK * 0.10);
+    // 高空投影（Ron 拍板"敌我平行空中对打"）：影子小而虚、向右下偏移投在
+    // 远处地表上——竖屏飞行射击祖传的高度暗示（接地影/引擎地光随平视板作废）
+    const bobK = (bob / 1.9 + 1) / 2;
+    cx.globalAlpha = alpha * (0.11 - bobK * 0.03);
     cx.fillStyle = GROUND_SHADOW;
     cx.beginPath();
-    cx.ellipse(0, h * 0.46, w * (0.40 - bobK * 0.05), h * (0.105 - bobK * 0.018), 0, 0, Math.PI * 2);
+    cx.ellipse(w * 0.14, h * 0.62, w * 0.26, h * 0.06, 0, 0, Math.PI * 2);
     cx.fill();
-    // 引擎地光斑（贴纸感解药之三）：船的光落在地上=单位与场地发生光照关系
-    cx.globalCompositeOperation = 'lighter';
-    cx.globalAlpha = alpha * (0.055 + 0.028 * Math.sin(t * 7 + u.phase));
-    cx.fillStyle = u.side === 'player' ? u.color : '#D9584A';
-    cx.beginPath();
-    cx.ellipse(0, h * 0.46, w * 0.30, h * 0.075, 0, 0, Math.PI * 2);
-    cx.fill();
-    cx.globalCompositeOperation = 'source-over';
   }
   cx.globalAlpha = alpha;
   cx.translate(ox, oy); // 船体层偏移（悬浮/抖动/后坐/点头/入场滑入）
@@ -549,9 +544,23 @@ function frame(ts) {
 
   while (cmdIdx < CMDS.length && CMDS[cmdIdx].tSec <= t) { exec(CMDS[cmdIdx]); cmdIdx++; }
 
-  // ---- 背景层：背景板素材（L67 定版）优先，缺位回程序底色 + 顶部星空带 ----
+  // ---- 背景层：高空俯瞰地表板（L77·Ron 拍板"平行空中对打"）+缓慢下流=编队向前飞；
+  //      缺位回程序底色 + 顶部星空带 ----
   if (ok(IMGS.bg)) {
+    // L77 轨道俯瞰板=静态（万米高空看远地近乎不动·带地平弧线不可循环滚动）；
+    // 飞行感交给云絮/星流两层视差
     cx.drawImage(IMGS.bg, 0, 0, W, H);
+    // 云絮中景（舰队与地面之间·比地表快=视差高度感）
+    for (const cl of clouds) {
+      cl.y += cl.v * dt;
+      if (cl.y - cl.s > H) { cl.y = -cl.s; cl.x = Math.random() * W; }
+      const cg = cx.createRadialGradient(cl.x, cl.y, 0, cl.x, cl.y, cl.s);
+      cg.addColorStop(0, 'rgba(255,250,252,0.11)');
+      cg.addColorStop(1, 'rgba(255,250,252,0)');
+      cx.fillStyle = cg;
+      cx.beginPath(); cx.ellipse(cl.x, cl.y, cl.s * 1.5, cl.s * 0.62, 0, 0, Math.PI * 2); cx.fill();
+      cx.beginPath(); cx.ellipse(cl.x + cl.s * 0.7, cl.y + cl.s * 0.2, cl.s * 0.9, cl.s * 0.4, 0, 0, Math.PI * 2); cx.fill();
+    }
     // 顶边窄星空带（17 版构图基因·程序渐变 0KB）
     const sky = cx.createLinearGradient(0, 0, 0, H * 0.12);
     sky.addColorStop(0, 'rgba(24,16,42,.95)');
