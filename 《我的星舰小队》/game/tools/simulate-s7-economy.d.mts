@@ -3,7 +3,8 @@
 
 export interface S7ShapeTierParams { minutesPerDay: number; r: number; stuckBonus: number }
 export declare const SHAPE: {
-  N: number; base: number; qStart: number; qEnd: number; curvePow: number;
+  // v3（450 关/60 天）：蜜月平台三键取代旧 qStart（收口批声明同步）
+  N: number; base: number; moonEnd: number; qMoonStart: number; qMoonEnd: number; qEnd: number; curvePow: number;
   bossSpikes: Record<number, number>; P0: number;
   SEC_PER_NODE: number; MAX_DAYS: number;
   tiers: Record<string, S7ShapeTierParams>;
@@ -17,6 +18,10 @@ export declare const TRUTHS: {
   regionSpans: { sf: number; from: number; to: number }[];
   bossNodes: number[];
   storyBossNode: number;
+  wallNodes: number[];    // 段2b：9 墙位（矩阵守卫/钥匙窗墙位判定）
+  climaxNodes: number[];  // 高潮+前哨（演出仗不卡天口径）
+  gradCorePower: number;  // 毕业核战力档（R12 咬合）
+  novaBreakEff: number;   // 超新星破墙实效当量（R16 B②）
   eliteNodes: number[];
   tierBase: number[];
   shipLevelFactor: number[];
@@ -107,13 +112,15 @@ export declare const PARAMS: {
     eggLv10CostMult: number;  // 开蛋九折（案C 0.9·其余 1.0）
     distinctPity: number;     // 核保底前 5 颗不重复（细案§二1）
     vaultFlowPrice: number; vaultGradPrice: number; treasureGradP: number; gradSaveAfterCores: number;
+    vaultGradUnlockNode: number;   // N2 终案：毕业核上架进度闩（n384 风暴前哨）
+    keyWindowReserveNode: number;  // 收口批任务3 c'：钥匙窗第 2 颗预留墙（n368 墙⑦）
   };
   gallery: { fragPerSpecies: number; gemPerSpecies: number }; // 展厅双层分红（量级可调）
   workerDiscount: { minHabitatLv: number; pctLv3: number; pctLv6: number; pctLv10: number; capPct: number };
   supplyGacha: { aPctByLv: number[] }; // A 级概率垫层（绝对加点·可调旋钮）
   ads: { ticketPerAd: number; salvageInstantDur: string; offlineDoubleMult: number; overnightShare: number };
   blackMarket: {
-    unlockNode: number; dailyViewCap: number;
+    unlockNode: number; novaUnlockNode: number; dailyViewCap: number; // novaUnlockNode=超新星单件闩（A5·n368）
     box: { price: number; give: Record<string, number>; fullCoreP: number; gradCoreP: number };
     goods: Record<string, S7BlackMarketGood>; largeMinPrice: number;
     smalls: { slots: number; adRerollMult: number; pool: Record<string, { w: number; wLv8?: number; price: number; give: Record<string, number> }> };
@@ -204,7 +211,7 @@ export declare function doLevelUps(st: unknown, debit: (src: string, key: string
 export interface S7EconRunOpts {
   envelope?: 'expected' | 'lucky' | 'unlucky';
   ads?: 'profile' | 'none' | 'full';
-  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'drill' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket' | 'bmBox' | 'gallery', boolean>>;
+  disable?: Partial<Record<'offline' | 'patrol' | 'bounty' | 'drill' | 'corridor' | 'salvage' | 'gacha' | 'events' | 'mail' | 'merchant' | 'puzzle' | 'mainlineRewards' | 'blackMarket' | 'bmBox' | 'gallery' | 'gradCores' | 'bmNova', boolean>>; // gradCores=双路硬堆构造／bmNova=无黑市线对照（收口批）
   incomeScale?: Record<string, number>;
   pause?: { from: number; days: number };
   runFullDays?: boolean;
@@ -225,6 +232,11 @@ export interface S7EconResult {
   coresDistinct: number;
   coreDays: number[];
   gradCoreDays: number[];
+  gradCoreVaultDays: number[]; gradCoreBmDays: number[]; // 收口批配套①：毕业核分渠道真源
+  break8Day: number | null; graduateNatural: number | null; // 破⑧日/自然毕业（合成毕业架构观察口）
+  reachOutpostDay: number | null; gemReach200Day: number | null; // 上架日/宝库读秒终点
+  wallWaitOther: number; // 计划外墙合计（裁决1 口径）
+  dailyGem: number[]; dailyBuildings: Record<string, number>[]; // 宝石日终/建筑逐日快照
   gradCores: { vault: number; bm: number; treasureEV: number };
   coreDraws: { egg: number; treasure: number; bmFlow: number; shopFlow: number; vaultFlow: number; vaultDupes: number };
   drillTier: number;
