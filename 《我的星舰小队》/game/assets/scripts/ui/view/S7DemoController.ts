@@ -250,6 +250,10 @@ const S7_DEMO_SEED_PLUGINS: { pluginId: string; quality: 'fine' | 'superior' | '
  *  ⚠️ core07=陨星弹(过载核心) 已从种子剔除(块2真机)——它是首Boss n030 的固定大奖，不能开局白送，
  *  否则"打 n030→掉陨星弹"链路无法验证；新档只能靠打赢 n030 拿到 core07（反复验证用 hub 工具行「回档n029」DEV 键）。 */
 const S7_DEMO_SEED_CORES = ['core10', 'core11']; // 步5 收编：旧 core01/02 占位 id 已删
+/** 演出线 DEV-TEMP（07-15 Ron 令·上线前删）：五艘带皮肤舰+配对驾驶员（缺就补发·真机看真皮肤演出用）。 */
+const S7_DEV_FX_SHOWCASE_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ['shp03', 'pil03'], ['shp06', 'pil06'], ['shp09', 'pil09'], ['shp13', 'pil13'], ['shp20', 'pil20'],
+];
 /** 插件槽位类型中文（仅显示用）。 */
 const S7_SLOT_TAG_NAMES: Record<S7PluginSlot, string> = { weapon: '武器', skill: '技能', tactical: '战术' };
 /** 品质中文（仅显示用·段二 E2 扩两档；散落的品质三元与合成 UI 切换=灰盒批接口清单）。 */
@@ -721,6 +725,9 @@ export class S7DemoController extends Component {
       this.ensureTutorialStarterSeeded();
     }
     // 自然走完教程(done 且 step>0)：保留玩家教程中挣得的状态，不再发货（不白送星核等）。
+    // 演出线 DEV-TEMP（07-15 Ron 令·上线前随 DEV 清单删）：引导完成的档（含自然走完教程档）
+    // 补发五艘带皮肤舰——独立于上面发货分支（那两支覆盖不到自然完教程档）；教程中不发（护强引导拥有态）。
+    if (tutorial.strongGuideDone) this.ensureFxShowcaseShipsGranted();
     this.session = new S7RunSession(
       this.playerState.resources,
       this.playerState.mainlineProgress,
@@ -810,6 +817,17 @@ export class S7DemoController extends Component {
     }
     if (this.pluginInventory && this.pluginInventory.plugins.length === 0) {
       for (const p of S7_DEMO_SEED_PLUGINS) addOwnedPlugin(this.pluginInventory, p.pluginId, p.quality);
+    }
+  }
+
+  /** 演出线 DEV-TEMP（07-15 Ron 令·上线前随 DEV 清单删）：五艘带皮肤舰「缺就补发」——
+   *  真机看真皮肤/签名弹道/切件动骨（SHIP_BODY 五舰=锋矢/铁壁/烈阳/晨曦/锁链）；配对驾驶员同补（上阵不缺员）；
+   *  首次入手才补专属碎片 200（对齐 seed 先例·可试升阶质变演出；借 grantShip 幂等返回值防每次启动重复加）。 */
+  private ensureFxShowcaseShipsGranted(): void {
+    if (!this.squad || !this.playerState) return;
+    for (const [ship, pilot] of S7_DEV_FX_SHOWCASE_PAIRS) {
+      if (grantShip(this.squad, ship)) addExclusiveShards(this.playerState.exclusiveShards, ship, 200);
+      if (grantPilot(this.squad, pilot)) addExclusiveShards(this.playerState.exclusiveShards, pilot, 200);
     }
   }
 
