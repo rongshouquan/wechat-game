@@ -1343,6 +1343,15 @@ function validateBattle(
     }
     const pe = num(row.passiveEnergyPerSec);
     if (pe === null || pe < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'passiveEnergyPerSec 必须 >= 0' });
+    // 段2 通道②（坟场自复活）可选字段带校验：pct ∈(0,1]（0-1 制·真源"半血"=0.5），delay ≥0。
+    if (row.selfReviveHpPct !== undefined) {
+      const rv = num(row.selfReviveHpPct);
+      if (rv === null || rv <= 0 || rv > 1) errors.push({ table: 'battle_unit_stat_param', id, message: 'selfReviveHpPct 必须 ∈(0,1]（0-1 制）' });
+    }
+    if (row.selfReviveDelaySec !== undefined) {
+      const rd = num(row.selfReviveDelaySec);
+      if (rd === null || rd < 0) errors.push({ table: 'battle_unit_stat_param', id, message: 'selfReviveDelaySec 必须 >= 0' });
+    }
     const sr = num(row.sizeRows);
     if (sr === null || !Number.isInteger(sr) || sr < 1 || sr > 3) errors.push({ table: 'battle_unit_stat_param', id, message: 'sizeRows 必须为 1-3 的整数' });
     const sc = num(row.sizeCols);
@@ -1752,7 +1761,8 @@ function validateBattle(
     if (row.reviveWaves !== undefined) {
       const rv = num(row.reviveWaves);
       if (rv === null || !Number.isInteger(rv) || rv < 1 || rv > 3) errors.push({ table: 'battle_encounter_param', id, message: 'reviveWaves 必须为 1-3 的整数' });
-      if (Array.isArray(row.bossPhaseRefs) && row.bossPhaseRefs.length > 0) errors.push({ table: 'battle_encounter_param', id, message: '复活波次关不配 Boss 阶段（阶段不随复活重置·配置纪律）' });
+      // 段2 战斗批：旧闸"复活波次关不配 Boss 阶段"撤除——引擎 reviveEnemies 已随复活波重置阶段旗
+      // （Boss 墙×连战组合上岗·n250/n312/n400 消费·守卫=s7_battle_revive_channels 测试）。
     }
     if (row.mirrorLineup !== undefined && row.mirrorLineup !== true) {
       errors.push({ table: 'battle_encounter_param', id, message: 'mirrorLineup 只允许 true 或缺席' });

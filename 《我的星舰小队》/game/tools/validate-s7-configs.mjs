@@ -1001,6 +1001,13 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
       const v = num(row[f]); if (v === null || v <= 0) fail('battle_unit_stat_param', id, `${f} 必须为正数`);
     }
     const pe = num(row.passiveEnergyPerSec); if (pe === null || pe < 0) fail('battle_unit_stat_param', id, 'passiveEnergyPerSec 必须 >= 0');
+    // 段2 通道②（坟场自复活）可选字段带校验（镜像 ConfigValidatorS7·两处同改）。
+    if (row.selfReviveHpPct !== undefined) {
+      const rv = num(row.selfReviveHpPct); if (rv === null || rv <= 0 || rv > 1) fail('battle_unit_stat_param', id, 'selfReviveHpPct 必须 ∈(0,1]（0-1 制）');
+    }
+    if (row.selfReviveDelaySec !== undefined) {
+      const rd = num(row.selfReviveDelaySec); if (rd === null || rd < 0) fail('battle_unit_stat_param', id, 'selfReviveDelaySec 必须 >= 0');
+    }
     const sr = num(row.sizeRows); if (sr === null || !Number.isInteger(sr) || sr < 1 || sr > 3) fail('battle_unit_stat_param', id, 'sizeRows 必须为 1-3 的整数');
     const sc = num(row.sizeCols); if (sc === null || !Number.isInteger(sc) || sc < 1 || sc > 7) fail('battle_unit_stat_param', id, 'sizeCols 必须为 1-7 的整数');
     if (!BATTLE_UNIT_TARGETING_TAGS.includes(row.targetingTag)) fail('battle_unit_stat_param', id, 'targetingTag 非法（首版至少支持 nearest_random_tie）');

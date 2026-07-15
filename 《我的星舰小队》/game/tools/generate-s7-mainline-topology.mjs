@@ -133,7 +133,9 @@ const WORLD_450 = {
   // n214/n340=高潮仗、n384=风暴前哨硬仗（毕业核货架进度闩位·经济尺 vaultGradUnlockNode 384）。
   climaxBossNodes: [54, 214, 340, 384],
   // 38 精英位＝剧本 v1.3 表（=经济尺 TRUTHS.eliteNodes 一字对齐）。
-  eliteNodes: [7, 18, 33, 68, 88, 116, 122, 128, 142, 150, 165, 168, 186, 192, 198, 208, 224, 232, 238, 244, 258, 266, 274, 284, 290, 298, 306, 320, 330, 336, 344, 348, 356, 362, 372, 378, 390, 396],
+  // n018→n020（总控已裁·段2 落地）：18=protectionGates.resetNode 非战斗节点，elite 身份被
+  // nodeTypeTag 判定链（保护期优先）静默吞掉=磁盘曾实出 37 精英；挪 20 后回 38。
+  eliteNodes: [7, 20, 33, 68, 88, 116, 122, 128, 142, 150, 165, 168, 186, 192, 198, 208, 224, 232, 238, 244, 258, 266, 274, 284, 290, 298, 306, 320, 330, 336, 344, 348, 356, 362, 372, 378, 390, 396],
   chapterSize: 6,
   tutorialMaxNode: 5,
   protectionGates: { resetNode: 18, noticeNode: 19 }, // 绝对保持族（重映射表一）
@@ -464,6 +466,6 @@ for (let n = 1; n <= WORLD.N; n++) {
 }
 writeJson('mainline_node_config', rows);
 
-console.log('生成完成：star_region_config(' + REGIONS.length + ') chapter_config(' + CHAPTERS.length + ') boss_node_config(' + (REGIONS.length + STORY_BOSS_NODES.length) + '=' + REGIONS.length + '墙+' + STORY_BOSS_NODES.length + '高潮) tutorial_trigger_config(5)');
+console.log('生成完成：star_region_config(' + REGIONS.length + ') chapter_config(' + CHAPTERS.length + ') boss_node_config(' + (BOSS_NODES.length + STORY_BOSS_NODES.length) + '=' + BOSS_NODES.length + '墙+' + STORY_BOSS_NODES.length + '高潮/前哨) tutorial_trigger_config(5)');
 console.log('protection_reset_config(2) unlock_checkpoint_config(' + (NODE_UNLOCKS.length + BUILDING_UNLOCKS.length) + ') no_ad_path_check_config(' + BOSS_NODES.length + ') risk_fallback_70_config(0)');
 console.log('reward_pool_ref_config(' + (4 + STORY_BOSS_NODES.length + (REGIONS.length - 1)) + ') reward_param(+' + WORLD.bossRewardSteps.length + ') mainline_node_config(' + WORLD.N + '·含高潮Boss)');

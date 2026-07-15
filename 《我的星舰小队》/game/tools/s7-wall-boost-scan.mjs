@@ -34,7 +34,8 @@ const nodeId = `n${String(WALL).padStart(3, '0')}`;
 const MEDIAN = ['shp05', 'shp01', 'shp09', 'shp11', 'shp13'];
 const service = new mod.S7BattleRunService();
 const base = mod.loadBundle();
-const cur = { 60: { pool: 1.41, dps: 0.885 }, 102: { pool: 0.9, dps: 0.6 }, 120: { pool: 1.65, dps: 0.95 }, 150: { pool: 1.5, dps: 0.75 } }[WALL];
+// 段2：换算基准=entry 磁盘现值单点（export WALL_BOOST·旧硬编码 4 墙表退役——双账本漂移根治）。
+const cur = mod.WALL_BOOST[nodeId] ?? { pool: 1, dps: 1 };
 
 console.log(`# ${nodeId}（${TIER}·破墙 D${brk}·P=${pressure[WALL]}·现行 boost ${cur.pool}/${cur.dps}·n=${SAMPLES}）`);
 for (const pool of POOLS) for (const dps of DPSS) {

@@ -424,6 +424,10 @@ interface RtUnit {
   summonOverride?: { targetingTag?: string; normalEffectRef?: string };
   /** 甘霖SS复活选人：阵亡时刻（stepCleanupDead 记账·复活选"最近阵亡"）。 */
   diedAt?: number;
+  /** 段2 通道②（坟场复活）：挂起的自复活到点时刻（死亡登记·stepSelfRevives 消费）。缺省=无挂起。 */
+  selfReviveAt?: number;
+  /** 段2 通道②：本场已自复活过（每单位每场 1 次闩锁·复活作废也置=防满场重试死循环）。 */
+  selfReviveUsed?: boolean;
   /** 韧性传奇：本场"免疫第一次硬控"已用（一次性闩锁）。 */
   firstControlImmuneUsed?: boolean;
 }
@@ -557,6 +561,7 @@ class BattleRun {
       this.time = roundTime(tick * TICK_SEC);
 
       this.stepSpawnWaves();        // 1 出怪
+      this.stepSelfRevives();       // 1.5 坟场自复活（段2 通道②·无挂起=空扫零行为）
       this.stepExpireStates();      // 2 状态到期
       this.stepTriggers();          // 3 三类触发（CD / 开局即放 / 血量阈值；on_kill/on_hit 留块2b）
       this.stepNormalAttacks();     // 4 普攻
@@ -728,12 +733,53 @@ class BattleRun {
     }
   }
 
-  /** 段二 C3 复活波次：按原出怪计划全体满血重出一遍（Boss 阶段/已触发状态不重置＝配置纪律上复活关不配 Boss）。 */
+  /** 段二 C3 复活波次：按原出怪计划全体满血重出一遍。
+   *  段2 战斗批扩展（Boss 墙×连战组合上岗·n250/n312/n400 消费）：阶段旗随复活波重置——
+   *  第二遍=完整再打一遍（含 Boss 阶段机制）而非白板 Boss；C3 旧纪律"复活关不配 Boss"随此作废。
+   *  既有面零回归：精英复活关无 phase（重置空集=零行为），现库无 Boss 关配 reviveWaves。 */
   private reviveEnemies(): void {
     const wave = this.reviveRemaining;
     this.reviveRemaining -= 1;
+    for (const ph of this.phases) ph.triggered = false;
     for (const plan of this.spawnPlans) {
       this.processSpawnPlan(plan.row, 0, `revive_wave_${wave}`);
+    }
+  }
+
+  /** 段2 通道②（坟场复活）：处理到点的挂起自复活——原地优先、被占找空格、满场作废；
+   *  复位序复用 revive 效果先例（血=maxHp×pct/CD 重置防复活即大招/普攻下一拍起）。
+   *  无 selfReviveAt 挂起=空扫零行为。 */
+  private stepSelfRevives(): void {
+    for (const unit of this.stableUnits()) {
+      if (unit.selfReviveAt === undefined || unit.alive) continue;
+      if (this.time + 1e-9 < unit.selfReviveAt) continue;
+      unit.selfReviveAt = undefined;
+      unit.selfReviveUsed = true; // 复活成败都记一次（防满场无格逐 tick 重试死循环）
+      const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', unit.unitStatRef);
+      const pct = typeof stat?.selfReviveHpPct === 'number' ? stat.selfReviveHpPct : 0;
+      if (pct <= 0) continue;
+      let placed = false;
+      if (this.canPlace(unit.side, unit.row, unit.col, unit.sizeRows, unit.sizeCols)) {
+        placed = true; // 原地复活（坟场语义主形态）
+      } else {
+        const cell = this.findEmptyCell(unit.side, unit.sizeRows, unit.sizeCols);
+        if (cell) {
+          unit.row = cell.row;
+          unit.col = cell.col;
+          unit.slotRef = unit.side === 'player' ? `p${cell.row}c${cell.col}` : `r${cell.row}c${cell.col}`;
+          placed = true;
+        }
+      }
+      if (!placed) continue; // 满场无格=复活作废（闩锁已置·不再重试）
+      unit.alive = true;
+      unit.downLogged = false;
+      unit.hp = Math.max(1, Math.round(unit.maxHp * pct));
+      this.occupy(unit);
+      for (const t2 of unit.triggers) {
+        if (t2.block.on === 'cd' && t2.block.cdSec !== undefined && t2.block.cdSec > 0) t2.nextFireAt = this.time + t2.block.cdSec;
+      }
+      unit.nextAttackAt = this.time + unit.attackIntervalSec;
+      this.pushLog('revive', { actorId: unit.unitId, side: unit.side, targetIds: [unit.unitId], note: 'graveyard_self' });
     }
   }
 
@@ -1141,6 +1187,17 @@ class BattleRun {
       // 机制批③段二 澈5★「增益转移」：被增益友军阵亡→其增益态原样搬给同阵营最高攻存活友军（同 tag 覆盖）。
       if (this.anyBuffTransfer) this.transferBuffsOnDeath(unit);
       this.pushLog('unit_down', { actorId: unit.unitId, side: unit.side });
+      // 段2 通道②（坟场复活·真源 sf02 域规则+n140）：带 selfReviveHpPct 的单位死亡登记一次
+      // 挂起自复活（到点=stepSelfRevives 消费）。缺省缺席=零行为（同亡语通道范式）。
+      // 召唤物不吃自复活（summonedBy≠null 排除）：真源"击杀召唤源即停+随源消亡"——召唤物再自
+      // 复活会违反生命周期包语义（源死级联消亡后原地复活=永动违规），非防御加料是语义边界。
+      if (!unit.selfReviveUsed && unit.summonedBy === null) {
+        const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', unit.unitStatRef);
+        const pct = stat?.selfReviveHpPct;
+        if (typeof pct === 'number' && pct > 0) {
+          unit.selfReviveAt = roundTime(this.time + (stat?.selfReviveDelaySec ?? 0.8));
+        }
+      }
     }
   }
 
@@ -1175,7 +1232,9 @@ class BattleRun {
     const enemiesAlive = this.units.some((u) => u.side === 'enemy' && u.alive);
     const playersAlive = this.units.some((u) => u.side === 'player' && u.alive);
     // RT-04-fix#4：仍有未处理出怪批次时，场上暂时无敌人不算清场（防延迟首波/两波间清场提前胜利）。
-    const pendingSpawns = this.spawnPlans.some((p) => !p.processed);
+    // 段2 通道②：坟场自复活挂起中的敌人=待出现的敌人，同 pendingSpawns 语义拦清场（无挂起=零行为）。
+    const pendingSpawns = this.spawnPlans.some((p) => !p.processed)
+      || this.units.some((u) => u.side === 'enemy' && !u.alive && u.selfReviveAt !== undefined);
     // 敌人全灭且无待出怪才判玩家胜（同 tick 双方清空也算清场成功——判序与旧版一字不动）。
     if (!enemiesAlive && !pendingSpawns) {
       // 复活波次通道：拦下本该到手的清场胜利，全体满血再打一遍（余额用尽才放行；无配置=永不进此分支）。

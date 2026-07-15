@@ -20,7 +20,7 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON } from './enemy-landing-lib.mjs';
+import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON, BOSS_EFFECT_RE } from './enemy-landing-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -166,6 +166,16 @@ function landBundle(tables, mod) {
         if (scale.units[ref]) return ensureNodeRow(ref);
         return ensureSpecialtyRow(suffixOfGlobal(ref), ADD_SHARE, ref);
       });
+    }
+    // ②b 段2 · Boss 声明效果行（eff_boss_<node>_*·content 生成器管建）召唤引用节点化：
+    //    全局职业行 → 本关节点行（spawn 计划有份额=ensureNodeRow；无=按 add 份额落专属行·机制随模板）
+    //    ——召出单位吃本关压力缩放值而非全局原始值；cleanBundle 对称回退全局（防净土悬空引用）。
+    for (const eff of effects) {
+      const m = eff.rowId.match(BOSS_EFFECT_RE);
+      if (!m || m[1] !== nodeId) continue;
+      const ref = eff.summonUnitRef;
+      if (typeof ref !== 'string' || ref === 'none' || !/^bu_enemy_/.test(ref)) continue;
+      eff.summonUnitRef = scale.units[ref] ? ensureNodeRow(ref) : ensureSpecialtyRow(suffixOfGlobal(ref), ADD_SHARE, ref);
     }
     // ③ 母舰节点化：召唤效果 + 产出行 + 母舰行改指节点效果。
     const summonRowId = `bu_${nodeId}_summon_source`;

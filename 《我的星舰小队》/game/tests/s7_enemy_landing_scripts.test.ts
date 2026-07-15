@@ -53,4 +53,29 @@ describe('s7 enemy landing scripts (⑩A0 幂等两步·自证守卫)', () => {
       rmSync(tmp, { recursive: true, force: true });
     }
   }, 120_000);
+
+  // 段2 全链重放守卫（手调通道设计的验收锚·总控确认件）："磁盘 json 永远=content→apply 两步
+  // 重放的产物"从纪律变成机器保证——手调值全在声明表（BOSS_CONTENT/FORMATION_OVERRIDE/
+  // ELITE_CONTENT）里，任何时候全链重跑=声明自动重放、字节复现仓库。
+  // 变异探针（段2 立表时实测记账）：BOSS_CONTENT 改一处 phase 触发值→本守卫红→复原绿。
+  it('全链重放：content→apply 复现磁盘态，第二遍全链逐字节不变（手调声明重放）', () => {
+    const tmp = mkdtempSync(path.join(tmpdir(), 's7-fullchain-guard-'));
+    try {
+      // content 生成器额外吃 mainline_node_config（拓扑输入·--dir 同目录取）。
+      for (const t of [...TABLES, 'mainline_node_config']) {
+        cpSync(path.join(S7_DIR, `${t}.sample.json`), path.join(tmp, `${t}.sample.json`));
+      }
+      runTool('generate-s7-battle-content.mjs', tmp);
+      runTool('apply-enemy-landing.mjs', tmp);
+      const first = snapshot(tmp);
+      const disk = snapshot(S7_DIR);
+      for (const t of TABLES) expect(first[t], `${t}: 全链重放应复现仓库磁盘（手改 json=红）`).toBe(disk[t]);
+      runTool('generate-s7-battle-content.mjs', tmp);
+      runTool('apply-enemy-landing.mjs', tmp);
+      const second = snapshot(tmp);
+      for (const t of TABLES) expect(second[t], `${t}: 第二遍全链应逐字节不变`).toBe(first[t]);
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 180_000);
 });

@@ -369,22 +369,29 @@ describe('S7AutoBattleEngine - 星核触发 (#14)', () => {
 describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
   // 段二战斗批重定基：载体 n084/n150（150 关旧世界 Boss 位）→n104/n450（450 关墙①/毕业战）。
   // #15/#16 只验阶段切换与召唤 cap 逻辑——敌场钉手调量纲（同旧 fixture 手法），机制语义零变化。
-  // 450 关占位 Boss 仅 mid/final 两段（真阶段=段 2 对位手调）——#15 的三阶段时序覆盖靠 fixture
-  // 内存补一段 start（battle_start 触发·不动磁盘表），"start/mid/final 按序"引擎行为覆盖不缩水。
+  // 段2 重定基：n104 磁盘=真机制（BOSS_CONTENT 声明·仅 mid 一段+鼓动/召唤 extraTriggerBlocks）——
+  // #15 是载体无关的引擎时序验收：三段全量 fixture 自给（start 沿旧手法+final 补齐），Boss 行
+  // extraTriggerBlocks 清空隔离（鼓动/周期召唤=n104 设计内容，不属本测"阶段切换"验证面）。
   const pinN104 = (b: Bundle): Bundle => {
     for (const u of b.battle_unit_stat_param as Array<Record<string, unknown>>) {
       if (/^bu_n104_/.test(String(u.rowId))) { u.attack = 30; u.maxHp = 400; }
     }
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n104'), { maxHp: 6000, attack: 120 });
+    const bossRow104 = row(b, 'battle_unit_stat_param', 'bu_boss_n104');
+    Object.assign(bossRow104, { maxHp: 6000, attack: 120 });
+    delete bossRow104.extraTriggerBlocks; // 隔离面：validator 规定该字段存在须非空——删除=缺席
     Object.assign(row(b, 'battle_spawn_param', 'spawn_n104_adds'), { unitStatRef: 'bu_enemy_shield' });
     (b.battle_boss_phase_param as Array<Record<string, unknown>>).push({
       schemaVersion: 's7-0.1.0', rowId: 'phase_n104_start', bossNodeId: 'n104', phaseTag: 'start',
       triggerType: 'battle_start', triggerValue: 0, effectRefs: ['eff_state_shield'],
       summonUnitRefs: [], summonCountCap: 0, note: 'fixture 补 start 段（三阶段时序覆盖）',
+    }, {
+      schemaVersion: 's7-0.1.0', rowId: 'phase_n104_final_fx', bossNodeId: 'n104', phaseTag: 'final',
+      triggerType: 'hp_pct_below', triggerValue: 20, effectRefs: ['eff_ult_burst_nuke'],
+      summonUnitRefs: [], summonCountCap: 0, note: 'fixture 补 final 段（磁盘真机制仅 mid·三段自给）',
     });
     Object.assign(row(b, 'battle_encounter_param', 'enc_n104'), {
       enemyUnitStatRefs: ['bu_boss_n104', 'bu_enemy_shield'],
-      bossPhaseRefs: ['phase_n104_start', 'phase_n104_mid', 'phase_n104_final'],
+      bossPhaseRefs: ['phase_n104_start', 'phase_n104_mid', 'phase_n104_final_fx'],
     });
     return b;
   };
@@ -590,7 +597,11 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
     });
     // 血 14000（=#16 已验证量纲·2500 被 FIVE 开局爆发同 tick 秒杀→phase 永不触发=DIAG 实证 0s 全灭）+关大招（隔离面同 affix 先例）。
     Object.assign(row(b1, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180, sizeRows: 3, sizeCols: 3, ultimateEffectRef: 'none', ultimateCdSec: 0 });
-    // 走量 adds 格位=r2 行中心（r2c2-c4）——与 fixture pin 的 3x3 Boss 底行（r0c2 锚→r0-r2×c2-c4）撞格，
+    // 段2 C① 重定基：走量 Boss 锚 r0c2→r1c2（横向居中），而本测全部格子算术（占 9 格/空格数/
+    // adds 避让位）基于 r0c2 锚——fixture 显式钉回 r0c2（旧值靠走量骨架隐式提供=pin 面缺口，
+    // 补齐后本测与摆阵走量层解耦·机制语义零变化）。
+    Object.assign(row(b1, 'battle_spawn_param', 'spawn_n450_boss'), { slotRefs: ['r0c2'] });
+    // 走量 adds 格位——与 fixture pin 的 3x3 Boss（r0c2 锚→r0-r2×c2-c4）撞格，
     // Boss 会被静默跳过不生成（DIAG 实证 spawnWaves 无 boss 波）——adds 挪 r3 行避让。
     Object.assign(row(b1, 'battle_spawn_param', 'spawn_n450_adds'), { unitStatRef: 'bu_enemy_boss_add', slotRefs: ['r3c2', 'r3c3', 'r3c4'] });
     Object.assign(row(b1, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
@@ -606,6 +617,7 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
       summonCountCap: 10,
     });
     Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180, sizeRows: 3, sizeCols: 3, ultimateEffectRef: 'none', ultimateCdSec: 0 });
+    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n450_boss'), { slotRefs: ['r0c2'] }); // 同 23a：fixture 显式钉回 r0c2 锚（段2 C① 走量挪 r1c2·格子算术解耦）
     Object.assign(row(b2, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
     Object.assign(row(b2, 'battle_spawn_param', 'spawn_n450_adds'), {
       unitStatRef: 'bu_enemy_boss_add', // 落数后为节点行（厚）——钉回手调量纲

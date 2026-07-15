@@ -65,7 +65,17 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   效果行 344=289 全局（305−16 旧节点召唤行）+55 eff_nXXX_summon（55 个母舰关）；
     //   encounter 448=450−2 非战斗（n018/n019）；spawn 845=11 教学保留+834 走量；
     //   phase 26=13 Boss×2 占位段（mid 易伤窗+final 爆发窗·真阶段=段 2 对位手调）。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(860);
+    // 段2 n018→n020 落位重定基（旧→新→为什么对）：精英位 18（被保护期身份吞=磁盘实出 37 精英）
+    //   挪 n020 后 elite 回 38——n020 normal（单职业 1 波）→ elite（swarm_tough+swarm 2 波）
+    //   =节点敌行 751→752、单位行 860→861（apply 清账 806→807 差 1 对账吻合）。
+    // 段2 13 Boss 真机制重定基（旧→新→为什么对）：BOSS_CONTENT 声明落盘——
+    //   单位行 861→868（+7=n140 adds 换型 tough+n312 adds +support+n400 adds 换双职业 +2
+    //     +phase 阶段召唤专属 add 行 ×3〔n312/n400/n450〕+n250 周期召唤 sadd +1）；
+    //   效果行 344→363（+19=eff_boss_* 声明域 18 行+eff_n250_summon 周期召唤 1 行）；
+    //   spawn 845→847（n400/n312 adds 各 1→2 波）；
+    //   phase 26→10（13 Boss 占位 ×2 段 → 声明制：n054/n140/n176/n368 零阶段〔真源机制在
+    //     常态触发器〕+n104/n214/n312/n340/n384/n400 各 1 段+n282/n450 各 2 段=10）。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(868);
     // ⑩A1：+50 驾驶员效果行（eff_pil_*·细表§13）；⑩A2：+8 星核效果行（eff_core_*·小太阳/星鲸/时光糖/护罩/战鼓/贪吃星/烟花·§15）→ 42+50+8+15=115。
     // ⑩A3：+18 舰装备行（张盾/怒吼/冲锋号/催进/微风/致盲领域/侵蚀/联防/普攻变体…）+14 插件行（cdr×5/净化/免疫/援护×4/自愈×3）；⑩A4：+5（污染体两件/污染潮/磁暴场/终Boss全屏）。
     // 机制批③段一：+5（曲率星门 rank_swap/彩虹棱镜弹跳普攻/全息镜召唤/群蜂饱和打击/影刃分裂普攻·6 深坑核+同族挂牌件接线）。
@@ -73,10 +83,10 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   沛L40回血+3★小盾/空3★清场/巡3★溅射无人机弹/护盾传奇自罩盾/小太阳后爆——驾驶员质变+插件传奇接线）。
     // 机制批③段二b：+132（20 舰大节点 L20-L100 档位行 + A/S/SS 质变行 + 蜂针延迟爆/迷雾普攻致盲接真件——
     //   舰侧阶/级装配通道 shipBlocks 的数据面·逐行注"批③2b"）。
-    expect(readTable('battle_effect_param')).toHaveLength(344);
+    expect(readTable('battle_effect_param')).toHaveLength(363);
     expect(readTable('battle_encounter_param')).toHaveLength(448);
-    expect(readTable('battle_spawn_param')).toHaveLength(845);
-    expect(readTable('battle_boss_phase_param')).toHaveLength(26);
+    expect(readTable('battle_spawn_param')).toHaveLength(847);
+    expect(readTable('battle_boss_phase_param')).toHaveLength(10);
   });
 
   it('covers all 17 RT-01 effect types', () => {

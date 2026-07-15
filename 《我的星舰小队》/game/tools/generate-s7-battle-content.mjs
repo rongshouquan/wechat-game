@@ -28,9 +28,14 @@ import { fileURLToPath } from 'node:url';
 import { loadTables, writeTables, serializeTable, LANDING_TABLES } from './enemy-landing-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DIR = path.resolve(HERE, '..', 'assets', 'resources', 'configs', 's7');
+const argv = process.argv.slice(2);
+const dirIdx = argv.indexOf('--dir');
+// --dir：对指定目录副本操作（全链重放守卫/测试用）——mainline 输入与 5 张输出域同目录取。
+const DIR = dirIdx >= 0 && argv[dirIdx + 1]
+  ? path.resolve(argv[dirIdx + 1])
+  : path.resolve(HERE, '..', 'assets', 'resources', 'configs', 's7');
 const SCHEMA = 's7-0.1.0';
-const CHECK = process.argv.includes('--check');
+const CHECK = argv.includes('--check');
 const TEACHING_MAX_NODE = 8; // n001-n008 保留面（§20.1）
 
 const mainline = JSON.parse(readFileSync(path.join(DIR, 'mainline_node_config.sample.json'), 'utf-8'));
@@ -92,26 +97,314 @@ const BOSS_ADDS = {
 const BOSS_ULT_PLACEHOLDER = ['eff_ult_clear_barrage', 'eff_ult_burst_nuke'];
 
 // ============================================================================
-// 格位铺排（敌方 5 行×7 列 r0-r4 × c0-c6·行内从中心 c3 向两侧扩）
+// 手调声明表总目录（段2 立·总控确认的三层手调通道之「生成器声明层」）
+// 红线：磁盘 json 永远=本工具→apply-enemy-landing 两步重放的产物，禁止手改 json 绕公式；
+//   一切手调=写进下面三张声明表，重跑=声明自动重放（守卫=s7_enemy_landing_scripts 全链重放测试）。
+// 分工：血攻防间隔四属性=压力公式独占（apply 层·差异化走 entry BOSS_SHAPE_OVERRIDE 公式参数）；
+//   机制（Boss 行为字段/阶段/专属效果行/adds 波次）=BOSS_CONTENT；格位=FORMATION_OVERRIDE；
+//   精英花样=ELITE_CONTENT（段3 填·本批空表架构）。
+// 效果行三方分域：本工具独管 eff_boss_nXXX_* 域（重跑=先删本域后按声明重建）；
+//   apply 管 eff_nXXX_summon；41 全局行+教学段=手写正文双不碰。
 // ============================================================================
 
-function rowSlots(startRow, count) {
-  const order = [3, 2, 4, 1, 5, 0, 6]; // 行内中心向外
-  const slots = [];
-  let row = startRow;
-  let left = count;
-  while (left > 0 && row <= 4) { // 敌方 5 行封顶（r0-r4）·超行数=配置错误由 validator 拦
-    const take = Math.min(left, 7);
-    slots.push(...order.slice(0, take).sort((a, b) => a - b).map((c) => `r${row}c${c}`));
-    left -= take;
-    row += 1;
-  }
-  return slots;
-}
+/**
+ * BOSS_CONTENT：13 Boss 真机制声明（键=nodeId·值缺省=通用占位弧线）。
+ *   boss:    Boss 行字段覆写（targetingTag/normalEffectRef/ultimateEffectRef/ultimateCdSec/
+ *            coreEffectRef/note…——只写要覆写的键；已存在 Boss 行同样重放=声明是真源）。
+ *   effects: 专属效果行全量字段数组（rowId 必须落 eff_boss_<nodeId>_* 命名域·本工具先删后建）。
+ *   phases:  真阶段数组（{tag,triggerType,triggerValue,effectRefs,summonUnitRefs?,summonCountCap?,note?}
+ *            ·替代 mid/final 通用占位·rowId 生成为 phase_<nodeId>_<tag>）。
+ *   adds:    Boss 场同屏 adds 波次覆写（[[职业后缀,数量],…]·缺省走域主题 BOSS_ADDS）。
+ *   encounter: encounter 行字段覆写（reviveWaves 连战等·只写要覆写的键）。
+ * 填表窗口=段2 13 Boss 手调（严格按敌人真源 §5 对位表）。
+ */
+const BOSS_CONTENT = {
+  // ===== n054 · 首Boss 星盗大副（真源§5 原班·强引导收尾高潮·非墙·掉陨星弹）=====
+  // 「小阵仗」=复用船长"鼓动"+队长"蓄力重轰"，幅度/规模远低于星盗大王；真源无阶段（1 普攻+1 招牌）。
+  n054: {
+    boss: {
+      ultimateEffectRef: 'eff_boss_n054_volley', ultimateCdSec: 12,
+      extraTriggerBlocks: [{ kind: 'trigger', on: 'cd', cdSec: 10, effectRef: 'eff_boss_n054_rally' }],
+      note: 'n054 星盗大副（真源§5 原班·段2 手调）：小阵仗=周期小幅鼓动身边星盗艇+蓄力小狂轰·掉陨星弹',
+    },
+    effects: [
+      { rowId: 'eff_boss_n054_volley', effectKind: 'ultimate', effectType: 'burst_nuke', effectPower: 1.1, targetingTag: 'cross_area', durationSec: 0, maxTargets: 3, stateTag: 'none', summonUnitRef: 'none', note: '大副蓄力小狂轰：对单体/小范围中伤（队长蓄力重轰缩幅·1.5s 蓄力感=演出层）' },
+      { rowId: 'eff_boss_n054_rally', effectKind: 'state', effectType: 'apply_state', effectPower: 0, targetingTag: 'self_block_area', durationSec: 4, maxTargets: 6, stateTag: 'atk_up', stateAmount: 0.15, summonUnitRef: 'none', note: '大副鼓动（船长鼓动缩幅）：身边星盗艇 +15% 攻 4s' },
+    ],
+    phases: [],
+  },
+  // ===== n104 · 墙① 星盗大王（真源§5 原班·群怪主题·两阶段）=====
+  // 阶段1 疯狂鼓动（大幅加攻加速+周期召星盗艇补数量）→阶段2（血50%）蓄力狂轰：引擎阶段=一次性
+  // 触发，"此后持续狂轰"以 mid 触发大 AoE ×1+长时狂暴态（普攻/鼓动全变猛）近似——真源忠实度记档。
+  n104: {
+    boss: {
+      ultimateEffectRef: 'none', ultimateCdSec: 0,
+      extraTriggerBlocks: [
+        { kind: 'trigger', on: 'cd', cdSec: 8, effectRef: 'eff_boss_n104_rally_atk' },
+        { kind: 'trigger', on: 'cd', cdSec: 8, effectRef: 'eff_boss_n104_rally_haste' },
+        { kind: 'trigger', on: 'cd', cdSec: 12, effectRef: 'eff_boss_n104_summon' },
+      ],
+      note: 'n104 星盗大王（真源§5 原班·段2 手调）：阶段1 疯狂鼓动+周期召星盗艇·阶段2（50%）蓄力狂轰+狂暴',
+    },
+    effects: [
+      { rowId: 'eff_boss_n104_rally_atk', effectKind: 'state', effectType: 'apply_state', effectPower: 0, targetingTag: 'self_block_area', durationSec: 6, maxTargets: 6, stateTag: 'atk_up', stateAmount: 0.3, summonUnitRef: 'none', note: '疯狂鼓动·攻（船长鼓动放大）：周围星盗 +30% 攻 6s' },
+      { rowId: 'eff_boss_n104_rally_haste', effectKind: 'state', effectType: 'apply_state', effectPower: 0, targetingTag: 'self_block_area', durationSec: 6, maxTargets: 6, stateTag: 'atk_speed_up', stateAmount: 0.25, summonUnitRef: 'none', note: '疯狂鼓动·速：周围星盗 +25% 攻速 6s' },
+      { rowId: 'eff_boss_n104_summon', effectKind: 'state', effectType: 'summon', effectPower: 0, targetingTag: 'self_team', durationSec: 10, maxTargets: 2, stateTag: 'none', summonUnitRef: 'bu_enemy_swarm', summonExpireSec: 20, despawnWithSource: true, summonSourceCap: 3, note: '周期召星盗艇补数量（击杀召唤源即停=生命周期包）·summonUnitRef 由 apply 节点化' },
+      { rowId: 'eff_boss_n104_wildvolley', effectKind: 'ultimate', effectType: 'basic_damage', effectPower: 1.8, targetingTag: 'block_area', durationSec: 0, maxTargets: 9, stateTag: 'none', summonUnitRef: 'none', note: '蓄力狂轰（队长蓄力重轰放大）：阶段2 宣言·对一片高伤' },
+      { rowId: 'eff_boss_n104_frenzy', effectKind: 'state', effectType: 'berserk', effectPower: 0, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'berserk', summonUnitRef: 'none', note: '阶段2 长时狂暴（蓄力狂轰的常态化近似·真源忠实度记档）' },
+    ],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_boss_n104_wildvolley', 'eff_boss_n104_frenzy'], note: '阶段2「蓄力狂轰」：大 AoE 宣言+此后狂暴（真源两阶段）' },
+    ],
+  },
+  // ===== n140 · 墙② 废铁再生者（Ron 定名变体·机制墙=坟场复活教学）=====
+  n140: {
+    boss: {
+      ultimateEffectRef: 'eff_ult_burst_nuke', ultimateCdSec: 12,
+      selfReviveHpPct: 0.5, selfReviveDelaySec: 1.2,
+      note: 'n140 废铁再生者（变体·Ron 定名·段2 手调）：Boss 死后原地半血复活一次（坟场通道·复活机制教学）+修理机 adds·重轰=废铁直射炮弹语义',
+    },
+    effects: [],
+    phases: [],
+    adds: [['support', 2], ['swarm_tough', 3]], // 修理机 adds（奶别的废铁=点治疗源教学）+滚石挡前
+  },
+  // ===== n176 · 墙③ 废铁泰坦（真源§5 原班·护后排双钥解题墙）=====
+  // 超高血高防+重锤点名后排（targetingTag=backline_first 既有字段）+震荡踏击 AoE+召滚石；
+  // 高血/高防/重锤形状=entry BOSS_SHAPE_OVERRIDE.n176（hpShare .75/armor 60/interval 2.6·公式参数层）。
+  n176: {
+    boss: {
+      targetingTag: 'backline_first',
+      ultimateEffectRef: 'eff_boss_n176_stomp', ultimateCdSec: 11,
+      extraTriggerBlocks: [{ kind: 'trigger', on: 'cd', cdSec: 14, effectRef: 'eff_boss_n176_rocks' }],
+      note: 'n176 废铁泰坦（真源§5 原班·段2 手调）：高血防+重锤点名后排+震荡踏击+召滚石——护后排双钥解题墙',
+    },
+    effects: [
+      { rowId: 'eff_boss_n176_stomp', effectKind: 'ultimate', effectType: 'basic_damage', effectPower: 1.3, targetingTag: 'block_area', durationSec: 0, maxTargets: 9, stateTag: 'none', summonUnitRef: 'none', note: '震荡踏击：周期对一片放【震荡波】AoE（真源原文）' },
+      { rowId: 'eff_boss_n176_rocks', effectKind: 'state', effectType: 'summon', effectPower: 0, targetingTag: 'self_team', durationSec: 10, maxTargets: 2, stateTag: 'none', summonUnitRef: 'bu_enemy_swarm_tough', summonExpireSec: 20, despawnWithSource: true, summonSourceCap: 3, note: '召唤滚石（swarm_tough=滚石机载体·生命周期包）' },
+    ],
+    phases: [],
+  },
+  // ===== n214 · 高潮② 巡卫母垒（Ron 定名变体·全场盾墙演出仗·不卡天）=====
+  n214: {
+    boss: {
+      ultimateEffectRef: 'eff_state_shield', ultimateCdSec: 8,
+      extraTriggerBlocks: [{ kind: 'trigger', on: 'cd', cdSec: 10, effectRef: 'eff_boss_n214_shieldwall' }],
+      note: 'n214 巡卫母垒（变体·Ron 定名·段2 手调）：护盾巡卫放大=自盾循环+周期全场盾墙（破盾题演出仗）',
+    },
+    effects: [
+      { rowId: 'eff_boss_n214_shieldwall', effectKind: 'state', effectType: 'shield', effectPower: 1.5, targetingTag: 'self_team', durationSec: 6, maxTargets: 12, stateTag: 'shield', summonUnitRef: 'none', note: '全场盾墙：给全体敌方上盾（盾卫"能量护盾"放大到全场·演出仗骨架）' },
+    ],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_boss_n214_shieldwall'], note: '第二幕盾墙（高潮演出节拍）' },
+    ],
+  },
+  // ===== n250 · 墙④ 失控母舰（真源§5 原班挪位·护盾主题×连战墙）=====
+  // 阶段1 带护盾+周期召唤无人机（f8c6ae75·ult=BOSS_PERIODIC_SUMMON n250 规则挂·此处不声明 ult）
+  // +红线点名后排；阶段2 破盾后狂暴连射（shield_broken 触发=机制自洽的"两阶段"）；连战=reviveWaves 1。
+  n250: {
+    boss: {
+      extraTriggerBlocks: [
+        { kind: 'trigger', on: 'battle_start', effectRef: 'eff_boss_n250_shield' },
+        { kind: 'trigger', on: 'shield_broken', effectRef: 'eff_boss_n250_frenzy' },
+        { kind: 'trigger', on: 'cd', cdSec: 10, effectRef: 'eff_ult_backline_strike' },
+      ],
+      note: 'n250 失控母舰（真源§5 原班挪位·段2 手调）：阶段1 大盾+周期召无人机（ult=BOSS_PERIODIC_SUMMON 规则）+红线点名后排·阶段2 破盾狂暴连射·连战墙=reviveWaves',
+    },
+    effects: [
+      { rowId: 'eff_boss_n250_shield', effectKind: 'state', effectType: 'shield', effectPower: 4, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'shield', summonUnitRef: 'none', note: '阶段1 大护盾（破盾前几乎免伤·破盾=阶段2 开关）' },
+      { rowId: 'eff_boss_n250_frenzy', effectKind: 'state', effectType: 'berserk', effectPower: 0, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'berserk', summonUnitRef: 'none', note: '阶段2 破盾后狂暴连射（真源原文·shield_broken 触发）' },
+    ],
+    phases: [],
+    adds: [['backline', 2]], // 红线点名塔（真源"红线点名后排"的场面呼应）
+    encounter: { reviveWaves: 1 }, // 墙④连战墙：满血复活连战 ×1（耐力配队·通道①上岗·数值域定报备）
+  },
+  // ===== n282 · 墙⑤ 母舰指挥官（真源§5 原班·召唤主题·两阶段）=====
+  // 阶段1 量产协议（ult=BOSS_PERIODIC_SUMMON n282 cd8=召唤速度更快·不声明 ult）
+  // →阶段2（50%）锁定歼灭：mid/final 两窗点名高伤（"周期点名"以双窗近似·真源忠实度记档）。
+  n282: {
+    boss: {
+      note: 'n282 母舰指挥官（真源§5 原班·段2 手调）：量产协议（周期快召无人机=BOSS_PERIODIC_SUMMON cd8）·血50% 起锁定歼灭点名后排',
+    },
+    effects: [
+      { rowId: 'eff_boss_n282_lockdown', effectKind: 'ultimate', effectType: 'backline_strike', effectPower: 1.6, targetingTag: 'backline_first', durationSec: 0, maxTargets: 2, stateTag: 'none', summonUnitRef: 'none', note: '锁定歼灭：红线锁定后排打持续射线高伤（点名者机制放大）' },
+      { rowId: 'eff_boss_n282_frenzy', effectKind: 'state', effectType: 'berserk', effectPower: 0, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'berserk', summonUnitRef: 'none', note: '残血狂暴（终段压迫）' },
+    ],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_boss_n282_lockdown'], note: '阶段2「锁定歼灭」开窗：点名后排高伤' },
+      { tag: 'final', triggerType: 'hp_pct_below', triggerValue: 20, effectRefs: ['eff_boss_n282_lockdown', 'eff_boss_n282_frenzy'], note: '终段：再点名+狂暴' },
+    ],
+  },
+  // ===== n312 · 墙⑥ 量产中枢（Ron 定名变体·母舰召唤放大×复活波次=反召唤+耐力双考）=====
+  n312: {
+    boss: {
+      note: 'n312 量产中枢（变体·Ron 定名·段2 手调）：母舰召唤放大（BOSS_PERIODIC_SUMMON cd6）×复活波次连战——反召唤+耐力双考（解题+连战叠加墙）',
+    },
+    effects: [],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, summonUnitRefs: ['bu_enemy_boss_add', 'bu_enemy_boss_add', 'bu_enemy_boss_add', 'bu_enemy_boss_add'], summonCountCap: 4, effectRefs: ['eff_state_vulnerable'], note: '血50% 爆产一波+召唤硬直易伤窗（量产放大的阶段宣言·validator 要求 effectRefs 非空）' },
+    ],
+    adds: [['summon_source', 2], ['support', 2]], // 母舰单元+修理机（点源优先级=解题成分）
+    encounter: { reviveWaves: 1 },
+  },
+  // ===== n340 · 高潮③ 污染巨兽（真源§5 原班挪位·爆发主题·挂起测换载体位）=====
+  n340: {
+    boss: {
+      normalEffectRef: 'eff_normal_polluted',
+      extraTriggerBlocks: [{ kind: 'trigger', on: 'cd', cdSec: 12, effectRef: 'eff_pollution_tide' }],
+      stackRules: [{ ruleId: 'n340_time_rage', on: 'per_second', stat: 'atkPct', perStack: 0.02 }],
+      note: 'n340 污染巨兽（真源§5 原班挪位·段2 手调）：污染潮（cd12 全屏+全队燃烧）+随时间狂暴（+2%攻/s）+阶段召污染体——验限时爆发+净化+护罩',
+    },
+    effects: [],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, summonUnitRefs: ['bu_enemy_pollution', 'bu_enemy_pollution'], summonCountCap: 2, effectRefs: ['eff_state_vulnerable'], note: '阶段召唤污染体+召唤硬直易伤窗（真源载体·⑩A4 先例）' },
+    ],
+  },
+  // ===== n368 · 墙⑦ 污染之心（Ron 定名变体·机制+解题叠加墙=净化+护罩双钥·A7 主流度说明在册）=====
+  n368: {
+    boss: {
+      normalEffectRef: 'eff_normal_polluted',
+      extraTriggerBlocks: [
+        { kind: 'trigger', on: 'on_hit', effectRef: 'eff_pollution_spray' },
+        { kind: 'trigger', on: 'cd', cdSec: 10, effectRef: 'eff_pollution_tide' },
+      ],
+      stackRules: [{ ruleId: 'n368_hit_rage', on: 'was_hit', stat: 'atkPct', perStack: 0.06 }],
+      note: 'n368 污染之心（变体·Ron 定名·段2 手调）：受击狂暴（+6%/次=污染体放大）+喷毒放大（命中挂燃烧）+周期污染潮——净化+护罩双钥（钥匙=宝库流通②·A7 说明书）',
+    },
+    effects: [],
+    phases: [],
+  },
+  // ===== n384 · 前哨 风暴哨兵（Ron 定名变体·锁定打击放大+快节奏·毕业核货架亮起位·不卡天）=====
+  // 快节奏形状=BOSS_SHAPE_OVERRIDE.n384（interval 1.4 快锤）。
+  n384: {
+    boss: {
+      ultimateEffectRef: 'eff_boss_n384_lock', ultimateCdSec: 8,
+      note: 'n384 风暴哨兵（变体·Ron 定名·段2 手调）：锁定打击放大+增幅域快节奏（毕业核货架进度闩位=vaultGradUnlockNode 384）',
+    },
+    effects: [
+      { rowId: 'eff_boss_n384_lock', effectKind: 'ultimate', effectType: 'backline_strike', effectPower: 1.5, targetingTag: 'backline_first', durationSec: 0, maxTargets: 2, stateTag: 'none', summonUnitRef: 'none', note: '锁定打击放大（点名者机制·快节奏 cd8）' },
+      { rowId: 'eff_boss_n384_frenzy', effectKind: 'state', effectType: 'berserk', effectPower: 0, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'berserk', summonUnitRef: 'none', note: '半血狂暴（前哨硬仗压迫）' },
+    ],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_boss_n384_frenzy'], note: '半血狂暴（硬仗档·不卡天）' },
+    ],
+  },
+  // ===== n400 · 墙⑧ 风暴壁垒（Ron 定名变体·战力+连战叠加墙=重装群海+复活波次连战）=====
+  // 波次击杀密度=超新星连环引爆舞台（A 案 −1.5s/杀·reviveWaves 2=三遍海量击杀）；重装形状=SHAPE_OVERRIDE.n400。
+  n400: {
+    boss: {
+      ultimateEffectRef: 'eff_ult_clear_barrage', ultimateCdSec: 10,
+      note: 'n400 风暴壁垒（变体·Ron 定名·段2 手调）：重装群海+复活波次连战 ×2——波次击杀密度=超新星连环引爆舞台（毕业核钥匙墙·A7 说明书）',
+    },
+    effects: [],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 50, summonUnitRefs: ['bu_enemy_boss_add', 'bu_enemy_boss_add', 'bu_enemy_boss_add', 'bu_enemy_boss_add'], summonCountCap: 4, effectRefs: ['eff_state_vulnerable'], note: '半血再爆一波海+召唤硬直易伤窗（击杀密度舞台）' },
+    ],
+    adds: [['swarm_tough', 4], ['shield', 3]], // 重装群海：滚石肉墙+自盾敌
+    encounter: { reviveWaves: 2 }, // 连战 ×2（数值域定报备·矩阵卡天最重墙+超新星舞台=击杀总量×3）
+  },
+  // ===== n450 · 墙⑨ 星能污染核心（真源§5 原班终Boss·3 阶段·六规则全叠载体·挂起测换载体位）=====
+  // 真源：阶段1 护盾、阶段2 召唤+后排点名、阶段3 狂暴全屏（先狂暴后全屏=§20.11 A4④ 旧 n150 效果序迁移）。
+  n450: {
+    boss: {
+      normalEffectRef: 'eff_normal_polluted',
+      extraTriggerBlocks: [{ kind: 'trigger', on: 'battle_start', effectRef: 'eff_boss_n450_shield' }],
+      note: 'n450 星能污染核心（真源§5 原班终Boss·段2 手调）：3 阶段=开局护盾→召唤+点名→狂暴全屏（毕业战·六规则全叠的 Boss 本体）',
+    },
+    effects: [
+      { rowId: 'eff_boss_n450_shield', effectKind: 'state', effectType: 'shield', effectPower: 4, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'shield', summonUnitRef: 'none', note: '阶段1 护盾（破盾=毕业战第一课）' },
+      { rowId: 'eff_boss_n450_frenzy', effectKind: 'state', effectType: 'berserk', effectPower: 0, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'berserk', summonUnitRef: 'none', note: '阶段3 狂暴（先狂暴后全屏=效果序）' },
+    ],
+    phases: [
+      { tag: 'mid', triggerType: 'hp_pct_below', triggerValue: 60, effectRefs: ['eff_ult_backline_strike'], summonUnitRefs: ['bu_enemy_pollution', 'bu_enemy_boss_add', 'bu_enemy_boss_add'], summonCountCap: 3, note: '阶段2（mid@60）：召唤（污染体+无人机）+后排点名（phaseTag 值域=mid/final·3 阶段=开局盾+mid+final）' },
+      { tag: 'final', triggerType: 'hp_pct_below', triggerValue: 25, effectRefs: ['eff_boss_n450_frenzy', 'eff_s7_cataclysm'], note: '阶段3：狂暴全屏（eff_s7_cataclysm=⑩A4 载体迁移）' },
+    ],
+  },
+};
 
-/** 一波占用的行数（跨行铺格后，下一波从其下一行起=波间零格冲突）。 */
-function rowsUsed(count) {
-  return Math.max(1, Math.ceil(count / 7));
+/**
+ * FORMATION_OVERRIDE：节点关摆阵手调（键=nodeId·全关级声明——该关所有波格位一次给全，
+ *   缺波=throw 防"半截手调"）。boss='rXcY'（Boss 锚格）；waves=[slotRefs[],…] 按该关
+ *   spawn 生成顺序对位（Boss 关=adds 波序·普通/精英关=w1,w2,…）。
+ * 手调者自保零撞格+版图合法（validator 兜格位语法·引擎 canPlace 兜冲突·s7-formation-check 兜美感）。
+ * 填表窗口=段2 节点关摆阵（13 Boss+38 精英·C 项②）。
+ */
+const FORMATION_OVERRIDE = {
+  // ===== 13 Boss 逐关手调（C 项②·Ron 摆阵美感规格：左右对称/阵心居中/自然有构图）=====
+  // 契约：boss=2×2 锚格；waves 按 adds 波序给全（全关级声明）；全部关于 r2 镜像对称；
+  // 构图跟机制走（奶后置/塔深藏/盾墙前压/壁垒两层……）——"阵"感为机制服务。
+  // 38 精英：走量对称版式先行；个性摆位（奇阵=阵型即花样本体）随段3 ELITE_CONTENT 花样载体一体落。
+  n054: { boss: 'r1c2', waves: [['r0c0', 'r2c0', 'r4c0', 'r1c1', 'r3c1']] }, // 大副小阵仗：疏扇前哨+双亲兵——"小弟拱卫"
+  n104: { boss: 'r1c2', waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0', 'r2c1']] }, // 大王：洞心横列+亲兵居中——"众星拱月"
+  n140: { boss: 'r1c2', waves: [['r1c4', 'r3c4'], ['r1c0', 'r2c0', 'r3c0']] }, // 再生者：修理机藏 Boss 身后（点治疗源教学的视觉表达）+滚石挡前
+  n176: { boss: 'r1c2', waves: [['r0c1', 'r4c1'], ['r1c4', 'r3c4']] }, // 泰坦：磁暴塔两翼+修理机后勤——重锤居中塔翼奶后
+  n214: { boss: 'r1c2', waves: [['r0c0', 'r2c0', 'r4c0']] }, // 巡卫母垒：疏排盾墙横陈中线——"盾墙演出"开幕构图
+  n250: { boss: 'r1c2', waves: [['r1c5', 'r3c5']] }, // 失控母舰：点名塔深藏最后层（红线从纵深射出=护后排考题的画面语言）
+  n282: { boss: 'r1c2', waves: [['r0c1', 'r4c1']] }, // 指挥官：母舰单元两翼量产线
+  n312: { boss: 'r1c2', waves: [['r0c0', 'r4c0'], ['r1c4', 'r3c4']] }, // 量产中枢：前置车间+后勤奶——纵深流水线
+  n340: { boss: 'r1c2', waves: [['r0c0', 'r2c0', 'r4c0']] }, // 污染巨兽：污染体疏排毒雾前线
+  n368: { boss: 'r1c2', waves: [['r1c0', 'r2c0', 'r3c0']] }, // 污染之心：紧凑毒心卫队
+  n384: { boss: 'r1c2', waves: [['r1c0', 'r2c0', 'r3c0']] }, // 风暴哨兵：突击楔（快节奏前压）
+  n400: { boss: 'r1c2', waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0'], ['r1c1', 'r2c1', 'r3c1']] }, // 风暴壁垒：洞心肉墙+二线盾——两层壁垒名实相符
+  n450: { boss: 'r1c3', waves: [['r0c1', 'r2c1', 'r4c1']] }, // 终Boss：锚深一层（c3-c4·压轴纵深）+污染体环卫·c0 留白=决战开阔感
+};
+
+/**
+ * ELITE_CONTENT：精英花样声明（结构对齐 BOSS_CONTENT 的 effects/波次思路·词缀/奇阵/斩首/
+ *   镜像/复活连战/福利六族载体）——段3 填表，本批只立架构空表（越段内容一格不填=总控边界备忘）。
+ */
+const ELITE_CONTENT = {};
+
+/** eff_boss_nXXX_* 命名域正则（本工具独管·与 apply 的 eff_nXXX_summon 域零交集）。 */
+const BOSS_EFFECT_RE = /^eff_boss_n\d+_/;
+
+// ============================================================================
+// 格位铺排 v2（C① 摆阵美感规格·Ron 2026-07-15 立·memory enemy-formation-aesthetics）
+// 坐标契约（引擎/演出层实读钉死·B0.7 s7FieldVisualCell+S7AutoBattleEngine.dist=ec+1+(2-pc)+|pr-er|）：
+//   row=屏幕横向（r0-r4·对称轴 r2）、col=纵深（c0 贴中线=最靠玩家·c6 最深）。
+// 规格三条落法：①左右基本对称=每层（同 col）row 集关于 r2 镜像；②阵心=横向居中由 r2 轴天然
+//   满足，纵深沿"贴中线起"铺（与旧世界"铺前排"手感口径一致·纵深整体偏移的自由留节点关手调层）；
+//   ③自然禁棋盘=禁 5 连横（[0..4] 全占版式不入库）+层间错行（相邻层集合互异出楔形/箭头感）+
+//   同 count 多版式按 (节点号×7+波序) 确定性轮换（域内有变化·零随机可重放）。
+// 旧 rowSlots（col 中心向外+row 递增）在 B0.7 语义下实际产出"纵深纵队串"（n104 adds
+//   r2c1..r2c5 磁盘实录），随本版退役（段2 C①）。教学段 n001-n008 spawn 原行保留不套本规格。
+// ============================================================================
+
+/** 同 count 对称版式库：每版式=层序列，层=关于 r2 镜像对称的 row 集（升序）。全库无 [0,1,2,3,4] 五连横。 */
+const LAYER_PATTERNS = {
+  1: [[[2]]],
+  2: [[[1, 3]], [[0, 4]]],
+  3: [[[1, 2, 3]], [[0, 2, 4]]],
+  4: [[[0, 1, 3, 4]], [[1, 3], [1, 3]]],
+  5: [[[1, 2, 3], [1, 3]], [[0, 1, 3, 4], [2]]],
+  6: [[[1, 2, 3], [1, 2, 3]], [[0, 1, 3, 4], [1, 3]]],
+  7: [[[0, 1, 3, 4], [1, 2, 3]], [[1, 2, 3], [0, 1, 3, 4]]],
+  8: [[[0, 1, 3, 4], [0, 1, 3, 4]], [[0, 2, 4], [1, 3], [0, 2, 4]]],
+  9: [[[0, 1, 3, 4], [1, 2, 3], [1, 3]], [[0, 2, 4], [1, 2, 3], [0, 2, 4]]],
+  10: [[[0, 1, 3, 4], [1, 2, 3], [1, 2, 3]], [[0, 1, 3, 4], [1, 3], [0, 1, 3, 4]]],
+  11: [[[0, 1, 3, 4], [1, 2, 3], [0, 1, 3, 4]]],
+  12: [[[0, 1, 3, 4], [0, 1, 3, 4], [0, 1, 3, 4]]],
+};
+
+/** 对称铺格：count 只从 fromCol 层起纵深铺，返回格位表＋占用层数（下一波从其后层起=波间零格冲突）。 */
+function symmetricSlots(count, fromCol, variantSeed) {
+  const patterns = LAYER_PATTERNS[count];
+  let layers;
+  if (patterns) {
+    layers = patterns[variantSeed % patterns.length];
+  } else {
+    // >12 兜底：4 只/层洞心阵循环+余数层查表（走量波次现值 ≤12·此支为参数变更保险）。
+    layers = [];
+    let left = count;
+    while (left > 4) { layers.push([0, 1, 3, 4]); left -= 4; }
+    layers.push(...LAYER_PATTERNS[left][0]);
+  }
+  const slots = [];
+  layers.forEach((rows, li) => {
+    const col = fromCol + li;
+    if (col > 6) throw new Error(`纵深越界：fromCol=${fromCol} 层数=${layers.length}（敌方 7 列封顶）`);
+    for (const r of rows) slots.push(`r${r}c${col}`);
+  });
+  return { slots, layersUsed: layers.length };
 }
 
 // ============================================================================
@@ -137,7 +430,13 @@ function buildBundle(tables) {
   let ultIdx = 0;
   for (const nodeId of bossNums) {
     const rowId = `bu_boss_${nodeId}`;
-    if (existingBoss.has(rowId)) continue; // 已有行保留（重跑幂等/段 2 手调后不被冲掉——本工具只建缺失骨架）
+    const decl = BOSS_CONTENT[nodeId];
+    const existing = keptUnits.find((r) => r.rowId === rowId);
+    if (existing) {
+      // 已有行保留骨架值（血攻防=apply 落数域不碰）；BOSS_CONTENT.boss 声明字段每次重放=声明是真源。
+      if (decl?.boss) Object.assign(existing, decl.boss);
+      continue;
+    }
     const node = mainline.find((r) => r.nodeId === nodeId);
     keptUnits.push({
       ...bossTemplateRow,
@@ -150,10 +449,24 @@ function buildBundle(tables) {
       ultimateCdSec: 10,
       coreEffectRef: 'none',
       note: `${nodeId} Boss 骨架占位（450 关走量·域主题=${node.problemTagRef}·真机制=段2 对位真源§5 手调）`,
+      ...(decl?.boss ?? {}),
     });
     stat.bossRows += 1;
   }
   tables.battle_unit_stat_param = keptUnits;
+
+  // —— eff_boss_nXXX_* 效果域：本工具独管——先删本域全部行，再按 BOSS_CONTENT 声明重建（重跑=声明重放）。
+  const keptEffects = tables.battle_effect_param.filter((r) => !BOSS_EFFECT_RE.test(r.rowId));
+  for (const [nodeId, decl] of Object.entries(BOSS_CONTENT)) {
+    for (const eff of decl.effects ?? []) {
+      if (!eff.rowId || !eff.rowId.startsWith(`eff_boss_${nodeId}_`)) {
+        throw new Error(`BOSS_CONTENT[${nodeId}] 效果行 rowId 必须落 eff_boss_${nodeId}_* 命名域：${eff.rowId}`);
+      }
+      keptEffects.push({ schemaVersion: SCHEMA, ...eff });
+      stat.bossEffects = (stat.bossEffects ?? 0) + 1;
+    }
+  }
+  tables.battle_effect_param = keptEffects;
 
   // —— encounter/spawn/phase：教学段 n001-n008 原行保留，n009+ 全重建。
   // 教学段保留面=敌配属性/波次/格位一字不动；stageType 标签跟 mainline 对齐
@@ -183,23 +496,42 @@ function buildBundle(tables) {
     const spawnRefs = [];
     const unitRefs = new Set();
 
+    // 全关级摆阵手调声明（FORMATION_OVERRIDE·有=该关所有波格位显式给全，缺波=throw 防半截手调）。
+    const fo = FORMATION_OVERRIDE[nodeId];
+    const overrideWave = (waveIdx0, fallbackFn) => {
+      if (!fo) return fallbackFn();
+      const slots = fo.waves?.[waveIdx0];
+      if (!slots) throw new Error(`FORMATION_OVERRIDE[${nodeId}] 缺第 ${waveIdx0 + 1} 波格位（全关级声明必须给全）`);
+      return { slots, layersUsed: 0 }; // 显式格表不参与层推进（手调者自保零撞格）
+    };
+
     if (isBoss) {
       const bossRowId = `bu_boss_${nodeId}`;
+      // Boss 2×2 锚 r1c2（占 r1-r2 × c2-c3）：几何中心横向偏轴 0.5 格=5 横位场对偶宽件无整数
+      // 居中解，属规格"基本对称"容差（旧 r0c2=占 r0-r1 贴横向最左·随 C① 修正）；纵深 c2 起
+      // =身前 c0-c1 留给 adds 挡刀层（零占格冲突·layersUsed 断言防撞）。逐关微调=FORMATION_OVERRIDE 手调层。
       newSpawn.push({
         schemaVersion: SCHEMA, rowId: `spawn_${nodeId}_boss`, encounterRef: `enc_${nodeId}`, waveIndex: 1,
-        unitStatRef: bossRowId, count: 1, slotRefs: ['r0c2'], spawnDelaySec: 0, maxConcurrentOnField: 12,
+        unitStatRef: bossRowId, count: 1, slotRefs: [fo?.boss ?? 'r1c2'], spawnDelaySec: 0, maxConcurrentOnField: 12,
         note: `enc_${nodeId} 第1波：${bossRowId} x1`,
       });
       spawnRefs.push(`spawn_${nodeId}_boss`);
       unitRefs.add(bossRowId);
-      const adds = BOSS_ADDS[tag] ?? BOSS_ADDS.swarm;
+      const decl = BOSS_CONTENT[nodeId];
+      const adds = decl?.adds ?? BOSS_ADDS[tag] ?? BOSS_ADDS.swarm;
       let addWave = 0;
+      let addsCol = 0; // adds 从 c0 贴中线起逐层铺（Boss 身前挡刀语义）
       for (const [suffix, count] of adds) {
         addWave += 1;
         const sid = `spawn_${nodeId}_adds${adds.length > 1 ? addWave : ''}`;
+        // Boss 场 adds 版式固定首版（每 count 最紧凑=层数最少）：c0-c1 仅两层预算（Boss 占 c2 起），
+        // 多层变体（如 4 只的 2×2 方阵）会挤爆断言——版式变化留给普通关（7 层纵深充裕）。
+        const { slots, layersUsed } = overrideWave(addWave - 1, () => symmetricSlots(count, addsCol, 0));
+        addsCol += layersUsed;
+        if (!fo && addsCol > 2) throw new Error(`${nodeId} Boss adds 层数越过 Boss 占格（c2 起）：走量 adds 必须 ≤2 层`);
         newSpawn.push({
           schemaVersion: SCHEMA, rowId: sid, encounterRef: `enc_${nodeId}`, waveIndex: 1,
-          unitStatRef: `bu_enemy_${suffix}`, count, slotRefs: rowSlots(2 + (addWave - 1), count),
+          unitStatRef: `bu_enemy_${suffix}`, count, slotRefs: slots,
           spawnDelaySec: 0, maxConcurrentOnField: 12,
           note: `enc_${nodeId} 第1波 adds：bu_enemy_${suffix} x${count}`,
         });
@@ -208,33 +540,47 @@ function buildBundle(tables) {
         // （bu_nXXX_add 是 phase 召唤专属行名·3%/6% 特殊份额，spawn 面不用）。
         unitRefs.add(`bu_${nodeId}_${suffix}`);
       }
-      // Boss 阶段占位（通用两段弧线：血50% 易伤窗 → 血20% 爆发窗）；真阶段=段 2 手调。
-      newPhases.push({
-        schemaVersion: SCHEMA, rowId: `phase_${nodeId}_mid`, bossNodeId: nodeId, phaseTag: 'mid',
-        triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_state_vulnerable'],
-        summonUnitRefs: [], summonCountCap: 0, note: '中段易伤窗占位（450 关走量·真阶段=段2 对位手调）',
-      });
-      newPhases.push({
-        schemaVersion: SCHEMA, rowId: `phase_${nodeId}_final`, bossNodeId: nodeId, phaseTag: 'final',
-        triggerType: 'hp_pct_below', triggerValue: 20, effectRefs: ['eff_ult_burst_nuke'],
-        summonUnitRefs: [], summonCountCap: 0, note: '残血爆发窗占位（450 关走量·真阶段=段2 对位手调）',
-      });
-      stat.phases += 2;
+      // Boss 阶段：BOSS_CONTENT.phases 声明真阶段（重跑=声明重放）；无声明=通用两段占位弧线
+      // （血50% 易伤窗 → 血20% 爆发窗）。
+      if (decl?.phases) {
+        for (const p of decl.phases) {
+          newPhases.push({
+            schemaVersion: SCHEMA, rowId: `phase_${nodeId}_${p.tag}`, bossNodeId: nodeId, phaseTag: p.tag,
+            triggerType: p.triggerType, triggerValue: p.triggerValue, effectRefs: p.effectRefs,
+            summonUnitRefs: p.summonUnitRefs ?? [], summonCountCap: p.summonCountCap ?? 0,
+            note: p.note ?? `${nodeId} 真阶段（段2 BOSS_CONTENT 声明·对位真源§5）`,
+          });
+          stat.phases += 1;
+        }
+      } else {
+        newPhases.push({
+          schemaVersion: SCHEMA, rowId: `phase_${nodeId}_mid`, bossNodeId: nodeId, phaseTag: 'mid',
+          triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_state_vulnerable'],
+          summonUnitRefs: [], summonCountCap: 0, note: '中段易伤窗占位（450 关走量·真阶段=段2 对位手调）',
+        });
+        newPhases.push({
+          schemaVersion: SCHEMA, rowId: `phase_${nodeId}_final`, bossNodeId: nodeId, phaseTag: 'final',
+          triggerType: 'hp_pct_below', triggerValue: 20, effectRefs: ['eff_ult_burst_nuke'],
+          summonUnitRefs: [], summonCountCap: 0, note: '残血爆发窗占位（450 关走量·真阶段=段2 对位手调）',
+        });
+        stat.phases += 2;
+      }
     } else {
       const variants = NORMAL_WAVES[tag] ?? NORMAL_WAVES.swarm;
       const plan = isElite ? (ELITE_WAVES[tag] ?? ELITE_WAVES.swarm) : variants[num % variants.length];
       let wave = 0;
-      let nextRow = 0; // 波间从上一波占用行的下一行起铺=零格冲突
+      let nextCol = 0; // 波间从上一波占用层（纵深）的下一层起铺=零格冲突
       for (const [suffix, count] of plan) {
         wave += 1;
         const sid = `spawn_${nodeId}_w${wave}`;
+        const { slots, layersUsed } = overrideWave(wave - 1, () => symmetricSlots(count, nextCol, num * 7 + wave));
         newSpawn.push({
           schemaVersion: SCHEMA, rowId: sid, encounterRef: `enc_${nodeId}`, waveIndex: wave,
-          unitStatRef: `bu_enemy_${suffix}`, count, slotRefs: rowSlots(nextRow, count),
+          unitStatRef: `bu_enemy_${suffix}`, count, slotRefs: slots,
           spawnDelaySec: wave === 1 ? 0 : 5, maxConcurrentOnField: 14,
           note: `enc_${nodeId} 第${wave}波：bu_enemy_${suffix} x${count}`,
         });
-        nextRow += rowsUsed(count);
+        nextCol += layersUsed;
         spawnRefs.push(sid);
         unitRefs.add(`bu_${nodeId}_${suffix}`);
       }
@@ -251,11 +597,15 @@ function buildBundle(tables) {
       pressureRef: isBoss ? `bp_${nodeId}` : `np_${node.starfieldId}`,
       enemyUnitStatRefs: [...unitRefs],
       spawnPlanRefs: spawnRefs,
-      bossPhaseRefs: isBoss ? [`phase_${nodeId}_mid`, `phase_${nodeId}_final`] : [],
+      bossPhaseRefs: isBoss
+        ? (BOSS_CONTENT[nodeId]?.phases?.map((p) => `phase_${nodeId}_${p.tag}`)
+          ?? [`phase_${nodeId}_mid`, `phase_${nodeId}_final`])
+        : [],
       playerSlotPolicy: 'five_ship_3x3_default',
       timeLimitSec: 120,
       battleSeedPolicy: 'node_id_plus_run_seed',
       note: `${nodeId} ${stage === 'boss' ? 'Boss关' : stage === 'elite' ? '精英关' : '普通关'}·${tag} 主题（450 关走量）`,
+      ...(isBoss ? (BOSS_CONTENT[nodeId]?.encounter ?? {}) : {}), // 声明覆写（reviveWaves 连战等·重放）
     });
     stat.encounters += 1;
     stat.spawns = newSpawn.length;

@@ -694,6 +694,12 @@ export interface S7BattleUnitStatParam {
   /** 机制批③段二b 可选（亡语通道·哨卫A「诱饵盒被打爆反击」）：本单位死亡清理时以自身为锚释放此效果行
    *  （攻击力按本行 attack 快照·区域以死亡时锚点格算）。缺省缺席=零行为。 */
   onDeathEffectRef?: string;
+  /** 段2 通道②可选（坟场复活·敌人真源 sf02 域规则+n140 废铁再生者）：本单位死亡后原地复活一次，
+   *  血量=maxHp×此比例（0-1 制·真源"半血"=0.5）。每单位每场限一次；原地被占自动找空格、
+   *  满场无格=复活作废。缺省缺席=零行为。 */
+  selfReviveHpPct?: number;
+  /** 段2 通道②可选：死亡→复活的延迟秒（"击杀→原地复活"的表现喘息拍）。缺省=0.8s（数值域定·报备）。 */
+  selfReviveDelaySec?: number;
   coreEffectRef: string;
   note: string;
 }

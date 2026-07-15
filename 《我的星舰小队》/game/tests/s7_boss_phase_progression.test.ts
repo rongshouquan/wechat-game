@@ -42,17 +42,30 @@ async function loadRuntime(bossHpOverride: number): Promise<{ runtime: S7ConfigR
   for (const r of bundle['battle_unit_stat_param'] as { rowId: string; attack: number }[]) {
     if ((r as { rowId: string }).rowId === 'bu_enemy_swarm') r.attack = 1;
   }
-  // fixture 补 start 段（占位 Boss 磁盘态只有 mid/final·内存补齐三段=三阶段时序覆盖）。
+  // 段2 重定基：n054 磁盘=真机制（真源"小阵仗"无阶段·phases 声明为空=零 phase 行）——
+  // 本测=载体无关的三阶段引擎时序验收，三段全量 fixture 自给（旧"补 start+引用磁盘占位段"升级）。
   (bundle['battle_boss_phase_param'] as Array<Record<string, unknown>>).push({
     schemaVersion: 's7-0.1.0', rowId: 'phase_n054_start', bossNodeId: 'n054', phaseTag: 'start',
     triggerType: 'battle_start', triggerValue: 0, effectRefs: ['eff_state_shield'],
     summonUnitRefs: [], summonCountCap: 0, note: 'fixture 补 start 段（三阶段时序覆盖）',
+  }, {
+    schemaVersion: 's7-0.1.0', rowId: 'phase_n054_mid_fx', bossNodeId: 'n054', phaseTag: 'mid',
+    triggerType: 'hp_pct_below', triggerValue: 50, effectRefs: ['eff_state_vulnerable'],
+    summonUnitRefs: [], summonCountCap: 0, note: 'fixture 补 mid 段（磁盘真机制零阶段·三段自给）',
+  }, {
+    schemaVersion: 's7-0.1.0', rowId: 'phase_n054_final_fx', bossNodeId: 'n054', phaseTag: 'final',
+    triggerType: 'hp_pct_below', triggerValue: 20, effectRefs: ['eff_ult_burst_nuke'],
+    summonUnitRefs: [], summonCountCap: 0, note: 'fixture 补 final 段（三段自给）',
   });
   for (const r of bundle['battle_encounter_param'] as { rowId: string; enemyUnitStatRefs: string[]; bossPhaseRefs?: string[] }[]) {
     if (r.rowId === 'enc_n054') {
       r.enemyUnitStatRefs = ['bu_boss_n054', 'bu_enemy_swarm']; // 校验器要求 spawn ref ∈ enc refs
-      r.bossPhaseRefs = ['phase_n054_start', 'phase_n054_mid', 'phase_n054_final'];
+      r.bossPhaseRefs = ['phase_n054_start', 'phase_n054_mid_fx', 'phase_n054_final_fx'];
     }
+  }
+  // 隔离面：n054 真机制（周期鼓动 rally）不属"阶段切换时序"验证面，清空防干扰。
+  for (const r of bundle['battle_unit_stat_param'] as Array<Record<string, unknown>>) {
+    if (r.rowId === 'bu_boss_n054') delete r.extraTriggerBlocks; // validator：字段存在须非空——删除=缺席
   }
   const runtime = await S7ConfigRuntime.load(createInMemoryS7TableReader(bundle as never));
   return { runtime, model: S7MainlineModel.fromRuntime(runtime) };

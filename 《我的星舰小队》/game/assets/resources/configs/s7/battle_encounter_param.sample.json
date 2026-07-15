@@ -369,12 +369,13 @@
     "schemaVersion": "s7-0.1.0",
     "rowId": "enc_n020",
     "nodeRef": "n020",
-    "stageType": "normal",
+    "stageType": "elite",
     "templateRef": "t01",
     "problemTagRef": "swarm",
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf01",
     "enemyUnitStatRefs": [
+      "bu_n020_swarm_tough",
       "bu_n020_swarm"
     ],
     "spawnPlanRefs": [
@@ -385,7 +386,7 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n020 普通关·swarm 主题（450 关走量）"
+    "note": "n020 精英关·swarm 主题（450 关走量）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -1115,10 +1116,7 @@
       "spawn_n054_boss",
       "spawn_n054_adds"
     ],
-    "bossPhaseRefs": [
-      "phase_n054_mid",
-      "phase_n054_final"
-    ],
+    "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
@@ -2197,8 +2195,7 @@
       "spawn_n104_adds"
     ],
     "bossPhaseRefs": [
-      "phase_n104_mid",
-      "phase_n104_final"
+      "phase_n104_mid"
     ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
@@ -3033,18 +3030,15 @@
     "pressureRef": "bp_n140",
     "enemyUnitStatRefs": [
       "bu_boss_n140",
-      "bu_n140_stormtower",
-      "bu_n140_support"
+      "bu_n140_support",
+      "bu_n140_swarm_tough"
     ],
     "spawnPlanRefs": [
       "spawn_n140_boss",
       "spawn_n140_adds1",
       "spawn_n140_adds2"
     ],
-    "bossPhaseRefs": [
-      "phase_n140_mid",
-      "phase_n140_final"
-    ],
+    "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
@@ -3887,10 +3881,7 @@
       "spawn_n176_adds1",
       "spawn_n176_adds2"
     ],
-    "bossPhaseRefs": [
-      "phase_n176_mid",
-      "phase_n176_final"
-    ],
+    "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
@@ -4759,8 +4750,7 @@
       "spawn_n214_adds"
     ],
     "bossPhaseRefs": [
-      "phase_n214_mid",
-      "phase_n214_final"
+      "phase_n214_mid"
     ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
@@ -5574,20 +5564,18 @@
     "pressureRef": "bp_n250",
     "enemyUnitStatRefs": [
       "bu_boss_n250",
-      "bu_n250_shield"
+      "bu_n250_backline"
     ],
     "spawnPlanRefs": [
       "spawn_n250_boss",
       "spawn_n250_adds"
     ],
-    "bossPhaseRefs": [
-      "phase_n250_mid",
-      "phase_n250_final"
-    ],
+    "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n250 Boss关·shield 主题（450 关走量）"
+    "note": "n250 Boss关·shield 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -7003,20 +6991,22 @@
     "pressureRef": "bp_n312",
     "enemyUnitStatRefs": [
       "bu_boss_n312",
-      "bu_n312_summon_source"
+      "bu_n312_summon_source",
+      "bu_n312_support"
     ],
     "spawnPlanRefs": [
       "spawn_n312_boss",
-      "spawn_n312_adds"
+      "spawn_n312_adds1",
+      "spawn_n312_adds2"
     ],
     "bossPhaseRefs": [
-      "phase_n312_mid",
-      "phase_n312_final"
+      "phase_n312_mid"
     ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n312 Boss关·summon 主题（450 关走量）"
+    "note": "n312 Boss关·summon 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -7657,8 +7647,7 @@
       "spawn_n340_adds"
     ],
     "bossPhaseRefs": [
-      "phase_n340_mid",
-      "phase_n340_final"
+      "phase_n340_mid"
     ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
@@ -8302,10 +8291,7 @@
       "spawn_n368_boss",
       "spawn_n368_adds"
     ],
-    "bossPhaseRefs": [
-      "phase_n368_mid",
-      "phase_n368_final"
-    ],
+    "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
@@ -8657,8 +8643,7 @@
       "spawn_n384_adds"
     ],
     "bossPhaseRefs": [
-      "phase_n384_mid",
-      "phase_n384_final"
+      "phase_n384_mid"
     ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
@@ -9003,20 +8988,22 @@
     "pressureRef": "bp_n400",
     "enemyUnitStatRefs": [
       "bu_boss_n400",
-      "bu_n400_charge"
+      "bu_n400_swarm_tough",
+      "bu_n400_shield"
     ],
     "spawnPlanRefs": [
       "spawn_n400_boss",
-      "spawn_n400_adds"
+      "spawn_n400_adds1",
+      "spawn_n400_adds2"
     ],
     "bossPhaseRefs": [
-      "phase_n400_mid",
-      "phase_n400_final"
+      "phase_n400_mid"
     ],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n400 Boss关·burst 主题（450 关走量）"
+    "note": "n400 Boss关·burst 主题（450 关走量）",
+    "reviveWaves": 2
   },
   {
     "schemaVersion": "s7-0.1.0",

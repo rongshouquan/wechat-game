@@ -336,18 +336,32 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
 };
 /** 墙关陡度（⑥三段·经济尺墙矩阵>0 的真墙）：到达态（power<P 数个点）打不过、破墙态（≥P）能过——
  *  没有陡度时战斗侧在贴线处必胜（手感靶设计），墙会比经济模型软=毕业节奏漂移（milestone 验收实证）。
- *  n084/n138=余势墙零等待不加陡；n102 双威胁另有 adds 火力修（护后排克制工具=M4 未接线·复调记档）。 */
+ *  段2 战斗批：旧世界 6 墙号（n060/n102/n120/n150/n084/n138·git 可溯）随 450 关新世界退役，
+ *  按新 9 墙+13 Boss 位重配。分工不变：经济层管"卡 N 天"（压力尖峰+lifts）、本表管"贴线是场硬仗"
+ *  （§20.2：贴线时长 ≥55s 或胜率 ≤80%·<120s 可破）。初值设计按墙类型分型（数值域自定·实测收敛报备）：
+ *  战力墙 pool 厚=持久硬仗；连战墙 pool 收（reviveWaves 已 ×总池）；解题墙中性（考题在机制/钥匙跳变·
+ *  boost 不越位）；机制墙中性（复活=天然二遍池）；高潮/前哨=演出硬仗不卡天。 */
 const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
-  // 定价重锚 v1 复收敛（刻度实测重标+φ 恒等后墙工况全体重对·扫参工具=s7-wall-boost-scan.mjs·
-  // 阵容=经济尺当日真实养成态）。新世界共性：经济闸靠 eff（板凳+试错 ≈1.25×）在裸纸面 65-80% 放行
-  // → 旧 boost 全体偏厚（破墙日 0%）；n150 反向（混编集中红利=同纸面强 1.3-1.45× → 旧 boost 墙虚设 87%+）。
-  n060: { pool: 0.8, dps: 0.7 },  // 首真墙=火力检定：破墙日 13%（带心）/+1 33%/+2 93%·偷鸡 0=日步长>悬崖宽（结构性越带·对锚批同款记档）
-  n102: { pool: 0.9, dps: 0.6 },  // 解题墙特例不套五段带（§8a）：中位默认队全程贴 0=预期形态·真验收=B5 五态+钞门（本批 C 件）
-  n120: { pool: 1.2, dps: 0.8 },  // 升阶事件二值墙：破墙=主力1 升 SS 日 0→100 跳变（§16e 肝/重同款"正中质变体感"记档·五段带不适用）·卡墙全 0 ✓
-  n150: { pool: 2.0, dps: 1.0 },  // 毕业墙恢复卡得住：旧值下卡墙日 87-100%=墙虚设→新值 卡墙 20-25%/破墙 35%/后续 40%+（纸面破墙后近平台+混编噪声=悬崖式五段带无标量解·精确形状候拍·报总控包）
-  n084: { pool: 0.5, dps: 0.55 }, // 余势墙：破大墙后爽段=到达即胜（经济闸侧同口径=reliefNodeGateMult）
-  n138: { pool: 0.65, dps: 0.5 },  // 余势墙：同上
+  // 第一轮实测修正（n104 三轮收敛的全表外推）：鼓动/量产/狂暴/盾墙/治疗类敌自增强机制是压力
+  // 预算外的乘法（n104 实测鼓动+攻速=团队实效 ×1.55·贴线队 35s 团灭）——dps 全表预折；
+  // n104 结构结论：自增强机制墙=天然二值形态（悬崖只随 pool 平移·无日内中间胜率点）——
+  // 破墙日为锚（卡日 0%/破日干脆过=墙①攒一晚教学字面·§8a 例外记档=n120 跳变先例同款）。
+  n054: { pool: 1.0, dps: 0.7 },   // 首Boss（非墙·小鼓动预折）
+  n104: { pool: 0.85, dps: 0.42 }, // 墙①战力：三轮收敛值（D3-4 卡 0%/D5 破干脆过·鼓动×2+召唤补员预折）
+  n140: { pool: 1.4, dps: 0.8 },   // 墙②机制：复活=二遍池+修理机奶=变相池·双预折
+  n176: { pool: 1.05, dps: 0.72 },  // 墙③解题：重锤尖峰在 BOSS_SHAPE·磁暴塔+奶预折
+  n214: { pool: 0.95, dps: 0.78 },  // 高潮②：盾墙=变相池预折（演出仗不卡天）
+  n250: { pool: 0.55, dps: 0.35 },   // 墙④连战：reviveWaves ×2 总池+大盾+召唤·三重预折
+  n282: { pool: 1.0, dps: 0.68 },   // 墙⑤战+机：量产协议召唤海预折
+  n312: { pool: 1.0, dps: 0.85 },  // 墙⑥解+连：revive+快召+奶·预折
+  n340: { pool: 0.8, dps: 0.5 }, // 高潮③：时间狂暴（120s 封顶 +240% 攻）重预折
+  n368: { pool: 0.9, dps: 0.6 },   // 墙⑦机+解：受击狂暴+喷毒·预折
+  n384: { pool: 2.0, dps: 0.85 },   // 前哨：快锤形状在 BOSS_SHAPE·中性
+  n400: { pool: 0.8, dps: 0.65 },  // 墙⑧战+连：revive ×3 总池·重预折（击杀密度=超新星舞台）
+  n450: { pool: 1.0, dps: 0.42 },   // 墙⑨毕业战：马拉松+3 阶段狂暴全屏预折
 };
+/** 扫参工具单点读本表（s7-wall-boost-scan.mjs 换算基准=磁盘现值·防双账本漂移）。 */
+export { WALL_BOOST };
 /** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·§20.2 n102 特例）：
  *  塔×3 设计密度下守恒摊薄杀死了单塔尖峰（A0 记档）——标量 dps/pool 五轮实证分不开五态（①双护卫组合
  *  杀敌速度=错舰队一半·任何①能清的池③都能竞速）。对症=把尖峰还给每座塔：间隔 1.3→3.0s、单发×2.31
@@ -361,6 +375,15 @@ const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number; at
 };
 /** Boss 行分成（血池/火力占比·余量归 adds）。 */
 const BOSS_SHARE = { hp: 0.65, dps: 0.3 }; // 首扫诊断：0.5 全压单点=前排瞬融·Boss=重锤节奏不是速射炮
+/** 段2 · Boss 形状覆写（手调通道·公式参数层——只对对位表点名形状词的 Boss 配，其余全默认；
+ *  血攻仍走压力公式守恒=k 合同结构性免疫，此表只调"同预算下的形状"）：
+ *  n176 废铁泰坦=真源"超高血高防"+重锤（hpShare 抬/防抬/间隔拉长·单发=DPS×interval 自动变重）；
+ *  n384 风暴哨兵=增幅域快节奏（间隔缩短=快锤）；n400 风暴壁垒=重装（防抬）。 */
+export const BOSS_SHAPE_OVERRIDE: Record<string, { hpShare?: number; interval?: number; armor?: number }> = {
+  n176: { hpShare: 0.75, interval: 2.6, armor: 60 },
+  n384: { interval: 1.4 },
+  n400: { armor: 50 },
+};
 
 export interface NodeScale {
   nodeId: string;
@@ -426,10 +449,11 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   let poolLeft = pool;
   let dpsLeft = dps;
   for (const bossRow of bossRows) {
-    const hp = Math.round((pool * BOSS_SHARE.hp) / bossRows.length);
+    const shape = BOSS_SHAPE_OVERRIDE[nodeId] ?? {};
+    const hp = Math.round((pool * (shape.hpShare ?? BOSS_SHARE.hp)) / bossRows.length);
     const bossDps = (dps * BOSS_SHARE.dps) / bossRows.length;
-    const interval = 2.0; // 重锤：单发大、频率低（前排能被奶回来=有惊无险而非瞬蒸发）
-    units[bossRow] = { maxHp: hp, attack: Math.max(1, Math.round(bossDps * interval)), armor: 35, attackIntervalSec: interval };
+    const interval = shape.interval ?? 2.0; // 重锤：单发大、频率低（前排能被奶回来=有惊无险而非瞬蒸发）
+    units[bossRow] = { maxHp: hp, attack: Math.max(1, Math.round(bossDps * interval)), armor: shape.armor ?? 35, attackIntervalSec: interval };
     poolLeft -= hp;
     dpsLeft -= bossDps;
   }
@@ -490,7 +514,7 @@ export async function scanMainlineAsync(opts: ScanOptions = {}): Promise<NodeRep
     .map((n) => n.nodeId)
     .filter((id) => {
       const num = Number(id.slice(1));
-      return num >= (opts.fromNode ?? 1) && num <= (opts.toNode ?? 150);
+      return num >= (opts.fromNode ?? 1) && num <= (opts.toNode ?? 450); // 450 关新世界默认全扫（旧 150=段1 前欠账·段2 修）
     });
   const encs = base.battle_encounter_param as unknown as S7BattleEncounterParam[];
   const service = new S7BattleRunService();
@@ -547,7 +571,7 @@ export async function main(argv: string[]): Promise<number> {
   const family = arg('lineup', 'median') as LineupFamily;
   const samples = Number(arg('samples', '3'));
   const fromNode = Number(arg('from', '1'));
-  const toNode = Number(arg('to', '150'));
+  const toNode = Number(arg('to', '450')); // 450 关新世界默认（段2 对齐）
   const powerRatio = Number(arg('power-ratio', '1'));
   const noScale = argv.includes('--no-scale');
   const milestonePower = argv.includes('--milestone-power');

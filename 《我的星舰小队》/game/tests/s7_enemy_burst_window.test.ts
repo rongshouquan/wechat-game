@@ -37,22 +37,20 @@ function player(b: Bundle, rowId: string): void {
   });
 }
 
-// ⚠️ 段二战斗批显式挂起（skip=记档非删除·非装绿）：本组载体=bu_boss_n138（150 关世界污染巨兽行），
-// 450 关重铺后旧 Boss 行退役、新 13 Boss=占位骨架（真机制=段 2 对位真源 §5 手调）。机制积木本体
-// （eff_pollution_tide/燃烧/狂暴）全局效果行都在、未失守。到期条件=段 2 污染巨兽对位新 Boss 位
-// 落真机制时，本组换新载体恢复（恢复时删本注记）。
-describe.skip('⑩A4 · n138 污染巨兽：污染潮（cd12 全屏+全队燃烧）+ 随时间狂暴（真源§5·M9 组合定式）〔挂起：待段2 Boss 对位落位后换新载体恢复〕', () => {
+// 段2 恢复（挂起核销·换载体 n138→n340）：污染巨兽对位 n340（真源§5 原班挪位·BOSS_CONTENT 声明
+// 落真机制=extra cd12 污染潮+stackRules per_second 0.02 狂暴+普攻 eff_normal_polluted）。
+describe('⑩A4→段2 · n340 污染巨兽：污染潮（cd12 全屏+全队燃烧）+ 随时间狂暴（真源§5·M9 组合定式）', () => {
   it('全队周期吃 eff_pollution_tide + 燃烧跳伤；Boss 普攻随时间涨（+2%/s 狂暴）', async () => {
     const b = clone(loadBundle());
-    // Boss 行原位缩为测试量纲（结构字段 extraTriggerBlocks/stackRules=⑩A4 接线·原样保留）。
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n138'), { maxHp: 100000000, attack: 125, armor: 25, attackIntervalSec: 2.0 });
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_n138_charge'), { maxHp: 1, attack: 1, armor: 1 }); // 随行前锋缩惰性（首拍即清·不污染手推口径）
+    // Boss 行原位缩为测试量纲（结构字段 extraTriggerBlocks/stackRules=BOSS_CONTENT 落数·原样保留）。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n340'), { maxHp: 100000000, attack: 125, armor: 25, attackIntervalSec: 2.0 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_n340_pollution'), { maxHp: 1, attack: 1, armor: 1 }); // 随行污染体缩惰性（首拍即清·不污染手推口径）
     player(b, 'bu_ship_vanguard');
     player(b, 'bu_ship_gunner');
-    // 直接用 n138 遭遇（spawn=bu_boss_n138 原样）。
+    // 直接用 n340 遭遇（spawn=bu_boss_n340+pollution adds 原样）。
     const engine = await engineOf(b);
     const r = engine.run({
-      encounterRef: 'enc_n138', battleSeed: 'tide',
+      encounterRef: 'enc_n340', battleSeed: 'tide',
       playerUnits: [
         { unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' },
         { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c0' },
@@ -65,7 +63,9 @@ describe.skip('⑩A4 · n138 污染巨兽：污染潮（cd12 全屏+全队燃烧
     expect(burns.length).toBeGreaterThan(0); // 全队燃烧真在跳（M2 rider）
     expect(burns[0].amount).toBe(10); // 125×8%=10（燃烧无视防御）
     // 随时间狂暴：Boss 普攻净伤 100 起步、后期显著上涨（per_second +2% 攻）。
-    const bossNormals = dmg(r.log).filter((d) => d.source.startsWith('enemy') && d.effectRef === 'eff_basic_attack').map((d) => d.amount);
+    // 载体注记：n340 普攻=eff_normal_polluted（真源污染族·带易伤 rider）——首发无易伤 ≤105 仍成立，
+    // 后期=狂暴×易伤叠加 ≥140 更稳。
+    const bossNormals = dmg(r.log).filter((d) => d.source.startsWith('enemy') && d.effectRef === 'eff_normal_polluted' && !d.periodic).map((d) => d.amount);
     expect(bossNormals[0]).toBeLessThanOrEqual(105);
     expect(Math.max(...bossNormals)).toBeGreaterThanOrEqual(140); // ≥20s 后 +40% 以上
   });
@@ -120,20 +120,20 @@ describe('⑩A4 · 磁暴塔磁暴场（真源§3·克制#10"削弱我方"敌侧
   });
 });
 
-// ⚠️ 段二战斗批显式挂起（同上组·载体=bu_boss_n150 已退役·eff_s7_cataclysm 效果行在）：
-// 到期条件=段 2 终Boss（星能污染核心）对位 n450 落真机制时换新载体恢复。
-describe.skip('⑩A4 · n150 终Boss 阶段3 狂暴全屏（真源§5·原单体核弹改全屏 ×1.2）〔挂起：待段2 Boss 对位落位后换新载体恢复〕', () => {
+// 段2 恢复（挂起核销·换载体 n150→n450）：终Boss 星能污染核心对位 n450（真源§5 原班·BOSS_CONTENT
+// 声明落真机制=开局大盾+mid 召唤点名+final「先狂暴后全屏」效果序原样迁移）。
+describe('⑩A4→段2 · n450 终Boss final 阶段狂暴全屏（真源§5·先狂暴后全屏效果序）', () => {
   it('压血入终阶后 eff_s7_cataclysm 全屏命中双船', async () => {
     const b = clone(loadBundle());
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n150'), { maxHp: 4000, attack: 50, armor: 25, attackIntervalSec: 2.0 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 4000, attack: 50, armor: 25, attackIntervalSec: 2.0 });
     player(b, 'bu_ship_vanguard');
     player(b, 'bu_ship_gunner');
-    // n150 mid 阶段召唤 bu_n150_add：缩到无害量纲防干扰（结构不动）。
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_n150_add'), { maxHp: 1000, attack: 1, armor: 1 });
-    Object.assign(row(b, 'battle_unit_stat_param', 'bu_n150_boss_add'), { maxHp: 500, attack: 1, armor: 1 }); // 出怪面随行 add 缩惰性（否则 3.2 万血挡路·玩家打不到 Boss）
+    // n450 场面单位缩到无害量纲防干扰（结构不动）：spawn 波污染体环卫+mid 阶段召唤（污染体+add×2）。
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_n450_pollution'), { maxHp: 1, attack: 1, armor: 1 });
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_n450_add'), { maxHp: 1, attack: 1, armor: 1 });
     const engine = await engineOf(b);
     const r = engine.run({
-      encounterRef: 'enc_n150', battleSeed: 'cat',
+      encounterRef: 'enc_n450', battleSeed: 'cat',
       playerUnits: [
         { unitStatRef: 'bu_ship_vanguard', slotRef: 'p1c2' },
         { unitStatRef: 'bu_ship_gunner', slotRef: 'p1c0' },
@@ -142,6 +142,9 @@ describe.skip('⑩A4 · n150 终Boss 阶段3 狂暴全屏（真源§5·原单体
     const cat = dmg(r.log).filter((d) => d.effectRef === 'eff_s7_cataclysm');
     expect(cat.length).toBeGreaterThanOrEqual(2); // 阶段入场一发·全屏=双船都中
     expect(new Set(cat.map((d) => d.target)).size).toBe(2);
-    expect(cat[0].amount).toBe(60); // 50×1.25(狂暴先上身·阶段效果序)×1.2×(100/125)=60 手推
+    // 手推（旧 n150 先例 60 的载体差重定基·旧→新→为什么对）：n150 普攻=eff_basic_attack（无易伤）
+    // →60=50×1.25(狂暴先上身)×1.2×(100/125)；n450 普攻=eff_normal_polluted（污染族·真源=命中挂
+    // 易伤 +25%）→cataclysm 落地时玩家已带易伤：60×1.25=75（易伤吃全屏伤=机制正确·非放宽）。
+    expect(cat[0].amount).toBe(75);
   });
 });

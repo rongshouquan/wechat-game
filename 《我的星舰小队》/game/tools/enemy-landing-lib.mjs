@@ -43,6 +43,8 @@ export function writeTables(dir, tables, onlyNames = LANDING_TABLES) {
 /** 节点行判定：bu_n<数字>_<后缀>（bu_boss_nXXX 是全局 Boss 行·原位改值不删）。 */
 export const NODE_UNIT_RE = /^bu_n\d+_(.+)$/;
 export const NODE_EFFECT_RE = /^eff_n\d+_summon$/;
+/** Boss 声明效果行域（content 生成器管建；apply 只节点化其 summonUnitRef、clean 对称回退全局）。 */
+export const BOSS_EFFECT_RE = /^eff_boss_(n\d+)_/;
 
 /**
  * Boss 周期召唤规则（段二 H1·真源 f8c6ae75：失控母舰阶段1"周期召唤【无人机】·复用母舰单元召唤物"）。
@@ -53,9 +55,20 @@ export const NODE_EFFECT_RE = /^eff_n\d+_summon$/;
  *
  * ⚠️ 450 关战斗批（2026-07-14）：旧键 n084=150 关世界的失控母舰位——新世界 n084=sf01 普通关，
  * 规则语义**追随 Boss 身份（失控母舰）而非节点号**；段 2 的 13 Boss 对位表过总控后，
- * 本表按失控母舰新位重挂（2a H1 成果=规则范式与生命周期包·原样复用）。段 1 暂空。
+ * 本表按失控母舰新位重挂（2a H1 成果=规则范式与生命周期包·原样复用）。
+ *
+ * 段2 落表（对位表过闸后·n084→n250 全链挪号+召唤主题两 Boss 同规则复用）：
+ *   n250 失控母舰（真源原班挪位·阶段1"周期召唤无人机"f8c6ae75）cd12=母舰单元先例值；
+ *   n282 母舰指挥官（真源"量产协议=复用母舰单元召唤、召唤速度更快"）cd8；
+ *   n312 量产中枢（变体·母舰召唤放大×复活波次）cd6=放大档。
+ * cleanUltimate=各 Boss 走量骨架占位值（净土回退防悬空引用·apply 时被本规则覆盖）。
+ * 三档 CD=数值域自定报备（12/8/6·"更快/放大"的量化）。
  */
-export const BOSS_PERIODIC_SUMMON = {};
+export const BOSS_PERIODIC_SUMMON = {
+  n250: { ultimateCdSec: 12, cleanUltimate: { ref: 'eff_ult_burst_nuke', cdSec: 10 } },
+  n282: { ultimateCdSec: 8, cleanUltimate: { ref: 'eff_ult_clear_barrage', cdSec: 10 } },
+  n312: { ultimateCdSec: 6, cleanUltimate: { ref: 'eff_ult_burst_nuke', cdSec: 10 } },
+};
 
 /** 节点行 → 全局职业行（roleKeyOf 同款反解·§20.1）：add/sadd 归 boss_add，其余按后缀。 */
 export function globalRowOf(rowId) {
@@ -99,6 +112,13 @@ export function cleanBundle(tables) {
   const keptEff = effects.filter((r) => !NODE_EFFECT_RE.test(r.rowId));
   stat.effectRemoved = effects.length - keptEff.length;
   tables.battle_effect_param = keptEff;
+  // 段2：Boss 声明效果行（eff_boss_nXXX_*·content 生成器管建）的召唤引用回退全局行——
+  // 净土态节点行已删，指针留节点名=悬空引用（validator 红）；apply 落数时再节点化（对称）。
+  for (const r of keptEff) {
+    if (!BOSS_EFFECT_RE.test(r.rowId) || typeof r.summonUnitRef !== 'string' || r.summonUnitRef === 'none') continue;
+    const g = globalRowOf(r.summonUnitRef);
+    if (g !== r.summonUnitRef) r.summonUnitRef = g;
+  }
   for (const sp of tables.battle_spawn_param) {
     const g = globalRowOf(sp.unitStatRef);
     if (g !== sp.unitStatRef) {
