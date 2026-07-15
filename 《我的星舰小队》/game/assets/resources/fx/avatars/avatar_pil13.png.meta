@@ -61,11 +61,67 @@
         "meshType": 0,
         "isUuid": true,
         "imageUuidOrDatabaseUri": "f47d1eb6-d48f-42b1-8e18-f461cd40ac77@6c48a",
-        "atlasUuid": ""
+        "atlasUuid": "",
+        "vertices": {
+          "rawPosition": [
+            -48,
+            -48,
+            0,
+            48,
+            -48,
+            0,
+            -48,
+            48,
+            0,
+            48,
+            48,
+            0
+          ],
+          "indexes": [
+            0,
+            1,
+            2,
+            2,
+            1,
+            3
+          ],
+          "uv": [
+            0,
+            96,
+            96,
+            96,
+            0,
+            0,
+            96,
+            0
+          ],
+          "nuv": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            1
+          ],
+          "minPos": [
+            -48,
+            -48,
+            0
+          ],
+          "maxPos": [
+            48,
+            48,
+            0
+          ]
+        }
       },
       "ver": "1.0.12",
-      "imported": false,
-      "files": [],
+      "imported": true,
+      "files": [
+        ".json"
+      ],
       "subMetas": {}
     }
   },
