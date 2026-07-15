@@ -3581,24 +3581,58 @@ export class S7DemoController extends Component {
     this.prebattleBackLabel = backBtn.getComponentInChildren(Label);
     this.prebattleSortieBtn = mkBtn('🚀 开始战斗', 300, 112, new Color(225, 150, 45, 255), W * 0.284, botY + 58, () => this.onConfirmSortie());
 
-    // 备战内嵌战斗的「跳过」键（挂面板·不在 ui 容器内，开战时单独显示）。
-    const skip = new Node('pbSkip'); skip.layer = this.node.layer; panel.addChild(skip); skip.setPosition(0, botY + 58, 0);
-    const sut = skip.addComponent(UITransform); sut.setContentSize(220, 72);
-    const sbg = skip.addComponent(Graphics); sbg.fillColor = new Color(95, 100, 120, 255); sbg.roundRect(-110, -36, 220, 72, 12); sbg.fill();
-    const sln = new Node('t'); sln.layer = this.node.layer; skip.addChild(sln);
-    const sl = sln.addComponent(Label); sl.fontSize = 32; sl.lineHeight = 40; sl.color = new Color(255, 255, 255); sl.string = '跳过 ▶▶';
-    skip.on(Node.EventType.TOUCH_END, () => this.onSkip(), this);
-    skip.active = false;
-    this.prebattleSkipBtn = skip;
-    // L：倍速键（1x/2x/3x 循环·与跳过同显隐）。
-    const spd = new Node('pbSpeed'); spd.layer = this.node.layer; panel.addChild(spd); spd.setPosition(-W * 0.30, botY + 58, 0);
-    spd.addComponent(UITransform).setContentSize(160, 72);
-    const spbg = spd.addComponent(Graphics); spbg.fillColor = new Color(80, 110, 95, 255); spbg.roundRect(-80, -36, 160, 72, 12); spbg.fill();
-    const spl = new Node('t'); spl.layer = this.node.layer; spd.addChild(spl);
-    this.speedBtnLabel = spl.addComponent(Label); this.speedBtnLabel.fontSize = 30; this.speedBtnLabel.color = new Color(255, 255, 255); this.speedBtnLabel.string = '1x ▶';
-    spd.on(Node.EventType.TOUCH_END, () => this.onCycleSpeed(), this);
-    spd.active = false;
-    this.prebattleSpeedBtn = spd;
+    // 备战内嵌战斗的「跳过」「倍速」两键（挂面板·开战时单独显示）——磨精批1 糖果件重画：
+    // 倍速收左下角、跳过收右下角（中央让给战场=竞品惯例），凝胶按钮=投影+描边圈+高光带。
+    const skip = this.makeBattleCandyBtn('跳过 ▶▶', 200, 78, new Color(240, 154, 62, 255), new Color(172, 100, 32, 255), W / 2 - 112, botY + 58, () => this.onSkip());
+    panel.addChild(skip.node);
+    skip.node.active = false;
+    this.prebattleSkipBtn = skip.node;
+    const spd = this.makeBattleCandyBtn('1x ▶', 140, 78, new Color(74, 156, 214, 255), new Color(40, 104, 156, 255), -(W / 2 - 82), botY + 58, () => this.onCycleSpeed());
+    panel.addChild(spd.node);
+    spd.node.active = false;
+    this.speedBtnLabel = spd.label;
+    this.prebattleSpeedBtn = spd.node;
+  }
+
+  /** 战斗态糖果按钮（磨精批1·战斗页专用件）：落地投影+深描边圈+主色体+顶部高光带——
+   *  治"灰盒方块钮=demo 感"；全局 addBtn 灰盒件不动，只换战斗播放态两钮。 */
+  private makeBattleCandyBtn(
+    text: string, w: number, h: number, main: Color, dark: Color,
+    x: number, y: number, onTap: () => void,
+  ): { node: Node; label: Label } {
+    const n = new Node('pbCandyBtn');
+    n.layer = this.node.layer;
+    n.addComponent(UITransform).setContentSize(w, h);
+    n.setPosition(x, y, 0);
+    const g = n.addComponent(Graphics);
+    const r = h / 2;
+    g.fillColor = new Color(30, 16, 36, 88); // 落地投影
+    g.roundRect(-w / 2 + 2, -h / 2 - 5, w, h, r);
+    g.fill();
+    g.fillColor = dark; // 深色外壳圈
+    g.roundRect(-w / 2, -h / 2, w, h, r);
+    g.fill();
+    g.fillColor = main; // 主色体
+    g.roundRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, r - 3);
+    g.fill();
+    g.fillColor = new Color(255, 255, 255, 58); // 顶部高光带（凝胶感）
+    g.roundRect(-w / 2 + 9, h * 0.08, w - 18, h * 0.28, h * 0.14);
+    g.fill();
+    const ln = new Node('t');
+    ln.layer = this.node.layer;
+    n.addChild(ln);
+    ln.setPosition(0, 1, 0);
+    const l = ln.addComponent(Label);
+    l.fontSize = 30;
+    l.lineHeight = 36;
+    l.isBold = true;
+    l.color = new Color(255, 255, 255);
+    l.enableOutline = true;
+    l.outlineWidth = 2;
+    l.outlineColor = new Color(Math.round(dark.r * 0.55), Math.round(dark.g * 0.55), Math.round(dark.b * 0.55), 235);
+    l.string = text;
+    n.on(Node.EventType.TOUCH_END, onTap, this);
+    return { node: n, label: l };
   }
 
   /** L：循环倍速 1x→2x→3x→1x（回放期间即时生效）。 */
@@ -4691,12 +4725,15 @@ export class S7DemoController extends Component {
       if (this.prebattleUiNode) this.prebattleUiNode.active = false;
       if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = true;
       if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = true;
+      if (this.tutorialDevBarNode) this.tutorialDevBarNode.active = false; // 磨精批1：播放期藏 DEV 教程键（不脏画面·finishPlayback 恢复）
       this.prebattleGfx.clear(); // 底板交给演出层的背景板
       // 备战即战场（Ron 07-15 反馈①）：把备战格坐标（Cocos 局部·中心原点 y 上）
       // 归一化成 0-1（y 下）喂给演出层——玩家摆哪打哪，弹道爆点全随之。
       // 我方整体下移（Ron 07-15 二轮反馈③"战斗中位置太靠前"）：只在战斗映射时加，
       // 备战九宫格不动；相对阵型不变=备战即战场承诺仍成立（摆哪打哪指相对站位）。
+      // 敌方整体下压（磨精批1·收窄对峙带）：竞品构图=敌我更贴近、画面重心聚拢。
       const PLAYER_Y_SHIFT = 0.07;
+      const ENEMY_Y_SHIFT = 0.09;
       this.computePositions(pb);
       const layoutOv: Record<string, { x: number; y: number }> = {};
       for (const u of pb.roster) {
@@ -4704,7 +4741,7 @@ export class S7DemoController extends Component {
         if (!p) continue;
         layoutOv[u.unitId] = {
           x: p.x / this.viewW + 0.5,
-          y: 0.5 - p.y / this.viewH + (u.side === 'player' ? PLAYER_Y_SHIFT : 0),
+          y: 0.5 - p.y / this.viewH + (u.side === 'player' ? PLAYER_Y_SHIFT : ENEMY_Y_SHIFT),
         };
       }
       this.fxLayer.play(pb, (ref) => this.fxRefMap.get(ref) ?? { unitRef: '', roleTag: '' }, {
@@ -4729,6 +4766,7 @@ export class S7DemoController extends Component {
     if (this.prebattleUiNode) this.prebattleUiNode.active = false; // 无关 UI 滑出 → 当前界面变战场
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = true;
     if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = true; // L 倍速键
+    if (this.tutorialDevBarNode) this.tutorialDevBarNode.active = false; // 磨精批1：播放期藏 DEV 教程键
     this.drawFrame(pb.frames[0]);
   }
 
@@ -4787,6 +4825,7 @@ export class S7DemoController extends Component {
     this.introSec = 0; this.introYOffset = 0;
     if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = false;
     if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = false;
+    if (this.tutorialDevBarNode) this.tutorialDevBarNode.active = true; // 恢复 DEV 教程键（播放期临时藏）
     this.openResultPopup(this.pendingWon);
   }
 

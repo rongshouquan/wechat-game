@@ -159,11 +159,11 @@ describe('S7FxScript 指令流', () => {
     const tl = buildS7FxScript(pb);
     const boss = tl.layout['BOSS'].at;
     expect(boss.x).toBeCloseTo(0.5, 5);
-    expect(boss.y).toBeCloseTo(0.28, 5); // =rowY[1] 中排（07-13 舒展版 0.29→0.28，随排距表调）
+    expect(boss.y).toBeCloseTo(0.37, 5); // =rowY[1] 中排（磨精批1 全阵下压 0.09 收对峙带：0.28→0.37）
     const ys = Array.from({ length: 7 }, (_, i) => tl.layout[`M${i}`].at.y);
-    const front = ys.filter((y) => y > 0.34);
-    const mid = ys.filter((y) => y > 0.245 && y <= 0.34);
-    const back = ys.filter((y) => y <= 0.245);
+    const front = ys.filter((y) => y > 0.43); // 分排阈值随 rowY 表同步 +0.09 平移
+    const mid = ys.filter((y) => y > 0.335 && y <= 0.43);
+    const back = ys.filter((y) => y <= 0.335);
     expect(front.length).toBeGreaterThan(0);
     expect(mid.length).toBeGreaterThan(0);
     expect(back.length).toBeGreaterThan(0);
