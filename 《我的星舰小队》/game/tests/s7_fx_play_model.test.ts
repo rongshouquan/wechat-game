@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildS7FxScript } from '../assets/scripts/core/s7/fx/S7FxScript';
 import type { S7BattlePlayback } from '../assets/scripts/core/s7/S7BattlePlayback';
 import {
-  S7FxPlayModel, S7FxRosterEntry, S7FX_REF_W, S7FX_REF_H, S7FX_MUZZLES,
+  S7FxPlayModel, S7FxRosterEntry, S7FX_REF_W, S7FX_REF_H, S7FX_MUZZLES, S7FX_INTRO_SEC,
 } from '../assets/scripts/core/s7/fx/S7FxPlayModel';
 
 const RESOLVE = (ref: string): { unitRef: string; roleTag: string } =>
@@ -62,13 +62,22 @@ describe('S7FxPlayModel 播放态', () => {
     }
   });
 
-  it('开场：我方在场、敌方随 spawn 指令入场（带滑入计时）', () => {
+  it('开场：入场仪式 t<0（我方滑入·敌阵已列阵·HUD 未亮·指令不执行）、Boss 随 t=0 spawn 登场', () => {
     const m = makeModel();
+    expect(m.t).toBe(-S7FX_INTRO_SEC); // 负区间=入场仪式
     expect(m.units.A.present).toBe(true);
-    expect(m.units.E1.present).toBe(false);
-    m.step(0.02); // t=0 帧 spawn 落地
-    expect(m.units.E1.present).toBe(true);
-    expect(m.units.E1.spawnT).toBeGreaterThan(0);
+    expect(m.units.E1.present).toBe(true); // 开场敌人（非 Boss）构造即列阵——入场期敌阵不隐身
+    expect(m.units.E2.present).toBe(false); // Boss 不预标：保留 t=0 spawn 登场戏
+    expect(m.introOffsetY(m.units.A)).toBeGreaterThan(0); // 我方屏下滑入途中
+    expect(m.introOffsetY(m.units.E1)).toBe(0); // 守方不滑
+    expect(m.hudVisible()).toBe(false);
+    expect(m.projs.length).toBe(0); // 指令 tSec≥0=入场期不执行
+    stepTo(m, 0.01); // 跨过 t=0 帧 spawn 落地
+    expect(m.units.E2.present).toBe(true);
+    expect(m.units.E2.spawnT).toBeGreaterThan(0); // Boss 带滑入计时登场
+    expect(m.units.E1.spawnT).toBe(0); // 已列阵单位 spawn 不重播入场
+    expect(m.introOffsetY(m.units.A)).toBe(0); // 到位
+    expect(m.hudVisible()).toBe(true);
   });
 
   it('三连点射入池且带锋矢锚点偏移（首发=鼻尖锚·y 负向机头）', () => {
@@ -131,9 +140,10 @@ describe('S7FxPlayModel 播放态', () => {
     stepTo(m, 1.4);
     const popTxt = m.pops[0]?.txt;
     m.restart();
-    expect(m.t).toBe(0);
+    expect(m.t).toBe(-S7FX_INTRO_SEC); // 重播回入场仪式起点
     expect(m.pops.length).toBe(0);
-    expect(m.units.E1.present).toBe(false);
+    expect(m.units.E1.present).toBe(true); // 恢复开场列阵快照（presentAtStart）
+    expect(m.units.E2.present).toBe(false); // Boss 仍等 spawn 登场
     expect(m.units.E1.hpPct).toBe(100);
     stepTo(m, 1.4);
     expect(m.pops[0]?.txt).toBe(popTxt);
@@ -201,7 +211,7 @@ describe('S7FxPlayModel 磨精件（星流曲线/推镜/顿帧/治疗/收尾）'
 
   it('Boss 登场推镜：Boss spawn 点亮 1s 推镜、峰值 ≤1.06、结束回 1', () => {
     const m = makeModel();
-    m.step(0.02); // t=0 帧 spawn（E2=Boss）
+    stepTo(m, 0.01); // 跨过入场仪式到 t=0 帧 spawn（E2=Boss）
     expect(m.bossZoomT).toBeGreaterThan(0);
     let peak = 1;
     for (let i = 0; i < 60; i += 1) { m.step(0.02); peak = Math.max(peak, m.zoomScale()); }

@@ -4694,11 +4694,19 @@ export class S7DemoController extends Component {
       this.prebattleGfx.clear(); // 底板交给演出层的背景板
       // 备战即战场（Ron 07-15 反馈①）：把备战格坐标（Cocos 局部·中心原点 y 上）
       // 归一化成 0-1（y 下）喂给演出层——玩家摆哪打哪，弹道爆点全随之。
+      // 我方整体下移（Ron 07-15 二轮反馈③"战斗中位置太靠前"）：只在战斗映射时加，
+      // 备战九宫格不动；相对阵型不变=备战即战场承诺仍成立（摆哪打哪指相对站位）。
+      const PLAYER_Y_SHIFT = 0.07;
       this.computePositions(pb);
       const layoutOv: Record<string, { x: number; y: number }> = {};
-      this.posById.forEach((p, id) => {
-        layoutOv[id] = { x: p.x / this.viewW + 0.5, y: 0.5 - p.y / this.viewH };
-      });
+      for (const u of pb.roster) {
+        const p = this.posById.get(u.unitId);
+        if (!p) continue;
+        layoutOv[u.unitId] = {
+          x: p.x / this.viewW + 0.5,
+          y: 0.5 - p.y / this.viewH + (u.side === 'player' ? PLAYER_Y_SHIFT : 0),
+        };
+      }
       this.fxLayer.play(pb, (ref) => this.fxRefMap.get(ref) ?? { unitRef: '', roleTag: '' }, {
         speed: this.playbackSpeed,
         layout: layoutOv,

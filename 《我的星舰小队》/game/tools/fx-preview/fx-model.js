@@ -91,6 +91,7 @@ var S7FX = (() => {
   // assets/scripts/core/s7/fx/S7FxPlayModel.ts
   var S7FX_REF_W = 464;
   var S7FX_REF_H = 825;
+  var S7FX_INTRO_SEC = 0.5;
   var S7FX_SHIP_COLOR = {
     shp03: "#4FC3F7",
     shp06: "#3BA8A0",
@@ -183,7 +184,8 @@ var S7FX = (() => {
       this.bursts = [];
       this.embers = [];
       this.pops = [];
-      this.t = 0;
+      this.t = -S7FX_INTRO_SEC;
+      // 负区间=入场仪式（我方滑入·HUD 未亮·指令未动）
       this.darkenT = 0;
       this.darkenDur = 0;
       this.finished = false;
@@ -200,6 +202,8 @@ var S7FX = (() => {
       this.bossZoomPlayed = false;
       this.cmdIdx = 0;
       this.rng = makeRng(340853);
+      /** 开场在场快照（restart 恢复用：开场敌人预标 present=true·Boss/召唤物 false）。 */
+      this.presentAtStart = {};
       this.cmds = timeline.commands;
       this.endT = timeline.durationSec + 1.5;
       this.winner = winner;
@@ -254,9 +258,16 @@ var S7FX = (() => {
         this.units[r.unitId] = u;
         this.unitList.push(u);
       }
+      for (const c of this.cmds) {
+        if (c.tSec > 1e-3) break;
+        if (c.kind !== "spawn") continue;
+        const u = this.units[c.unitId];
+        if (u && !u.isBoss) u.present = true;
+      }
+      for (const u of this.unitList) this.presentAtStart[u.unitId] = u.present;
     }
     restart() {
-      this.t = 0;
+      this.t = -S7FX_INTRO_SEC;
       this.cmdIdx = 0;
       this.darkenT = 0;
       this.darkenDur = 0;
@@ -275,7 +286,7 @@ var S7FX = (() => {
       for (const u of this.unitList) {
         u.hpPct = 100;
         u.alive = true;
-        u.present = u.side === "player";
+        u.present = this.presentAtStart[u.unitId] ?? u.side === "player";
         u.flashT = 0;
         u.shakeT = 0;
         u.recoilT = 0;
@@ -413,6 +424,17 @@ var S7FX = (() => {
     outroDone() {
       return this.finished && this.outroT >= 0.9;
     }
+    /** 入场纵向位移（参考像素·y 正=向下）：我方自屏幕下方滑入 0.5s 缓入到位（总谱 §6 开局序列·
+     *  Ron 07-15 反馈②补齐——旧色块版有此仪式、演出层漏移植）。敌方守方原地不动。 */
+    introOffsetY(u) {
+      if (this.t >= 0 || u.side !== "player") return 0;
+      const k = Math.min(1, -this.t / S7FX_INTRO_SEC);
+      return k * k * S7FX_REF_H * 0.62;
+    }
+    /** HUD 可见（血条/头像/倒计时 入场完成才亮起——"入场→就绪"节奏）。 */
+    hudVisible() {
+      return this.t >= 0;
+    }
     /** 收尾纵向位移（参考像素·y 负=向上）：胜=我方依次加速冲出画面上缘；负=敌方扬长而去。 */
     outroOffsetY(u) {
       if (!this.finished || this.outroT <= 0) return 0;
@@ -449,7 +471,7 @@ var S7FX = (() => {
       const u = "unitId" in c ? this.units[c.unitId] : void 0;
       switch (c.kind) {
         case "spawn":
-          if (u) {
+          if (u && !u.present) {
             u.present = true;
             u.spawnT = 0.4;
             if (u.isBoss && !this.bossZoomPlayed) {

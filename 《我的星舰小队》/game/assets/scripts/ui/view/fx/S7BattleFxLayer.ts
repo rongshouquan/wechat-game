@@ -12,7 +12,7 @@
 
 import {
   _decorator, Component, Node, Sprite, SpriteFrame, Graphics, Label, Color,
-  UITransform, resources, gfx, view, UIOpacity,
+  UITransform, resources, gfx, view, UIOpacity, Mask,
 } from 'cc';
 import { S7BattlePlayback } from '../../../core/s7/S7BattlePlayback';
 import { buildS7FxScript, S7FxRefResolver } from '../../../core/s7/fx/S7FxScript';
@@ -145,6 +145,8 @@ export class S7BattleFxLayer extends Component {
   private hudG: Graphics | null = null; // HP 条
   private avatarLayer: Node | null = null;
   private popLayer: Node | null = null;
+  private timerG: Graphics | null = null; // 顶部倒计时胶囊底
+  private timerLabel: Label | null = null;
 
   private unitRigs: Record<string, UnitNodeRig> = {};
   private avatarNodes: Node[] = [];
@@ -279,6 +281,20 @@ export class S7BattleFxLayer extends Component {
     this.hudG = this.child('hud').addComponent(Graphics);
     this.avatarLayer = this.child('avatars');
     this.popLayer = this.child('pops');
+    // 顶部倒计时（Ron 07-15 反馈①：常显。⚠总谱 §6 原口径=平时不显、剩 30s 才浮现——按 Ron 指令改常显，真源同步候拍）
+    this.timerG = this.child('timer').addComponent(Graphics);
+    const tlN = new Node('timerLabel');
+    tlN.layer = this.node.layer;
+    tlN.addComponent(UITransform);
+    this.timerLabel = tlN.addComponent(Label);
+    this.timerLabel.fontSize = Math.round(15 * this.k);
+    this.timerLabel.lineHeight = Math.round(18 * this.k);
+    this.timerLabel.isBold = true;
+    this.timerLabel.enableOutline = true;
+    this.timerLabel.outlineWidth = 2;
+    this.timerLabel.outlineColor = new Color(16, 14, 30, 210);
+    this.timerLabel.color = new Color(235, 242, 255);
+    this.timerG.node.addChild(tlN);
 
     // 单位节点
     if (this.model) {
@@ -363,11 +379,16 @@ export class S7BattleFxLayer extends Component {
       if (!pil) continue;
       const n = new Node(`av_${u.unitId}`);
       n.layer = this.node.layer;
-      n.addComponent(UITransform).setContentSize(26 * this.k * 0.5, 26 * this.k * 0.5);
-      const sp = n.addComponent(Sprite);
+      n.addComponent(UITransform).setContentSize(19 * this.k, 19 * this.k);
+      const mask = n.addComponent(Mask); // 圆裁方头像（否则 sprite 四角穿出徽记色环）
+      mask.type = Mask.Type.GRAPHICS_ELLIPSE;
+      const spN = new Node('img');
+      spN.layer = this.node.layer;
+      spN.addComponent(UITransform).setContentSize(19 * this.k, 19 * this.k);
+      const sp = spN.addComponent(Sprite);
       sp.sizeMode = Sprite.SizeMode.CUSTOM;
       this.setFrame(sp, `avatar_${pil}`);
-      n.getComponent(UITransform)!.setContentSize(17 * this.k, 17 * this.k);
+      n.addChild(spN);
       this.avatarLayer.addChild(n);
       this.avatarNodes.push(n);
       (n as unknown as { __fxUnitId: string }).__fxUnitId = u.unitId;
@@ -385,6 +406,7 @@ export class S7BattleFxLayer extends Component {
     this.syncProjImpacts(t);
     this.syncParticlesAndHud(t);
     this.syncPops();
+    this.syncTimer();
     if (this.darkenG) {
       this.darkenG.clear();
       const a = m.darkenAlpha();
@@ -441,7 +463,7 @@ export class S7BattleFxLayer extends Component {
       if (!show) continue;
       const o = this.idleOffsets(u, t);
       const alpha = (!u.alive ? Math.max(0, u.deadT / 0.4) : 1) * m.outroAlpha(u);
-      const p = this.refToView(u.x + o.drift + o.ox, u.y + o.oy + m.outroOffsetY(u));
+      const p = this.refToView(u.x + o.drift + o.ox, u.y + o.oy + m.outroOffsetY(u) + m.introOffsetY(u));
       rig.root.setPosition(p.x, p.y);
       rig.root.angle = (-o.rot * 180) / Math.PI;
       rig.root.setScale(1 - o.sq, 1 + o.sq, 1);
@@ -453,8 +475,8 @@ export class S7BattleFxLayer extends Component {
         rg.ellipse(p.x, p.y, u.w * 0.46 * this.k, u.h * 0.46 * this.k);
         rg.fill();
       }
-      // 高空投影（不随悬浮·总谱§4a）
-      if (u.spawnT <= 0) {
+      // 高空投影（不随悬浮·总谱§4a；入场滑入期不画=船未到位影不先到）
+      if (u.spawnT <= 0 && m.hudVisible()) {
         const bobK = (o.bob / 1.9 + 1) / 2;
         const sp = this.refToView(u.x + o.drift + u.w * 0.14, u.y + u.h * 0.62);
         gg.fillColor = new Color(42, 20, 48, Math.round((0.11 - bobK * 0.03) * alpha * 255));
@@ -676,7 +698,9 @@ export class S7BattleFxLayer extends Component {
       }
     }
     // HP 条 + 头像徽记环（我方左端头像·敌方裸条）；显示血量做非对称平滑——
-    // 掉血快贴（打击感）·回血慢涨（总谱 §3.3"回涨要看得见地长"）
+    // 掉血快贴（打击感）·回血慢涨（总谱 §3.3"回涨要看得见地长"）。
+    // Ron 07-15 反馈④重画：圆角胶囊槽+白细描边+糖果高光线；入场仪式期 HUD 不亮（入场→就绪节奏）。
+    const hudOn = m.hudVisible();
     for (const u of m.unitList) {
       if (!u.present || (!u.alive && u.deadT <= 0)) continue;
       const shown = this.shownHp[u.unitId] ?? u.hpPct;
@@ -684,17 +708,29 @@ export class S7BattleFxLayer extends Component {
       const rate = gap >= 0 ? 2.8 : 10; // 涨慢掉快
       const next = Math.abs(gap) < 0.4 ? u.hpPct : shown + gap * Math.min(1, rate * 0.0166);
       this.shownHp[u.unitId] = next;
-      const barW = u.w * 0.9;
-      const bx = u.x - barW / 2;
-      const by = u.y - u.h * 0.62;
-      const p0 = this.refToView(bx, by);
+      if (!hudOn) continue;
+      const barW = u.w * 0.78;
+      const barH = 6 * this.k;
+      const r = barH / 2;
+      const off = m.outroOffsetY(u); // 收尾演出血条跟船走（旧版漏跟·顺手修）
+      const p0 = this.refToView(u.x - barW / 2, u.y - u.h * 0.62 + off);
       const isP = u.side === 'player';
-      hud.fillColor = new Color(14, 16, 26, 200);
-      hud.rect(p0.x, p0.y, barW * this.k, 4.6 * this.k);
+      hud.fillColor = new Color(16, 20, 32, 228);
+      hud.roundRect(p0.x - 1.5 * this.k, p0.y - 1.5 * this.k, barW * this.k + 3 * this.k, barH + 3 * this.k, r + 1.5 * this.k);
       hud.fill();
-      hud.fillColor = isP ? new Color(88, 214, 100, 235) : new Color(214, 74, 74, 235);
-      hud.rect(p0.x, p0.y, barW * this.k * Math.max(0, next) / 100, 4.6 * this.k);
-      hud.fill();
+      hud.strokeColor = new Color(255, 255, 255, 56);
+      hud.lineWidth = 1 * this.k;
+      hud.roundRect(p0.x - 1.5 * this.k, p0.y - 1.5 * this.k, barW * this.k + 3 * this.k, barH + 3 * this.k, r + 1.5 * this.k);
+      hud.stroke();
+      const wNow = barW * this.k * Math.max(0, next) / 100;
+      if (wNow > barH * 0.6) { // 残血过窄不画圆角条（防圆角反噬画崩）
+        hud.fillColor = isP ? new Color(96, 218, 108, 245) : new Color(226, 84, 76, 245);
+        hud.roundRect(p0.x, p0.y, wNow, barH, r);
+        hud.fill();
+        hud.fillColor = new Color(255, 255, 255, 52); // 顶缘高光线（糖果光泽）
+        hud.roundRect(p0.x + r * 0.6, p0.y + barH * 0.55, Math.max(0, wNow - r * 1.2), barH * 0.28, barH * 0.14);
+        hud.fill();
+      }
       // 治疗泛绿柔光（总谱 §3.3·0.35s）
       if (u.healGlowT > 0) {
         const hk = u.healGlowT / 0.35;
@@ -705,20 +741,28 @@ export class S7BattleFxLayer extends Component {
         hud.stroke();
       }
     }
-    // 头像位置同步
+    // 头像位置同步（深色底圈+徽记色环+白细外圈；入场后亮；收尾跟船）
     for (const n of this.avatarNodes) {
       const uid = (n as unknown as { __fxUnitId: string }).__fxUnitId;
       const u = m.units[uid];
-      if (!u || !u.present || (!u.alive && u.deadT <= 0)) { n.active = false; continue; }
+      if (!u || !u.present || (!u.alive && u.deadT <= 0) || !hudOn) { n.active = false; continue; }
       n.active = true;
-      const p = this.refToView(u.x - u.w * 0.45 - 11, u.y - u.h * 0.62 + 2.3);
+      const p = this.refToView(u.x - u.w * 0.45 - 11, u.y - u.h * 0.62 + 2.3 + m.outroOffsetY(u));
       n.setPosition(p.x, p.y);
-      // 徽记色环
       const ring = S7FX_GROUP_RING[u.unitRef];
-      if (ring && this.hudG) {
-        this.hudG.strokeColor = hexColor(ring, 255);
-        this.hudG.lineWidth = 1.8 * this.k;
-        this.hudG.circle(p.x, p.y, 9.4 * this.k);
+      if (this.hudG) {
+        this.hudG.fillColor = new Color(18, 22, 34, 235); // 底圈（防透明头像穿底）
+        this.hudG.circle(p.x, p.y, 10.6 * this.k);
+        this.hudG.fill();
+        if (ring) {
+          this.hudG.strokeColor = hexColor(ring, 255);
+          this.hudG.lineWidth = 2.2 * this.k;
+          this.hudG.circle(p.x, p.y, 10.2 * this.k);
+          this.hudG.stroke();
+        }
+        this.hudG.strokeColor = new Color(255, 255, 255, 88);
+        this.hudG.lineWidth = 1 * this.k;
+        this.hudG.circle(p.x, p.y, 11.4 * this.k);
         this.hudG.stroke();
       }
     }
@@ -758,5 +802,29 @@ export class S7BattleFxLayer extends Component {
     for (let i = 0; i < this.popPool.length; i += 1) {
       if (i >= m.pops.length) this.popPool[i].active = false;
     }
+  }
+
+  /** 顶部倒计时（Ron 07-15 反馈①·常显）：剩余=120−已战秒（超时判负上限 120s=GDD §4 锁定）。
+   *  入场仪式期与收尾演出期收起。⚠总谱 §6 原口径=平时不显剩 30s 才浮现——真源同步候 Ron。 */
+  private syncTimer(): void {
+    const m = this.model;
+    if (!m || !this.timerG || !this.timerLabel) return;
+    this.timerG.clear();
+    const on = m.hudVisible() && !m.finished;
+    this.timerLabel.node.active = on;
+    if (!on) return;
+    const remain = Math.max(0, 120 - m.t);
+    const mm = Math.floor(remain / 60);
+    const ss = Math.floor(remain % 60);
+    this.timerLabel.string = `${mm}:${ss < 10 ? '0' : ''}${ss}`;
+    const p = this.refToView(S7FX_REF_W / 2, 30);
+    this.timerG.fillColor = new Color(18, 22, 36, 205);
+    this.timerG.roundRect(p.x - 37 * this.k, p.y - 13 * this.k, 74 * this.k, 26 * this.k, 13 * this.k);
+    this.timerG.fill();
+    this.timerG.strokeColor = new Color(255, 255, 255, 48);
+    this.timerG.lineWidth = 1 * this.k;
+    this.timerG.roundRect(p.x - 37 * this.k, p.y - 13 * this.k, 74 * this.k, 26 * this.k, 13 * this.k);
+    this.timerG.stroke();
+    this.timerLabel.node.setPosition(p.x, p.y);
   }
 }
