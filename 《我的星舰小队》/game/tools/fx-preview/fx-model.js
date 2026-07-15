@@ -566,7 +566,7 @@ var S7FX = (() => {
         case "recoil":
           if (u) {
             u.recoilT = 0.15;
-            u.castGlowT = 0.55;
+            u.castGlowT = 0.4;
           }
           break;
         case "darken":

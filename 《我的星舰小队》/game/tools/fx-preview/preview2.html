@@ -81,10 +81,12 @@ function idle(u, t) {
   const bob = Math.sin(t * 2 + u.phase) * 1.9;
   let ox = 0, oy = bob;
   if (u.shakeT > 0) { ox += (Math.random() - 0.5) * 4; oy += (Math.random() - 0.5) * 4; }
+  if (u.shakeT > 0) oy -= fwd * (u.shakeT / 0.1) * 3; // 批2 受击惯性（Cocos 同款）
   if (u.recoilT > 0) oy -= fwd * 4 * (u.recoilT / 0.15);
   if (u.lungeT > 0) oy += fwd * Math.sin((u.lungeT / 0.14) * Math.PI) * 3.5;
   if (u.spawnT > 0) oy += (u.side === 'player' ? 1 : -1) * u.spawnT * 120;
-  return { drift, bob, ox, oy, rot: Math.sin(t * 1.6 + u.phase) * 0.06, sq: Math.sin(t * 3.1 + u.phase) * 0.024 };
+  // 批2 巡航倾斜：drift 同源导数=向漂移方向压舷（Cocos 同款）
+  return { drift, bob, ox, oy, rot: Math.sin(t * 1.6 + u.phase) * 0.06 + Math.cos(t * 0.7 + u.phase * 3.1) * 0.05, sq: Math.sin(t * 3.1 + u.phase) * 0.024 };
 }
 
 function spriteOf(u) {
@@ -137,6 +139,17 @@ function frame(ts) {
       cx.beginPath(); cx.ellipse(sp.x, sp.y, u.w * 0.26 * K, u.h * 0.06 * K, 0, 0, Math.PI * 2); cx.fill();
       cx.globalAlpha = 1;
     }
+    // 批2 引擎喷口辉光呼吸（Cocos 同款）：尾向双层光晕·开火/入场增强
+    if (u.alive) {
+      const tp = rv(px + 0, py + (u.side === 'player' ? 1 : -1) * u.h * 0.46);
+      const breath = 0.72 + 0.28 * Math.sin(t * 3 + u.phase * 2);
+      const boost = !m.hudVisible() ? 1.8 : u.lungeT > 0 ? 1.55 : 1;
+      const ga = breath * alpha * boost;
+      cx.fillStyle = u.side === 'player' ? `rgba(127,216,232,${Math.min(1, ga * 0.16)})` : `rgba(255,170,100,${Math.min(1, ga * 0.13)})`;
+      cx.beginPath(); cx.arc(tp.x, tp.y, u.w * 0.16 * boost * K, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = u.side === 'player' ? `rgba(190,240,250,${Math.min(1, ga * 0.40)})` : `rgba(255,210,150,${Math.min(1, ga * 0.34)})`;
+      cx.beginPath(); cx.arc(tp.x, tp.y, u.w * 0.085 * boost * K, 0, Math.PI * 2); cx.fill();
+    }
     cx.save();
     cx.globalAlpha = alpha;
     cx.translate(p.x, p.y);
@@ -175,12 +188,25 @@ function frame(ts) {
       cx.beginPath(); cx.ellipse(0, 0, wpx * 0.46, hpx * 0.46, 0, 0, Math.PI * 2); cx.fill();
     }
     cx.restore();
-    // 施法环
+    // 施法环（批2 降噪：0.4s 单圈收细收淡=Cocos 同款）
     if (u.castGlowT > 0) {
-      const gk = u.castGlowT / 0.55, rr = 0.55 + (1 - gk) * 0.4;
-      cx.strokeStyle = hex(u.color, gk * 0.75 * alpha);
-      cx.lineWidth = (5 * gk + 1.5) * K;
+      const gk = u.castGlowT / 0.4, rr = 0.55 + (1 - gk) * 0.35;
+      cx.strokeStyle = hex(u.color, gk * 0.58 * alpha);
+      cx.lineWidth = (3.2 * gk + 1.2) * K;
       cx.beginPath(); cx.ellipse(p.x, p.y, u.w * rr * K, u.h * rr * K, 0, 0, Math.PI * 2); cx.stroke();
+    }
+    // 灯点眨眼（批2 活感·Cocos 同款）：翼尖暖灯短促眨
+    if (u.alive && m.hudVisible()) {
+      for (let wi = 0; wi < 2; wi += 1) {
+        const blink = Math.sin(t * 2.3 + u.phase * 7 + wi * 2.6);
+        if (blink <= 0.90) continue;
+        const bk = (blink - 0.90) / 0.10;
+        const wp = rv(px + (wi === 0 ? -1 : 1) * u.w * 0.33, py - u.h * 0.02);
+        cx.fillStyle = `rgba(255,242,200,${bk * 0.35 * alpha})`;
+        cx.beginPath(); cx.arc(wp.x, wp.y, 3.2 * K, 0, Math.PI * 2); cx.fill();
+        cx.fillStyle = `rgba(255,248,225,${bk * 0.9 * alpha})`;
+        cx.beginPath(); cx.arc(wp.x, wp.y, 1.6 * K, 0, Math.PI * 2); cx.fill();
+      }
     }
     // 治疗泛绿
     if (u.healGlowT > 0) {
@@ -194,6 +220,11 @@ function frame(ts) {
   const airG = cx.createLinearGradient(0, H * 0.10, 0, H * 0.46);
   airG.addColorStop(0, `rgba(${AIR_TINT},0.10)`); airG.addColorStop(1, `rgba(${AIR_TINT},0)`);
   cx.fillStyle = airG; cx.fillRect(0, 0, W, H * 0.46);
+  // 暗角（批2·边缘压暗=战斗区聚光；Cocos 侧=四缘矩形阶梯同语义）
+  const vg = cx.createRadialGradient(W / 2, H * 0.52, H * 0.32, W / 2, H * 0.52, H * 0.74);
+  vg.addColorStop(0, 'rgba(20,13,32,0)');
+  vg.addColorStop(1, 'rgba(20,13,32,0.32)');
+  cx.fillStyle = vg; cx.fillRect(0, 0, W, H);
   // V3 压暗
   const da = m.darkenAlpha();
   if (da > 0) { cx.fillStyle = `rgba(10,8,20,${da})`; cx.fillRect(0, 0, W, H); }

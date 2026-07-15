@@ -272,6 +272,9 @@ export class S7BattleFxLayer extends Component {
     this.airHaze.color = new Color(255, 255, 255, 26);
     hazeN.getComponent(UITransform)!.setContentSize(this.viewW, this.viewH * 0.36);
     hazeN.setPosition(0, this.viewH * 0.5 - this.viewH * 0.10 - this.viewH * 0.18);
+    // 暗角（磨精批2·静态一次绘制）：边缘压暗=战斗区自然聚光——治"背景均质像海报"；
+    // 层序=盖背景与单位、在特效/HUD 之下（§4a"特效层后画保锐"口径）。
+    this.buildVignette(this.child('vignette').addComponent(Graphics));
     // V3 压暗（盖场景不盖特效）
     this.darkenG = this.child('darken').addComponent(Graphics);
     // 特效层（弹体/爆点池）+ 粒子 Graphics
@@ -309,6 +312,28 @@ export class S7BattleFxLayer extends Component {
     n.addComponent(UITransform).setContentSize(this.viewW, this.viewH);
     this.node.addChild(n);
     return n;
+  }
+
+  /** 暗角（磨精批2）：四缘多层矩形 α 阶梯模拟径向渐变（Graphics 无渐变·层高 ≈2% 屏肉眼无阶；
+   *  角落双带叠加自然更深=径向感）。静态画一次零逐帧开销。 */
+  private buildVignette(g: Graphics): void {
+    const W = this.viewW;
+    const H = this.viewH;
+    const LAYERS = 6;
+    const bands: ReadonlyArray<readonly [string, number, number]> = [
+      ['bottom', H * 0.16, 13], ['top', H * 0.10, 10], ['left', W * 0.085, 7], ['right', W * 0.085, 7],
+    ];
+    for (const [side, span, aStep] of bands) {
+      for (let i = 0; i < LAYERS; i += 1) {
+        g.fillColor = new Color(20, 13, 32, aStep); // 每层同 α·厚度递减=叠加成边缘渐深
+        const t = span * (1 - i / LAYERS);
+        if (side === 'bottom') g.rect(-W / 2, -H / 2, W, t);
+        else if (side === 'top') g.rect(-W / 2, H / 2 - t, W, t);
+        else if (side === 'left') g.rect(-W / 2, -H / 2, t, H);
+        else g.rect(W / 2 - t, -H / 2, t, H);
+        g.fill();
+      }
+    }
   }
 
   private setFrame(sp: Sprite, name: string): boolean {
@@ -441,10 +466,12 @@ export class S7BattleFxLayer extends Component {
     const bob = Math.sin(t * 2 + u.phase) * 1.9;
     let ox = 0, oy = bob;
     if (u.shakeT > 0) { ox += (this.rand() - 0.5) * 4; oy += (this.rand() - 0.5) * 4; }
+    if (u.shakeT > 0) oy -= fwd * (u.shakeT / 0.1) * 3; // 批2 受击惯性：被打向后微退 3px 衰减（挨打有"分量"）
     if (u.recoilT > 0) oy -= fwd * 4 * (u.recoilT / 0.15);
     if (u.lungeT > 0) oy += fwd * Math.sin((u.lungeT / 0.14) * Math.PI) * 3.5;
     if (u.spawnT > 0) oy += (u.side === 'player' ? 1 : -1) * u.spawnT * 120;
-    const rot = Math.sin(t * 1.6 + u.phase) * 0.06;
+    // 批2 巡航倾斜：与横漂同源导数（cos）→向漂移方向压舷=飞行器味（原纯 sin 摇摆保留叠加）
+    const rot = Math.sin(t * 1.6 + u.phase) * 0.06 + Math.cos(t * 0.7 + u.phase * 3.1) * 0.05;
     const sq = Math.sin(t * 3.1 + u.phase) * 0.024;
     return { drift, bob, ox, oy, rot, sq };
   }
@@ -483,6 +510,27 @@ export class S7BattleFxLayer extends Component {
         gg.ellipse(sp.x, sp.y, u.w * 0.26 * this.k, u.h * 0.06 * this.k);
         gg.fill();
       }
+      // 引擎喷口辉光呼吸（批2 活感·总谱 V0"引擎火苗"迟到补齐）：尾向双层光晕·
+      // 呼吸起伏，开火/入场时增强（发力感）；我方青蓝（家族喷口）/敌方暖橙（阵营区分）。
+      if (u.alive) {
+        const tailRef = this.refToView(
+          u.x + o.drift + o.ox,
+          u.y + o.oy + m.outroOffsetY(u) + m.introOffsetY(u) + (u.side === 'player' ? 1 : -1) * u.h * 0.46,
+        );
+        const breath = 0.72 + 0.28 * Math.sin(t * 3 + u.phase * 2);
+        const boost = !m.hudVisible() ? 1.8 : u.lungeT > 0 ? 1.55 : 1;
+        const glowA = breath * alpha * boost;
+        gg.fillColor = u.side === 'player'
+          ? new Color(127, 216, 232, Math.round(Math.min(1, glowA * 0.16) * 255))
+          : new Color(255, 170, 100, Math.round(Math.min(1, glowA * 0.13) * 255));
+        gg.circle(tailRef.x, tailRef.y, u.w * 0.16 * boost * this.k);
+        gg.fill();
+        gg.fillColor = u.side === 'player'
+          ? new Color(190, 240, 250, Math.round(Math.min(1, glowA * 0.40) * 255))
+          : new Color(255, 210, 150, Math.round(Math.min(1, glowA * 0.34) * 255));
+        gg.circle(tailRef.x, tailRef.y, u.w * 0.085 * boost * this.k);
+        gg.fill();
+      }
       // 切件动骨
       for (const part of rig.parts) {
         const pr = part.rig;
@@ -501,19 +549,32 @@ export class S7BattleFxLayer extends Component {
           part.node.angle = (-Math.sin(t * 2.1 + u.phase) * 0.09 * 180) / Math.PI;
         }
       }
-      // 施法能量环（实心盘淘汰版·两圈描边外扩）
+      // 施法能量环（批2 降噪：0.55→0.4s·双圈→单圈收细收淡——同屏多环不再吵，V2 主体=舰身泛光+签名弹）
       if (u.castGlowT > 0) {
-        const gk = u.castGlowT / 0.55;
-        const rr = 0.55 + (1 - gk) * 0.4;
-        const ccol = hexColor(u.color, Math.round(gk * 0.75 * alpha * 255));
-        rg.strokeColor = ccol;
-        rg.lineWidth = (5 * gk + 1.5) * this.k;
+        const gk = u.castGlowT / 0.4;
+        const rr = 0.55 + (1 - gk) * 0.35;
+        rg.strokeColor = hexColor(u.color, Math.round(gk * 0.58 * alpha * 255));
+        rg.lineWidth = (3.2 * gk + 1.2) * this.k;
         rg.ellipse(p.x, p.y, u.w * rr * this.k, u.h * rr * this.k);
         rg.stroke();
-        rg.strokeColor = hexColor(u.color, Math.round(gk * 0.35 * alpha * 255));
-        rg.lineWidth = 2 * this.k;
-        rg.ellipse(p.x, p.y, u.w * rr * 0.78 * this.k, u.h * rr * 0.78 * this.k);
-        rg.stroke();
+      }
+      // 灯点眨眼（批2 活感·总谱 V0）：左右翼尖小暖灯短促眨（sin 峰值窗=偶尔亮一下）
+      if (u.alive && m.hudVisible()) {
+        for (let wi = 0; wi < 2; wi += 1) {
+          const blink = Math.sin(t * 2.3 + u.phase * 7 + wi * 2.6);
+          if (blink <= 0.90) continue;
+          const bk = (blink - 0.90) / 0.10;
+          const wp = this.refToView(
+            u.x + o.drift + o.ox + (wi === 0 ? -1 : 1) * u.w * 0.33,
+            u.y + o.oy + m.outroOffsetY(u) - u.h * 0.02,
+          );
+          rg.fillColor = new Color(255, 242, 200, Math.round(bk * 0.35 * alpha * 255));
+          rg.circle(wp.x, wp.y, 3.2 * this.k);
+          rg.fill();
+          rg.fillColor = new Color(255, 248, 225, Math.round(bk * 0.9 * alpha * 255));
+          rg.circle(wp.x, wp.y, 1.6 * this.k);
+          rg.fill();
+        }
       }
       // 兜底皮（未铺皮肤舰=糖果舰矢量·族色·演出不许断；07-15 Ron 反馈黄圆球太素）
       if (!rig.hasSprite) {

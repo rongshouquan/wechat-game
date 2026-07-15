@@ -237,7 +237,8 @@ export function buildS7FxScript(
         cmds.push({ tSec: t, kind: 'recoil', unitId: atk.actorId });
         const castColor = sign.projectile?.color ?? sign.impact.color;
         if (castColor) {
-          cmds.push({ tSec: t, kind: 'impact', at: from, impact: { kind: 'ring_expand', size: 1.3 }, color: castColor, vLevel: 2 });
+          // 磨精批2 降噪：1.3→1.1（施法环克制一档·V2 辨识主体=舰身泛光+签名弹）
+          cmds.push({ tSec: t, kind: 'impact', at: from, impact: { kind: 'ring_expand', size: 1.1 }, color: castColor, vLevel: 2 });
         }
       }
 

@@ -539,7 +539,7 @@ export class S7FxPlayModel {
         break;
       }
       case 'recoil':
-        if (u) { u.recoilT = 0.15; u.castGlowT = 0.55; }
+        if (u) { u.recoilT = 0.15; u.castGlowT = 0.4; } // 磨精批2 降噪：0.55→0.4（同屏施法环过多过吵）
         break;
       case 'darken':
         this.darkenT = c.durationSec;
