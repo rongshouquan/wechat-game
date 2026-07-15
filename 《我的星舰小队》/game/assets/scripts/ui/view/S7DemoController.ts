@@ -2186,14 +2186,16 @@ export class S7DemoController extends Component {
       const n = new Node('lsl'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
       const l = n.addComponent(Label); l.fontSize = s; l.lineHeight = Math.round(s * 1.3); l.color = c; l.string = t;
     };
-    const mkB = (t: string, w: number, h: number, c: Color, x: number, y: number, tap: () => void): void => {
-      const n = new Node('lsb'); n.layer = this.node.layer; panel.addChild(n); n.setPosition(x, y, 0);
+    const mkB = (t: string, w: number, h: number, c: Color, x: number, y: number, tap: () => void, host?: Node): void => {
+      const n = new Node('lsb'); n.layer = this.node.layer; (host ?? panel).addChild(n); n.setPosition(x, y, 0);
       const ut = n.addComponent(UITransform); ut.setContentSize(w, h);
       const bg = n.addComponent(Graphics); bg.fillColor = c; bg.roundRect(-w / 2, -h / 2, w, h, 10); bg.fill();
       const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
       const l = ln.addComponent(Label); l.fontSize = 32; l.lineHeight = 40; l.color = new Color(255, 255, 255); l.string = t;
-      n.on(Node.EventType.TOUCH_END, tap, this);
+      n.on(Node.EventType.TOUCH_END, () => { if (this.scrollDragging) return; tap(); }, this); // 滚动松手不误点
     };
+    // 节点按钮滚动容器（07-15 反馈③：150 关列表超一屏必须能滑）
+    const lsContent = new Node('lsContent'); lsContent.layer = this.node.layer; panel.addChild(lsContent); lsContent.setPosition(0, 0, 0);
 
     mkL('选择关卡（灰盒跳关·点了去打那一关）', 34, new Color(255, 230, 120), 0, band.usableTopY - 50);
     // 节点按钮：每行 3 个，居中铺开。
@@ -2208,9 +2210,14 @@ export class S7DemoController extends Component {
       const c = i % perRow;
       const x = (c - (perRow - 1) / 2) * gx;
       const y = top - r * gy;
-      mkB(nodeId, bw, bh, new Color(60, 110, 170, 255), x, y, () => this.onPickLevel(nodeId));
+      mkB(nodeId, bw, bh, new Color(60, 110, 170, 255), x, y, () => this.onPickLevel(nodeId), lsContent);
     });
-    mkB('返回', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLevelSelect()); // #16：子浮层退路统一叫「返回」
+    // 滚动上限：最低一行抬到「返回」键上方可见（内容不满一屏=0 不滚）
+    const lsRows = Math.ceil(this.encounterNodeIds.length / perRow);
+    const lsLowest = top - (lsRows - 1) * gy;
+    const lsMax = Math.max(0, (band.usableBottomY + 150) - lsLowest);
+    this.attachVScroll(panel, lsContent, () => lsMax);
+    mkB('返回', 200, 64, new Color(120, 90, 160, 255), 0, band.usableBottomY + 50, () => this.closeLevelSelect()); // #16：子浮层退路统一叫「返回」（钉在面板·不随列表滚）
   }
 
   // ===== M0 新手引导 UI 壳（通用·M1-M3 复用，本层不含具体步骤内容） =====
@@ -3913,7 +3920,7 @@ export class S7DemoController extends Component {
         }
         const lbl = this.prebattleCellLabels[r2 * 3 + c];
         if (lbl) {
-          const s = slot ? `${slot.shipId}\n${this.pilotOf(slot.shipId) ?? '缺员'}` : '+';
+          const s = slot ? `${this.unitName('ship', slot.shipId)}\n${this.pilotOf(slot.shipId) ? this.unitName('pilot', this.pilotOf(slot.shipId)!) : '缺员'}` : '+';
           if (lbl.string !== s) lbl.string = s; // 复验批：文本守卫（九宫格逐格重设会白付 9 次排版）
         }
       }
@@ -4046,9 +4053,10 @@ export class S7DemoController extends Component {
     const tN = new Node('bt'); tN.layer = this.node.layer; panel.addChild(tN); tN.setPosition(-W * 0.24, sheetTop - 40, 0);
     const tl = tN.addComponent(Label); tl.fontSize = 30; tl.lineHeight = 38; tl.color = new Color(255, 220, 140); tl.string = '上阵 — 选星舰';
 
-    // 左侧拥有星舰列表容器（刷新重建）。
+    // 左侧拥有星舰列表容器（刷新重建）；拖动滚动（07-15 反馈③）。
     const listN = new Node('bList'); listN.layer = this.node.layer; panel.addChild(listN); listN.setPosition(0, 0, 0);
     this.boardingShipListNode = listN;
+    this.attachVScroll(panel, listN, () => this.boardingScrollMax);
 
     // 右侧详情 + 操作（装配/上下场）。
     const dN = new Node('bd'); dN.layer = this.node.layer; panel.addChild(dN); dN.setPosition(W * 0.24, sheetTop - 120, 0);
@@ -4086,6 +4094,7 @@ export class S7DemoController extends Component {
     const W = this.viewW, H = this.viewH;
     const list = this.boardingShipListNode;
     list.removeAllChildren();
+    list.setPosition(0, 0, 0); // 重建回顶
     this.boardingShipRowBtns.clear();
     // 排序：① 当前格上的船最前 → ② 上阵的靠前 → ③ 战力高靠前。
     const cellShip = this.prebattleSelSlot ? this.slotOf(this.prebattleSelSlot)?.shipId ?? null : null;
@@ -4099,10 +4108,12 @@ export class S7DemoController extends Component {
     });
     const bw = W * 0.40, bh = 76;
     let y = -H * 0.06;
+    // 滚动上限：最低一行要能抬到底部安全区之上（07-15 反馈③）
+    this.boardingScrollMax = Math.max(0, (band.usableBottomY + 150) - (-H * 0.06 - (ships.length - 1) * (bh + 10)));
     for (const shipId of ships) {
       const deployed = isShipDeployed(this.squad, shipId);
       const sel = this.prebattleSelShip === shipId;
-      const label = `${shipId}（战力${this.shipPower(shipId)}）${deployed ? '·已上场' : ''}`;
+      const label = `${this.unitName('ship', shipId)}（战力${this.shipPower(shipId)}）${deployed ? '·已上场' : ''}`;
       const col = sel ? new Color(70, 130, 95, 255) : deployed ? new Color(45, 95, 75, 255) : new Color(55, 95, 150, 255);
       const row = this.addBtn(list, label, bw, bh, col, -W * 0.24, y, () => this.onBoardingPickShip(shipId), 24);
       this.boardingShipRowBtns.set(shipId, row.node.parent as Node);
@@ -4114,7 +4125,7 @@ export class S7DemoController extends Component {
       if (ship) {
         const deployed = isShipDeployed(this.squad, ship);
         const where = deployed ? `在场 ${this.squad.formation.find((s) => s.shipId === ship)?.slotRef}` : '未上场';
-        this.boardingDetailLabel.string = `星舰 ${ship}（${where}）\n战力 ${this.shipPower(ship)}\n驾驶员 ${this.pilotOf(ship) ?? '缺员'}\n${this.loadoutSummaryText(ship)}`;
+        this.boardingDetailLabel.string = `星舰 ${this.unitName('ship', ship)}（${where}）\n战力 ${this.shipPower(ship)}\n驾驶员 ${this.pilotOf(ship) ? this.unitName('pilot', this.pilotOf(ship)!) : '缺员'}\n${this.loadoutSummaryText(ship)}`;
       } else {
         this.boardingDetailLabel.string = '← 左侧选一艘星舰';
       }
@@ -4141,7 +4152,7 @@ export class S7DemoController extends Component {
   private addModalDismiss(panel: Node, onClose: () => void, cardW: number, cardH: number, cardX = 0, cardY = 0): void {
     const back = new Node('backdrop'); back.layer = this.node.layer; panel.addChild(back); back.setPosition(0, 0, 0);
     const bu = back.addComponent(UITransform); bu.setContentSize(this.viewW, this.viewH);
-    back.on(Node.EventType.TOUCH_END, onClose, this);
+    back.on(Node.EventType.TOUCH_END, () => { if (this.scrollDragging) return; onClose(); }, this); // 滚动拖出卡片松手≠点空白关（07-15 反馈③）
     const card = new Node('cardAbsorb'); card.layer = this.node.layer; panel.addChild(card); card.setPosition(cardX, cardY, 0);
     const cu = card.addComponent(UITransform); cu.setContentSize(cardW, cardH);
     card.on(Node.EventType.TOUCH_END, () => {}, this);
@@ -4176,8 +4187,35 @@ export class S7DemoController extends Component {
     const bg = n.addComponent(Graphics); bg.fillColor = color; bg.roundRect(-w / 2, -h / 2, w, h, 10); bg.fill();
     const ln = new Node('t'); ln.layer = this.node.layer; n.addChild(ln);
     const l = ln.addComponent(Label); l.fontSize = fontSize; l.lineHeight = Math.round(fontSize * 1.25); l.color = new Color(255, 255, 255); l.string = text;
-    n.on(Node.EventType.TOUCH_END, onTap, this);
+    n.on(Node.EventType.TOUCH_END, () => { if (this.scrollDragging) return; onTap(); }, this); // 拖动滚动后松手不误触（07-15 反馈③）
     return l;
+  }
+
+  // ===== 手搓列表拖动滚动（07-15 Ron 反馈③：内容超一屏的页面要能上下滑看全）=====
+
+  /** 本次触摸是否已构成拖动（各按钮回调据此吞掉"拖完松手"的误点击）。 */
+  private scrollDragging = false;
+
+  /** 给"内容超一屏"的手搓列表加拖动滚动：拖 touchArea 时把 content 在 y∈[0,maxScroll()] 里平移。
+   *  maxScroll 用闭包=列表行数随刷新变；触摸累计位移 >12px 才算拖（保住普通点击）。 */
+  private attachVScroll(touchArea: Node, content: Node, maxScroll: () => number): void {
+    let lastY = 0;
+    let startY = 0;
+    touchArea.on(Node.EventType.TOUCH_START, (e: EventTouch) => {
+      lastY = e.getUILocation().y;
+      startY = lastY;
+      this.scrollDragging = false;
+    }, this);
+    touchArea.on(Node.EventType.TOUCH_MOVE, (e: EventTouch) => {
+      const yNow = e.getUILocation().y;
+      const dy = yNow - lastY;
+      lastY = yNow;
+      if (Math.abs(yNow - startY) > 12) this.scrollDragging = true;
+      const max = Math.max(0, maxScroll());
+      if (max <= 0) return; // 内容不满一屏=不滚
+      const ny = Math.min(max, Math.max(0, content.position.y + dy));
+      content.setPosition(content.position.x, ny, 0);
+    }, this);
   }
 
   /** 装配面板：标题 + 提示 + 装备列表容器(刷新重建) + 关闭；并搭 详情/移动确认 两弹窗。 */
@@ -4636,8 +4674,16 @@ export class S7DemoController extends Component {
       if (this.prebattleSkipBtn) this.prebattleSkipBtn.active = true;
       if (this.prebattleSpeedBtn) this.prebattleSpeedBtn.active = true;
       this.prebattleGfx.clear(); // 底板交给演出层的背景板
+      // 备战即战场（Ron 07-15 反馈①）：把备战格坐标（Cocos 局部·中心原点 y 上）
+      // 归一化成 0-1（y 下）喂给演出层——玩家摆哪打哪，弹道爆点全随之。
+      this.computePositions(pb);
+      const layoutOv: Record<string, { x: number; y: number }> = {};
+      this.posById.forEach((p, id) => {
+        layoutOv[id] = { x: p.x / this.viewW + 0.5, y: 0.5 - p.y / this.viewH };
+      });
       this.fxLayer.play(pb, (ref) => this.fxRefMap.get(ref) ?? { unitRef: '', roleTag: '' }, {
         speed: this.playbackSpeed,
+        layout: layoutOv,
         onFinish: () => this.finishPlayback(),
       });
       return;
@@ -4819,8 +4865,16 @@ export class S7DemoController extends Component {
     this.addBtn(panel, kind === 'ship' ? '升级船坞' : '升级训练舱', 260, 76, new Color(90, 150, 110, 255), W * 0.20, botY + 44, () => this.openBuildingUpgrade(bid), 26);
     if (kind === 'ship') { this.dockNode = panel; this.dockListNode = list; this.dockInfoLabel = info; this.dockResultLabel = result; this.dockBackBtn = back.node.parent; }
     else { this.trainingNode = panel; this.trainingListNode = list; this.trainingInfoLabel = info; this.trainingResultLabel = result; this.trainingBackBtn = back.node.parent; }
+    // 列表拖动滚动（07-15 反馈③）：行数超一屏时可上下滑；上限随 refreshUnitTrain 重算。
+    this.attachVScroll(panel, list, () => (kind === 'ship' ? this.dockScrollMax : this.trainingScrollMax));
     return panel;
   }
+
+  /** 船坞/训练舱列表滚动上限（refreshUnitTrain 重算）。 */
+  private dockScrollMax = 0;
+  private trainingScrollMax = 0;
+  /** 上阵星舰列表滚动上限（refreshBoarding 重算）。 */
+  private boardingScrollMax = 0;
 
   private openDock(): void {
     if (this.blockIfBuildingLocked('bld_dock', '船坞')) return;
@@ -4843,8 +4897,16 @@ export class S7DemoController extends Component {
       ? `船坞 Lv.${bLv} · 星舰升级合金 -${(UPGRADE_DISCOUNT_PCT_PER_LEVEL * bLv).toFixed(1)}%`
       : `训练舱 Lv.${bLv} · 驾驶员升级记录 -${(UPGRADE_DISCOUNT_PCT_PER_LEVEL * bLv).toFixed(1)}%`;
     listNode.removeAllChildren();
+    listNode.setPosition(0, 0, 0); // 重建列表回顶（滚动位不跨刷新残留）
     for (const key of Array.from(this.manageRowBtns.keys())) { if (key.startsWith(`${kind}:`)) this.manageRowBtns.delete(key); }
     const units = kind === 'ship' ? this.squad.ownedShips : this.squad.ownedPilots;
+    // 滚动上限：内容高 − 可视高（可视=列表首行到底部按钮区上沿）
+    {
+      const b2 = getS7UsableBand();
+      const visibleSpan = (b2.usableTopY - 170) - (b2.usableBottomY + 170);
+      const overflow = Math.max(0, units.length * 62 - visibleSpan);
+      if (kind === 'ship') this.dockScrollMax = overflow; else this.trainingScrollMax = overflow;
+    }
     let y = getS7UsableBand().usableTopY - 170;
     if (units.length === 0) this.mkPanelLabel(listNode, '（还没有拥有的单位）', 24, new Color(150, 160, 175), 0, y);
     for (const uid of units) {

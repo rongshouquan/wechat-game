@@ -71,8 +71,9 @@ export interface S7FxResolveQuery {
 const COLOR_HEAL = '#7ED957';
 const COLOR_SHIELD = '#63B8FF';
 
-// ---- 五族基调色（我方 fallback 用的代表色；正式逐舰色随素材接入补齐）----
-const ROLE_COLOR: Record<string, string> = {
+// ---- 五族基调色（我方 fallback 用的代表色；正式逐舰色随素材接入补齐；
+//      导出=渲染层无皮舰矢量兜底同源取色·07-15）----
+export const ROLE_COLOR: Record<string, string> = {
   assault: '#4FC3F7', // 突击·青蓝系
   guard: '#3BA8A0', // 护卫·钢青系
   artillery: '#FF8A3D', // 炮击·炽橙系

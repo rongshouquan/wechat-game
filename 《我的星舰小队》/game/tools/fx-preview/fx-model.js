@@ -35,6 +35,59 @@ var S7FX = (() => {
     s7FxVfxForProjectile: () => s7FxVfxForProjectile
   });
 
+  // assets/scripts/core/s7/fx/S7FxCatalog.ts
+  var COLOR_SHIELD = "#63B8FF";
+  var ROLE_COLOR = {
+    assault: "#4FC3F7",
+    // 突击·青蓝系
+    guard: "#3BA8A0",
+    // 护卫·钢青系
+    artillery: "#FF8A3D",
+    // 炮击·炽橙系
+    support: "#F5A8C0",
+    // 支援·金粉系
+    engineer: "#9C6BD4"
+    // 工程·紫系
+  };
+  function sig(projectile, impactKind, impactSize, vLevel, impactColor) {
+    return { projectile, impact: { kind: impactKind, size: impactSize, color: impactColor }, vLevel };
+  }
+  function proj(p) {
+    return {
+      count: 1,
+      intervalSec: 0,
+      flightSec: 0.3,
+      size: 1,
+      arc: 0,
+      ...p
+    };
+  }
+  var SHIP_SIGNS = {
+    shp03: {
+      normal: sig(proj({ shape: "bolt", color: "#4FC3F7", count: 3, intervalSec: 0.1, flightSec: 0.18, size: 0.7 }), "burst_small", 0.7, 1),
+      ultimate: { ...sig(proj({ shape: "blade", color: "#4FC3F7", count: 2, intervalSec: 0.12, flightSec: 0.32, size: 1.6, arc: 0.25 }), "burst_mid", 1.3, 2), name: "\u5206\u9556" }
+    },
+    shp06: {
+      normal: sig(proj({ shape: "ring", color: "#3BA8A0", flightSec: 0.35, size: 1.1 }), "ring_expand", 1, 1),
+      ultimate: { ...sig(null, "ring_expand", 2.2, 2, "#3BA8A0"), name: "\u6012\u543C", impact: { kind: "ring_expand", size: 2.2, color: "#3BA8A0", durationSec: 0.9 } }
+      // 自心钢青声波大环
+    },
+    shp09: {
+      normal: sig(proj({ shape: "shell", color: "#FF8A3D", flightSec: 0.4, size: 1.5 }), "burst_mid", 1.3, 1),
+      ultimate: { ...sig(proj({ shape: "shell", color: "#FF8A3D", flightSec: 0.55, size: 2.8, arc: 1 }), "burst_big", 2.4, 2), name: "\u8FC7\u8F7D\u8F70\u51FB" }
+    },
+    shp13: {
+      normal: sig(proj({ shape: "bubble", color: COLOR_SHIELD, flightSec: 0.35, size: 1 }), "bubble_pop", 1, 1),
+      ultimate: { ...sig(null, "bubble_pop", 1.6, 2, COLOR_SHIELD), name: "\u5723\u76FE", impact: { kind: "bubble_pop", size: 1.6, color: COLOR_SHIELD, durationSec: 2.5 } }
+      // 全队罩泡·罩得住看得见
+    },
+    shp20: {
+      normal: sig(proj({ shape: "orb", color: "#9C6BD4", flightSec: 0.38, size: 0.9 }), "burst_small", 0.8, 1),
+      ultimate: { ...sig(proj({ shape: "ring", color: "#B96BE0", flightSec: 0.4, size: 1.8 }), "cage_ring", 2, 2), name: "\u529B\u573A\u7262\u7B3C", impact: { kind: "cage_ring", size: 2, color: "#B96BE0", durationSec: 2 } }
+      // 牢笼罩 2 秒
+    }
+  };
+
   // assets/scripts/core/s7/fx/S7FxPlayModel.ts
   var S7FX_REF_W = 464;
   var S7FX_REF_H = 825;
@@ -151,25 +204,35 @@ var S7FX = (() => {
       this.endT = timeline.durationSec + 1.5;
       this.winner = winner;
       let maxEnemyHp = 1;
-      for (const r of roster) if (r.side === "enemy" && r.maxHp > maxEnemyHp) maxEnemyHp = r.maxHp;
+      let secondEnemyHp = 0;
+      let bossUnitId = "";
+      for (const r of roster) {
+        if (r.side !== "enemy") continue;
+        if (r.maxHp > maxEnemyHp) {
+          secondEnemyHp = maxEnemyHp;
+          maxEnemyHp = r.maxHp;
+          bossUnitId = r.unitId;
+        } else if (r.maxHp > secondEnemyHp) secondEnemyHp = r.maxHp;
+      }
+      const hasRealBoss = secondEnemyHp <= 0 ? true : maxEnemyHp >= secondEnemyHp * 1.8;
       for (const r of roster) {
         const lay = timeline.layout[r.unitId];
         const isP = r.side === "player";
         let size = 92;
         let isBoss = false;
         if (!isP) {
-          const ratio = r.maxHp / maxEnemyHp;
-          if (ratio >= 0.999) {
+          if (hasRealBoss && r.unitId === bossUnitId) {
             size = 150;
             isBoss = true;
-          } else if (ratio >= 0.35) size = 78;
+          } else if (r.maxHp / maxEnemyHp >= 0.35) size = 78;
           else size = 54;
         }
         const u = {
           unitId: r.unitId,
           side: r.side,
           unitRef: r.unitRef,
-          color: isP ? S7FX_SHIP_COLOR[r.unitRef] ?? "#FFE066" : S7FX_ENEMY_COLOR,
+          roleTag: r.roleTag,
+          color: isP ? S7FX_SHIP_COLOR[r.unitRef] ?? ROLE_COLOR[r.roleTag] ?? "#FFE066" : S7FX_ENEMY_COLOR,
           x: (lay ? lay.at.x : 0.5) * S7FX_REF_W,
           y: (lay ? lay.at.y : 0.5) * S7FX_REF_H,
           w: size,

@@ -11,7 +11,7 @@
 //   热路径外移（数组复用·渲染层负责节点池）。微信兼容：不展开 Set/Map。
 
 import { S7FxCommand, S7FxTimeline } from './S7FxScript';
-import { S7FxImpactKind, S7FxProjectileSpec } from './S7FxCatalog';
+import { S7FxImpactKind, S7FxProjectileSpec, ROLE_COLOR } from './S7FxCatalog';
 
 /** 参考画布（预览壳同幅面；渲染层等比缩放）。 */
 export const S7FX_REF_W = 464;
@@ -97,6 +97,8 @@ export interface S7FxUnitState {
   unitId: string;
   side: string;
   unitRef: string;
+  /** 职业标签（无皮舰矢量兜底取族色/画型用）。 */
+  roleTag: string;
   color: string;
   /** 参考像素坐标（464×825 空间·中心点）。 */
   x: number;
@@ -207,25 +209,34 @@ export class S7FxPlayModel {
     this.cmds = timeline.commands;
     this.endT = timeline.durationSec + 1.5;
     this.winner = winner;
-    // 敌方尺寸阶（对标验收尺②）：最大 maxHp=船长档 150 / ≥35% 分位=大副档 78 / 其余=小兵档 54；我方 92。
+    // 敌方尺寸阶（对标验收尺②）：Boss=断崖判定（最大血 ≥1.8× 次大血才算·全同血敌群
+    //   =全大副档，07-15 Ron 真机反馈：旧"最大即 Boss"让均血 7 敌全变船长尺寸挤成一坨）；
+    //   其余 ≥35% 分位=大副档 78 / 以下=小兵档 54；我方 92。
     let maxEnemyHp = 1;
-    for (const r of roster) if (r.side === 'enemy' && r.maxHp > maxEnemyHp) maxEnemyHp = r.maxHp;
+    let secondEnemyHp = 0;
+    let bossUnitId = '';
+    for (const r of roster) {
+      if (r.side !== 'enemy') continue;
+      if (r.maxHp > maxEnemyHp) { secondEnemyHp = maxEnemyHp; maxEnemyHp = r.maxHp; bossUnitId = r.unitId; }
+      else if (r.maxHp > secondEnemyHp) secondEnemyHp = r.maxHp;
+    }
+    const hasRealBoss = secondEnemyHp <= 0 ? true : maxEnemyHp >= secondEnemyHp * 1.8;
     for (const r of roster) {
       const lay = timeline.layout[r.unitId];
       const isP = r.side === 'player';
       let size = 92;
       let isBoss = false;
       if (!isP) {
-        const ratio = r.maxHp / maxEnemyHp;
-        if (ratio >= 0.999) { size = 150; isBoss = true; }
-        else if (ratio >= 0.35) size = 78;
+        if (hasRealBoss && r.unitId === bossUnitId) { size = 150; isBoss = true; }
+        else if (r.maxHp / maxEnemyHp >= 0.35) size = 78;
         else size = 54;
       }
       const u: S7FxUnitState = {
         unitId: r.unitId,
         side: r.side,
         unitRef: r.unitRef,
-        color: isP ? (S7FX_SHIP_COLOR[r.unitRef] ?? '#FFE066') : S7FX_ENEMY_COLOR,
+        roleTag: r.roleTag,
+        color: isP ? (S7FX_SHIP_COLOR[r.unitRef] ?? ROLE_COLOR[r.roleTag] ?? '#FFE066') : S7FX_ENEMY_COLOR,
         x: (lay ? lay.at.x : 0.5) * S7FX_REF_W,
         y: (lay ? lay.at.y : 0.5) * S7FX_REF_H,
         w: size, h: size, isBoss,

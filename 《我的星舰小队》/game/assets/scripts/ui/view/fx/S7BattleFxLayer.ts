@@ -156,9 +156,13 @@ export class S7BattleFxLayer extends Component {
   private shownHp: Record<string, number> = {}; // 血条显示值（非对称平滑·回涨看得见）
   private rand = (() => { let s = 0xC0C05 >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; })();
 
-  /** 开演。resolveRef=unitStatRef→{unitRef,roleTag}（Demo 侧从 runtime 表拼）。 */
-  play(pb: S7BattlePlayback, resolveRef: S7FxRefResolver, opts?: { speed?: number; bg?: string; onFinish?: () => void }): void {
-    const timeline = buildS7FxScript(pb, resolveRef);
+  /** 开演。resolveRef=unitStatRef→{unitRef,roleTag}（Demo 侧从 runtime 表拼）；
+   *  opts.layout=外部站位表（0-1 归一化）——备战即战场（Ron 07-15 反馈①）。 */
+  play(pb: S7BattlePlayback, resolveRef: S7FxRefResolver, opts?: {
+    speed?: number; bg?: string; onFinish?: () => void;
+    layout?: Record<string, { x: number; y: number }>;
+  }): void {
+    const timeline = buildS7FxScript(pb, resolveRef, opts?.layout);
     const roster: S7FxRosterEntry[] = pb.roster.map((u) => {
       const r = resolveRef(u.unitStatRef);
       return { unitId: u.unitId, side: u.side, unitRef: r.unitRef, roleTag: r.roleTag, maxHp: u.maxHp };
@@ -489,10 +493,32 @@ export class S7BattleFxLayer extends Component {
         rg.ellipse(p.x, p.y, u.w * rr * 0.78 * this.k, u.h * rr * 0.78 * this.k);
         rg.stroke();
       }
-      // 兜底皮（贴图缺失=舰色圆块·演出不许断）
+      // 兜底皮（未铺皮肤舰=糖果舰矢量·族色·演出不许断；07-15 Ron 反馈黄圆球太素）
       if (!rig.hasSprite) {
-        rg.fillColor = hexColor(u.color, Math.round(alpha * 255));
-        rg.ellipse(p.x, p.y, u.w * 0.42 * this.k, u.h * 0.42 * this.k);
+        const wpx = u.w * this.k, hpx = u.h * this.k;
+        const a255 = Math.round(alpha * 255);
+        // 壳（胖圆糖果体·纵向椭圆）+ 深色描边
+        rg.fillColor = hexColor(u.color, a255);
+        rg.ellipse(p.x, p.y, wpx * 0.34, hpx * 0.44);
+        rg.fill();
+        rg.strokeColor = new Color(30, 22, 40, a255);
+        rg.lineWidth = 2 * this.k;
+        rg.ellipse(p.x, p.y, wpx * 0.34, hpx * 0.44);
+        rg.stroke();
+        // 短翼
+        rg.fillColor = hexColor(u.color, Math.round(alpha * 200));
+        rg.ellipse(p.x - wpx * 0.38, p.y, wpx * 0.14, hpx * 0.10);
+        rg.fill();
+        rg.ellipse(p.x + wpx * 0.38, p.y, wpx * 0.14, hpx * 0.10);
+        rg.fill();
+        // 大圆泡舱（偏机头侧·家族脸）；noseUp=视图系机头方向（Cocos y 向上）
+        const noseUp = u.side === 'player' ? 1 : -1;
+        rg.fillColor = new Color(205, 232, 245, Math.round(alpha * 230));
+        rg.circle(p.x, p.y + noseUp * hpx * 0.14, wpx * 0.17);
+        rg.fill();
+        // 尾喷口（青蓝·尾侧）
+        rg.fillColor = new Color(90, 190, 220, a255);
+        rg.rect(p.x - wpx * 0.07, p.y - noseUp * hpx * 0.5 - hpx * 0.06, wpx * 0.14, hpx * 0.12);
         rg.fill();
       }
     }

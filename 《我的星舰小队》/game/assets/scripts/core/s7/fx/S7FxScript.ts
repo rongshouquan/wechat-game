@@ -168,8 +168,14 @@ function layoutEnemies(roster: S7PlaybackUnit[], bossId: string): Map<string, S7
  * 把回放帧铺成演出指令流（纯函数）。
  * @param playback buildS7BattlePlayback 产物
  * @param resolveRef unitStatRef→unitRef/roleTag 解析器（Cocos 壳从配置运行时注入；测试/预览可省略）
+ * @param layoutOverride 外部站位表（unitId→0-1 归一化点）。备战即战场承诺（Ron 07-15 反馈①）：
+ *   Demo 传备战格坐标进来=玩家摆哪打哪；不传时用内置阵型（工具/预览）。弹道/爆点/锚点全随之。
  */
-export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRefResolver): S7FxTimeline {
+export function buildS7FxScript(
+  playback: S7BattlePlayback,
+  resolveRef?: S7FxRefResolver,
+  layoutOverride?: Record<string, S7FxPoint>
+): S7FxTimeline {
   const byId = new Map<string, S7PlaybackUnit>();
   for (const u of playback.roster) byId.set(u.unitId, u);
 
@@ -185,6 +191,8 @@ export function buildS7FxScript(playback: S7BattlePlayback, resolveRef?: S7FxRef
   }
   const enemyPos = layoutEnemies(playback.roster, bossId);
   const posOf = (unitId: string): S7FxPoint => {
+    const ov = layoutOverride ? layoutOverride[unitId] : undefined;
+    if (ov) return ov; // 备战即战场（外部站位优先）
     const u = byId.get(unitId);
     if (!u) return { x: 0.5, y: 0.5 };
     if (u.side === 'enemy') return enemyPos.get(unitId) ?? { x: 0.5, y: 0.28 };
