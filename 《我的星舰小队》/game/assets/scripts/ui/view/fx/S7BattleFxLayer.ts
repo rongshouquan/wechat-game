@@ -127,6 +127,7 @@ export class S7BattleFxLayer extends Component {
   private speed = 1;
   private playing = false;
   private onFinish: (() => void) | null = null;
+  private onSfx: ((event: string) => void) | null = null;
   private k = 1; // 参考像素→视图像素
   private viewW = 720;
   private viewH = 1280;
@@ -166,6 +167,8 @@ export class S7BattleFxLayer extends Component {
   play(pb: S7BattlePlayback, resolveRef: S7FxRefResolver, opts?: {
     speed?: number; bg?: string; onFinish?: () => void;
     layout?: Record<string, { x: number; y: number }>;
+    /** 音效回调（音效批）：模型 sfxQueue 事件名逐条回调宿主（宿主转 SoundService·未传=静默）。 */
+    onSfx?: (event: string) => void;
   }): void {
     const timeline = buildS7FxScript(pb, resolveRef, opts?.layout);
     const roster: S7FxRosterEntry[] = pb.roster.map((u) => {
@@ -175,6 +178,7 @@ export class S7BattleFxLayer extends Component {
     this.model = new S7FxPlayModel(timeline, roster, pb.winner);
     this.speed = opts?.speed ?? 1;
     this.onFinish = opts?.onFinish ?? null;
+    this.onSfx = opts?.onSfx ?? null;
     this.buildStage(opts?.bg ?? 'bg_pirate_turf');
     this.playing = true;
   }
@@ -185,6 +189,7 @@ export class S7BattleFxLayer extends Component {
   skipToEnd(): void {
     if (!this.model) return;
     this.model.skipToEnd();
+    if (this.onSfx) for (const e of this.model.drainSfx()) this.onSfx(e); // 跳过=只剩胜负一声
     this.syncFrame(0);
     this.playing = false;
     if (this.onFinish) { const f = this.onFinish; this.onFinish = null; f(); }
@@ -193,6 +198,7 @@ export class S7BattleFxLayer extends Component {
   stopAndClear(): void {
     this.playing = false;
     this.model = null;
+    this.onSfx = null;
     this.node.removeAllChildren();
     this.node.setScale(1, 1, 1);
     this.unitRigs = {};
@@ -206,6 +212,7 @@ export class S7BattleFxLayer extends Component {
   update(dt: number): void {
     if (!this.playing || !this.model) return;
     this.model.step(dt * this.speed);
+    if (this.onSfx) for (const e of this.model.drainSfx()) this.onSfx(e);
     this.syncFrame(dt);
     // 镜头（总谱 §5·根节点缩放实现·放大方向不露画布外）
     const z = this.model.zoomScale();

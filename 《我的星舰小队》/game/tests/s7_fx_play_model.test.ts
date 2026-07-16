@@ -237,4 +237,32 @@ describe('S7FxPlayModel 磨精件（星流曲线/推镜/顿帧/治疗/收尾）'
     for (let i = 0; i < 8; i += 1) m.step(0.05);
     expect(m.outroDone()).toBe(true);
   });
+
+  // ===== 音效事件队列（音效批 2026-07-16·两层制：模型发事件名·渲染层 drain 回调宿主）=====
+
+  it('音效队列：整场跑完 drain 累计含 开火/命中/爆点/开锣横幅/胜利短曲，drain 后清空', () => {
+    const m = makeModel();
+    const all: string[] = [];
+    while (!m.finished) { m.step(0.05); all.push(...m.drainSfx()); }
+    all.push(...m.drainSfx());
+    expect(all.filter((e) => e.startsWith('battle_shoot_')).length).toBeGreaterThan(0);
+    expect(all).toContain('battle_hit');
+    expect(all).toContain('battle_explode'); // miniPlayback 有击杀
+    expect(all).toContain('battle_banner'); // 开锣横幅锵（跨窗口一次）
+    expect(all.filter((e) => e === 'battle_banner').length).toBe(1);
+    // makeModel 不传 winner（缺省败方）→ 结果音=battle_defeat；finished 时机播且恰一声=音画同步
+    expect(all.filter((e) => e === 'battle_victory' || e === 'battle_defeat')).toEqual(['battle_defeat']);
+    expect(m.drainSfx()).toEqual([]); // drain 清空
+  });
+
+  it('音效队列：入场仪式期（t<0）指令未执行=无开火音；跳过=全清只剩胜负一声', () => {
+    const m = makeModel();
+    m.step(0.05); // 仍在入场负区间
+    expect(m.drainSfx().filter((e) => e.startsWith('battle_shoot_'))).toEqual([]);
+    const m2 = makeModel();
+    m2.skipToEnd();
+    const after = m2.drainSfx();
+    expect(after).toEqual(['battle_defeat']); // 快进整场的音效全清·只留结果音（makeModel 缺省败方）
+    expect(m2.drainSfx()).toEqual([]);
+  });
 });

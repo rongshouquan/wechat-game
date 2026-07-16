@@ -1,7 +1,7 @@
 # GDD 附录C · 音效/音乐事件钩子清单
 
-> 真实音频素材**推迟**（Ron 定）；本文档只定"哪些事件要配音"，与代码 `game/assets/scripts/sound/SoundEventTypes.ts` 共用一份事件 id 真源——以后接素材时，只需把下表事件 id 对应到具体音频文件，不用改业务代码。
-> C1 音频整体风格基调（听感/各场景情绪/参考）待真要接素材时再做；本阶段只钉事件钩子（C2）。
+> ~~真实音频素材推迟~~ → **音效批已接真声（2026-07-16·Ron 排期第 1 批）**：`CocosSoundAdapter` 上岗（预载 28 件短音效·同事件 60ms 节流·未映射/加载失败静默=流程永不因音频断）；素材=Kenney CC0 三包转码 mp3 96k 单声道+响度归一，合计 204KB，映射表=`CocosSoundAdapter.ts` SFX_FILES；映射按语义盲选，听感由 Ron 真机点名换。BGM 两场景映射留空=静默（BGM 二批候 Ron 选曲）。事件 id 真源仍=`SoundEventTypes.ts`。
+> C1 音频整体风格基调（听感/各场景情绪/参考）随 BGM 二批做。
 
 ## C2 事件音效清单
 
@@ -26,6 +26,24 @@
 | `puzzle_solve` | 每日推演解开（"妙手"高光，包A） | 块4 已接 |
 | `supply_chest_open` | 今日补给箱开箱入账（包A·块5 新登记） | 块5 已接（`onOpenSupplyChest`） |
 | `trivia_pop` | 星港趣事弹泡出现（轻快，包A） | 块5 已接（`showAnecdote`） |
+
+### 战斗内音效（音效批 2026-07-16 新增·经演出层触发）
+
+> 触发链＝两层制：`S7FxPlayModel` 在指令执行时把事件名压入 `sfxQueue` → `S7BattleFxLayer` 每帧 drain → `onSfx` 回调宿主 → `SoundService.playSfx`。战斗语义仍只在模型层；跳过键=清队列只留胜负一声；胜负短曲随演出收尾播（结算窗时机仅旧色块路径补播）。
+
+| 事件 id | 触发时机 |
+|---|---|
+| `battle_shoot_light` | 快弹开火（聚能束/飞刃/电球·哒哒哒） |
+| `battle_shoot_heavy` | 慢重弹开火（炮弹/震荡环·哐） |
+| `battle_shoot_support` | 支援弹出手（治疗/护盾/旗光·柔） |
+| `battle_hit` | 命中爆点（小/中档） |
+| `battle_hit_big` | 命中大爆（V3 陨星级） |
+| `battle_crit` | 暴击（冲击环时机） |
+| `battle_explode` | 单位被消灭（糖果星爆） |
+| `battle_shield` | 护盾泡罩上 |
+| `battle_heal` | 治疗生效（泛绿柔光时机） |
+| `battle_banner` | 横幅锵（战斗开始/第 N 波来袭） |
+| `battle_v3` | 星核质变排场（压暗起手） |
 
 > 块5 清理：`dispatch_done`（每日委托秒结算/速刷入账）随"委托→星港悬赏板"重构作废——秒结算机制已删、事件成孤儿，代码与本表同步移除。
 

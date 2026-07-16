@@ -213,6 +213,11 @@ export class S7FxPlayModel {
   waveCount = 1;
   /** 「第 N 波来袭」横幅计时（exec wave_banner 点亮·1.5s）。 */
   waveBannerT = 0;
+  /** 音效事件队列（音效批·两层制：模型只发事件名字符串，渲染层 drain 后回调宿主播放；
+   *  事件名=SoundEventTypes 战斗子集·模型不 import 音频模块保层间干净）。 */
+  private readonly sfxQueue: string[] = [];
+  private bannerSfxPlayed = false;
+  private endSfxPlayed = false;
 
   private cmdIdx = 0;
   private readonly cmds: S7FxCommand[];
@@ -281,6 +286,9 @@ export class S7FxPlayModel {
     this.cmdIdx = 0;
     this.waveIdx = 1;
     this.waveBannerT = 0;
+    this.sfxQueue.length = 0;
+    this.bannerSfxPlayed = false;
+    this.endSfxPlayed = false;
     this.darkenT = 0;
     this.darkenDur = 0;
     this.finished = false;
@@ -321,6 +329,13 @@ export class S7FxPlayModel {
     for (const u of this.unitList) { u.spawnT = 0; if (!u.alive) u.deadT = 0; u.critRingT = 0; }
     this.finished = true;
     this.outroT = 9; // 跳过=不放收尾演出，直接可收场
+    // 跳过=快进 exec 塞了整场音效——全清只留胜负一声（宿主 drain 一次即播）
+    this.sfxQueue.length = 0;
+    this.bannerSfxPlayed = true;
+    if (!this.endSfxPlayed) {
+      this.endSfxPlayed = true;
+      this.sfxQueue.push(this.winner === 'player' ? 'battle_victory' : 'battle_defeat');
+    }
   }
 
   /** 推进 dt 秒（渲染层每帧调用；speed 由调用方乘进 dt）。 */
@@ -378,7 +393,25 @@ export class S7FxPlayModel {
     }
     if (this.waveBannerT > 0) this.waveBannerT = Math.max(0, this.waveBannerT - dt);
     if (this.darkenT > 0) this.darkenT = Math.max(0, this.darkenT - dt);
+    // 开锣横幅锵（跨入横幅窗口那一帧·一次性）
+    if (!this.bannerSfxPlayed && this.t >= S7FX_BANNER_FROM) {
+      this.bannerSfxPlayed = true;
+      this.sfxQueue.push('battle_banner');
+    }
     if (this.t >= this.endT) this.finished = true;
+    // 胜负短曲（finished 置位那一帧·一次性——演出层音画同步，替代结算窗时机）
+    if (this.finished && !this.endSfxPlayed) {
+      this.endSfxPlayed = true;
+      this.sfxQueue.push(this.winner === 'player' ? 'battle_victory' : 'battle_defeat');
+    }
+  }
+
+  /** 取走并清空本帧音效事件（渲染层每帧调·回调宿主播放）。 */
+  drainSfx(): string[] {
+    if (this.sfxQueue.length === 0) return [];
+    const out = this.sfxQueue.slice();
+    this.sfxQueue.length = 0;
+    return out;
   }
 
   /** 「战斗开始」横幅强度 0-1（批4 开锣仪式·窗口 [-0.25,1.35]s 梯形包络：淡入0.2/驻/淡出0.35）。 */
@@ -506,6 +539,11 @@ export class S7FxPlayModel {
       }
       case 'projectile': {
         if (this.projs.length >= PROJ_CAP) this.projs.shift(); // 红线：超发丢最旧
+        // 开火音三档：柔（治疗/盾泡）/重（慢弹环波）/轻（快弹哒哒哒）——adapter 侧 60ms 节流防齐射爆音
+        this.sfxQueue.push(
+          c.spec.color === '#7ED957' || c.spec.shape === 'bubble' ? 'battle_shoot_support'
+            : c.spec.shape === 'shell' || c.spec.shape === 'ring' ? 'battle_shoot_heavy' : 'battle_shoot_light',
+        );
         const m = c.srcId !== undefined ? this.muzzleOffset(c.srcId, c.shotIdx ?? 0) : ([0, 0] as const);
         this.projs.push({
           spec: c.spec,
@@ -521,6 +559,9 @@ export class S7FxPlayModel {
         const life = c.impact.durationSec || dflt;
         const x = c.at.x * S7FX_REF_W, y = c.at.y * S7FX_REF_H;
         this.impacts.push({ x, y, kind: c.impact.kind, size: c.impact.size, color: c.color, age: 0, life });
+        if (c.impact.kind === 'burst_big') this.sfxQueue.push('battle_hit_big');
+        else if (c.impact.kind === 'burst_small' || c.impact.kind === 'burst_mid') this.sfxQueue.push('battle_hit');
+        else if (c.impact.kind === 'bubble_pop') this.sfxQueue.push('battle_shield');
         if (c.impact.kind === 'burst_small' || c.impact.kind === 'burst_mid' || c.impact.kind === 'burst_big') {
           const n = c.impact.kind === 'burst_big' ? 9 : c.impact.kind === 'burst_mid' ? 6 : 3;
           for (let i = 0; i < n; i += 1) {
@@ -534,12 +575,16 @@ export class S7FxPlayModel {
       case 'unit_flash':
         if (u) {
           u.flashT = 0.12;
-          if (c.crit) u.critRingT = 0.3; // 总谱 §3.1：暴击=爆点外加一圈冲击环（批4 欠账补齐）
+          if (c.crit) {
+            u.critRingT = 0.3; // 总谱 §3.1：暴击=爆点外加一圈冲击环（批4 欠账补齐）
+            this.sfxQueue.push('battle_crit');
+          }
         }
         break;
       case 'wave_banner':
         this.waveIdx = c.wave;
         this.waveBannerT = 1.5;
+        this.sfxQueue.push('battle_banner');
         break;
       case 'unit_shake':
         if (u) u.shakeT = 0.1;
@@ -556,11 +601,15 @@ export class S7FxPlayModel {
           if (this.pops.length > POP_CAP) this.pops.splice(0, this.pops.length - POP_CAP);
         }
         // 治疗（差分正 delta）：泛绿柔光·不出数字（总谱 §3.3"血条就是数字的替身"）
-        if (u && typeof c.delta === 'number' && c.delta > 0) u.healGlowT = 0.35;
+        if (u && typeof c.delta === 'number' && c.delta > 0) {
+          u.healGlowT = 0.35;
+          this.sfxQueue.push('battle_heal');
+        }
         break;
       }
       case 'death_burst': {
         if (u) { u.alive = false; u.deadT = 0.4; }
+        this.sfxQueue.push('battle_explode');
         const colors = ['#FFD93D', '#FF8A3D', '#F5A8C0', '#4FC3F7', '#7ED957'];
         for (let i = 0; i < 5; i += 1) {
           const a = (i / 5) * Math.PI * 2 + this.rng() * 0.5;
@@ -583,6 +632,7 @@ export class S7FxPlayModel {
         this.darkenT = c.durationSec;
         this.darkenDur = c.durationSec;
         this.starPulseT = 0.3; // V3 曲速脉冲：星光拉线+punch-zoom 与压暗同拍（总谱 §4/§5）
+        this.sfxQueue.push('battle_v3');
         break;
       default:
         break;

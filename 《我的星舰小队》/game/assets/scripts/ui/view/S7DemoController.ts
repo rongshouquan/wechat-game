@@ -137,9 +137,10 @@ import {
 } from '../../core/s7/S7GachaService';
 import { S7AdGateway, S7MockAdAdapter, S7AdPoint } from '../../core/s7/S7AdGateway';
 import { S7AutoBattleRng } from '../../core/s7/S7AutoBattleRng';
-// 音效/BGM 工程接口（附录C 事件钩子）：当前只接 MockSoundAdapter，真机播放属后续任务。
+// 音效/BGM 工程接口（附录C 事件钩子）：音效批（07-16）起接真声 CocosSoundAdapter。
 import { SoundService } from '../../sound/SoundService';
-import { MockSoundAdapter } from '../../sound/MockSoundAdapter';
+import { CocosSoundAdapter } from '../../sound/CocosSoundAdapter';
+import { SfxEvent } from '../../sound/SoundEventTypes';
 // 阶段一 F·关卡三选一发奖（首通限定·三档稀缺池·Boss大奖·看广告×2）。
 import { DEFAULT_S7_LEVEL_REWARD_CONFIG, S7LevelReward, S7LevelRewardStage } from '../../core/s7/S7LevelRewardConfig';
 import {
@@ -285,8 +286,10 @@ const S7_DEMO_FLAGSHIP_ID = 'shp01';
 @ccclass('S7DemoController')
 export class S7DemoController extends Component {
   private adapter: SaveStorageAdapter | null = null;
-  /** 音效/BGM 服务（附录C 事件钩子）：当前只用 MockSoundAdapter，真机播放属后续任务。 */
-  private readonly sound = new SoundService(new MockSoundAdapter());
+  /** 音效/BGM 服务（附录C 事件钩子·音效批起真声）。 */
+  // 音效批（07-16）：Mock→真声适配器（预载失败逐条静默=流程永不因音频断；Mock 仅测试用）。
+  private readonly soundAdapter = new CocosSoundAdapter();
+  private readonly sound = new SoundService(this.soundAdapter);
   private session: S7RunSession | null = null;
   private playerState: S7PlayerState | null = null;
   private saveVersion = S7_CURRENT_SAVE_VERSION;
@@ -682,6 +685,7 @@ export class S7DemoController extends Component {
     this.runtime = runtime;
     // 演出层资源预载（异步幂等）+ unitStatRef→{unitRef,roleTag} 解析表（演出签名查表键）。
     S7BattleFxLayer.preload();
+    this.soundAdapter.init(); // 音效批：预载全部短音效（失败逐条静默·不阻塞流程）
     this.fxRefMap.clear();
     runtime.getAll<S7BattleUnitStatParam>('battle_unit_stat_param').forEach((row) => {
       const r = row as unknown as { rowId?: string; unitRef?: unknown; roleTag?: unknown };
@@ -2040,7 +2044,8 @@ export class S7DemoController extends Component {
   /** 弹结果窗（背景保留战斗画面：不隐藏 stage、不切场景）。 */
   private openResultPopup(won: boolean): void {
     if (!this.resultPopupNode) return;
-    this.sound.playSfx(won ? 'battle_victory' : 'battle_defeat');
+    // 音效批：演出层路径的胜负音已随收尾演出播（模型 finished 时机=音画同步）——只有旧色块路径在此补播
+    if (!this.fxActive) this.sound.playSfx(won ? 'battle_victory' : 'battle_defeat');
     if (this.resultTitleLabel) {
       this.resultTitleLabel.string = won ? '★ 战斗胜利 ★' : '战斗失败';
       this.resultTitleLabel.color = won ? new Color(150, 235, 160) : new Color(255, 150, 150);
@@ -4760,6 +4765,8 @@ export class S7DemoController extends Component {
         speed: this.playbackSpeed,
         layout: layoutOv,
         onFinish: () => this.finishPlayback(),
+        // 音效批：模型事件名=SfxEvent 战斗子集（未知名 adapter 静默兜底）
+        onSfx: (e) => this.sound.playSfx(e as SfxEvent),
       });
       return;
     }

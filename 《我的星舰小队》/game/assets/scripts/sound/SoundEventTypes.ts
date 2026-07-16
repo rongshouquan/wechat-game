@@ -23,7 +23,19 @@ export type SfxEvent =
   | 'puzzle_solve'
   | 'supply_chest_open'
   | 'trivia_pop'
-  | 'ui_click';
+  | 'ui_click'
+  // —— 战斗内音效（音效批 2026-07-16 新增·演出层经模型 sfxQueue 触发=两层制不破）——
+  | 'battle_shoot_light'
+  | 'battle_shoot_heavy'
+  | 'battle_shoot_support'
+  | 'battle_hit'
+  | 'battle_hit_big'
+  | 'battle_crit'
+  | 'battle_explode'
+  | 'battle_shield'
+  | 'battle_heal'
+  | 'battle_banner'
+  | 'battle_v3';
 
 /** 背景音乐场景（切换式，同一时刻只有一条在播）。 */
 export type BgmScene = 'bgm_hub' | 'bgm_battle';
@@ -47,6 +59,17 @@ export const SFX_EVENT_NOTES: Readonly<Record<SfxEvent, string>> = {
   supply_chest_open: '今日补给箱开箱入账（包A·块5）',
   trivia_pop: '星港趣事弹泡出现（轻快·包A·块5）',
   ui_click: '主要按钮点击',
+  battle_shoot_light: '战斗·轻快弹开火（快弹族：聚能束/飞刃/电球·哒哒哒）',
+  battle_shoot_heavy: '战斗·厚重弹开火（慢重弹族：炮弹/震荡环·哐）',
+  battle_shoot_support: '战斗·支援弹出手（治疗/护盾/旗光·柔）',
+  battle_hit: '战斗·命中爆点（小/中档）',
+  battle_hit_big: '战斗·命中大爆（V3 陨星/大招级）',
+  battle_crit: '战斗·暴击（冲击环时机·更响一记）',
+  battle_explode: '战斗·单位被消灭（糖果星爆）',
+  battle_shield: '战斗·护盾泡罩上',
+  battle_heal: '战斗·治疗生效（泛绿柔光时机）',
+  battle_banner: '战斗·横幅锵（战斗开始/第N波来袭）',
+  battle_v3: '战斗·星核质变排场（压暗起手·大招音）',
 };
 // 块5 清理：dispatch_done（每日委托秒结算/速刷）随"委托→悬赏板"重构作废——秒结算机制已删、事件成孤儿，一并移除（附录C 同步）。
 
