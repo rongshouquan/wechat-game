@@ -25,7 +25,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadTables, writeTables, serializeTable, LANDING_TABLES, EYE_RULES } from './enemy-landing-lib.mjs';
+import { loadTables, writeTables, serializeTable, LANDING_TABLES, EYE_RULES, ELITE_EFFECT_RE } from './enemy-landing-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -388,7 +388,9 @@ const FORMATION_OVERRIDE = {
  *   tier: 五档（福利/无压力/微阻滞/阻滞/变态·写入 encounter.eliteTier=entry 五档带查表源）；
  *   waves: 波次覆写（缺省 ELITE_WAVES[tag]·镜像关由 encounter.mirrorLineup 触发零 spawn）；
  *   encounter: 花样件（victoryRule+victoryTargetUnitRef〔全局行名·apply ②c 节点化〕/reviveWaves/
- *              mirrorLineup+mirrorScalePct）。
+ *              mirrorLineup+mirrorScalePct）；
+ *   effects: 关级专属效果行全量字段数组（段6 起·rowId 必须落 eff_elite_<nodeId>_* 命名域·本工具
+ *            先删后建=BOSS_CONTENT.effects 同构；节点行引用重定向=lib ELITE_EFFECT_REDIRECT）。
  * 六族载体（段3 盘点定案）：词缀=rally_source/rally_haste_source 强化源单位（真源§1 星盗船长·
  *   击杀即停 counterplay）；奇阵=FORMATION_OVERRIDE 摆位本体；斩首=victoryRule（杀点名单位即胜·
  *   目标藏深处）；镜像=mirrorLineup+缩放通道；复活连战=reviveWaves；福利=档位白送（0.3/0.3）零账变。
@@ -431,7 +433,17 @@ const ELITE_CONTENT = {
   n336: { kind: '镜像关（纯·参数升档）', tier: '微阻滞', encounter: { mirrorLineup: true, mirrorScalePct: 1.0 } },
   n344: { kind: '词缀点名（纯）', tier: '无压力', waves: [['rally_source', 1], ['pollution', 2], ['swarm', 3]] },
   n348: { kind: '复活+奇阵（1+1）', tier: '微阻滞', waves: [['pollution', 3], ['swarm', 3]], encounter: { reviveWaves: 1 } },
-  n356: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_haste_source', 1], ['rally_source', 1], ['pollution', 3], ['swarm', 2]] }, // 段4 续调R1（总控裁白板化不接受）：下一杆=双源（攻+速双词缀·分摊集火窗·杀完两源才白板）
+  n356: {
+    kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_haste_source', 1], ['rally_source', 1], ['pollution', 3], ['swarm', 2]], // 段4 续调R1（总控裁白板化不接受）：下一杆=双源（攻+速双词缀·分摊集火窗·杀完两源才白板）
+    // 段6 升级案（§21.3b·总控批）：速鼓效果行全局共享（n165/n356 同用 eff_s7_elite_rally_haste）→
+    // 关级变体行解耦（lib ELITE_EFFECT_REDIRECT 指回）——幅度杆独立可调不连带在带的 n165。
+    // 初值=全局同值 0.2（零行为差基线·调参轮账见 §21.6）。
+    effects: [{
+      rowId: 'eff_elite_n356_rally_haste', effectKind: 'state', effectType: 'apply_state', effectPower: 0,
+      targetingTag: 'self_block_area', durationSec: 6, maxTargets: 8, stateTag: 'atk_speed_up', stateAmount: 0.2,
+      summonUnitRef: 'none', note: 'n356 速鼓关级变体（段6 升级案·与全局行解耦·幅度独立调·现值=全局同值 0.2〔两轮无效刀已撤·候裁喘气关语义·§21.6〕）',
+    }],
+  },
   n362: { kind: '斩首+复活（1+1）', tier: '阻滞', waves: [['support', 2], ['pollution', 3]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_support', reviveWaves: 1 } }, // 连战里点奶=斩首×耐力
   // —— sf06 风暴核心（burst 域）——
   n372: { kind: '镜像+词缀+奇阵（1+1+1）', tier: '变态', encounter: { mirrorLineup: true, mirrorScalePct: 1.25 } }, // 变态②·第4轮：敌比我强 75%（先手补偿+变态档）
@@ -594,6 +606,20 @@ function buildBundle(tables) {
     }
   }
   tables.battle_effect_param = keptEffects;
+
+  // —— eff_elite_nXXX_* 效果域（段6·总控批）：BOSS 域同构——先删后建=ELITE_CONTENT.effects 声明重放；
+  //    消费闭环=lib ELITE_EFFECT_REDIRECT（apply 造节点行时把 extraTriggerBlocks 引用换成本域变体行）。
+  const keptEffects2 = tables.battle_effect_param.filter((r) => !ELITE_EFFECT_RE.test(r.rowId));
+  for (const [nodeId, decl] of Object.entries(ELITE_CONTENT)) {
+    for (const eff of decl.effects ?? []) {
+      if (!eff.rowId || !eff.rowId.startsWith(`eff_elite_${nodeId}_`)) {
+        throw new Error(`ELITE_CONTENT[${nodeId}] 效果行 rowId 必须落 eff_elite_${nodeId}_* 命名域：${eff.rowId}`);
+      }
+      keptEffects2.push({ schemaVersion: SCHEMA, ...eff });
+      stat.eliteEffects = (stat.eliteEffects ?? 0) + 1;
+    }
+  }
+  tables.battle_effect_param = keptEffects2;
 
   // —— encounter/spawn/phase：教学段 n001-n008 原行保留，n009+ 全重建。
   // 教学段保留面=敌配属性/波次/格位一字不动；stageType 标签跟 mainline 对齐

@@ -4437,6 +4437,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "eff_elite_n356_rally_haste",
+    "effectKind": "state",
+    "effectType": "apply_state",
+    "effectPower": 0,
+    "targetingTag": "self_block_area",
+    "durationSec": 6,
+    "maxTargets": 8,
+    "stateTag": "atk_speed_up",
+    "stateAmount": 0.2,
+    "summonUnitRef": "none",
+    "note": "n356 速鼓关级变体（段6 升级案·与全局行解耦·幅度独立调·现值=全局同值 0.2〔两轮无效刀已撤·候裁喘气关语义·§21.6〕）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "eff_n033_summon",
     "effectKind": "state",
     "effectType": "summon",

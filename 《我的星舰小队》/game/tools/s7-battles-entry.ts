@@ -383,10 +383,10 @@ export const ELITE_TIER_BOOST: Record<string, { pool: number; dps: number }> = {
  *  k 合同预算外乘法（同段2 敌自增强教训），段值按"含环境体验"设计而非裸 k 预算。 */
 export const EYE_BOOST_BANDS: Array<{ from: number; to: number; pool: number; dps: number }> = [
   { from: 401, to: 404, pool: 0.3, dps: 0.35 },  // 低压检阅（10-14s 碾压·毕业核检阅台·R2 再压+迷雾检阅版 delay 5s）
-  { from: 405, to: 415, pool: 0.95, dps: 0.62 }, // 两叠段（初见 30-45%·R1 段均在带·关间散布=组合难度不等价记档）
-  { from: 416, to: 430, pool: 1.2, dps: 0.74 },  // 三叠段（25-40%·R3 终=段均口径·R2 段均 52 微超）
+  { from: 405, to: 415, pool: 1.25, dps: 0.81 }, // 两叠段（初见 30-45%·段6 R3 微刀：40 样本 48.3 微超 3.3pt→dps +0.03〔0.95/0.62 旧值=§21.4a 段账系中间态快照·§21.6〕）
+  { from: 416, to: 430, pool: 1.2, dps: 0.72 },  // 三叠段（25-40%·段6 R1 微刀：40 样本 24.5 差 0.5pt 边缘→dps −0.02 稳进带）
   { from: 431, to: 443, pool: 1.0, dps: 0.55 },  // 四叠段（22-35%·R3 终·R2 段均 12 微狠——surge+battlewave 双狠组合=散布下限记档）
-  { from: 444, to: 449, pool: 1.0, dps: 0.58 },  // 五叠段（20-30%·R3 终·R2 段均 37 微超——缺 graveyard 组合=散布上限记档）
+  { from: 444, to: 449, pool: 0.9, dps: 0.48 },  // 五叠段（20-30%·段6 R1：文件态复跑 3.3% 狠 17pt→减压〔第 5 规则预算外连乘断崖=R2 教训同构〕）
 ];
 /** 档位来源=磁盘 encounter.eliteTier 字段（生成器按 ELITE_CONTENT.tier 声明写入——单点在声明表，
  *  本文件零 38 关副本=零双账本；关级覆写=实测收敛个别偏离档默认时填·查找链先于档位默认）。 */
@@ -397,11 +397,18 @@ export const ELITE_BOOST_OVERRIDE: Record<string, { pool: number; dps: number }>
   // 斩首关（n033/n142/n198/n290/n320/n362）＝速胜结构记档例外（集火单点 vs 全场分摊=目标必速杀·
   // pool 4.0 时间墙实测不收敛）——初见带豁免·boost 走档位默认（旧时间墙 override 删除）；
   // 普通面窄带逐关细调（同 boost 不同波次构成形状天差=档位默认+关级细调的设计用途）；
-  n168: { pool: 1.2, dps: 0.8 }, n356: { pool: 1.45, dps: 0.9 }, n192: { pool: 1.15, dps: 0.78 },
+  n168: { pool: 1.2, dps: 0.8 }, n356: { pool: 1.45, dps: 0.9 } /* 段6：变体 0.35 与 dps 1.15 两轮全纹丝不动（100%/18.1s 逐秒同=D31 平台 129% 体格差掐死威胁窗）——无效刀按减法撤·停手候裁喘气关语义（§21.6） */, n192: { pool: 1.15, dps: 0.78 },
   // 段4 首件·n390 归类令落档（总控裁二选一→豁免论证·实证据）：boost 2.6→3.4（+31% 全场量）
   // 五点逐点纹丝不动（25/30/20/30/40）=胜率由「杀源两遍」斩首竞速结构决定·与全场血攻量无关——
   // 与斩首 6 关速胜豁免同口径；25-40% 高于纯斩首（100%）正是 revive×2 复合难度=变态档实际体验
   // 载体（磨 3-4 把·小 Boss 级高光仗）。override 不挂（档位默认 2.6/1.1·豁免关不白耗 boost）。
+};
+/** 段6 · 眼段关级覆写（总控批·n438 必修杆）：查找链插 eyeBand 段值之前——组合方差 ±40pt 段均口径下
+ *  的散布下限点名件（段均带内不动·个别 0% 关抬回当日可过）。空表=行为不变（可选通道·探针=apply --check）。 */
+export const EYE_BOOST_OVERRIDE: Record<string, { pool: number; dps: number }> = {
+  // n438=0% 必修（总控升格令·§21.4a 点名）：mist+tide+surge+battlewave 四叠=surge+battlewave
+  // 双狠组合散布下限——段值 1.0/0.55 下 0%，关级减压回"当日可过"（dps 主刀=杀穿轴）。
+  n438: { pool: 0.9, dps: 0.47 }, // 段6 R2：R1 0.85/0.42 得 50% 偏松→收半档（靶=段均带 22-35 内的可过位）
 };
 /** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·"把尖峰还给每座塔"手法=间隔拉长+单发放大·
  *  单位 DPS 守恒）。段3 首件：旧世界 n102 塔尖峰键处死（总控验收令·07-15）——450 世界 n102=普通关
@@ -460,6 +467,7 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   const wall = WALL_BOOST[nodeId]
     ?? ELITE_BOOST_OVERRIDE[nodeId]
     ?? (eliteTier ? ELITE_TIER_BOOST[eliteTier] : undefined)
+    ?? EYE_BOOST_OVERRIDE[nodeId] // 段6：眼段关级覆写先于段值（n438 必修杆·空表=不变）
     ?? (eyeBand ? { pool: eyeBand.pool, dps: eyeBand.dps } : undefined)
     ?? { pool: 1, dps: 1 };
   const pool = K_HP * PHI_BASE * phiPool * mult.pool * wall.pool;

@@ -20,7 +20,7 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON, BOSS_EFFECT_RE, EYE_RULES } from './enemy-landing-lib.mjs';
+import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON, BOSS_EFFECT_RE, ELITE_EFFECT_RE, ELITE_EFFECT_REDIRECT, EYE_RULES } from './enemy-landing-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -103,6 +103,14 @@ function landBundle(tables, mod) {
         attackIntervalSec: attrs.attackIntervalSec,
         note: `${nodeId} ${suffix}·⑩落数(P=${p}·§19映射·基=${globalId})`,
       };
+      // 段6 · 关级效果引用重定向（ELITE_EFFECT_REDIRECT·n356 速鼓变体）：spread 是浅拷贝——
+      // extraTriggerBlocks 必须深拷再换引用，防污染全局模板行（clean 对称=节点行整删零残留）。
+      const redirect = ELITE_EFFECT_REDIRECT[nodeId];
+      if (redirect && Array.isArray(row.extraTriggerBlocks)) {
+        row.extraTriggerBlocks = row.extraTriggerBlocks.map((tb) => (
+          redirect[tb.effectRef] ? { ...tb, effectRef: redirect[tb.effectRef] } : tb
+        ));
+      }
       block.push(row);
       blockById.set(nodeRowId, row);
       stat.nodeRows += 1;
@@ -171,7 +179,7 @@ function landBundle(tables, mod) {
     //    全局职业行 → 本关节点行（spawn 计划有份额=ensureNodeRow；无=按 add 份额落专属行·机制随模板）
     //    ——召出单位吃本关压力缩放值而非全局原始值；cleanBundle 对称回退全局（防净土悬空引用）。
     for (const eff of effects) {
-      const m = eff.rowId.match(BOSS_EFFECT_RE);
+      const m = eff.rowId.match(BOSS_EFFECT_RE) ?? eff.rowId.match(ELITE_EFFECT_RE); // 段6：elite 变体域并列（summon 对称·现役 n356 无 summon=零动作通道完备）
       if (!m || m[1] !== nodeId) continue;
       const ref = eff.summonUnitRef;
       if (typeof ref !== 'string' || ref === 'none' || !/^bu_enemy_/.test(ref)) continue;

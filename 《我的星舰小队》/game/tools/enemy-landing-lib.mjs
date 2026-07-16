@@ -45,6 +45,14 @@ export const NODE_UNIT_RE = /^bu_n\d+_(.+)$/;
 export const NODE_EFFECT_RE = /^eff_n\d+_summon$/;
 /** Boss 声明效果行域（content 生成器管建；apply 只节点化其 summonUnitRef、clean 对称回退全局）。 */
 export const BOSS_EFFECT_RE = /^eff_boss_(n\d+)_/;
+/** 段6 · 精英关级效果变体域（n356 速鼓升级案·总控批）：eff_elite_nXXX_*=generate ELITE_CONTENT.effects
+ *  独管（先删后建·BOSS 域同构）；带 summon 引用时 apply 节点化/clean 回退与 BOSS 域并列对称。 */
+export const ELITE_EFFECT_RE = /^eff_elite_(n\d+)_/;
+/** 段6 · 关级效果引用重定向（apply 造节点行时把 extraTriggerBlocks 的全局效果引用换成关级变体行；
+ *  clean 对称=节点行整行删除·天然回净土零残留）。n356=速鼓幅度与全局共享行解耦（n165 不再连带）。 */
+export const ELITE_EFFECT_REDIRECT = {
+  n356: { eff_s7_elite_rally_haste: 'eff_elite_n356_rally_haste' },
+};
 
 /**
  * Boss 周期召唤规则（段二 H1·真源 f8c6ae75：失控母舰阶段1"周期召唤【无人机】·复用母舰单元召唤物"）。
@@ -159,7 +167,8 @@ export function cleanBundle(tables) {
   // 段2：Boss 声明效果行（eff_boss_nXXX_*·content 生成器管建）的召唤引用回退全局行——
   // 净土态节点行已删，指针留节点名=悬空引用（validator 红）；apply 落数时再节点化（对称）。
   for (const r of keptEff) {
-    if (!BOSS_EFFECT_RE.test(r.rowId) || typeof r.summonUnitRef !== 'string' || r.summonUnitRef === 'none') continue;
+    if ((!BOSS_EFFECT_RE.test(r.rowId) && !ELITE_EFFECT_RE.test(r.rowId)) // 段6：elite 变体域并列对称
+      || typeof r.summonUnitRef !== 'string' || r.summonUnitRef === 'none') continue;
     const g = globalRowOf(r.summonUnitRef);
     if (g !== r.summonUnitRef) r.summonUnitRef = g;
   }

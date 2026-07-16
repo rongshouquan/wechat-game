@@ -97,7 +97,10 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   沛L40回血+3★小盾/空3★清场/巡3★溅射无人机弹/护盾传奇自罩盾/小太阳后爆——驾驶员质变+插件传奇接线）。
     // 机制批③段二b：+132（20 舰大节点 L20-L100 档位行 + A/S/SS 质变行 + 蜂针延迟爆/迷雾普攻致盲接真件——
     //   舰侧阶/级装配通道 shipBlocks 的数据面·逐行注"批③2b"）。
-    expect(readTable('battle_effect_param')).toHaveLength(387);
+    // 段6 重定基（旧→新→为什么对）：387→388（+1=eff_elite_n356_rally_haste 关级变体行——
+    //   ELITE_CONTENT.effects 消费点上岗〔总控批·§21.3b 升级案〕：速鼓行与 n165 共享解耦·
+    //   generate 先删后建 eff_elite_* 域+apply ELITE_EFFECT_REDIRECT 指回·全链 --check 双过）。
+    expect(readTable('battle_effect_param')).toHaveLength(388);
     expect(readTable('battle_encounter_param')).toHaveLength(448);
     expect(readTable('battle_spawn_param')).toHaveLength(866); // 段4：n356 双源 +1+眼段 assembly/六叠 +25（840→866）
     expect(readTable('battle_boss_phase_param')).toHaveLength(10);
