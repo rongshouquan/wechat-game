@@ -913,6 +913,21 @@ export interface S7BattleEncounterParam {
    *  ELITE_CONTENT.tier 声明写入（单点在声明表）；entry 压力映射按档查 ELITE_TIER_BOOST。
    *  仅 stageType=elite 行携带；缺席=非精英或未定档（映射按 1/1 中性）。 */
   eliteTier?: string;
+  /** 段4 可选（域规则通道①·总控批 07-16）：环境效果块——虚拟天气源按 side 对全体结算
+   *  （污染潮=cd 型伤害+燃烧；风暴增幅=battle_start 型敌我 buff）。伤害结算=盾吸+不过甲+
+   *  零击杀归因（applySubHit 同款姿势内联·环境杀不给任何单位充能/叠层）。
+   *  attackPof=伤害量纲占压力值比例（生成器声明）；attack=落数绝对值（apply 写入·clean 删除
+   *  =三方对称）。缺席=零波及。 */
+  environmentBlocks?: {
+    on: 'cd' | 'battle_start';
+    cdSec?: number;
+    effectRef: string;
+    side: 'player' | 'enemy' | 'both';
+    /** 伤害量纲=P×此比例（伤害型块必填·buff 型可缺省）。 */
+    attackPof?: number;
+    /** 落数绝对值（apply 产物·手不填）。 */
+    attack?: number;
+  }[];
   note: string;
 }
 

@@ -70,6 +70,50 @@ export const BOSS_PERIODIC_SUMMON = {
   n312: { ultimateCdSec: 6, cleanUltimate: { ref: 'eff_ult_burst_nuke', cdSec: 10 } },
 };
 
+/**
+ * 段4 · 眼段域规则声明表（n401-449 普通关·两工具共享=BOSS_PERIODIC_SUMMON 同构）：
+ *   生成器翻译 encounter/spawn 面（mist=部分波 spawnDelaySec 10/assembly=波含母舰/tide=env cd 块/
+ *   surge=env battle_start 块/battlewave=reviveWaves 1）；apply 翻译单位行面（graveyard=该关节点
+ *   敌行注 selfReviveHpPct 0.5/DelaySec 0.8）。n450 六叠=BOSS_CONTENT 手工声明（Boss 关特例）。
+ * 六规则池（剧本骨架五域规则+终墙连战成分）：graveyard/mist/assembly/tide/surge/battlewave。
+ * 递进（剧本 R7 结构原文）：401-404 低压检阅（两叠·六规则各亮相）→405-415 两叠→416-430 三叠→
+ *   431-443 四叠→444-449 五叠（C(6,5)=6 组合恰好各一）→450 六叠全叠。
+ * 环境伤害量纲：tide 块 attackPof=0.04（P 的 4%·小潮 cd8）+0.08（大潮 cd20）——预算外预折记档
+ *   （§21.4·总控前置令）。
+ */
+export const EYE_RULES = {
+  // —— 低压检阅 4 关（10-14s 碾压·六规则各亮相一遍=毕业核大杀四方的检阅台）——
+  n401: ['graveyard', 'mist'], n402: ['tide', 'assembly'], n403: ['surge', 'battlewave'], n404: ['graveyard', 'tide'],
+  // —— 两叠段 405-415（11 关·教学序轮换）——
+  n405: ['graveyard', 'assembly'], n406: ['mist', 'tide'], n407: ['surge', 'graveyard'], n408: ['battlewave', 'mist'],
+  n409: ['tide', 'surge'], n410: ['assembly', 'battlewave'], n411: ['graveyard', 'battlewave'], n412: ['mist', 'assembly'],
+  n413: ['tide', 'battlewave'], n414: ['surge', 'assembly'], n415: ['mist', 'surge'],
+  // —— 三叠段 416-430（15 关）——
+  n416: ['graveyard', 'mist', 'tide'], n417: ['assembly', 'surge', 'battlewave'], n418: ['graveyard', 'tide', 'surge'],
+  n419: ['mist', 'assembly', 'battlewave'], n420: ['graveyard', 'assembly', 'tide'], n421: ['mist', 'surge', 'battlewave'],
+  n422: ['graveyard', 'mist', 'assembly'], n423: ['tide', 'surge', 'battlewave'], n424: ['graveyard', 'mist', 'battlewave'],
+  n425: ['assembly', 'tide', 'surge'], n426: ['graveyard', 'surge', 'battlewave'], n427: ['mist', 'assembly', 'tide'],
+  n428: ['graveyard', 'assembly', 'surge'], n429: ['mist', 'tide', 'battlewave'], n430: ['graveyard', 'tide', 'battlewave'],
+  // —— 四叠段 431-443（13 关）——
+  n431: ['graveyard', 'mist', 'tide', 'surge'], n432: ['assembly', 'tide', 'surge', 'battlewave'],
+  n433: ['graveyard', 'mist', 'assembly', 'battlewave'], n434: ['graveyard', 'tide', 'surge', 'battlewave'],
+  n435: ['mist', 'assembly', 'tide', 'surge'], n436: ['graveyard', 'mist', 'assembly', 'tide'],
+  n437: ['graveyard', 'assembly', 'surge', 'battlewave'], n438: ['mist', 'tide', 'surge', 'battlewave'],
+  n439: ['graveyard', 'mist', 'surge', 'battlewave'], n440: ['graveyard', 'assembly', 'tide', 'battlewave'],
+  n441: ['mist', 'assembly', 'surge', 'battlewave'], n442: ['graveyard', 'mist', 'tide', 'battlewave'],
+  n443: ['graveyard', 'assembly', 'tide', 'surge'],
+  // —— 五叠段 444-449（6 关=C(6,5) 恰好各缺一）——
+  n444: ['mist', 'assembly', 'tide', 'surge', 'battlewave'],      // 缺 graveyard
+  n445: ['graveyard', 'assembly', 'tide', 'surge', 'battlewave'], // 缺 mist
+  n446: ['graveyard', 'mist', 'tide', 'surge', 'battlewave'],     // 缺 assembly
+  n447: ['graveyard', 'mist', 'assembly', 'surge', 'battlewave'], // 缺 tide
+  n448: ['graveyard', 'mist', 'assembly', 'tide', 'battlewave'],  // 缺 surge
+  n449: ['graveyard', 'mist', 'assembly', 'tide', 'surge'],       // 缺 battlewave
+  // —— n450 毕业战=六叠全叠（encounter 面 tide/surge/battlewave+单位面 graveyard 走本表通用翻译；
+  //    assembly/mist=Boss 场 adds 面·BOSS_CONTENT.n450.adds 手工声明〔母舰波+延迟环卫〕）——
+  n450: ['graveyard', 'mist', 'assembly', 'tide', 'surge', 'battlewave'],
+};
+
 /** 节点行 → 全局职业行（roleKeyOf 同款反解·§20.1）：add/sadd 归 boss_add，其余按后缀。 */
 export function globalRowOf(rowId) {
   const m = rowId.match(NODE_UNIT_RE);
@@ -124,6 +168,11 @@ export function cleanBundle(tables) {
     if (typeof enc.victoryTargetUnitRef !== 'string') continue;
     const g = globalRowOf(enc.victoryTargetUnitRef);
     if (g !== enc.victoryTargetUnitRef) enc.victoryTargetUnitRef = g;
+  }
+  // 段4：环境块落数值删除（attack=apply 产物·attackPof 声明保留=三方对称·apply ②d 的对称面）。
+  for (const enc of tables.battle_encounter_param) {
+    if (!Array.isArray(enc.environmentBlocks)) continue;
+    for (const eb of enc.environmentBlocks) delete eb.attack;
   }
   for (const sp of tables.battle_spawn_param) {
     const g = globalRowOf(sp.unitStatRef);

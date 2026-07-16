@@ -11243,7 +11243,7 @@
     "unitStatRef": "bu_n356_rally_haste_source",
     "count": 1,
     "slotRefs": [
-      "r2c4"
+      "r1c4"
     ],
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 14,
@@ -11254,6 +11254,20 @@
     "rowId": "spawn_n356_w2",
     "encounterRef": "enc_n356",
     "waveIndex": 2,
+    "unitStatRef": "bu_n356_rally_source",
+    "count": 1,
+    "slotRefs": [
+      "r3c4"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n356 第2波：bu_enemy_rally_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n356_w3",
+    "encounterRef": "enc_n356",
+    "waveIndex": 3,
     "unitStatRef": "bu_n356_pollution",
     "count": 3,
     "slotRefs": [
@@ -11263,22 +11277,22 @@
     ],
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
-    "note": "enc_n356 第2波：bu_enemy_pollution x3"
+    "note": "enc_n356 第3波：bu_enemy_pollution x3"
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "spawn_n356_w3",
+    "rowId": "spawn_n356_w4",
     "encounterRef": "enc_n356",
-    "waveIndex": 3,
+    "waveIndex": 4,
     "unitStatRef": "bu_n356_swarm",
     "count": 2,
     "slotRefs": [
-      "r1c1",
-      "r3c1"
+      "r0c1",
+      "r4c1"
     ],
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
-    "note": "enc_n356 第3波：bu_enemy_swarm x2"
+    "note": "enc_n356 第4波：bu_enemy_swarm x2"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12390,7 +12404,7 @@
     ],
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
-    "note": "enc_n401 第2波：bu_enemy_burst_raider x2"
+    "note": "enc_n401 第2波：bu_enemy_burst_raider x2（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12424,6 +12438,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n402 第2波：bu_enemy_swarm x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n402_w3",
+    "encounterRef": "enc_n402",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n402_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n402 第3波：bu_enemy_summon_source x1"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12517,6 +12545,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n405_w3",
+    "encounterRef": "enc_n405",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n405_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n405 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n406_w1",
     "encounterRef": "enc_n406",
     "waveIndex": 1,
@@ -12544,9 +12586,9 @@
       "r3c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n406 第2波：bu_enemy_swarm x4"
+    "note": "enc_n406 第2波：bu_enemy_swarm x4（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12612,9 +12654,9 @@
       "r1c3",
       "r3c3"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n408 第2波：bu_enemy_swarm x5"
+    "note": "enc_n408 第2波：bu_enemy_swarm x5（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12678,6 +12720,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n410 第2波：bu_enemy_swarm x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n410_w3",
+    "encounterRef": "enc_n410",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n410_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n410 第3波：bu_enemy_summon_source x1"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12758,6 +12814,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n412_w4",
+    "encounterRef": "enc_n412",
+    "waveIndex": 4,
+    "unitStatRef": "bu_n412_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c4"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n412 第4波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n413_w1",
     "encounterRef": "enc_n413",
     "waveIndex": 1,
@@ -12821,6 +12891,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n414_w3",
+    "encounterRef": "enc_n414",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n414_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n414 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n415_w1",
     "encounterRef": "enc_n415",
     "waveIndex": 1,
@@ -12845,9 +12929,9 @@
       "r0c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n415 第2波：bu_enemy_burst_raider x2"
+    "note": "enc_n415 第2波：bu_enemy_burst_raider x2（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12861,9 +12945,9 @@
       "r2c0",
       "r4c0"
     ],
-    "spawnDelaySec": 0,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n416 第1波：bu_enemy_shield x3"
+    "note": "enc_n416 第1波：bu_enemy_shield x3（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12894,6 +12978,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n417 第2波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n417_w3",
+    "encounterRef": "enc_n417",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n417_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n417 第3波：bu_enemy_summon_source x1"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -12960,6 +13058,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n419_w3",
+    "encounterRef": "enc_n419",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n419_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n419 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n420_w1",
     "encounterRef": "enc_n420",
     "waveIndex": 1,
@@ -12992,6 +13104,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n420_w3",
+    "encounterRef": "enc_n420",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n420_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n420 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n421_w1",
     "encounterRef": "enc_n421",
     "waveIndex": 1,
@@ -13016,9 +13142,9 @@
       "r0c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n421 第2波：bu_enemy_burst_raider x2"
+    "note": "enc_n421 第2波：bu_enemy_burst_raider x2（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13052,6 +13178,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n422 第2波：bu_enemy_swarm x4"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n422_w3",
+    "encounterRef": "enc_n422",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n422_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n422 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13112,9 +13252,9 @@
       "r3c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n424 第2波：bu_enemy_swarm x4"
+    "note": "enc_n424 第2波：bu_enemy_swarm x4（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13145,6 +13285,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n425 第2波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n425_w3",
+    "encounterRef": "enc_n425",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n425_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n425 第3波：bu_enemy_summon_source x1"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13211,6 +13365,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n427_w3",
+    "encounterRef": "enc_n427",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n427_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n427 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n428_w1",
     "encounterRef": "enc_n428",
     "waveIndex": 1,
@@ -13241,6 +13409,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n428_w3",
+    "encounterRef": "enc_n428",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n428_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n428 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n429_w1",
     "encounterRef": "enc_n429",
     "waveIndex": 1,
@@ -13265,9 +13447,9 @@
       "r0c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n429 第2波：bu_enemy_burst_raider x2"
+    "note": "enc_n429 第2波：bu_enemy_burst_raider x2（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13328,9 +13510,9 @@
       "r0c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n431 第2波：bu_enemy_burst_raider x2"
+    "note": "enc_n431 第2波：bu_enemy_burst_raider x2（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13372,6 +13554,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n432_w3",
+    "encounterRef": "enc_n432",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n432_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c4"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n432 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n433_w1",
     "encounterRef": "enc_n433",
     "waveIndex": 1,
@@ -13399,6 +13595,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n433 第2波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n433_w3",
+    "encounterRef": "enc_n433",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n433_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n433 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13465,6 +13675,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n435_w3",
+    "encounterRef": "enc_n435",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n435_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n435 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n436_w1",
     "encounterRef": "enc_n436",
     "waveIndex": 1,
@@ -13512,6 +13736,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n436_w4",
+    "encounterRef": "enc_n436",
+    "waveIndex": 4,
+    "unitStatRef": "bu_n436_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c4"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n436 第4波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n437_w1",
     "encounterRef": "enc_n437",
     "waveIndex": 1,
@@ -13542,6 +13780,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n437_w3",
+    "encounterRef": "enc_n437",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n437_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n437 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n438_w1",
     "encounterRef": "enc_n438",
     "waveIndex": 1,
@@ -13569,9 +13821,9 @@
       "r3c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n438 第2波：bu_enemy_swarm x4"
+    "note": "enc_n438 第2波：bu_enemy_swarm x4（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13599,9 +13851,9 @@
       "r0c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n439 第2波：bu_enemy_burst_raider x2"
+    "note": "enc_n439 第2波：bu_enemy_burst_raider x2（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13618,6 +13870,20 @@
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 14,
     "note": "enc_n440 第1波：bu_enemy_shield x3"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n440_w2",
+    "encounterRef": "enc_n440",
+    "waveIndex": 2,
+    "unitStatRef": "bu_n440_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c1"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n440 第2波：bu_enemy_summon_source x1"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13651,6 +13917,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n441_w3",
+    "encounterRef": "enc_n441",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n441_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n441 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n442_w1",
     "encounterRef": "enc_n442",
     "waveIndex": 1,
@@ -13678,9 +13958,9 @@
       "r3c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n442 第2波：bu_enemy_swarm x4"
+    "note": "enc_n442 第2波：bu_enemy_swarm x4（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13711,6 +13991,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n443 第2波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n443_w3",
+    "encounterRef": "enc_n443",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n443_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n443 第3波：bu_enemy_summon_source x1"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13746,6 +14040,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n444_w3",
+    "encounterRef": "enc_n444",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n444_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n444 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n445_w1",
     "encounterRef": "enc_n445",
     "waveIndex": 1,
@@ -13776,6 +14084,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n445_w3",
+    "encounterRef": "enc_n445",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n445_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 5,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n445 第3波：bu_enemy_summon_source x1"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n446_w1",
     "encounterRef": "enc_n446",
     "waveIndex": 1,
@@ -13803,9 +14125,9 @@
       "r3c1",
       "r4c1"
     ],
-    "spawnDelaySec": 5,
+    "spawnDelaySec": 10,
     "maxConcurrentOnField": 14,
-    "note": "enc_n446 第2波：bu_enemy_swarm x4"
+    "note": "enc_n446 第2波：bu_enemy_swarm x4（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13836,6 +14158,20 @@
     "spawnDelaySec": 5,
     "maxConcurrentOnField": 14,
     "note": "enc_n447 第2波：bu_enemy_burst_raider x2"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n447_w3",
+    "encounterRef": "enc_n447",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n447_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n447 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -13872,6 +14208,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n448_w3",
+    "encounterRef": "enc_n448",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n448_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n448 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n449_w1",
     "encounterRef": "enc_n449",
     "waveIndex": 1,
@@ -13902,6 +14252,20 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n449_w3",
+    "encounterRef": "enc_n449",
+    "waveIndex": 3,
+    "unitStatRef": "bu_n449_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c2"
+    ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 14,
+    "note": "enc_n449 第3波：bu_enemy_summon_source x1（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
     "rowId": "spawn_n450_boss",
     "encounterRef": "enc_n450",
     "waveIndex": 1,
@@ -13916,7 +14280,7 @@
   },
   {
     "schemaVersion": "s7-0.1.0",
-    "rowId": "spawn_n450_adds",
+    "rowId": "spawn_n450_adds1",
     "encounterRef": "enc_n450",
     "waveIndex": 1,
     "unitStatRef": "bu_n450_pollution",
@@ -13926,8 +14290,22 @@
       "r2c1",
       "r4c1"
     ],
+    "spawnDelaySec": 10,
+    "maxConcurrentOnField": 12,
+    "note": "enc_n450 第1波 adds：bu_enemy_pollution x3（迷雾藏兵=延迟现身·眼段域规则）"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "rowId": "spawn_n450_adds2",
+    "encounterRef": "enc_n450",
+    "waveIndex": 1,
+    "unitStatRef": "bu_n450_summon_source",
+    "count": 1,
+    "slotRefs": [
+      "r2c5"
+    ],
     "spawnDelaySec": 0,
     "maxConcurrentOnField": 12,
-    "note": "enc_n450 第1波 adds：bu_enemy_pollution x3"
+    "note": "enc_n450 第1波 adds：bu_enemy_summon_source x1"
   }
 ]

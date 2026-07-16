@@ -400,12 +400,17 @@ describe('S7AutoBattleEngine - Boss 阶段 (#15,#16)', () => {
       if (/^bu_n450_/.test(String(u.rowId))) u.attack = 30;
     }
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180 });
-    Object.assign(row(b, 'battle_spawn_param', 'spawn_n450_adds'), { unitStatRef: 'bu_enemy_boss_add' });
+    Object.assign(row(b, 'battle_spawn_param', 'spawn_n450_adds1'), { unitStatRef: 'bu_enemy_boss_add' });
     // 占位 phase 无召唤（真召唤=段 2 对位手调）——#16 验"召唤 cap"须 fixture 给 mid 段塞召唤面。
     Object.assign(row(b, 'battle_boss_phase_param', 'phase_n450_mid'), {
       summonUnitRefs: ['bu_enemy_boss_add', 'bu_enemy_boss_add'], summonCountCap: 10,
     });
-    Object.assign(row(b, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
+    const encPin = row(b, 'battle_encounter_param', 'enc_n450');
+    Object.assign(encPin, { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'], spawnPlanRefs: ['spawn_n450_boss', 'spawn_n450_adds1'], environmentBlocks: undefined, reviveWaves: undefined });
+    // 段4 六叠隔离面：环境潮（落数 attack 1431）会先打崩裸舰 fixture·revive 重置阶段——均非本测验证面。
+    delete encPin.environmentBlocks;
+    delete encPin.reviveWaves;
+    b.battle_spawn_param = (b.battle_spawn_param as Row[]).filter((x) => x.rowId !== 'spawn_n450_adds2');
     return b;
   };
 
@@ -603,8 +608,9 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
     Object.assign(row(b1, 'battle_spawn_param', 'spawn_n450_boss'), { slotRefs: ['r0c2'] });
     // 走量 adds 格位——与 fixture pin 的 3x3 Boss（r0c2 锚→r0-r2×c2-c4）撞格，
     // Boss 会被静默跳过不生成（DIAG 实证 spawnWaves 无 boss 波）——adds 挪 r3 行避让。
-    Object.assign(row(b1, 'battle_spawn_param', 'spawn_n450_adds'), { unitStatRef: 'bu_enemy_boss_add', slotRefs: ['r3c2', 'r3c3', 'r3c4'] });
-    Object.assign(row(b1, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
+    Object.assign(row(b1, 'battle_spawn_param', 'spawn_n450_adds1'), { unitStatRef: 'bu_enemy_boss_add', slotRefs: ['r3c2', 'r3c3', 'r3c4'] });
+    Object.assign(row(b1, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'], spawnPlanRefs: ['spawn_n450_boss', 'spawn_n450_adds1'], environmentBlocks: undefined, reviveWaves: undefined }); // 段4 六叠隔离面：adds 收敛+环境潮/连战删（非本测验证面）
+    b1.battle_spawn_param = (b1.battle_spawn_param as Row[]).filter((x) => x.rowId !== 'spawn_n450_adds2'); // 六叠母舰波摘除（不在 fixture enemyUnitStatRefs·全表校验）
     const e1 = await engineOf(b1);
     const r1 = e1.run({ encounterRef: 'enc_n450', battleSeed: 'cap', playerUnits: FIVE });
     expect(ofType(r1.log, 'boss_phase').some((e) => e.phaseTag === 'mid')).toBe(true);
@@ -618,8 +624,8 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
     });
     Object.assign(row(b2, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 14000, attack: 180, sizeRows: 3, sizeCols: 3, ultimateEffectRef: 'none', ultimateCdSec: 0 });
     Object.assign(row(b2, 'battle_spawn_param', 'spawn_n450_boss'), { slotRefs: ['r0c2'] }); // 同 23a：fixture 显式钉回 r0c2 锚（段2 C① 走量挪 r1c2·格子算术解耦）
-    Object.assign(row(b2, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'] });
-    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n450_adds'), {
+    Object.assign(row(b2, 'battle_encounter_param', 'enc_n450'), { enemyUnitStatRefs: ['bu_boss_n450', 'bu_enemy_boss_add'], spawnPlanRefs: ['spawn_n450_boss', 'spawn_n450_adds1'], environmentBlocks: undefined, reviveWaves: undefined });
+    Object.assign(row(b2, 'battle_spawn_param', 'spawn_n450_adds1'), {
       unitStatRef: 'bu_enemy_boss_add', // 落数后为节点行（厚）——钉回手调量纲
 
       // 5×7=35 格：boss 占 9（r0c2..r2c4）+ 23 附属 = 32，仅余 3 空格（r4c4/r4c5/r4c6）。
@@ -631,6 +637,7 @@ describe('S7AutoBattleEngine - 满场召唤 (#23)', () => {
       ],
       maxConcurrentOnField: 35,
     });
+    b2.battle_spawn_param = (b2.battle_spawn_param as Row[]).filter((x) => x.rowId !== 'spawn_n450_adds2');
     const e2 = await engineOf(b2);
     const r2 = e2.run({ encounterRef: 'enc_n450', battleSeed: 'cap2', playerUnits: FIVE });
     const summoned2 = summonedCount(r2.log);

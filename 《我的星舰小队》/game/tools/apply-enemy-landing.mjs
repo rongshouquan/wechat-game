@@ -20,7 +20,7 @@ import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON, BOSS_EFFECT_RE } from './enemy-landing-lib.mjs';
+import { loadTables, writeTables, cleanBundle, serializeTable, stripLandingNote, LANDING_TABLES, BOSS_PERIODIC_SUMMON, BOSS_EFFECT_RE, EYE_RULES } from './enemy-landing-lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -188,6 +188,15 @@ function landBundle(tables, mod) {
         enc.enemyUnitStatRefs = [...enc.enemyUnitStatRefs, enc.victoryTargetUnitRef];
       }
     }
+    // ②d 段4 · 环境块伤害量纲落数（域规则通道①）：attackPof（生成器声明·占 P 比例）→
+    //    attack 绝对值（=P×attackPof·随压力自动缩放）；cleanBundle 删 attack=三方对称。
+    //    ⚠️ 压力预算外记档（总控前置令 07-16）：环境伤/增幅不在 k 合同预算内——同段2"敌自增强
+    //    预算外乘法"结构，眼段带子/boost 调参显式预折（§21.4 记账）。
+    if (Array.isArray(enc.environmentBlocks)) {
+      for (const eb of enc.environmentBlocks) {
+        if (typeof eb.attackPof === 'number' && eb.attackPof > 0) eb.attack = Math.max(1, Math.round(p * eb.attackPof));
+      }
+    }
     // ③ 母舰节点化：召唤效果 + 产出行 + 母舰行改指节点效果。
     const summonRowId = `bu_${nodeId}_summon_source`;
     if (blockById.has(summonRowId)) {
@@ -225,6 +234,15 @@ function landBundle(tables, mod) {
       }
       bossRow.ultimateEffectRef = effId;
       bossRow.ultimateCdSec = bossRule.ultimateCdSec;
+    }
+    // ⑤ 段4 · 眼段坟场复活字段注入（EYE_RULES graveyard·lib 共享声明）：本关全部节点敌行注
+    //    selfReviveHpPct 0.5/DelaySec 0.8（真源 sf02"击毁后原地复活一次半血"·引擎通道②消费）；
+    //    节点行=本函数产物→重放天然对称（清土删行=字段随行走·零悬挂）。
+    if (EYE_RULES[nodeId]?.includes('graveyard')) {
+      for (const row2 of block) {
+        row2.selfReviveHpPct = 0.5;
+        row2.selfReviveDelaySec = 0.8;
+      }
     }
     nodeUnitBlocks.push(...block);
   }

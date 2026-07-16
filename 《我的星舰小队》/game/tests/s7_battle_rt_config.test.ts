@@ -82,7 +82,14 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   效果行 363→362（+2 rally 全局效果行−3 母舰召唤效果〔sadd 56→53=换波后母舰关净减〕）；
     //   spawn 847→839（828 走量+11 教学：镜像 4 关 −8 波+38 关波数净变）；
     //   encounter 448/phase 10 不变。
-    expect(readTable('battle_unit_stat_param')).toHaveLength(857);
+    // 段4 首件偏差续调重定基（旧→新→为什么对）：n356 白板化续调 R1=双源结构（速鼓+攻鼓各一·
+    //   分摊集火窗）→节点行 +1（bu_n356_rally_source）=857→858。
+    // 段4 眼段域规则重铺重定基（旧→新→为什么对）：EYE_RULES 50 关落盘——
+    //   单位行 858→906（+48=assembly 关〔25+n450〕各 +母舰节点行+sadd 产出行·apply 打印
+    //   「节点行 769+add 3+sadd 77」对账）；效果行 362→387（+24 母舰召唤效果+1 风暴增幅全局行）；
+    //   spawn 840→866（+25 assembly 母舰波+n450 六叠 adds 1→2 波）；graveyard 字段=节点行属性
+    //   不加行；tide/surge/battlewave=encounter 字段不加行。
+    expect(readTable('battle_unit_stat_param')).toHaveLength(906);
     // ⑩A1：+50 驾驶员效果行（eff_pil_*·细表§13）；⑩A2：+8 星核效果行（eff_core_*·小太阳/星鲸/时光糖/护罩/战鼓/贪吃星/烟花·§15）→ 42+50+8+15=115。
     // ⑩A3：+18 舰装备行（张盾/怒吼/冲锋号/催进/微风/致盲领域/侵蚀/联防/普攻变体…）+14 插件行（cdr×5/净化/免疫/援护×4/自愈×3）；⑩A4：+5（污染体两件/污染潮/磁暴场/终Boss全屏）。
     // 机制批③段一：+5（曲率星门 rank_swap/彩虹棱镜弹跳普攻/全息镜召唤/群蜂饱和打击/影刃分裂普攻·6 深坑核+同族挂牌件接线）。
@@ -90,9 +97,9 @@ describe('s7 battle-rt config tables (BATTLE-RT-03)', () => {
     //   沛L40回血+3★小盾/空3★清场/巡3★溅射无人机弹/护盾传奇自罩盾/小太阳后爆——驾驶员质变+插件传奇接线）。
     // 机制批③段二b：+132（20 舰大节点 L20-L100 档位行 + A/S/SS 质变行 + 蜂针延迟爆/迷雾普攻致盲接真件——
     //   舰侧阶/级装配通道 shipBlocks 的数据面·逐行注"批③2b"）。
-    expect(readTable('battle_effect_param')).toHaveLength(362);
+    expect(readTable('battle_effect_param')).toHaveLength(387);
     expect(readTable('battle_encounter_param')).toHaveLength(448);
-    expect(readTable('battle_spawn_param')).toHaveLength(839);
+    expect(readTable('battle_spawn_param')).toHaveLength(866); // 段4：n356 双源 +1+眼段 assembly/六叠 +25（840→866）
     expect(readTable('battle_boss_phase_param')).toHaveLength(10);
   });
 

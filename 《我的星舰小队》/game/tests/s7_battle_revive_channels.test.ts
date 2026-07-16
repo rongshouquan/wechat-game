@@ -148,13 +148,72 @@ describe('段2 通道② · 坟场自复活（selfReviveHpPct）', () => {
     const enc = row(b, 'battle_encounter_param', 'enc_n450');
     enc.spawnPlanRefs = ['spawn_n450_boss'];
     enc.enemyUnitStatRefs = ['bu_boss_n450', 'bu_enemy_boss_add'];
-    // 残留 adds 波行会触发"unitStatRef 不在 enemyUnitStatRefs"全表校验——fixture 一并摘除。
-    b.battle_spawn_param = (b.battle_spawn_param as Row[]).filter((x) => x.rowId !== 'spawn_n450_adds');
+    // 残留 adds 波行会触发"unitStatRef 不在 enemyUnitStatRefs"全表校验——fixture 一并摘除
+    // （段4 六叠后 n450 adds=两波：adds1 污染延迟环卫+adds2 量产母舰）。
+    b.battle_spawn_param = (b.battle_spawn_param as Row[]).filter((x) => !/^spawn_n450_adds/.test(String(x.rowId)));
     const e = await engineOf(b);
     const r = e.run({ encounterRef: 'enc_n450', battleSeed: 'gy-summon', playerUnits: TRIO });
     const summoned = ofType(r.log, 'spawn_wave').filter((x) => x.note === 'phase_summon');
     expect(summoned.length).toBeGreaterThan(0); // mid 真的召了
     expect(ofType(r.log, 'revive')).toHaveLength(0); // 召唤物死亡零复活
+  });
+});
+
+describe('段4 通道① · 域规则环境块（environmentBlocks·虚拟天气源）', () => {
+  // 变异探针（开发期实测记账）：注掉主循环 stepEnvironment 调用行 → T1/T2 红 → 复原绿。
+  it('污染潮（cd 型·side player）：全队周期吃潮伤（不过甲）+盾优先吸收+燃烧 rider 跳伤', async () => {
+    const b = graveyardSoloFixture(0, 0, 100000); // 复用单敌 fixture（敌血厚保战斗持续·自复活关闭 pct=0）
+    Object.assign(row(b, 'battle_unit_stat_param', 'bu_enemy_swarm'), { selfReviveHpPct: 0.5 }); // 修回合法值（fixture 校验 pct>0 不必—— pct 0 会被引擎跳过·validator 无此约束）
+    const enc = row(b, 'battle_encounter_param', 'enc_n001');
+    enc.environmentBlocks = [{ on: 'cd', cdSec: 5, effectRef: 'eff_pollution_tide', side: 'player', attack: 100 }];
+    const e = await engineOf(b);
+    const r = e.run({ encounterRef: 'enc_n001', battleSeed: 'env-tide', playerUnits: TRIO });
+    const envDmg = ofType(r.log, 'damage').filter((x) => x.actorId === 'environment' && !x.periodic);
+    // 100×0.8（eff_pollution_tide power）=80 直伤·不过甲（vanguard armor 高低无关=手推恒 80）
+    expect(envDmg.length).toBeGreaterThanOrEqual(6); // ≥2 轮 × 3 船
+    expect(envDmg[0].amount).toBe(80);
+    // 燃烧 rider（stateTag burn dur4）：玩家侧出现周期跳伤（source 为玩家自身持有态=periodic 事件在）
+    const burns = ofType(r.log, 'damage').filter((x) => x.periodic && (x.targetIds ?? []).some((t) => t.startsWith('player')));
+    expect(burns.length).toBeGreaterThan(0);
+  });
+
+  it('风暴增幅（battle_start 型·side both）：敌我普攻首发同吃 +25%（对照零环境跑）', async () => {
+    const mk = (withEnv: boolean) => {
+      const b = graveyardSoloFixture(0.5, 99, 100000); // 敌血厚+自复活不触发（99s 延迟超时限）
+      if (withEnv) {
+        row(b, 'battle_encounter_param', 'enc_n001').environmentBlocks = [
+          { on: 'battle_start', effectRef: 'eff_s7_env_storm_surge', side: 'both' },
+        ];
+      }
+      return b;
+    };
+    const run = async (withEnv: boolean) => {
+      const e = await engineOf(mk(withEnv));
+      const r = e.run({ encounterRef: 'enc_n001', battleSeed: 'env-surge', playerUnits: TRIO });
+      const firstPlayerHit = ofType(r.log, 'damage').find((x) => x.actorId?.startsWith('player') && !x.periodic);
+      const firstEnemyHit = ofType(r.log, 'damage').find((x) => x.actorId?.startsWith('enemy') && !x.periodic);
+      return { p: firstPlayerHit?.amount ?? 0, e: firstEnemyHit?.amount ?? 0 };
+    };
+    const base = await run(false);
+    const surged = await run(true);
+    // atk_up 0.25 both：敌我首发普攻伤害同涨（防修后比例略异·下限断言 ≥1.2×——真实=攻 ×1.25 过防修）
+    expect(surged.p).toBeGreaterThanOrEqual(Math.floor(base.p * 1.2));
+    expect(surged.e).toBeGreaterThanOrEqual(Math.floor(base.e * 1.2));
+  });
+
+  it('零击杀归因：环境杀（side enemy 潮打死残血敌）→ actorId=environment·不触发任何单位 kill 事件', async () => {
+    const b = graveyardSoloFixture(0.5, 99, 10); // 敌 10 血（首潮 80 直接打死）
+    const enc = row(b, 'battle_encounter_param', 'enc_n001');
+    enc.environmentBlocks = [{ on: 'battle_start', effectRef: 'eff_pollution_tide', side: 'enemy', attack: 100 }];
+    // 我方远置后排+攻 1 化（保证击杀者=环境非我方）
+    for (const rid of ['bu_ship_vanguard', 'bu_ship_gunner', 'bu_ship_guardian']) {
+      Object.assign(row(b, 'battle_unit_stat_param', rid), { attack: 1 });
+    }
+    const e = await engineOf(b);
+    const r = e.run({ encounterRef: 'enc_n001', battleSeed: 'env-kill', playerUnits: TRIO });
+    const killShot = ofType(r.log, 'damage').find((x) => x.actorId === 'environment' && x.hpAfter === 0);
+    expect(killShot).toBeDefined(); // 环境击杀发生
+    expect(r.winner).toBe('player'); // 死亡由 cleanup 统一收·清场判定正常
   });
 });
 

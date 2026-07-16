@@ -128,6 +128,16 @@ describe('⑩A4→段2 · n450 终Boss final 阶段狂暴全屏（真源§5·先
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_boss_n450'), { maxHp: 4000, attack: 50, armor: 25, attackIntervalSec: 2.0 });
     player(b, 'bu_ship_vanguard');
     player(b, 'bu_ship_gunner');
+    // 段4 六叠隔离面：本测=final「先狂暴后全屏」效果序——域规则面（环境块/连战重置/母舰波）
+    // 不属验证面，fixture 摘除（enc 收敛到 boss+延迟环卫两波·revive/env 删）。
+    {
+      const enc450 = row(b, 'battle_encounter_param', 'enc_n450');
+      delete enc450.environmentBlocks;
+      delete enc450.reviveWaves;
+      enc450.spawnPlanRefs = ['spawn_n450_boss', 'spawn_n450_adds1'];
+      enc450.enemyUnitStatRefs = ['bu_boss_n450', 'bu_n450_pollution', 'bu_n450_add', 'bu_n450_sadd'];
+      b.battle_spawn_param = (b.battle_spawn_param as Row[]).filter((x) => x.rowId !== 'spawn_n450_adds2');
+    }
     // n450 场面单位缩到无害量纲防干扰（结构不动）：spawn 波污染体环卫+mid 阶段召唤（污染体+add×2）。
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_n450_pollution'), { maxHp: 1, attack: 1, armor: 1 });
     Object.assign(row(b, 'battle_unit_stat_param', 'bu_n450_add'), { maxHp: 1, attack: 1, armor: 1 });
@@ -142,9 +152,10 @@ describe('⑩A4→段2 · n450 终Boss final 阶段狂暴全屏（真源§5·先
     const cat = dmg(r.log).filter((d) => d.effectRef === 'eff_s7_cataclysm');
     expect(cat.length).toBeGreaterThanOrEqual(2); // 阶段入场一发·全屏=双船都中
     expect(new Set(cat.map((d) => d.target)).size).toBe(2);
-    // 手推（旧 n150 先例 60 的载体差重定基·旧→新→为什么对）：n150 普攻=eff_basic_attack（无易伤）
-    // →60=50×1.25(狂暴先上身)×1.2×(100/125)；n450 普攻=eff_normal_polluted（污染族·真源=命中挂
-    // 易伤 +25%）→cataclysm 落地时玩家已带易伤：60×1.25=75（易伤吃全屏伤=机制正确·非放宽）。
-    expect(cat[0].amount).toBe(75);
+    // 手推（段4 六叠重定基·旧→新→为什么对）：段2 值 75=50×1.25(狂暴)×1.2×1.25(单层易伤)；
+    // 段4 n450 场面=Boss（polluted 普攻）+延迟环卫/mid 召唤污染体（同 polluted）——dmg_taken_up
+    // （0.25·M1 限时修正态可叠）双源各挂一层=×1.5 → 50×1.25×1.2×1.5=112.5→113（六叠世界
+    // final 全屏落在双层易伤上=机制正确·磁盘行核实 stateAmount 0.25·非放宽）。
+    expect(cat[0].amount).toBe(113);
   });
 });

@@ -4118,7 +4118,7 @@
     "note": "n186 精英关·shield 主题（450 关走量）",
     "eliteTier": "微阻滞",
     "mirrorLineup": true,
-    "mirrorScalePct": 1
+    "mirrorScalePct": 0.95
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -5953,7 +5953,7 @@
     "note": "n266 精英关·summon 主题（450 关走量）",
     "eliteTier": "阻滞",
     "mirrorLineup": true,
-    "mirrorScalePct": 1.15
+    "mirrorScalePct": 1.12
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -8039,13 +8039,15 @@
     "pressureRef": "np_sf05",
     "enemyUnitStatRefs": [
       "bu_n356_rally_haste_source",
+      "bu_n356_rally_source",
       "bu_n356_pollution",
       "bu_n356_swarm"
     ],
     "spawnPlanRefs": [
       "spawn_n356_w1",
       "spawn_n356_w2",
-      "spawn_n356_w3"
+      "spawn_n356_w3",
+      "spawn_n356_w4"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
@@ -9077,17 +9079,37 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n402_pollution",
-      "bu_n402_swarm"
+      "bu_n402_swarm",
+      "bu_n402_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n402_w1",
-      "spawn_n402_w2"
+      "spawn_n402_w2",
+      "spawn_n402_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n402 普通关·berserk 主题（450 关走量）"
+    "note": "n402 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 543
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1087
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9110,7 +9132,15 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n403 普通关·berserk 主题（450 关走量）"
+    "note": "n403 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9133,7 +9163,25 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n404 普通关·burst 主题（450 关走量）"
+    "note": "n404 普通关·burst 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 543
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1087
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9146,11 +9194,13 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n405_pollution",
-      "bu_n405_burst_raider"
+      "bu_n405_burst_raider",
+      "bu_n405_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n405_w1",
-      "spawn_n405_w2"
+      "spawn_n405_w2",
+      "spawn_n405_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
@@ -9179,7 +9229,25 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n406 普通关·berserk 主题（450 关走量）"
+    "note": "n406 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 550
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1100
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9202,7 +9270,14 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n407 普通关·berserk 主题（450 关走量）"
+    "note": "n407 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9224,7 +9299,8 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n408 普通关·swarm 主题（450 关走量）"
+    "note": "n408 普通关·swarm 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9247,7 +9323,30 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n409 普通关·berserk 主题（450 关走量）"
+    "note": "n409 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 560
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1120
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9260,17 +9359,20 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n410_pollution",
-      "bu_n410_swarm"
+      "bu_n410_swarm",
+      "bu_n410_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n410_w1",
-      "spawn_n410_w2"
+      "spawn_n410_w2",
+      "spawn_n410_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n410 普通关·berserk 主题（450 关走量）"
+    "note": "n410 普通关·berserk 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9293,7 +9395,8 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n411 普通关·berserk 主题（450 关走量）"
+    "note": "n411 普通关·berserk 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9307,12 +9410,14 @@
     "enemyUnitStatRefs": [
       "bu_n412_swarm_tough",
       "bu_n412_support",
-      "bu_n412_stormtower"
+      "bu_n412_stormtower",
+      "bu_n412_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n412_w1",
       "spawn_n412_w2",
-      "spawn_n412_w3"
+      "spawn_n412_w3",
+      "spawn_n412_w4"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
@@ -9341,7 +9446,26 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n413 普通关·berserk 主题（450 关走量）"
+    "note": "n413 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 573
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1147
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9354,17 +9478,26 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n414_pollution",
-      "bu_n414_swarm"
+      "bu_n414_swarm",
+      "bu_n414_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n414_w1",
-      "spawn_n414_w2"
+      "spawn_n414_w2",
+      "spawn_n414_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n414 普通关·berserk 主题（450 关走量）"
+    "note": "n414 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9387,7 +9520,14 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n415 普通关·berserk 主题（450 关走量）"
+    "note": "n415 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9408,7 +9548,25 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n416 普通关·shield 主题（450 关走量）"
+    "note": "n416 普通关·shield 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 584
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1168
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9421,17 +9579,27 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n417_pollution",
-      "bu_n417_burst_raider"
+      "bu_n417_burst_raider",
+      "bu_n417_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n417_w1",
-      "spawn_n417_w2"
+      "spawn_n417_w2",
+      "spawn_n417_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n417 普通关·berserk 主题（450 关走量）"
+    "note": "n417 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9454,7 +9622,30 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n418 普通关·berserk 主题（450 关走量）"
+    "note": "n418 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 591
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1182
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9467,17 +9658,20 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n419_pollution",
-      "bu_n419_burst_raider"
+      "bu_n419_burst_raider",
+      "bu_n419_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n419_w1",
-      "spawn_n419_w2"
+      "spawn_n419_w2",
+      "spawn_n419_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n419 普通关·berserk 主题（450 关走量）"
+    "note": "n419 普通关·berserk 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9494,13 +9688,32 @@
     ],
     "spawnPlanRefs": [
       "spawn_n420_w1",
-      "spawn_n420_w2"
+      "spawn_n420_w2",
+      "spawn_n420_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n420 普通关·summon 主题（450 关走量）"
+    "note": "n420 普通关·summon 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 598
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1196
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9523,7 +9736,15 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n421 普通关·berserk 主题（450 关走量）"
+    "note": "n421 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9536,11 +9757,13 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n422_pollution",
-      "bu_n422_swarm"
+      "bu_n422_swarm",
+      "bu_n422_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n422_w1",
-      "spawn_n422_w2"
+      "spawn_n422_w2",
+      "spawn_n422_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
@@ -9569,7 +9792,31 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n423 普通关·berserk 主题（450 关走量）"
+    "note": "n423 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 609
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1218
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9592,7 +9839,8 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n424 普通关·berserk 主题（450 关走量）"
+    "note": "n424 普通关·berserk 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9605,17 +9853,42 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n425_pollution",
-      "bu_n425_burst_raider"
+      "bu_n425_burst_raider",
+      "bu_n425_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n425_w1",
-      "spawn_n425_w2"
+      "spawn_n425_w2",
+      "spawn_n425_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n425 普通关·berserk 主题（450 关走量）"
+    "note": "n425 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 616
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1232
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9638,7 +9911,15 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n426 普通关·berserk 主题（450 关走量）"
+    "note": "n426 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9651,17 +9932,37 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n427_pollution",
-      "bu_n427_burst_raider"
+      "bu_n427_burst_raider",
+      "bu_n427_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n427_w1",
-      "spawn_n427_w2"
+      "spawn_n427_w2",
+      "spawn_n427_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n427 普通关·berserk 主题（450 关走量）"
+    "note": "n427 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 624
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1247
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9674,17 +9975,26 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n428_burst_raider",
-      "bu_n428_charge"
+      "bu_n428_charge",
+      "bu_n428_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n428_w1",
-      "spawn_n428_w2"
+      "spawn_n428_w2",
+      "spawn_n428_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n428 普通关·burst 主题（450 关走量）"
+    "note": "n428 普通关·burst 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9707,7 +10017,26 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n429 普通关·berserk 主题（450 关走量）"
+    "note": "n429 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 631
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1262
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9730,7 +10059,26 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n430 普通关·berserk 主题（450 关走量）"
+    "note": "n430 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 635
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1270
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9753,7 +10101,30 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n431 普通关·berserk 主题（450 关走量）"
+    "note": "n431 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 639
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1277
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9765,17 +10136,43 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
-      "bu_n432_swarm"
+      "bu_n432_swarm",
+      "bu_n432_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n432_w1",
-      "spawn_n432_w2"
+      "spawn_n432_w2",
+      "spawn_n432_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n432 普通关·swarm 主题（450 关走量）"
+    "note": "n432 普通关·swarm 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 642
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1285
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9788,17 +10185,20 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n433_pollution",
-      "bu_n433_burst_raider"
+      "bu_n433_burst_raider",
+      "bu_n433_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n433_w1",
-      "spawn_n433_w2"
+      "spawn_n433_w2",
+      "spawn_n433_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n433 普通关·berserk 主题（450 关走量）"
+    "note": "n433 普通关·berserk 主题（450 关走量）",
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9821,7 +10221,31 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n434 普通关·berserk 主题（450 关走量）"
+    "note": "n434 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 650
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1300
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9834,17 +10258,42 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n435_pollution",
-      "bu_n435_burst_raider"
+      "bu_n435_burst_raider",
+      "bu_n435_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n435_w1",
-      "spawn_n435_w2"
+      "spawn_n435_w2",
+      "spawn_n435_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n435 普通关·berserk 主题（450 关走量）"
+    "note": "n435 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 654
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1308
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9858,18 +10307,38 @@
     "enemyUnitStatRefs": [
       "bu_n436_swarm_tough",
       "bu_n436_support",
-      "bu_n436_stormtower"
+      "bu_n436_stormtower",
+      "bu_n436_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n436_w1",
       "spawn_n436_w2",
-      "spawn_n436_w3"
+      "spawn_n436_w3",
+      "spawn_n436_w4"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n436 普通关·backline 主题（450 关走量）"
+    "note": "n436 普通关·backline 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 658
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1316
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9882,17 +10351,27 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n437_pollution",
-      "bu_n437_burst_raider"
+      "bu_n437_burst_raider",
+      "bu_n437_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n437_w1",
-      "spawn_n437_w2"
+      "spawn_n437_w2",
+      "spawn_n437_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n437 普通关·berserk 主题（450 关走量）"
+    "note": "n437 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9915,7 +10394,31 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n438 普通关·berserk 主题（450 关走量）"
+    "note": "n438 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 666
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1332
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9938,7 +10441,15 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n439 普通关·berserk 主题（450 关走量）"
+    "note": "n439 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9950,16 +10461,37 @@
     "secondaryPressureTag": "none",
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
-      "bu_n440_shield"
+      "bu_n440_shield",
+      "bu_n440_summon_source"
     ],
     "spawnPlanRefs": [
-      "spawn_n440_w1"
+      "spawn_n440_w1",
+      "spawn_n440_w2"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n440 普通关·shield 主题（450 关走量）"
+    "note": "n440 普通关·shield 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 674
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1348
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -9972,17 +10504,27 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n441_pollution",
-      "bu_n441_burst_raider"
+      "bu_n441_burst_raider",
+      "bu_n441_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n441_w1",
-      "spawn_n441_w2"
+      "spawn_n441_w2",
+      "spawn_n441_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n441 普通关·berserk 主题（450 关走量）"
+    "note": "n441 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10005,7 +10547,26 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n442 普通关·berserk 主题（450 关走量）"
+    "note": "n442 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 682
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1364
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10018,17 +10579,42 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n443_pollution",
-      "bu_n443_burst_raider"
+      "bu_n443_burst_raider",
+      "bu_n443_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n443_w1",
-      "spawn_n443_w2"
+      "spawn_n443_w2",
+      "spawn_n443_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n443 普通关·berserk 主题（450 关走量）"
+    "note": "n443 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 686
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1372
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10045,13 +10631,38 @@
     ],
     "spawnPlanRefs": [
       "spawn_n444_w1",
-      "spawn_n444_w2"
+      "spawn_n444_w2",
+      "spawn_n444_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n444 普通关·summon 主题（450 关走量）"
+    "note": "n444 普通关·summon 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 690
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1381
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10064,17 +10675,43 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n445_pollution",
-      "bu_n445_burst_raider"
+      "bu_n445_burst_raider",
+      "bu_n445_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n445_w1",
-      "spawn_n445_w2"
+      "spawn_n445_w2",
+      "spawn_n445_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n445 普通关·berserk 主题（450 关走量）"
+    "note": "n445 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 695
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1389
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10097,7 +10734,31 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n446 普通关·berserk 主题（450 关走量）"
+    "note": "n446 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 699
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1397
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10110,17 +10771,27 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n447_pollution",
-      "bu_n447_burst_raider"
+      "bu_n447_burst_raider",
+      "bu_n447_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n447_w1",
-      "spawn_n447_w2"
+      "spawn_n447_w2",
+      "spawn_n447_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n447 普通关·berserk 主题（450 关走量）"
+    "note": "n447 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10133,17 +10804,38 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n448_pollution",
-      "bu_n448_swarm"
+      "bu_n448_swarm",
+      "bu_n448_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n448_w1",
-      "spawn_n448_w2"
+      "spawn_n448_w2",
+      "spawn_n448_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n448 普通关·berserk 主题（450 关走量）"
+    "note": "n448 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 707
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1414
+      }
+    ],
+    "reviveWaves": 1
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10156,17 +10848,42 @@
     "pressureRef": "np_sf07",
     "enemyUnitStatRefs": [
       "bu_n449_pollution",
-      "bu_n449_burst_raider"
+      "bu_n449_burst_raider",
+      "bu_n449_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n449_w1",
-      "spawn_n449_w2"
+      "spawn_n449_w2",
+      "spawn_n449_w3"
     ],
     "bossPhaseRefs": [],
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n449 普通关·berserk 主题（450 关走量）"
+    "note": "n449 普通关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 711
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1423
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ]
   },
   {
     "schemaVersion": "s7-0.1.0",
@@ -10179,11 +10896,13 @@
     "pressureRef": "bp_n450",
     "enemyUnitStatRefs": [
       "bu_boss_n450",
-      "bu_n450_pollution"
+      "bu_n450_pollution",
+      "bu_n450_summon_source"
     ],
     "spawnPlanRefs": [
       "spawn_n450_boss",
-      "spawn_n450_adds"
+      "spawn_n450_adds1",
+      "spawn_n450_adds2"
     ],
     "bossPhaseRefs": [
       "phase_n450_mid",
@@ -10192,6 +10911,30 @@
     "playerSlotPolicy": "five_ship_3x3_default",
     "timeLimitSec": 120,
     "battleSeedPolicy": "node_id_plus_run_seed",
-    "note": "n450 Boss关·berserk 主题（450 关走量）"
+    "note": "n450 Boss关·berserk 主题（450 关走量）",
+    "environmentBlocks": [
+      {
+        "on": "cd",
+        "cdSec": 8,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.04,
+        "attack": 716
+      },
+      {
+        "on": "cd",
+        "cdSec": 20,
+        "effectRef": "eff_pollution_tide",
+        "side": "player",
+        "attackPof": 0.08,
+        "attack": 1431
+      },
+      {
+        "on": "battle_start",
+        "effectRef": "eff_s7_env_storm_surge",
+        "side": "both"
+      }
+    ],
+    "reviveWaves": 1
   }
 ]

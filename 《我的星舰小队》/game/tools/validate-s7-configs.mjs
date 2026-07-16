@@ -1361,6 +1361,17 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     const mline = mainlineMap.get(row.nodeRef);
     if (mline) { const d = deriveStage(mline.nodeTypeTag); if (d !== row.stageType) fail('battle_encounter_param', id, `stageType "${row.stageType}" 与主线节点 nodeTypeTag 推导（${d}）不一致`); }
     if (Array.isArray(row.spawnPlanRefs)) for (const sref of row.spawnPlanRefs) { const s = spawnMap.get(sref); if (s && s.encounterRef !== id) fail('battle_encounter_param', id, `spawnPlanRefs 引用的 "${sref}" 的 encounterRef 不指向本 encounter（双向闭合失败）`); }
+    // 段4 域规则通道①（TS 校验器同口径镜像）
+    if (row.environmentBlocks !== undefined) {
+      if (!Array.isArray(row.environmentBlocks) || row.environmentBlocks.length === 0) fail('battle_encounter_param', id, 'environmentBlocks 存在时必须为非空数组');
+      else for (let i = 0; i < row.environmentBlocks.length; i += 1) {
+        const eb = row.environmentBlocks[i];
+        if (eb.on !== 'cd' && eb.on !== 'battle_start') fail('battle_encounter_param', id, `environmentBlocks[${i}].on 必须 ∈ cd/battle_start`);
+        if (eb.on === 'cd') { const c = num(eb.cdSec); if (c === null || c <= 0) fail('battle_encounter_param', id, `environmentBlocks[${i}] cd 型必须给正 cdSec`); }
+        if (typeof eb.effectRef !== 'string' || !effectIdSet.has(eb.effectRef)) fail('battle_encounter_param', id, `environmentBlocks[${i}].effectRef 无效`);
+        if (eb.side !== 'player' && eb.side !== 'enemy' && eb.side !== 'both') fail('battle_encounter_param', id, `environmentBlocks[${i}].side 必须 ∈ player/enemy/both`);
+      }
+    }
     if (Array.isArray(row.bossPhaseRefs)) for (const pref of row.bossPhaseRefs) { const ph = phaseMap.get(pref); if (ph && ph.bossNodeId !== row.nodeRef) fail('battle_encounter_param', id, `bossPhaseRefs 引用的 "${pref}" 不属于 boss 节点 ${row.nodeRef}（双向闭合失败）`); }
   }
   const coveredNodes = new Set(encounterRows.map((r) => r.nodeRef));

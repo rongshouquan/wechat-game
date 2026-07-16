@@ -1777,6 +1777,19 @@ function validateBattle(
       if (row.stageType !== 'elite') errors.push({ table: 'battle_encounter_param', id, message: 'eliteTier 仅 stageType=elite 行可携带（段3 五档带）' });
       if (typeof row.eliteTier !== 'string' || !ELITE_TIER_VALUES.includes(row.eliteTier)) errors.push({ table: 'battle_encounter_param', id, message: `eliteTier 必须 ∈ ${ELITE_TIER_VALUES.join('/')}` });
     }
+    if (row.environmentBlocks !== undefined) {
+      if (!Array.isArray(row.environmentBlocks) || row.environmentBlocks.length === 0) {
+        errors.push({ table: 'battle_encounter_param', id, message: 'environmentBlocks 存在时必须为非空数组（段4 域规则通道①）' });
+      } else {
+        for (const [i, eb] of (row.environmentBlocks as Record<string, unknown>[]).entries()) {
+          if (eb.on !== 'cd' && eb.on !== 'battle_start') errors.push({ table: 'battle_encounter_param', id, message: `environmentBlocks[${i}].on 必须 ∈ cd/battle_start` });
+          if (eb.on === 'cd') { const c = num(eb.cdSec); if (c === null || c <= 0) errors.push({ table: 'battle_encounter_param', id, message: `environmentBlocks[${i}] cd 型必须给正 cdSec` }); }
+          if (typeof eb.effectRef !== 'string' || !effectIds.has(eb.effectRef)) errors.push({ table: 'battle_encounter_param', id, message: `environmentBlocks[${i}].effectRef 无效` });
+          if (eb.side !== 'player' && eb.side !== 'enemy' && eb.side !== 'both') errors.push({ table: 'battle_encounter_param', id, message: `environmentBlocks[${i}].side 必须 ∈ player/enemy/both` });
+          if (eb.attackPof !== undefined) { const a = num(eb.attackPof); if (a === null || a < 0) errors.push({ table: 'battle_encounter_param', id, message: `environmentBlocks[${i}].attackPof 必须 ≥0` }); }
+        }
+      }
+    }
     if (row.mirrorLineup === true && Array.isArray(row.spawnPlanRefs) && row.spawnPlanRefs.length > 0) {
       errors.push({ table: 'battle_encounter_param', id, message: '镜像关的 spawnPlanRefs 必须为空数组（敌阵=玩家阵容读档生成）' });
     }

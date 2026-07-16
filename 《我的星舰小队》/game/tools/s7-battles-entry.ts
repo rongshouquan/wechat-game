@@ -378,6 +378,16 @@ export const ELITE_TIER_BOOST: Record<string, { pool: number; dps: number }> = {
   阻滞: { pool: 1.5, dps: 0.9 },  // 20-35%（磨 3-5 把）
   变态: { pool: 2.6, dps: 1.1 },  // 5-15%（小 Boss 级·磨 4-6 把不卡天·量级参照墙⑧连战等效池）
 };
+/** 段4 · 眼段递进带 boost（n401-450 按段五值·剧本 R7 递进结构+R16 B④ 低压检阅段）：
+ *  ⚠️ 环境压力预折已含（总控前置令 07-16·§21.4 记账）——tide 持续压血+surge 敌我同涨都是
+ *  k 合同预算外乘法（同段2 敌自增强教训），段值按"含环境体验"设计而非裸 k 预算。 */
+export const EYE_BOOST_BANDS: Array<{ from: number; to: number; pool: number; dps: number }> = [
+  { from: 401, to: 404, pool: 0.3, dps: 0.35 },  // 低压检阅（10-14s 碾压·毕业核检阅台·R2 再压+迷雾检阅版 delay 5s）
+  { from: 405, to: 415, pool: 0.95, dps: 0.62 }, // 两叠段（初见 30-45%·R1 段均在带·关间散布=组合难度不等价记档）
+  { from: 416, to: 430, pool: 1.2, dps: 0.74 },  // 三叠段（25-40%·R3 终=段均口径·R2 段均 52 微超）
+  { from: 431, to: 443, pool: 1.0, dps: 0.55 },  // 四叠段（22-35%·R3 终·R2 段均 12 微狠——surge+battlewave 双狠组合=散布下限记档）
+  { from: 444, to: 449, pool: 1.0, dps: 0.58 },  // 五叠段（20-30%·R3 终·R2 段均 37 微超——缺 graveyard 组合=散布上限记档）
+];
 /** 档位来源=磁盘 encounter.eliteTier 字段（生成器按 ELITE_CONTENT.tier 声明写入——单点在声明表，
  *  本文件零 38 关副本=零双账本；关级覆写=实测收敛个别偏离档默认时填·查找链先于档位默认）。 */
 export const ELITE_BOOST_OVERRIDE: Record<string, { pool: number; dps: number }> = {
@@ -387,7 +397,11 @@ export const ELITE_BOOST_OVERRIDE: Record<string, { pool: number; dps: number }>
   // 斩首关（n033/n142/n198/n290/n320/n362）＝速胜结构记档例外（集火单点 vs 全场分摊=目标必速杀·
   // pool 4.0 时间墙实测不收敛）——初见带豁免·boost 走档位默认（旧时间墙 override 删除）；
   // 普通面窄带逐关细调（同 boost 不同波次构成形状天差=档位默认+关级细调的设计用途）；
-  n168: { pool: 1.2, dps: 0.8 }, n356: { pool: 1.3, dps: 0.85 }, n192: { pool: 1.15, dps: 0.78 },
+  n168: { pool: 1.2, dps: 0.8 }, n356: { pool: 1.45, dps: 0.9 }, n192: { pool: 1.15, dps: 0.78 },
+  // 段4 首件·n390 归类令落档（总控裁二选一→豁免论证·实证据）：boost 2.6→3.4（+31% 全场量）
+  // 五点逐点纹丝不动（25/30/20/30/40）=胜率由「杀源两遍」斩首竞速结构决定·与全场血攻量无关——
+  // 与斩首 6 关速胜豁免同口径；25-40% 高于纯斩首（100%）正是 revive×2 复合难度=变态档实际体验
+  // 载体（磨 3-4 把·小 Boss 级高光仗）。override 不挂（档位默认 2.6/1.1·豁免关不白耗 boost）。
 };
 /** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·"把尖峰还给每座塔"手法=间隔拉长+单发放大·
  *  单位 DPS 守恒）。段3 首件：旧世界 n102 塔尖峰键处死（总控验收令·07-15）——450 世界 n102=普通关
@@ -438,11 +452,15 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   // 敌火晚段 ^1.08 结构补偿保留（φ>1 才作用）：套件结构价值（复活/免控/保底）不随战力砍半，
   // 纯属性压强晚段追不上=砍半晚段 64% 实证——这是"结构件不缩放"的独立机理，不随刻度诚实化消失。
   const phiDps = phiPool > 1 ? Math.pow(phiPool, 1.08) : phiPool;
-  // 段3：精英五档带查找链（关级覆写 > 磁盘 eliteTier 档位默认）；Boss 墙表优先；普通关=1/1。
+  // 段3：精英五档带查找链（关级覆写 > 磁盘 eliteTier 档位默认）；Boss 墙表优先；
+  // 段4：眼段递进带（n401-449 段值·n450=WALL_BOOST 毕业墙）；普通关=1/1。
   const eliteTier = (enc as { eliteTier?: string }).eliteTier;
+  const num = Number(nodeId.slice(1));
+  const eyeBand = EYE_BOOST_BANDS.find((b) => num >= b.from && num <= b.to);
   const wall = WALL_BOOST[nodeId]
     ?? ELITE_BOOST_OVERRIDE[nodeId]
     ?? (eliteTier ? ELITE_TIER_BOOST[eliteTier] : undefined)
+    ?? (eyeBand ? { pool: eyeBand.pool, dps: eyeBand.dps } : undefined)
     ?? { pool: 1, dps: 1 };
   const pool = K_HP * PHI_BASE * phiPool * mult.pool * wall.pool;
   let dps = K_DPS * PHI_BASE * phiDps * mult.dps * wall.dps;

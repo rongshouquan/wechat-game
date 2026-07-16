@@ -522,6 +522,8 @@ class BattleRun {
   private victoryTargetRef: string | null = null;
   /** 复活波次余额（reviveWaves 配置·每触发一次 −1）。 */
   private reviveRemaining = 0;
+  /** 段4 通道①（域规则·environmentBlocks）：环境块计时器（无配置=空数组=零波及）。 */
+  private envTimers: { block: NonNullable<S7BattleEncounterParam['environmentBlocks']>[number]; nextFireAt: number }[] = [];
 
   constructor(
     private readonly runtime: S7ConfigRuntime,
@@ -544,6 +546,11 @@ class BattleRun {
     this.victoryTargetRef = enc.victoryRule === 'kill_target' && typeof enc.victoryTargetUnitRef === 'string' && enc.victoryTargetUnitRef.length > 0
       ? enc.victoryTargetUnitRef : null;
     this.reviveRemaining = typeof enc.reviveWaves === 'number' && enc.reviveWaves > 0 ? Math.min(3, Math.floor(enc.reviveWaves)) : 0;
+    // 段4 通道①装载（无配置=空数组=零波及）：battle_start 型 t=0 起、cd 型首发=cdSec。
+    this.envTimers = (enc.environmentBlocks ?? []).map((b) => ({
+      block: b,
+      nextFireAt: b.on === 'battle_start' ? 0 : (b.cdSec ?? 1),
+    }));
     // 【回廊受控扩展】内联敌阵：给了则用它一次性铺敌、忽略 encounter 出怪批次；否则走原 spawnPlans 路径（零行为变化）。
     // 段二 C3 镜像通道：mirrorLineup=true 时敌方=玩家出战阵容读档生成（优先级：回廊内联 > 镜像 > 出怪计划）。
     const inline = this.request.inlineEnemyUnits;
@@ -564,6 +571,7 @@ class BattleRun {
 
       this.stepSpawnWaves();        // 1 出怪
       this.stepSelfRevives();       // 1.5 坟场自复活（段2 通道②·无挂起=空扫零行为）
+      this.stepEnvironment();       // 1.7 域规则环境块（段4 通道①·无配置=空扫零行为）
       this.stepExpireStates();      // 2 状态到期
       this.stepTriggers();          // 3 三类触发（CD / 开局即放 / 血量阈值；on_kill/on_hit 留块2b）
       this.stepNormalAttacks();     // 4 普攻
@@ -756,6 +764,53 @@ class BattleRun {
     for (const ph of this.phases) ph.triggered = false;
     for (const plan of this.spawnPlans) {
       this.processSpawnPlan(plan.row, 0, `revive_wave_${wave}`);
+    }
+  }
+
+  /** 段4 通道①（域规则环境块·总控批 07-16）：到点的环境块按 side 对全体存活单位结算。
+   *  伤害型（basic_damage）＝applySubHit 同款姿势内联（盾吸+不过甲=天气压力语义·护罩 counterplay
+   *  成立）但**零击杀归因**——环境杀不触发 on_kill/充能/叠层（贪吃星/超新星 A 案的 kill 事件不被
+   *  天气污染），死亡由 stepCleanupDead 统一收；状态型（带 stateTag）＝applyState 既有链。
+   *  虚拟天气源不占格/不可被打/不进胜负判定。无配置=空扫零行为。 */
+  private stepEnvironment(): void {
+    for (const t of this.envTimers) {
+      while (t.nextFireAt <= this.time + 1e-9) {
+        const b = t.block;
+        const eff = this.runtime.getById<S7BattleEffectParam>('battle_effect_param', b.effectRef);
+        if (eff) {
+          const sides: Array<'player' | 'enemy'> = b.side === 'both' ? ['player', 'enemy'] : [b.side];
+          for (const side of sides) {
+            for (const u of this.stableUnits()) {
+              if (u.side !== side || !u.alive) continue;
+              if (eff.effectType === 'basic_damage') {
+                const dmg = Math.max(1, Math.round((b.attack ?? 0) * eff.effectPower));
+                let hpDmg = dmg;
+                if (u.shield > 0) {
+                  const absorbed = Math.min(u.shield, dmg);
+                  u.shield -= absorbed;
+                  hpDmg = dmg - absorbed;
+                  if (u.shield <= 0) {
+                    u.shield = 0;
+                    u.states.delete('shield');
+                    u.shieldBrokenSinceTrigger = true;
+                  }
+                }
+                if (hpDmg > 0) u.hp -= hpDmg;
+                if (u.hp <= 0) { u.hp = 0; u.alive = false; this.deadCount[u.side] += 1; }
+                this.pushLog('damage', {
+                  actorId: 'environment', side: side === 'player' ? 'enemy' : 'player', targetIds: [u.unitId],
+                  effectRef: eff.rowId, amount: hpDmg, note: 'environment', hpAfter: u.hp, shieldAfter: u.shield,
+                });
+              }
+              if (eff.stateTag && eff.stateTag !== 'none') {
+                this.applyState(u, u, eff.stateTag, eff.durationSec, eff);
+              }
+            }
+          }
+        }
+        if (b.on === 'cd' && typeof b.cdSec === 'number' && b.cdSec > 0) t.nextFireAt += b.cdSec;
+        else t.nextFireAt = Infinity;
+      }
     }
   }
 
