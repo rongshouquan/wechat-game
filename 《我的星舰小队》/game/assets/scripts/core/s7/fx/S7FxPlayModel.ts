@@ -17,9 +17,12 @@ import { S7FxImpactKind, S7FxProjectileSpec, ROLE_COLOR } from './S7FxCatalog';
 export const S7FX_REF_W = 464;
 export const S7FX_REF_H = 825;
 
-/** 入场仪式时长（总谱 §6 开局序列：0.0s 入场滑入 0.5s·星流快掠）。
+/** 入场仪式时长（总谱 §6 开局序列·批4 依 Ron 07-15「滑入太快，仪式感要放长」0.5→0.9s）。
  *  实现＝t 从 -INTRO 起跑：指令 tSec≥0 天然等入场完再执行，逻辑/指令流零改动。 */
-export const S7FX_INTRO_SEC = 0.5;
+export const S7FX_INTRO_SEC = 0.9;
+/** 「战斗开始」横幅窗口（批4·Ron「0.6 秒太短」→1.6s：入场尾 0.25s 前亮、开打后 1.35s 收）。 */
+export const S7FX_BANNER_FROM = -0.25;
+export const S7FX_BANNER_TO = 1.35;
 
 /** 五舰签名色 + 敌方族色（预览壳同表）。 */
 export const S7FX_SHIP_COLOR: Record<string, string> = {
@@ -124,6 +127,8 @@ export interface S7FxUnitState {
   deadT: number;
   /** 治疗泛绿柔光（总谱 §3.3·0.35s）。 */
   healGlowT: number;
+  /** 暴击冲击环（总谱 §3.1"暴击=爆点外加一圈冲击环"·批4 欠账补齐·0.3s 扩散）。 */
+  critRingT: number;
   /** 相位（确定性哈希·渲染层做悬浮/摇摆错拍）。 */
   phase: number;
 }
@@ -203,6 +208,11 @@ export class S7FxPlayModel {
   /** Boss 登场推镜（1.00→1.06 约 1s·总谱 §5）。 */
   bossZoomT = 0;
   private bossZoomPlayed = false;
+  /** 波次（批4 信息层）：当前波号/总波数（单波关渲染层不显）。 */
+  waveIdx = 1;
+  waveCount = 1;
+  /** 「第 N 波来袭」横幅计时（exec wave_banner 点亮·1.5s）。 */
+  waveBannerT = 0;
 
   private cmdIdx = 0;
   private readonly cmds: S7FxCommand[];
@@ -215,6 +225,7 @@ export class S7FxPlayModel {
     this.cmds = timeline.commands;
     this.endT = timeline.durationSec + 1.5;
     this.winner = winner;
+    this.waveCount = timeline.waveCount ?? 1;
     // 敌方尺寸阶（对标验收尺②）：Boss=断崖判定（最大血 ≥1.8× 次大血才算·全同血敌群
     //   =全大副档，07-15 Ron 真机反馈：旧"最大即 Boss"让均血 7 敌全变船长尺寸挤成一坨）；
     //   其余 ≥35% 分位=大副档 78 / 以下=小兵档 54；我方 92。
@@ -247,7 +258,7 @@ export class S7FxPlayModel {
         y: (lay ? lay.at.y : 0.5) * S7FX_REF_H,
         w: size, h: size, isBoss,
         hpPct: 100, alive: true, present: isP,
-        flashT: 0, shakeT: 0, recoilT: 0, lungeT: 0, spawnT: 0, castGlowT: 0, deadT: 0, healGlowT: 0,
+        flashT: 0, shakeT: 0, recoilT: 0, lungeT: 0, spawnT: 0, castGlowT: 0, deadT: 0, healGlowT: 0, critRingT: 0,
         phase: hash01(r.unitId, 31) * Math.PI * 2,
       };
       this.units[r.unitId] = u;
@@ -268,6 +279,8 @@ export class S7FxPlayModel {
   restart(): void {
     this.t = -S7FX_INTRO_SEC;
     this.cmdIdx = 0;
+    this.waveIdx = 1;
+    this.waveBannerT = 0;
     this.darkenT = 0;
     this.darkenDur = 0;
     this.finished = false;
@@ -284,7 +297,7 @@ export class S7FxPlayModel {
     this.rng = makeRng(0x53375);
     for (const u of this.unitList) {
       u.hpPct = 100; u.alive = true; u.present = this.presentAtStart[u.unitId] ?? u.side === 'player';
-      u.flashT = 0; u.shakeT = 0; u.recoilT = 0; u.lungeT = 0; u.spawnT = 0; u.castGlowT = 0; u.deadT = 0; u.healGlowT = 0;
+      u.flashT = 0; u.shakeT = 0; u.recoilT = 0; u.lungeT = 0; u.spawnT = 0; u.castGlowT = 0; u.deadT = 0; u.healGlowT = 0; u.critRingT = 0;
     }
   }
 
@@ -304,7 +317,8 @@ export class S7FxPlayModel {
     this.freezeT = 0;
     this.starPulseT = 0;
     this.bossZoomT = 0;
-    for (const u of this.unitList) { u.spawnT = 0; if (!u.alive) u.deadT = 0; }
+    this.waveBannerT = 0;
+    for (const u of this.unitList) { u.spawnT = 0; if (!u.alive) u.deadT = 0; u.critRingT = 0; }
     this.finished = true;
     this.outroT = 9; // 跳过=不放收尾演出，直接可收场
   }
@@ -359,10 +373,27 @@ export class S7FxPlayModel {
       if (u.spawnT > 0) u.spawnT = Math.max(0, u.spawnT - dt);
       if (u.castGlowT > 0) u.castGlowT = Math.max(0, u.castGlowT - dt);
       if (u.healGlowT > 0) u.healGlowT = Math.max(0, u.healGlowT - dt);
+      if (u.critRingT > 0) u.critRingT = Math.max(0, u.critRingT - dt);
       if (!u.alive && u.deadT > 0) u.deadT = Math.max(0, u.deadT - dt);
     }
+    if (this.waveBannerT > 0) this.waveBannerT = Math.max(0, this.waveBannerT - dt);
     if (this.darkenT > 0) this.darkenT = Math.max(0, this.darkenT - dt);
     if (this.t >= this.endT) this.finished = true;
+  }
+
+  /** 「战斗开始」横幅强度 0-1（批4 开锣仪式·窗口 [-0.25,1.35]s 梯形包络：淡入0.2/驻/淡出0.35）。 */
+  battleBannerK(): number {
+    if (this.t < S7FX_BANNER_FROM || this.t > S7FX_BANNER_TO || this.finished) return 0;
+    const inK = Math.min(1, (this.t - S7FX_BANNER_FROM) / 0.2);
+    const outK = Math.min(1, (S7FX_BANNER_TO - this.t) / 0.35);
+    return Math.max(0, Math.min(inK, outK));
+  }
+
+  /** 「第 N 波来袭」横幅强度 0-1（1.5s 包络：淡入0.15/驻/淡出0.35）。 */
+  waveBannerK(): number {
+    if (this.waveBannerT <= 0) return 0;
+    const k = 1.5 - this.waveBannerT; // 已播秒
+    return Math.max(0, Math.min(k / 0.15, 1, this.waveBannerT / 0.35));
   }
 
   /** V3 压暗当前 alpha（0-0.42·渲染层直接用）。 */
@@ -501,7 +532,14 @@ export class S7FxPlayModel {
         break;
       }
       case 'unit_flash':
-        if (u) u.flashT = 0.12;
+        if (u) {
+          u.flashT = 0.12;
+          if (c.crit) u.critRingT = 0.3; // 总谱 §3.1：暴击=爆点外加一圈冲击环（批4 欠账补齐）
+        }
+        break;
+      case 'wave_banner':
+        this.waveIdx = c.wave;
+        this.waveBannerT = 1.5;
         break;
       case 'unit_shake':
         if (u) u.shakeT = 0.1;

@@ -45,7 +45,9 @@ export type S7FxCommand =
   | { tSec: number; kind: 'hp_change'; unitId: string; hpPct: number; delta?: number; crit?: boolean }
   | { tSec: number; kind: 'death_burst'; unitId: string; at: S7FxPoint }
   | { tSec: number; kind: 'recoil'; unitId: string }
-  | { tSec: number; kind: 'darken'; durationSec: number };
+  | { tSec: number; kind: 'darken'; durationSec: number }
+  /** 波次横幅（批4·敌方增援波开打时"第 N 波来袭"·开场首波不发）。 */
+  | { tSec: number; kind: 'wave_banner'; wave: number };
 
 /** 一场战斗的演出时间轴。 */
 export interface S7FxTimeline {
@@ -53,6 +55,8 @@ export interface S7FxTimeline {
   durationSec: number;
   /** 单位静态摆位（渲染壳开场布阵用；key=unitId）。 */
   layout: Record<string, { at: S7FxPoint; side: string }>;
+  /** 敌方波次总数（批4 信息层"第x/y波"·敌 spawn 时刻按 >1s 间隔聚类·至少 1）。 */
+  waveCount: number;
 }
 
 /** unitStatRef → { unitRef, roleTag } 解析器（由调用方注入；缺省返回空=走兜底签名）。 */
@@ -316,8 +320,28 @@ export function buildS7FxScript(
     }
   }
 
+  // 波次聚类（批4 信息层）：敌方 spawn 时刻按 >1s 间隔分段——段1=开场列阵（不发横幅），
+  // 段2+ 各发一条 wave_banner（"第 N 波来袭"）。语义只读 spawnedIds，战斗逻辑零改动。
+  const enemySpawnTs: number[] = [];
+  for (const frame of playback.frames) {
+    for (const id of frame.spawnedIds) {
+      const su = byId.get(id);
+      if (su && su.side === 'enemy') { enemySpawnTs.push(frame.timeSec); break; }
+    }
+  }
+  enemySpawnTs.sort((a, b) => a - b);
+  let waveCount = enemySpawnTs.length > 0 ? 1 : 1;
+  let lastTs = enemySpawnTs.length > 0 ? enemySpawnTs[0] : 0;
+  for (const ts of enemySpawnTs) {
+    if (ts - lastTs > 1) {
+      waveCount += 1;
+      cmds.push({ tSec: ts, kind: 'wave_banner', wave: waveCount });
+    }
+    lastTs = ts;
+  }
+
   cmds.sort((a, b) => a.tSec - b.tSec);
-  return { commands: cmds, durationSec: maxT, layout };
+  return { commands: cmds, durationSec: maxT, layout, waveCount };
 }
 
 function pctOf(hpAfter: number, u: S7PlaybackUnit | undefined): number {

@@ -19,7 +19,7 @@ import { buildS7FxScript, S7FxRefResolver } from '../../../core/s7/fx/S7FxScript
 import {
   S7FxPlayModel, S7FxRosterEntry, S7FxUnitState, S7FX_REF_W, S7FX_REF_H,
   S7FX_PART_RIGS, S7FX_PIRATE_FLAG_RIG, S7FX_MASTER_SIZE, S7FX_GROUP_RING,
-  S7FX_PILOT_OF_SHIP, s7FxVfxForProjectile, S7FxPartRig,
+  S7FX_PILOT_OF_SHIP, s7FxVfxForProjectile, S7FxPartRig, S7FX_BANNER_FROM,
 } from '../../../core/s7/fx/S7FxPlayModel';
 
 const { ccclass } = _decorator;
@@ -147,6 +147,9 @@ export class S7BattleFxLayer extends Component {
   private popLayer: Node | null = null;
   private timerG: Graphics | null = null; // 顶部倒计时胶囊底
   private timerLabel: Label | null = null;
+  private waveLabel: Label | null = null; // 波次信息条（倒计时下·多波关才显）
+  private bannerG: Graphics | null = null; // 战斗开始/波次来袭横幅
+  private bannerLabel: Label | null = null;
 
   private unitRigs: Record<string, UnitNodeRig> = {};
   private avatarNodes: Node[] = [];
@@ -269,7 +272,7 @@ export class S7BattleFxLayer extends Component {
     this.airHaze = hazeN.addComponent(Sprite);
     this.airHaze.sizeMode = Sprite.SizeMode.CUSTOM;
     this.setFrame(this.airHaze, 'grad_air');
-    this.airHaze.color = new Color(255, 255, 255, 26);
+    this.airHaze.color = new Color(255, 255, 255, 17); // 批4 减淡（发灰主因之一·融合职能保底量）
     hazeN.getComponent(UITransform)!.setContentSize(this.viewW, this.viewH * 0.36);
     hazeN.setPosition(0, this.viewH * 0.5 - this.viewH * 0.10 - this.viewH * 0.18);
     // 暗角（磨精批2·静态一次绘制）：边缘压暗=战斗区自然聚光——治"背景均质像海报"；
@@ -298,6 +301,33 @@ export class S7BattleFxLayer extends Component {
     this.timerLabel.outlineColor = new Color(16, 14, 30, 210);
     this.timerLabel.color = new Color(235, 242, 255);
     this.timerG.node.addChild(tlN);
+    // 波次信息条（批4：多波关"第x/y波"·单波关不显）
+    const wvN = new Node('waveLabel');
+    wvN.layer = this.node.layer;
+    wvN.addComponent(UITransform);
+    this.waveLabel = wvN.addComponent(Label);
+    this.waveLabel.fontSize = Math.round(10.5 * this.k);
+    this.waveLabel.lineHeight = Math.round(13 * this.k);
+    this.waveLabel.isBold = true;
+    this.waveLabel.enableOutline = true;
+    this.waveLabel.outlineWidth = 2;
+    this.waveLabel.outlineColor = new Color(16, 14, 30, 200);
+    this.waveLabel.color = new Color(255, 226, 150);
+    this.timerG.node.addChild(wvN);
+    // 开锣/波次横幅（批4·最上层）：底衬横带+大字
+    this.bannerG = this.child('banner').addComponent(Graphics);
+    const bnN = new Node('bannerLabel');
+    bnN.layer = this.node.layer;
+    bnN.addComponent(UITransform);
+    this.bannerLabel = bnN.addComponent(Label);
+    this.bannerLabel.fontSize = Math.round(30 * this.k);
+    this.bannerLabel.lineHeight = Math.round(36 * this.k);
+    this.bannerLabel.isBold = true;
+    this.bannerLabel.enableOutline = true;
+    this.bannerLabel.outlineWidth = 3;
+    this.bannerLabel.outlineColor = new Color(40, 18, 52, 235);
+    this.bannerLabel.color = new Color(255, 240, 200);
+    this.bannerG.node.addChild(bnN);
 
     // 单位节点
     if (this.model) {
@@ -320,8 +350,9 @@ export class S7BattleFxLayer extends Component {
     const W = this.viewW;
     const H = this.viewH;
     const LAYERS = 6;
+    // 批4 减淡约 30%（Ron"画面发灰发白"——暗角保聚焦但不压鲜艳度）
     const bands: ReadonlyArray<readonly [string, number, number]> = [
-      ['bottom', H * 0.16, 13], ['top', H * 0.10, 10], ['left', W * 0.085, 7], ['right', W * 0.085, 7],
+      ['bottom', H * 0.16, 9], ['top', H * 0.10, 7], ['left', W * 0.085, 5], ['right', W * 0.085, 5],
     ];
     for (const [side, span, aStep] of bands) {
       for (let i = 0; i < LAYERS; i += 1) {
@@ -432,6 +463,7 @@ export class S7BattleFxLayer extends Component {
     this.syncParticlesAndHud(t);
     this.syncPops();
     this.syncTimer();
+    this.syncBanner();
     if (this.darkenG) {
       this.darkenG.clear();
       const a = m.darkenAlpha();
@@ -501,6 +533,14 @@ export class S7BattleFxLayer extends Component {
         rg.fillColor = new Color(255, 255, 255, Math.round((u.flashT / 0.12) * 130));
         rg.ellipse(p.x, p.y, u.w * 0.46 * this.k, u.h * 0.46 * this.k);
         rg.fill();
+      }
+      // 暴击冲击环（总谱 §3.1·批4 欠账补齐）：白亮环快速扩散 0.3s
+      if (u.critRingT > 0) {
+        const ck = 1 - u.critRingT / 0.3;
+        rg.strokeColor = new Color(255, 245, 215, Math.round((1 - ck) * 230));
+        rg.lineWidth = (3.4 * (1 - ck) + 1) * this.k;
+        rg.circle(p.x, p.y, (u.w * 0.34 + ck * u.w * 0.55) * this.k);
+        rg.stroke();
       }
       // 高空投影（不随悬浮·总谱§4a；入场滑入期不画=船未到位影不先到）
       if (u.spawnT <= 0 && m.hudVisible()) {
@@ -643,6 +683,17 @@ export class S7BattleFxLayer extends Component {
         n.getComponent(UITransform)!.setContentSize(size, size);
         const spinExtra = pr.spec.shape === 'blade' ? pr.age * 14 : 0;
         n.angle = (-(pose.angle - vfx.baseAngle + spinExtra) * 180) / Math.PI;
+        // 弹体拖尾残影（批4 治"特效水"）：飞行方向反向两枚递减光斑（加法混合下=光带感）
+        if (pr.age > 0.03 && pr.spec.shape !== 'bubble') {
+          const dx = Math.sin(pose.angle) * 9 * this.k;
+          const dy = Math.cos(pose.angle) * 9 * this.k;
+          rg.fillColor = hexColor(pr.spec.color, 96);
+          rg.circle(p.x - dx, p.y + dy, 4.6 * pr.spec.size * this.k);
+          rg.fill();
+          rg.fillColor = hexColor(pr.spec.color, 48);
+          rg.circle(p.x - dx * 2, p.y + dy * 2, 3.2 * pr.spec.size * this.k);
+          rg.fill();
+        }
       } else {
         // 矢量兜底：舰色圆点（演出不许断）
         sp.enabled = false;
@@ -673,6 +724,12 @@ export class S7BattleFxLayer extends Component {
           const size = base * im.size * (1 + kk * 1.6) * mul * this.k;
           n.getComponent(UITransform)!.setContentSize(size, size);
           sp.color = new Color(255, 255, 255, Math.round(env * 235));
+          // 爆点白核闪（批4 治"炸不响"）：首 0.07s 一记白芯瞬闪
+          if (im.age < 0.07) {
+            rg.fillColor = new Color(255, 252, 240, Math.round((1 - im.age / 0.07) * 220));
+            rg.circle(p.x, p.y, base * im.size * 0.5 * this.k);
+            rg.fill();
+          }
         } else {
           sp.enabled = false;
           rg.fillColor = hexColor(im.color, Math.round(env * 220));
@@ -699,15 +756,36 @@ export class S7BattleFxLayer extends Component {
           }
         }
       } else if (im.kind === 'bubble_pop') {
-        // 盾泡：泡体+白描边（Fresnel 简化版·真机过了再加高光弧）
-        rg.fillColor = hexColor(im.color, Math.round(env * 60));
+        // 盾泡重画（批4 治"护盾不行"）：外辉光双圈+泡体+粗白描边+顶部高光月牙——糖果泡泡感
         const rr = (14 + Math.min(kk, 0.25) * 40) * im.size * this.k;
+        rg.strokeColor = hexColor(im.color, Math.round(env * 70));
+        rg.lineWidth = 5 * this.k;
+        rg.circle(p.x, p.y, rr + 3.5 * this.k);
+        rg.stroke();
+        rg.fillColor = hexColor(im.color, Math.round(env * 74));
         rg.circle(p.x, p.y, rr);
         rg.fill();
-        rg.strokeColor = hexColor('#FFFFFF', Math.round(env * 170));
-        rg.lineWidth = 1.6 * this.k;
+        rg.strokeColor = hexColor('#FFFFFF', Math.round(env * 215));
+        rg.lineWidth = 2.2 * this.k;
         rg.circle(p.x, p.y, rr);
         rg.stroke();
+        // 顶部高光月牙（左上 45°短弧·两端细中间粗用双椭圆近似）
+        rg.fillColor = new Color(255, 255, 255, Math.round(env * 195));
+        rg.ellipse(p.x - rr * 0.42, p.y + rr * 0.46, rr * 0.30, rr * 0.13);
+        rg.fill();
+        rg.fillColor = new Color(255, 255, 255, Math.round(env * 110));
+        rg.circle(p.x + rr * 0.30, p.y + rr * 0.55, rr * 0.09);
+        rg.fill();
+        // 破裂尾段（kk>0.72）：6 片碎光绕环飞散
+        if (kk > 0.72) {
+          const fk = (kk - 0.72) / 0.28;
+          for (let ci = 0; ci < 6; ci += 1) {
+            const ca = (ci / 6) * Math.PI * 2 + 0.5;
+            rg.fillColor = new Color(255, 255, 255, Math.round(env * (1 - fk) * 200));
+            rg.circle(p.x + Math.cos(ca) * rr * (1 + fk * 0.8), p.y + Math.sin(ca) * rr * (1 + fk * 0.8), 2.4 * this.k);
+            rg.fill();
+          }
+        }
       }
     }
     // 收池（多余节点熄灯·不销毁）
@@ -854,8 +932,14 @@ export class S7BattleFxLayer extends Component {
       const p = this.refToView(pop.x, pop.y - rise);
       n.setPosition(p.x, p.y);
       lb.string = pop.txt;
-      lb.fontSize = Math.round((pop.crit ? 16 : 11.5) * this.k * (pop.crit && pop.age < 0.12 ? 1 + (0.12 - pop.age) * 3 : 1));
-      lb.color = pop.crit ? new Color(255, 215, 94, 255) : new Color(244, 247, 255, 255);
+      // 批4 字体美化：弹性出场（back 过冲回弹·暴击峰 2.0/普通 1.35）+暴击金橙大号+微倾角
+      const aIn = Math.min(1, pop.age / 0.14);
+      const overshoot = 1 + (pop.crit ? 1.0 : 0.35) * Math.sin(Math.min(1, aIn) * Math.PI) * (1 - aIn * 0.55);
+      lb.fontSize = Math.round((pop.crit ? 18 : 12.5) * this.k);
+      n.setScale(overshoot, overshoot, 1);
+      n.angle = ((i % 2 === 0 ? 1 : -1) * (pop.crit ? 6 : 3)) * (1 - k * 0.4);
+      lb.color = pop.crit ? new Color(255, 206, 64, 255) : new Color(248, 250, 255, 255);
+      lb.outlineColor = pop.crit ? new Color(120, 52, 8, 235) : new Color(20, 12, 28, 220);
       const fade = k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45;
       const op = n.getComponent(UIOpacity) ?? n.addComponent(UIOpacity);
       op.opacity = Math.round(Math.max(0, fade) * 255);
@@ -887,5 +971,47 @@ export class S7BattleFxLayer extends Component {
     this.timerG.roundRect(p.x - 37 * this.k, p.y - 13 * this.k, 74 * this.k, 26 * this.k, 13 * this.k);
     this.timerG.stroke();
     this.timerLabel.node.setPosition(p.x, p.y);
+    // 波次信息条（多波关才显）
+    if (this.waveLabel) {
+      const showWave = m.waveCount > 1;
+      this.waveLabel.node.active = showWave;
+      if (showWave) {
+        this.waveLabel.string = `第 ${m.waveIdx}/${m.waveCount} 波`;
+        this.waveLabel.node.setPosition(p.x, p.y - 22 * this.k);
+      }
+    }
+  }
+
+  /** 开锣/波次横幅（批4）：「战斗开始」（开局仪式·battleBannerK 包络）与「第 N 波来袭！」
+   *  （waveBannerK）共用一条底衬横带+大字；出现帧微放大回弹。 */
+  private syncBanner(): void {
+    const m = this.model;
+    if (!m || !this.bannerG || !this.bannerLabel) return;
+    this.bannerG.clear();
+    const bk = m.battleBannerK();
+    const wk = m.waveBannerK();
+    const k = Math.max(bk, wk);
+    this.bannerLabel.node.active = k > 0.01;
+    if (k <= 0.01) return;
+    this.bannerLabel.string = bk >= wk ? '— 战斗开始 —' : `第 ${m.waveIdx} 波来袭！`; // 装饰用横线（⚔ 系统字体不可靠·两端实测乱形）
+    const p = this.refToView(S7FX_REF_W / 2, S7FX_REF_H * 0.30);
+    const a = Math.round(k * 255);
+    // 底衬横带（横贯全宽·上下细线）
+    this.bannerG.fillColor = new Color(24, 14, 40, Math.round(k * 150));
+    this.bannerG.rect(-this.viewW / 2, p.y - 24 * this.k, this.viewW, 48 * this.k);
+    this.bannerG.fill();
+    this.bannerG.fillColor = new Color(255, 226, 150, Math.round(k * 190));
+    this.bannerG.rect(-this.viewW / 2, p.y + 24 * this.k, this.viewW, 1.2 * this.k);
+    this.bannerG.fill();
+    this.bannerG.rect(-this.viewW / 2, p.y - 25.2 * this.k, this.viewW, 1.2 * this.k);
+    this.bannerG.fill();
+    // 大字（出现帧 1.18→1 回弹：按该横幅已播时长）
+    const age = bk >= wk ? m.t - S7FX_BANNER_FROM : 1.5 - m.waveBannerT;
+    const popIn = age < 0.2 ? 1.18 - (age / 0.2) * 0.18 : 1;
+    this.bannerLabel.node.setScale(popIn, popIn, 1);
+    this.bannerLabel.node.setPosition(p.x, p.y);
+    const lc = this.bannerLabel.color.clone();
+    lc.a = a;
+    this.bannerLabel.color = lc;
   }
 }

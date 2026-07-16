@@ -188,6 +188,13 @@ function frame(ts) {
       cx.beginPath(); cx.ellipse(0, 0, wpx * 0.46, hpx * 0.46, 0, 0, Math.PI * 2); cx.fill();
     }
     cx.restore();
+    // 暴击冲击环（批4·总谱 §3.1 欠账补齐=Cocos 同款）
+    if (u.critRingT > 0) {
+      const ck = 1 - u.critRingT / 0.3;
+      cx.strokeStyle = `rgba(255,245,215,${(1 - ck) * 0.9})`;
+      cx.lineWidth = (3.4 * (1 - ck) + 1) * K;
+      cx.beginPath(); cx.arc(p.x, p.y, (u.w * 0.34 + ck * u.w * 0.55) * K, 0, Math.PI * 2); cx.stroke();
+    }
     // 施法环（批2 降噪：0.4s 单圈收细收淡=Cocos 同款）
     if (u.castGlowT > 0) {
       const gk = u.castGlowT / 0.4, rr = 0.55 + (1 - gk) * 0.35;
@@ -216,14 +223,14 @@ function frame(ts) {
       cx.beginPath(); cx.ellipse(p.x, p.y, u.w * 0.5 * K, u.h * 0.5 * K, 0, 0, Math.PI * 2); cx.stroke();
     }
   }
-  // 空气透视
+  // 空气透视（批4 减淡 0.10→0.065·"发灰"回调）
   const airG = cx.createLinearGradient(0, H * 0.10, 0, H * 0.46);
-  airG.addColorStop(0, `rgba(${AIR_TINT},0.10)`); airG.addColorStop(1, `rgba(${AIR_TINT},0)`);
+  airG.addColorStop(0, `rgba(${AIR_TINT},0.065)`); airG.addColorStop(1, `rgba(${AIR_TINT},0)`);
   cx.fillStyle = airG; cx.fillRect(0, 0, W, H * 0.46);
-  // 暗角（批2·边缘压暗=战斗区聚光；Cocos 侧=四缘矩形阶梯同语义）
+  // 暗角（批2·批4 减淡 30%——"发灰"回调，保聚焦不压鲜艳；Cocos 侧=四缘矩形阶梯同语义）
   const vg = cx.createRadialGradient(W / 2, H * 0.52, H * 0.32, W / 2, H * 0.52, H * 0.74);
   vg.addColorStop(0, 'rgba(20,13,32,0)');
-  vg.addColorStop(1, 'rgba(20,13,32,0.32)');
+  vg.addColorStop(1, 'rgba(20,13,32,0.22)');
   cx.fillStyle = vg; cx.fillRect(0, 0, W, H);
   // V3 压暗
   const da = m.darkenAlpha();
@@ -241,6 +248,14 @@ function frame(ts) {
       cx.globalCompositeOperation = 'lighter';
       cx.drawImage(VFX[vfx.name], -size / 2, -size / 2, size, size);
       cx.restore();
+      // 弹体拖尾残影（批4=Cocos 同款·lighter 下光带感）
+      if (pr.age > 0.03 && pr.spec.shape !== 'bubble') {
+        const dxp = Math.sin(pose.angle) * 9 * K, dyp = Math.cos(pose.angle) * 9 * K;
+        cx.fillStyle = hex(pr.spec.color, 0.38);
+        cx.beginPath(); cx.arc(p.x - dxp, p.y + dyp, 4.6 * pr.spec.size * K, 0, Math.PI * 2); cx.fill();
+        cx.fillStyle = hex(pr.spec.color, 0.19);
+        cx.beginPath(); cx.arc(p.x - dxp * 2, p.y + dyp * 2, 3.2 * pr.spec.size * K, 0, Math.PI * 2); cx.fill();
+      }
       cx.globalCompositeOperation = 'source-over';
     } else {
       cx.fillStyle = pr.spec.color;
@@ -260,6 +275,10 @@ function frame(ts) {
         cx.save(); cx.globalAlpha = env * 0.92; cx.globalCompositeOperation = 'lighter';
         cx.drawImage(VFX.vfx_explosion, p.x - size / 2, p.y - size / 2, size, size);
         cx.restore(); cx.globalCompositeOperation = 'source-over';
+        if (im.age < 0.07) { // 爆点白核闪（批4=Cocos 同款）
+          cx.fillStyle = `rgba(255,252,240,${(1 - im.age / 0.07) * 0.86})`;
+          cx.beginPath(); cx.arc(p.x, p.y, base * im.size * 0.5 * K, 0, Math.PI * 2); cx.fill();
+        }
       }
     } else if (im.kind === 'muzzle') {
       cx.fillStyle = hex(im.color, env);
@@ -277,12 +296,28 @@ function frame(ts) {
         }
       }
     } else if (im.kind === 'bubble_pop') {
+      // 盾泡重画（批4=Cocos 同款）：外辉光+泡体+粗白描边+高光月牙+破裂碎光
       const rr = (14 + Math.min(kk, 0.25) * 40) * im.size * K;
-      cx.fillStyle = hex(im.color, env * 0.24);
+      cx.strokeStyle = hex(im.color, env * 0.27);
+      cx.lineWidth = 5 * K;
+      cx.beginPath(); cx.arc(p.x, p.y, rr + 3.5 * K, 0, Math.PI * 2); cx.stroke();
+      cx.fillStyle = hex(im.color, env * 0.29);
       cx.beginPath(); cx.arc(p.x, p.y, rr, 0, Math.PI * 2); cx.fill();
-      cx.strokeStyle = `rgba(255,255,255,${env * 0.67})`;
-      cx.lineWidth = 1.6 * K;
+      cx.strokeStyle = `rgba(255,255,255,${env * 0.84})`;
+      cx.lineWidth = 2.2 * K;
       cx.beginPath(); cx.arc(p.x, p.y, rr, 0, Math.PI * 2); cx.stroke();
+      cx.fillStyle = `rgba(255,255,255,${env * 0.76})`;
+      cx.beginPath(); cx.ellipse(p.x - rr * 0.42, p.y - rr * 0.46, rr * 0.30, rr * 0.13, -0.6, 0, Math.PI * 2); cx.fill();
+      cx.fillStyle = `rgba(255,255,255,${env * 0.43})`;
+      cx.beginPath(); cx.arc(p.x + rr * 0.30, p.y - rr * 0.55, rr * 0.09, 0, Math.PI * 2); cx.fill();
+      if (kk > 0.72) {
+        const fk = (kk - 0.72) / 0.28;
+        cx.fillStyle = `rgba(255,255,255,${env * (1 - fk) * 0.78})`;
+        for (let ci = 0; ci < 6; ci += 1) {
+          const ca = (ci / 6) * Math.PI * 2 + 0.5;
+          cx.beginPath(); cx.arc(p.x + Math.cos(ca) * rr * (1 + fk * 0.8), p.y + Math.sin(ca) * rr * (1 + fk * 0.8), 2.4 * K, 0, Math.PI * 2); cx.fill();
+        }
+      }
     }
   }
   // 星流（速度=情绪曲线·脉冲拉线）+ 星爆 + 余烬 + 败局烟
@@ -358,22 +393,32 @@ function frame(ts) {
       }
     }
   }
-  // 伤害数字
+  // 伤害数字（批4 弹性美化=Cocos 同款：back 过冲回弹+暴击金橙大号+微倾角）
   cx.textAlign = 'center';
+  let popIdx = 0;
   for (const pop of m.pops) {
     const k = pop.age / pop.life;
     const rise = 26 * (1 - (1 - k) * (1 - k));
     const p = rv(pop.x, pop.y - rise);
-    const popScale = pop.crit && pop.age < 0.12 ? 1 + (0.12 - pop.age) * 3 : 1;
+    const aIn = Math.min(1, pop.age / 0.14);
+    const overshoot = 1 + (pop.crit ? 1.0 : 0.35) * Math.sin(aIn * Math.PI) * (1 - aIn * 0.55);
+    const tilt = ((popIdx % 2 === 0 ? 1 : -1) * (pop.crit ? 6 : 3)) * (1 - k * 0.4) * Math.PI / 180;
+    popIdx += 1;
+    cx.save();
+    cx.translate(p.x, p.y);
+    cx.rotate(tilt);
+    cx.scale(overshoot, overshoot);
     cx.globalAlpha = k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45;
-    cx.font = `bold ${Math.round((pop.crit ? 16 : 11.5) * popScale)}px "Segoe UI", sans-serif`;
-    cx.lineWidth = 3; cx.strokeStyle = 'rgba(20,12,28,0.85)';
-    cx.strokeText(pop.txt, p.x, p.y);
-    cx.fillStyle = pop.crit ? '#FFD75E' : '#F4F7FF';
-    cx.fillText(pop.txt, p.x, p.y);
+    cx.font = `bold ${Math.round(pop.crit ? 18 : 12.5)}px "Segoe UI", sans-serif`;
+    cx.lineWidth = 3;
+    cx.strokeStyle = pop.crit ? 'rgba(120,52,8,0.92)' : 'rgba(20,12,28,0.85)';
+    cx.strokeText(pop.txt, 0, 0);
+    cx.fillStyle = pop.crit ? '#FFCE40' : '#F8FAFF';
+    cx.fillText(pop.txt, 0, 0);
+    cx.restore();
   }
   cx.globalAlpha = 1;
-  // 倒计时+暂停钮（占位 UI·入场后亮/收尾收起=Cocos 同款节奏）
+  // 倒计时+波次条+暂停钮（占位 UI·入场后亮/收尾收起=Cocos 同款节奏）
   cx.setTransform(1, 0, 0, 1, 0, 0);
   if (m.hudVisible() && !m.finished) {
     cx.fillStyle = 'rgba(18,22,36,.8)';
@@ -383,9 +428,39 @@ function frame(ts) {
     cx.fillStyle = '#EAF2FF'; cx.font = 'bold 15px monospace'; cx.textAlign = 'center';
     const remain = Math.max(0, 120 - t);
     cx.fillText(`${Math.floor(remain / 60)}:${String(Math.floor(remain % 60)).padStart(2, '0')}`, W / 2, 35);
+    if (m.waveCount > 1) { // 波次信息条（批4·多波关才显）
+      cx.font = 'bold 10.5px sans-serif';
+      cx.lineWidth = 2; cx.strokeStyle = 'rgba(16,14,30,0.78)';
+      cx.strokeText(`第 ${m.waveIdx}/${m.waveCount} 波`, W / 2, 55);
+      cx.fillStyle = '#FFE296';
+      cx.fillText(`第 ${m.waveIdx}/${m.waveCount} 波`, W / 2, 55);
+    }
     cx.fillStyle = 'rgba(240,120,60,.92)';
     cx.beginPath(); cx.arc(W - 32, H - 32, 17, 0, Math.PI * 2); cx.fill();
     cx.fillStyle = '#fff'; cx.fillRect(W - 38, H - 40, 4.5, 16); cx.fillRect(W - 30, H - 40, 4.5, 16);
+  }
+  // 开锣/波次横幅（批4=Cocos 同款：底衬横带+金线+大字回弹）
+  const bk = m.battleBannerK(), wk = m.waveBannerK(), bnK = Math.max(bk, wk);
+  if (bnK > 0.01) {
+    const by = H * 0.30;
+    cx.fillStyle = `rgba(24,14,40,${bnK * 0.59})`;
+    cx.fillRect(0, by - 24, W, 48);
+    cx.fillStyle = `rgba(255,226,150,${bnK * 0.75})`;
+    cx.fillRect(0, by - 25.2, W, 1.2); cx.fillRect(0, by + 24, W, 1.2);
+    const age = bk >= wk ? m.t - (-0.25) : 1.5 - m.waveBannerT;
+    const popIn = age < 0.2 ? 1.18 - (age / 0.2) * 0.18 : 1;
+    cx.save();
+    cx.translate(W / 2, by);
+    cx.scale(popIn, popIn);
+    cx.globalAlpha = bnK;
+    cx.font = 'bold 30px sans-serif'; cx.textAlign = 'center';
+    cx.lineWidth = 4; cx.strokeStyle = 'rgba(40,18,52,0.92)';
+    const txt = bk >= wk ? '— 战斗开始 —' : `第 ${m.waveIdx} 波来袭！`;
+    cx.strokeText(txt, 0, 10);
+    cx.fillStyle = '#FFF0C8';
+    cx.fillText(txt, 0, 10);
+    cx.restore();
+    cx.globalAlpha = 1;
   }
   scheduleRaf();
 }

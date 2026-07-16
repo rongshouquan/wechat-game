@@ -1,5 +1,5 @@
 {
- "nodeId": "n030",
+ "nodeId": "n020",
  "seed": "fx-preview-1",
  "teamPower": 4790,
  "winner": "player",
@@ -45,85 +45,57 @@
    "unitId": "enemy_0000",
    "side": "enemy",
    "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
+   "roleTag": "minion_tough",
+   "maxHp": 711
   },
   {
    "unitId": "enemy_0001",
    "side": "enemy",
    "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
+   "roleTag": "minion_tough",
+   "maxHp": 711
   },
   {
    "unitId": "enemy_0002",
    "side": "enemy",
    "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
+   "roleTag": "minion_tough",
+   "maxHp": 711
   },
   {
    "unitId": "enemy_0003",
    "side": "enemy",
    "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
+   "roleTag": "minion_tough",
+   "maxHp": 711
   },
   {
    "unitId": "enemy_0004",
    "side": "enemy",
    "unitRef": "enemy_swarm",
    "roleTag": "minion",
-   "maxHp": 230
+   "maxHp": 400
   },
   {
    "unitId": "enemy_0005",
    "side": "enemy",
    "unitRef": "enemy_swarm",
    "roleTag": "minion",
-   "maxHp": 230
+   "maxHp": 400
   },
   {
    "unitId": "enemy_0006",
    "side": "enemy",
    "unitRef": "enemy_swarm",
    "roleTag": "minion",
-   "maxHp": 230
+   "maxHp": 400
   },
   {
    "unitId": "enemy_0007",
    "side": "enemy",
    "unitRef": "enemy_swarm",
    "roleTag": "minion",
-   "maxHp": 230
-  },
-  {
-   "unitId": "enemy_0008",
-   "side": "enemy",
-   "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
-  },
-  {
-   "unitId": "enemy_0009",
-   "side": "enemy",
-   "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
-  },
-  {
-   "unitId": "enemy_0010",
-   "side": "enemy",
-   "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
-  },
-  {
-   "unitId": "enemy_0011",
-   "side": "enemy",
-   "unitRef": "enemy_swarm",
-   "roleTag": "minion",
-   "maxHp": 230
+   "maxHp": 400
   }
  ],
  "layout": {
@@ -165,84 +137,56 @@
   "enemy_0000": {
    "at": {
     "x": 0.5,
-    "y": 0.37
+    "y": 0.3
    },
    "side": "enemy"
   },
   "enemy_0001": {
    "at": {
-    "x": 0.7147359999999999,
-    "y": 0.37445024
+    "x": 0.504736,
+    "y": 0.42805024
    },
    "side": "enemy"
   },
   "enemy_0002": {
    "at": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.71016,
+    "y": 0.31585040000000003
    },
    "side": "enemy"
   },
   "enemy_0003": {
    "at": {
-    "x": 0.264852,
-    "y": 0.45452032000000003
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "side": "enemy"
   },
   "enemy_0004": {
    "at": {
-    "x": 0.425276,
-    "y": 0.48951216000000003
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "side": "enemy"
   },
   "enemy_0005": {
    "at": {
-    "x": 0.112968,
-    "y": 0.36021088
+    "x": 0.652968,
+    "y": 0.41766112000000005
    },
    "side": "enemy"
   },
   "enemy_0006": {
    "at": {
-    "x": 0.762892,
-    "y": 0.27274128000000003
+    "x": 0.30539200000000005,
+    "y": 0.30366672
    },
    "side": "enemy"
   },
   "enemy_0007": {
    "at": {
-    "x": 0.578084,
-    "y": 0.49297856
-   },
-   "side": "enemy"
-  },
-  "enemy_0008": {
-   "at": {
-    "x": 0.28100800000000004,
-    "y": 0.39244527999999995
-   },
-   "side": "enemy"
-  },
-  "enemy_0009": {
-   "at": {
-    "x": 0.42069999999999996,
-    "y": 0.30746400000000007
-   },
-   "side": "enemy"
-  },
-  "enemy_0010": {
-   "at": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
-   },
-   "side": "enemy"
-  },
-  "enemy_0011": {
-   "at": {
-    "x": 0.59482,
-    "y": 0.31564880000000006
+    "x": 0.6605840000000001,
+    "y": 0.22977856
    },
    "side": "enemy"
   }
@@ -271,21 +215,6 @@
   },
   {
    "tSec": 0,
-   "kind": "spawn",
-   "unitId": "enemy_0004"
-  },
-  {
-   "tSec": 0,
-   "kind": "spawn",
-   "unitId": "enemy_0005"
-  },
-  {
-   "tSec": 0,
-   "kind": "spawn",
-   "unitId": "enemy_0006"
-  },
-  {
-   "tSec": 0,
    "kind": "recoil",
    "unitId": "player_p0c1"
   },
@@ -298,7 +227,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#4FC3F7",
    "vLevel": 2
@@ -322,8 +251,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.264852,
-    "y": 0.45452032000000003
+    "x": 0.5,
+    "y": 0.3
    },
    "spec": {
     "count": 2,
@@ -358,8 +287,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "spec": {
     "count": 3,
@@ -394,7 +323,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#B96BE0",
    "vLevel": 2
@@ -418,8 +347,8 @@
     "y": 0.740584
    },
    "to": {
-    "x": 0.112968,
-    "y": 0.36021088
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "spec": {
     "count": 1,
@@ -449,7 +378,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#3BA8A0",
    "vLevel": 2
@@ -458,24 +387,8 @@
    "tSec": 0,
    "kind": "impact",
    "at": {
-    "x": 0.112968,
-    "y": 0.36021088
-   },
-   "impact": {
-    "kind": "ring_expand",
-    "size": 2.2,
-    "color": "#3BA8A0",
-    "durationSec": 0.9
-   },
-   "color": "#3BA8A0",
-   "vLevel": 2
-  },
-  {
-   "tSec": 0,
-   "kind": "impact",
-   "at": {
-    "x": 0.762892,
-    "y": 0.27274128000000003
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "ring_expand",
@@ -500,7 +413,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#3BA8A0",
    "vLevel": 2
@@ -535,7 +448,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#3BA8A0",
    "vLevel": 2
@@ -544,8 +457,8 @@
    "tSec": 0,
    "kind": "impact",
    "at": {
-    "x": 0.112968,
-    "y": 0.36021088
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "ring_expand",
@@ -570,7 +483,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#3BA8A0",
    "vLevel": 2
@@ -605,7 +518,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#FF8A3D",
    "vLevel": 2
@@ -629,8 +542,8 @@
     "y": 0.732016
    },
    "to": {
-    "x": 0.112968,
-    "y": 0.36021088
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "spec": {
     "count": 1,
@@ -660,7 +573,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#63B8FF",
    "vLevel": 2
@@ -789,8 +702,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "spec": {
     "count": 3,
@@ -814,8 +727,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.5,
-    "y": 0.37
+    "x": 0.504736,
+    "y": 0.42805024
    },
    "spec": {
     "count": 2,
@@ -835,8 +748,8 @@
    "tSec": 0.18,
    "kind": "impact",
    "at": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "burst_small",
@@ -853,8 +766,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "spec": {
     "count": 3,
@@ -874,8 +787,8 @@
    "tSec": 0.28,
    "kind": "impact",
    "at": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "burst_small",
@@ -888,8 +801,8 @@
    "tSec": 0.32,
    "kind": "impact",
    "at": {
-    "x": 0.264852,
-    "y": 0.45452032000000003
+    "x": 0.5,
+    "y": 0.3
    },
    "impact": {
     "kind": "burst_mid",
@@ -916,8 +829,8 @@
    "tSec": 0.38,
    "kind": "impact",
    "at": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "burst_small",
@@ -930,8 +843,8 @@
    "tSec": 0.4,
    "kind": "impact",
    "at": {
-    "x": 0.112968,
-    "y": 0.36021088
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "cage_ring",
@@ -946,8 +859,8 @@
    "tSec": 0.44,
    "kind": "impact",
    "at": {
-    "x": 0.5,
-    "y": 0.37
+    "x": 0.504736,
+    "y": 0.42805024
    },
    "impact": {
     "kind": "burst_mid",
@@ -960,8 +873,8 @@
    "tSec": 0.55,
    "kind": "impact",
    "at": {
-    "x": 0.112968,
-    "y": 0.36021088
+    "x": 0.512352,
+    "y": 0.24016768
    },
    "impact": {
     "kind": "burst_big",
@@ -973,46 +886,8 @@
   {
    "tSec": 0.55,
    "kind": "unit_flash",
-   "unitId": "enemy_0003",
-   "crit": true
-  },
-  {
-   "tSec": 0.55,
-   "kind": "unit_shake",
-   "unitId": "enemy_0003"
-  },
-  {
-   "tSec": 0.55,
-   "kind": "hp_change",
-   "unitId": "enemy_0003",
-   "hpPct": 0,
-   "delta": -1455,
-   "crit": true
-  },
-  {
-   "tSec": 0.55,
-   "kind": "unit_flash",
-   "unitId": "enemy_0004",
-   "crit": false
-  },
-  {
-   "tSec": 0.55,
-   "kind": "unit_shake",
-   "unitId": "enemy_0004"
-  },
-  {
-   "tSec": 0.55,
-   "kind": "hp_change",
-   "unitId": "enemy_0004",
-   "hpPct": 0,
-   "delta": -437,
-   "crit": false
-  },
-  {
-   "tSec": 0.55,
-   "kind": "unit_flash",
    "unitId": "enemy_0000",
-   "crit": true
+   "crit": false
   },
   {
    "tSec": 0.55,
@@ -1024,8 +899,8 @@
    "kind": "hp_change",
    "unitId": "enemy_0000",
    "hpPct": 0,
-   "delta": -1455,
-   "crit": true
+   "delta": -779,
+   "crit": false
   },
   {
    "tSec": 0.55,
@@ -1043,7 +918,7 @@
    "kind": "hp_change",
    "unitId": "enemy_0001",
    "hpPct": 0,
-   "delta": -437,
+   "delta": -779,
    "crit": false
   },
   {
@@ -1062,46 +937,46 @@
    "kind": "hp_change",
    "unitId": "enemy_0002",
    "hpPct": 0,
-   "delta": -333,
+   "delta": -779,
    "crit": false
   },
   {
    "tSec": 0.55,
    "kind": "unit_flash",
-   "unitId": "enemy_0005",
+   "unitId": "enemy_0003",
    "crit": false
   },
   {
    "tSec": 0.55,
    "kind": "unit_shake",
-   "unitId": "enemy_0005"
+   "unitId": "enemy_0003"
   },
   {
    "tSec": 0.55,
    "kind": "hp_change",
-   "unitId": "enemy_0005",
-   "hpPct": 0,
-   "delta": -1571,
+   "unitId": "enemy_0003",
+   "hpPct": 56,
+   "delta": -312,
    "crit": false
   },
   {
    "tSec": 0.55,
    "kind": "unit_flash",
-   "unitId": "enemy_0006",
-   "crit": true
+   "unitId": "enemy_0003",
+   "crit": false
   },
   {
    "tSec": 0.55,
    "kind": "unit_shake",
-   "unitId": "enemy_0006"
+   "unitId": "enemy_0003"
   },
   {
    "tSec": 0.55,
    "kind": "hp_change",
-   "unitId": "enemy_0006",
+   "unitId": "enemy_0003",
    "hpPct": 0,
-   "delta": -2750,
-   "crit": true
+   "delta": -1473,
+   "crit": false
   },
   {
    "tSec": 0.6000000000000001,
@@ -1109,7 +984,7 @@
    "unitId": "enemy_0000",
    "at": {
     "x": 0.5,
-    "y": 0.37
+    "y": 0.3
    }
   },
   {
@@ -1117,8 +992,8 @@
    "kind": "death_burst",
    "unitId": "enemy_0001",
    "at": {
-    "x": 0.7147359999999999,
-    "y": 0.37445024
+    "x": 0.504736,
+    "y": 0.42805024
    }
   },
   {
@@ -1126,8 +1001,8 @@
    "kind": "death_burst",
    "unitId": "enemy_0002",
    "at": {
-    "x": 0.87516,
-    "y": 0.3594504
+    "x": 0.71016,
+    "y": 0.31585040000000003
    }
   },
   {
@@ -1135,35 +1010,8 @@
    "kind": "death_burst",
    "unitId": "enemy_0003",
    "at": {
-    "x": 0.264852,
-    "y": 0.45452032000000003
-   }
-  },
-  {
-   "tSec": 0.6000000000000001,
-   "kind": "death_burst",
-   "unitId": "enemy_0004",
-   "at": {
-    "x": 0.425276,
-    "y": 0.48951216000000003
-   }
-  },
-  {
-   "tSec": 0.6000000000000001,
-   "kind": "death_burst",
-   "unitId": "enemy_0005",
-   "at": {
-    "x": 0.112968,
-    "y": 0.36021088
-   }
-  },
-  {
-   "tSec": 0.6000000000000001,
-   "kind": "death_burst",
-   "unitId": "enemy_0006",
-   "at": {
-    "x": 0.762892,
-    "y": 0.27274128000000003
+    "x": 0.512352,
+    "y": 0.24016768
    }
   },
   {
@@ -1230,7 +1078,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#4FC3F7",
    "vLevel": 2
@@ -1296,7 +1144,7 @@
    },
    "impact": {
     "kind": "ring_expand",
-    "size": 1.3
+    "size": 1.1
    },
    "color": "#3BA8A0",
    "vLevel": 2
@@ -1420,35 +1268,30 @@
   {
    "tSec": 5,
    "kind": "spawn",
+   "unitId": "enemy_0004"
+  },
+  {
+   "tSec": 5,
+   "kind": "spawn",
+   "unitId": "enemy_0005"
+  },
+  {
+   "tSec": 5,
+   "kind": "spawn",
+   "unitId": "enemy_0006"
+  },
+  {
+   "tSec": 5,
+   "kind": "spawn",
    "unitId": "enemy_0007"
   },
   {
    "tSec": 5,
-   "kind": "spawn",
-   "unitId": "enemy_0008"
-  },
-  {
-   "tSec": 5,
-   "kind": "spawn",
-   "unitId": "enemy_0009"
-  },
-  {
-   "tSec": 5,
-   "kind": "spawn",
-   "unitId": "enemy_0010"
-  },
-  {
-   "tSec": 5,
-   "kind": "spawn",
-   "unitId": "enemy_0011"
-  },
-  {
-   "tSec": 5,
    "kind": "muzzle",
-   "unitId": "enemy_0007",
+   "unitId": "enemy_0004",
    "at": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "color": "#D94A4A",
    "vLevel": 1
@@ -1457,8 +1300,116 @@
    "tSec": 5,
    "kind": "projectile",
    "from": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
+   },
+   "to": {
+    "x": 0.897512,
+    "y": 0.732016
+   },
+   "spec": {
+    "count": 1,
+    "intervalSec": 0,
+    "flightSec": 0.3,
+    "size": 1,
+    "arc": 0,
+    "shape": "bolt",
+    "color": "#D94A4A"
+   },
+   "flightSec": 0.3,
+   "vLevel": 1,
+   "srcId": "enemy_0004",
+   "shotIdx": 0
+  },
+  {
+   "tSec": 5,
+   "kind": "muzzle",
+   "unitId": "enemy_0005",
+   "at": {
+    "x": 0.652968,
+    "y": 0.41766112000000005
+   },
+   "color": "#D94A4A",
+   "vLevel": 1
+  },
+  {
+   "tSec": 5,
+   "kind": "projectile",
+   "from": {
+    "x": 0.652968,
+    "y": 0.41766112000000005
+   },
+   "to": {
+    "x": 0.897512,
+    "y": 0.732016
+   },
+   "spec": {
+    "count": 1,
+    "intervalSec": 0,
+    "flightSec": 0.3,
+    "size": 1,
+    "arc": 0,
+    "shape": "bolt",
+    "color": "#D94A4A"
+   },
+   "flightSec": 0.3,
+   "vLevel": 1,
+   "srcId": "enemy_0005",
+   "shotIdx": 0
+  },
+  {
+   "tSec": 5,
+   "kind": "muzzle",
+   "unitId": "enemy_0006",
+   "at": {
+    "x": 0.30539200000000005,
+    "y": 0.30366672
+   },
+   "color": "#D94A4A",
+   "vLevel": 1
+  },
+  {
+   "tSec": 5,
+   "kind": "projectile",
+   "from": {
+    "x": 0.30539200000000005,
+    "y": 0.30366672
+   },
+   "to": {
+    "x": 0.897512,
+    "y": 0.732016
+   },
+   "spec": {
+    "count": 1,
+    "intervalSec": 0,
+    "flightSec": 0.3,
+    "size": 1,
+    "arc": 0,
+    "shape": "bolt",
+    "color": "#D94A4A"
+   },
+   "flightSec": 0.3,
+   "vLevel": 1,
+   "srcId": "enemy_0006",
+   "shotIdx": 0
+  },
+  {
+   "tSec": 5,
+   "kind": "muzzle",
+   "unitId": "enemy_0007",
+   "at": {
+    "x": 0.6605840000000001,
+    "y": 0.22977856
+   },
+   "color": "#D94A4A",
+   "vLevel": 1
+  },
+  {
+   "tSec": 5,
+   "kind": "projectile",
+   "from": {
+    "x": 0.6605840000000001,
+    "y": 0.22977856
    },
    "to": {
     "x": 0.897512,
@@ -1481,150 +1432,6 @@
   {
    "tSec": 5,
    "kind": "muzzle",
-   "unitId": "enemy_0008",
-   "at": {
-    "x": 0.28100800000000004,
-    "y": 0.39244527999999995
-   },
-   "color": "#D94A4A",
-   "vLevel": 1
-  },
-  {
-   "tSec": 5,
-   "kind": "projectile",
-   "from": {
-    "x": 0.28100800000000004,
-    "y": 0.39244527999999995
-   },
-   "to": {
-    "x": 0.4846,
-    "y": 0.847472
-   },
-   "spec": {
-    "count": 1,
-    "intervalSec": 0,
-    "flightSec": 0.3,
-    "size": 1,
-    "arc": 0,
-    "shape": "bolt",
-    "color": "#D94A4A"
-   },
-   "flightSec": 0.3,
-   "vLevel": 1,
-   "srcId": "enemy_0008",
-   "shotIdx": 0
-  },
-  {
-   "tSec": 5,
-   "kind": "muzzle",
-   "unitId": "enemy_0009",
-   "at": {
-    "x": 0.42069999999999996,
-    "y": 0.30746400000000007
-   },
-   "color": "#D94A4A",
-   "vLevel": 1
-  },
-  {
-   "tSec": 5,
-   "kind": "projectile",
-   "from": {
-    "x": 0.42069999999999996,
-    "y": 0.30746400000000007
-   },
-   "to": {
-    "x": 0.897512,
-    "y": 0.732016
-   },
-   "spec": {
-    "count": 1,
-    "intervalSec": 0,
-    "flightSec": 0.3,
-    "size": 1,
-    "arc": 0,
-    "shape": "bolt",
-    "color": "#D94A4A"
-   },
-   "flightSec": 0.3,
-   "vLevel": 1,
-   "srcId": "enemy_0009",
-   "shotIdx": 0
-  },
-  {
-   "tSec": 5,
-   "kind": "muzzle",
-   "unitId": "enemy_0010",
-   "at": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
-   },
-   "color": "#D94A4A",
-   "vLevel": 1
-  },
-  {
-   "tSec": 5,
-   "kind": "projectile",
-   "from": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
-   },
-   "to": {
-    "x": 0.897512,
-    "y": 0.732016
-   },
-   "spec": {
-    "count": 1,
-    "intervalSec": 0,
-    "flightSec": 0.3,
-    "size": 1,
-    "arc": 0,
-    "shape": "bolt",
-    "color": "#D94A4A"
-   },
-   "flightSec": 0.3,
-   "vLevel": 1,
-   "srcId": "enemy_0010",
-   "shotIdx": 0
-  },
-  {
-   "tSec": 5,
-   "kind": "muzzle",
-   "unitId": "enemy_0011",
-   "at": {
-    "x": 0.59482,
-    "y": 0.31564880000000006
-   },
-   "color": "#D94A4A",
-   "vLevel": 1
-  },
-  {
-   "tSec": 5,
-   "kind": "projectile",
-   "from": {
-    "x": 0.59482,
-    "y": 0.31564880000000006
-   },
-   "to": {
-    "x": 0.4846,
-    "y": 0.847472
-   },
-   "spec": {
-    "count": 1,
-    "intervalSec": 0,
-    "flightSec": 0.3,
-    "size": 1,
-    "arc": 0,
-    "shape": "bolt",
-    "color": "#D94A4A"
-   },
-   "flightSec": 0.3,
-   "vLevel": 1,
-   "srcId": "enemy_0011",
-   "shotIdx": 0
-  },
-  {
-   "tSec": 5,
-   "kind": "muzzle",
    "unitId": "player_p0c1",
    "at": {
     "x": 0.516544,
@@ -1641,8 +1448,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "spec": {
     "count": 3,
@@ -1677,8 +1484,8 @@
     "y": 0.740584
    },
    "to": {
-    "x": 0.28100800000000004,
-    "y": 0.39244527999999995
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "spec": {
     "count": 1,
@@ -1713,8 +1520,8 @@
     "y": 0.726868
    },
    "to": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
+    "x": 0.652968,
+    "y": 0.41766112000000005
    },
    "spec": {
     "count": 1,
@@ -1736,6 +1543,11 @@
    "durationSec": 1.5
   },
   {
+   "tSec": 5,
+   "kind": "wave_banner",
+   "wave": 2
+  },
+  {
    "tSec": 5.1,
    "kind": "projectile",
    "from": {
@@ -1743,8 +1555,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "spec": {
     "count": 3,
@@ -1778,12 +1590,12 @@
    "tSec": 5.15,
    "kind": "projectile",
    "from": {
-    "x": 0.740012,
+    "x": 0.652968,
     "y": -0.08
    },
    "to": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
+    "x": 0.652968,
+    "y": 0.41766112000000005
    },
    "spec": {
     "shape": "shell",
@@ -1801,12 +1613,12 @@
    "tSec": 5.15,
    "kind": "projectile",
    "from": {
-    "x": 0.42069999999999996,
+    "x": 0.30539200000000005,
     "y": -0.08
    },
    "to": {
-    "x": 0.42069999999999996,
-    "y": 0.30746400000000007
+    "x": 0.30539200000000005,
+    "y": 0.30366672
    },
    "spec": {
     "shape": "shell",
@@ -1824,12 +1636,12 @@
    "tSec": 5.15,
    "kind": "projectile",
    "from": {
-    "x": 0.59482,
+    "x": 0.6605840000000001,
     "y": -0.08
    },
    "to": {
-    "x": 0.59482,
-    "y": 0.31564880000000006
+    "x": 0.6605840000000001,
+    "y": 0.22977856
    },
    "spec": {
     "shape": "shell",
@@ -1847,8 +1659,8 @@
    "tSec": 5.18,
    "kind": "impact",
    "at": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "impact": {
     "kind": "burst_small",
@@ -1865,8 +1677,8 @@
     "y": 0.592728
    },
    "to": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "spec": {
     "count": 3,
@@ -1886,8 +1698,8 @@
    "tSec": 5.279999999999999,
    "kind": "impact",
    "at": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "impact": {
     "kind": "burst_small",
@@ -1914,20 +1726,6 @@
    "tSec": 5.3,
    "kind": "impact",
    "at": {
-    "x": 0.4846,
-    "y": 0.847472
-   },
-   "impact": {
-    "kind": "burst_small",
-    "size": 0.9
-   },
-   "color": "#D94A4A",
-   "vLevel": 1
-  },
-  {
-   "tSec": 5.3,
-   "kind": "impact",
-   "at": {
     "x": 0.897512,
     "y": 0.732016
    },
@@ -1956,8 +1754,8 @@
    "tSec": 5.3,
    "kind": "impact",
    "at": {
-    "x": 0.4846,
-    "y": 0.847472
+    "x": 0.897512,
+    "y": 0.732016
    },
    "impact": {
     "kind": "burst_small",
@@ -1970,8 +1768,8 @@
    "tSec": 5.35,
    "kind": "impact",
    "at": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
+    "x": 0.652968,
+    "y": 0.41766112000000005
    },
    "impact": {
     "kind": "ring_expand",
@@ -1984,8 +1782,8 @@
    "tSec": 5.38,
    "kind": "impact",
    "at": {
-    "x": 0.578084,
-    "y": 0.49297856
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "impact": {
     "kind": "burst_small",
@@ -1998,8 +1796,8 @@
    "tSec": 5.38,
    "kind": "impact",
    "at": {
-    "x": 0.28100800000000004,
-    "y": 0.39244527999999995
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
    },
    "impact": {
     "kind": "burst_small",
@@ -2030,25 +1828,6 @@
   {
    "tSec": 5.38,
    "kind": "unit_flash",
-   "unitId": "player_p2c1",
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "player_p2c1"
-  },
-  {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "player_p2c1",
-   "hpPct": 100,
-   "delta": 0,
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_flash",
    "unitId": "player_p1c2",
    "crit": false
   },
@@ -2087,27 +1866,122 @@
   {
    "tSec": 5.38,
    "kind": "unit_flash",
-   "unitId": "player_p2c1",
+   "unitId": "player_p1c2",
    "crit": false
   },
   {
    "tSec": 5.38,
    "kind": "unit_shake",
-   "unitId": "player_p2c1"
+   "unitId": "player_p1c2"
   },
   {
    "tSec": 5.38,
    "kind": "hp_change",
-   "unitId": "player_p2c1",
+   "unitId": "player_p1c2",
    "hpPct": 100,
    "delta": 0,
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_flash",
+   "unitId": "enemy_0004",
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_shake",
+   "unitId": "enemy_0004"
+  },
+  {
+   "tSec": 5.38,
+   "kind": "hp_change",
+   "unitId": "enemy_0004",
+   "hpPct": 17,
+   "delta": -333,
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_flash",
+   "unitId": "enemy_0004",
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_shake",
+   "unitId": "enemy_0004"
+  },
+  {
+   "tSec": 5.38,
+   "kind": "hp_change",
+   "unitId": "enemy_0004",
+   "hpPct": 0,
+   "delta": -132,
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_flash",
+   "unitId": "enemy_0005",
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_shake",
+   "unitId": "enemy_0005"
+  },
+  {
+   "tSec": 5.38,
+   "kind": "hp_change",
+   "unitId": "enemy_0005",
+   "hpPct": 76,
+   "delta": -96,
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_flash",
+   "unitId": "enemy_0005",
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_shake",
+   "unitId": "enemy_0005"
+  },
+  {
+   "tSec": 5.38,
+   "kind": "hp_change",
+   "unitId": "enemy_0005",
+   "hpPct": 0,
+   "delta": -917,
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_flash",
+   "unitId": "enemy_0006",
+   "crit": false
+  },
+  {
+   "tSec": 5.38,
+   "kind": "unit_shake",
+   "unitId": "enemy_0006"
+  },
+  {
+   "tSec": 5.38,
+   "kind": "hp_change",
+   "unitId": "enemy_0006",
+   "hpPct": 0,
+   "delta": -917,
    "crit": false
   },
   {
    "tSec": 5.38,
    "kind": "unit_flash",
    "unitId": "enemy_0007",
-   "crit": true
+   "crit": false
   },
   {
    "tSec": 5.38,
@@ -2119,174 +1993,51 @@
    "kind": "hp_change",
    "unitId": "enemy_0007",
    "hpPct": 0,
-   "delta": -582,
-   "crit": true
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_flash",
-   "unitId": "enemy_0008",
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "enemy_0008"
-  },
-  {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "enemy_0008",
-   "hpPct": 24,
-   "delta": -175,
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_flash",
-   "unitId": "enemy_0008",
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "enemy_0008"
-  },
-  {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "enemy_0008",
-   "hpPct": 0,
-   "delta": -132,
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_flash",
-   "unitId": "enemy_0010",
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "enemy_0010"
-  },
-  {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "enemy_0010",
-   "hpPct": 58,
-   "delta": -96,
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_flash",
-   "unitId": "enemy_0010",
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "enemy_0010"
-  },
-  {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "enemy_0010",
-   "hpPct": 0,
    "delta": -917,
    "crit": false
   },
   {
-   "tSec": 5.38,
-   "kind": "unit_flash",
-   "unitId": "enemy_0009",
-   "crit": false
+   "tSec": 5.43,
+   "kind": "death_burst",
+   "unitId": "enemy_0004",
+   "at": {
+    "x": 0.34277599999999997,
+    "y": 0.40631216000000003
+   }
   },
   {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "enemy_0009"
+   "tSec": 5.43,
+   "kind": "death_burst",
+   "unitId": "enemy_0005",
+   "at": {
+    "x": 0.652968,
+    "y": 0.41766112000000005
+   }
   },
   {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "enemy_0009",
-   "hpPct": 0,
-   "delta": -917,
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_flash",
-   "unitId": "enemy_0011",
-   "crit": false
-  },
-  {
-   "tSec": 5.38,
-   "kind": "unit_shake",
-   "unitId": "enemy_0011"
-  },
-  {
-   "tSec": 5.38,
-   "kind": "hp_change",
-   "unitId": "enemy_0011",
-   "hpPct": 0,
-   "delta": -917,
-   "crit": false
+   "tSec": 5.43,
+   "kind": "death_burst",
+   "unitId": "enemy_0006",
+   "at": {
+    "x": 0.30539200000000005,
+    "y": 0.30366672
+   }
   },
   {
    "tSec": 5.43,
    "kind": "death_burst",
    "unitId": "enemy_0007",
    "at": {
-    "x": 0.578084,
-    "y": 0.49297856
-   }
-  },
-  {
-   "tSec": 5.43,
-   "kind": "death_burst",
-   "unitId": "enemy_0008",
-   "at": {
-    "x": 0.28100800000000004,
-    "y": 0.39244527999999995
-   }
-  },
-  {
-   "tSec": 5.43,
-   "kind": "death_burst",
-   "unitId": "enemy_0009",
-   "at": {
-    "x": 0.42069999999999996,
-    "y": 0.30746400000000007
-   }
-  },
-  {
-   "tSec": 5.43,
-   "kind": "death_burst",
-   "unitId": "enemy_0010",
-   "at": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
-   }
-  },
-  {
-   "tSec": 5.43,
-   "kind": "death_burst",
-   "unitId": "enemy_0011",
-   "at": {
-    "x": 0.59482,
-    "y": 0.31564880000000006
+    "x": 0.6605840000000001,
+    "y": 0.22977856
    }
   },
   {
    "tSec": 5.65,
    "kind": "impact",
    "at": {
-    "x": 0.740012,
-    "y": 0.45508608000000006
+    "x": 0.652968,
+    "y": 0.41766112000000005
    },
    "impact": {
     "kind": "burst_big",
@@ -2299,8 +2050,8 @@
    "tSec": 5.65,
    "kind": "impact",
    "at": {
-    "x": 0.42069999999999996,
-    "y": 0.30746400000000007
+    "x": 0.30539200000000005,
+    "y": 0.30366672
    },
    "impact": {
     "kind": "burst_big",
@@ -2313,8 +2064,8 @@
    "tSec": 5.65,
    "kind": "impact",
    "at": {
-    "x": 0.59482,
-    "y": 0.31564880000000006
+    "x": 0.6605840000000001,
+    "y": 0.22977856
    },
    "impact": {
     "kind": "burst_big",
