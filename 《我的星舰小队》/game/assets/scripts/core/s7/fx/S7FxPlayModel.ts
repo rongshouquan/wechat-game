@@ -164,7 +164,7 @@ export interface S7FxPopState {
 
 const PROJ_CAP = 48; // 总谱 §7 弹体红线
 const EMBER_CAP = 90;
-const POP_CAP = 26;
+const POP_CAP = 48; // 总谱 §7·07-16 数字瀑布制 26→48（Ron 拍·高潮节奏制配套）
 
 function hash01(s: string, salt: number): number {
   let h = 2166136261 ^ salt;

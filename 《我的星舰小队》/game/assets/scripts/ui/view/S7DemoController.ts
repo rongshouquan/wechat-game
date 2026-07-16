@@ -655,7 +655,11 @@ export class S7DemoController extends Component {
   private levelRewardAdLabel: Label | null = null;
   private levelRewardExtraBtnNode: Node | null = null; // #4 再选一个（块5）
   private levelRewardExtraLabel: Label | null = null;
-  private levelRewardContinueBtnNode: Node | null = null;
+  /** 一窗两点（Ron 07-16）：三选一屏内的终局三键（选关/回港/下一关·选完浮现）+📊 统计小键；教程期不显走旧直通链。 */
+  private levelRewardEndBtnNodes: Node[] = [];
+  private levelRewardStatsBtnNode: Node | null = null;
+  /** Boss 大奖特写「收下」后要续跑的终局动作（一窗两点路径专用；教程旧链=null→收下即露结算窗）。 */
+  private pendingGrandAction: (() => void) | null = null;
   /** 本次首通待发的三选一上下文（继续/离开后清空）。 */
   private pendingLevelReward: {
     nodeId: string; stage: S7LevelRewardStage; isBoss: boolean;
@@ -2064,8 +2068,14 @@ export class S7DemoController extends Component {
     if (this.resultRightLabel) this.clampBtnLabel(this.resultRightLabel);
     // 块5(S13 #9)：主线战败 → 结算卡下方附"安慰补给"小块（基础包已入账文案/第4败鼓励文案 + 「📺安慰双倍」三态）。
     this.refreshConsolationStrip(won, isSpecial);
+    // 一窗两点（Ron 07-16·只改首胜）：首通有奖且非教程 → 结算窗不再弹出，三选一屏=终点窗
+    //（胜利 banner/📊 统计/终局三键全并入·"继续"中转步删除）。教程期走下方旧链（M 0-46 封板步序不动）。
+    if (won && this.pendingLevelReward && !this.isStrongGuideActive()) {
+      this.openLevelReward();
+      return;
+    }
     this.resultPopupNode.active = true;
-    // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（必须选 1 才继续；选完浮现两键/继续·块5 全部关卡；Boss 继续后弹大奖特写，才露出结算窗）。
+    // F：首通胜利且该档有奖 → 在结算窗之上弹「三选一屏(唯一奖励屏)」（教程旧链：必须选 1 才继续；Boss 继续后弹大奖特写，才露出结算窗）。
     if (won && this.pendingLevelReward) this.openLevelReward();
   }
 
@@ -2145,7 +2155,8 @@ export class S7DemoController extends Component {
   /** 收起就地战斗画面 + 结果窗（玩家选完才切场景）：复位备战 UI、隐藏备战面板、回主界面状态。 */
   private dismissBattleScene(): void {
     this.sound.playBgm('bgm_hub');
-    this.pendingLevelReward = null; // ③终稿·防御：离开结算即清三选一上下文（正常路径已由「继续」/无键直接走清空）
+    this.pendingLevelReward = null; // ③终稿·防御：离开结算即清三选一上下文（正常路径已由终局键/教程直通清空）
+    this.pendingGrandAction = null; // 一窗两点·防御：特写待续动作不跨场泄漏
     this.pendingConsolation = null; // 块5：安慰包上下文只活本场结算
     if (this.consolationStripNode) this.consolationStripNode.active = false;
     if (this.levelRewardNode) this.levelRewardNode.active = false;
@@ -6002,8 +6013,22 @@ export class S7DemoController extends Component {
     this.levelRewardExtraLabel = exBtn;
     this.levelRewardExtraBtnNode = exBtn.node.parent;
     if (this.levelRewardExtraBtnNode) this.levelRewardExtraBtnNode.active = false;
-    this.levelRewardContinueBtnNode = this.addBtn(panel, '继续 ▶', 280, 84, new Color(225, 150, 45, 255), 0, -dh * 0.33, () => this.onContinueLevelReward(), 30).node.parent;
-    if (this.levelRewardContinueBtnNode) this.levelRewardContinueBtnNode.active = false;
+    // 一窗两点（Ron 07-16·首胜结算改造）：原「继续」中转步删除——终局三键直接进屏
+    //（同结算窗三键语义/孔位），选完奖励即亮：不看广告一步点走。伤害统计小键右上常驻（Ron 点名保留）。
+    const xs3 = this.dialogBtnRowXs(3);
+    const endDefs: ReadonlyArray<readonly [string, Color, () => void]> = [
+      ['选择关卡', new Color(70, 130, 180, 255), () => this.onLevelRewardEnd('level')],
+      ['返回星港', new Color(120, 90, 160, 255), () => this.onLevelRewardEnd('home')],
+      ['下一关 ▶', new Color(225, 150, 45, 255), () => this.onLevelRewardEnd('next')],
+    ];
+    this.levelRewardEndBtnNodes = endDefs.map(([txt, col, cb], i) => {
+      const b = this.addBtn(panel, txt, 210, 92, col, xs3[i] ?? 0, -dh * 0.33, cb, 30).node.parent!;
+      b.active = false;
+      return b;
+    });
+    const statsBtn = this.addBtn(panel, '📊 统计', 150, 52, new Color(90, 100, 130, 255), dw * 0.34, dh * 0.40, () => this.openBattleStats(), 20);
+    this.levelRewardStatsBtnNode = statsBtn.node.parent;
+    if (this.levelRewardStatsBtnNode) this.levelRewardStatsBtnNode.active = false;
     this.levelRewardMsgLabel = this.mkPanelLabel(panel, '', 22, new Color(255, 225, 150), 0, -dh * 0.43); // 翻倍飘字/反馈行
   }
 
@@ -6125,7 +6150,12 @@ export class S7DemoController extends Component {
     if (!p || !this.levelRewardListNode) return;
     const picked = p.pickedIndex !== null;
     const x2 = p.softDoubled;
-    if (this.levelRewardTitleLabel) this.levelRewardTitleLabel.string = `🎁 ${p.nodeId} · ${this.stageName(p.stage)}首通奖励`;
+    // 一窗两点：非教程=终点窗，胜利 banner 并入标题（结算窗不再弹出·战报感一屏齐）。
+    if (this.levelRewardTitleLabel) {
+      this.levelRewardTitleLabel.string = this.isStrongGuideActive()
+        ? `🎁 ${p.nodeId} · ${this.stageName(p.stage)}首通奖励`
+        : `★ 战斗胜利 ★　🎁 ${this.stageName(p.stage)}首通奖励`;
+    }
     // 固定奖励列表（必得软货币·看广告可×2·就地显示翻倍值）+ 必给大奖预告（精英/Boss）。
     const fixedParts: string[] = [];
     const soft = p.softGrants.map((g) => `${this.zhRes(g.resourceId)}×${x2 ? g.amount * 2 : g.amount}`).join('　');
@@ -6176,7 +6206,10 @@ export class S7DemoController extends Component {
         this.clampBtnLabel(this.levelRewardExtraLabel);
       }
     }
-    if (this.levelRewardContinueBtnNode) this.levelRewardContinueBtnNode.active = picked;
+    // 一窗两点：终局三键=选完浮现（教程期不显·教程选完直接走不会到这）；📊 统计=常驻（选前也可看）。
+    const showEnd = picked && !this.isStrongGuideActive();
+    for (const b of this.levelRewardEndBtnNodes) b.active = showEnd;
+    if (this.levelRewardStatsBtnNode) this.levelRewardStatsBtnNode.active = !this.isStrongGuideActive();
   }
 
   /** 一笔关卡奖励的中文短描述。 */
@@ -6233,12 +6266,12 @@ export class S7DemoController extends Component {
     // 块5(S13 决策⑥)：全部关卡——选完若 #3/#4 至少一键可显 → 锁卡停留同屏；两键都不可显（每日已用尽&无券/新手期）
     // → 直接走（不留只剩「继续」的空步·教程期两键必隐=行为与旧"选完直接关"一致，step40 毕业选卡照常续步）。
     p.pickedIndex = index;
-    const anyAdKey = (p.softGrants.length > 0 && this.adButtonState('clear_reward_double').kind !== 'hidden')
-      || (p.choices.length === 3 && this.adButtonState('triple_pick_extra').kind !== 'hidden');
-    if (anyAdKey) {
-      this.refreshLevelReward();
-    } else {
+    if (this.isStrongGuideActive()) {
+      // 教程封板路径照旧：选完直接走（广告键教程期必隐·后续步序靠结算窗高亮键推进）。
       this.finishLevelReward();
+    } else {
+      // 一窗两点：选完停留同屏——终局三键亮起（+广告键若可显），不看广告直接点「下一关」走人。
+      this.refreshLevelReward();
     }
   }
 
@@ -6253,16 +6286,30 @@ export class S7DemoController extends Component {
     if (grand) this.openGrandRewardPopup(grand);
   }
 
-  /** ③终稿·选完「继续」（有广告键浮现时走此；无键时首选后已直接 finish）。
-   *  #4 已看广告但还没再选 → 拦下（广告已花·别让玩家一键跳过丢掉再选机会——与首选"必须选1"同精神）。 */
-  private onContinueLevelReward(): void {
+  /** 一窗两点终局（Ron 07-16·替代旧「继续」中转步）：从三选一屏直接执行终局动作；
+   *  Boss 大奖特写插在中间（收下→续跑动作）；#4 已看广告未再选 → 拦下（广告已花别浪费·与首选"必须选1"同精神）。 */
+  private onLevelRewardEnd(action: 'level' | 'home' | 'next'): void {
     const p = this.pendingLevelReward;
     if (!p || p.pickedIndex === null) return;
     if (p.extraPickArmed && p.extraPickedIndex === null) {
       if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '广告已看完——先从剩下两张里再选一张，别浪费';
       return;
     }
-    this.finishLevelReward();
+    const grand = p.bossGrand;
+    this.pendingLevelReward = null;
+    if (this.levelRewardNode) this.levelRewardNode.active = false;
+    if (this.levelRewardMsgLabel) this.levelRewardMsgLabel.string = '';
+    const go = () => {
+      if (action === 'level') this.onResultGoLevelSelect();
+      else if (action === 'home') this.onResultGoHome();
+      else this.onResultGoPrebattle();
+    };
+    if (grand) {
+      this.pendingGrandAction = go; // 大奖特写照弹（高光时刻保留）·收下即续跑终局
+      this.openGrandRewardPopup(grand);
+    } else {
+      go();
+    }
   }
 
   /** 「📺固定奖励×2」(#3·块5 全部关卡)：只把首通必得(固定)软货币再补一份(合计×2)；唯一核/三选一选中项/Boss星辉货舱均不翻。
@@ -6347,9 +6394,12 @@ export class S7DemoController extends Component {
     this.sound.playSfx('reward_claim');
   }
 
-  /** 收下大奖：关特写弹窗 → 露出底下已 active 的结算窗（瘦身版）。 */
+  /** 收下大奖：关特写弹窗 → 一窗两点路径=续跑终局动作；教程旧链（无 pendingGrandAction）=露出底下结算窗。 */
   private onGrandRewardClaim(): void {
     if (this.grandRewardNode) this.grandRewardNode.active = false;
+    const act = this.pendingGrandAction;
+    this.pendingGrandAction = null;
+    if (act) act();
   }
 
   /** 大奖奖名（核/宝箱取配置名·陨星弹=core07 已改名）。 */
