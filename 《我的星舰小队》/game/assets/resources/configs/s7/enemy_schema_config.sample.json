@@ -334,5 +334,75 @@
       "不移动·原地放电（真源§3）",
       "⑩A4 削弱我方载体（克制#10）"
     ]
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "enemyId": "enemy_rally_source",
+    "nameKey": "enemy.rally_source",
+    "familyTag": "minion_family",
+    "roleTag": "elite",
+    "mainProblemTag": "swarm",
+    "problemTagRefs": [
+      "swarm"
+    ],
+    "templateRefSlots": [
+      "t08",
+      "t09"
+    ],
+    "positionTag": "mid",
+    "previewTagRefs": [
+      "count_band",
+      "spawn_position"
+    ],
+    "threatLabel": "buff_source",
+    "counterHintTags": [
+      "focus_source",
+      "fast_clear"
+    ],
+    "assetRefPolicy": "reuse_or_placeholder",
+    "validationTags": [
+      "schema_complete",
+      "tag_legal"
+    ],
+    "forbiddenNotes": [
+      "不移动·原地挥旗（真源§1 星盗船长）",
+      "段3 词缀源载体·击杀源即停"
+    ],
+    "note": "星盗船长（真源§1 在册·段3 词缀源载体注册·⑩A4 enemy_schema 补行先例）：挥旗给周围星盗加攻——源型单位击杀即停。"
+  },
+  {
+    "schemaVersion": "s7-0.1.0",
+    "enemyId": "enemy_rally_haste_source",
+    "nameKey": "enemy.rally_haste_source",
+    "familyTag": "minion_family",
+    "roleTag": "elite",
+    "mainProblemTag": "swarm",
+    "problemTagRefs": [
+      "swarm"
+    ],
+    "templateRefSlots": [
+      "t08",
+      "t09"
+    ],
+    "positionTag": "mid",
+    "previewTagRefs": [
+      "count_band",
+      "spawn_position"
+    ],
+    "threatLabel": "buff_source",
+    "counterHintTags": [
+      "focus_source",
+      "fast_clear"
+    ],
+    "assetRefPolicy": "reuse_or_placeholder",
+    "validationTags": [
+      "schema_complete",
+      "tag_legal"
+    ],
+    "forbiddenNotes": [
+      "不移动·原地挥旗（真源§1 星盗船长·速鼓变体）",
+      "段3 词缀分档=攻速词缀源"
+    ],
+    "note": "星盗船长速鼓变体（段3 词缀分档=攻速词缀源）。"
   }
 ]

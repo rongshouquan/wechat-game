@@ -548,7 +548,9 @@ class BattleRun {
     // 段二 C3 镜像通道：mirrorLineup=true 时敌方=玩家出战阵容读档生成（优先级：回廊内联 > 镜像 > 出怪计划）。
     const inline = this.request.inlineEnemyUnits;
     if (inline && inline.length > 0) this.placeInlineEnemies(inline);
-    else if (enc.mirrorLineup === true) this.placeMirrorEnemies();
+    // 段3 镜像缩放通道：mirrorScalePct（可选·缺省 0=敌我同强=旧行为逐字节不变）——五档带在镜像关
+    // 的强度旋钮（镜像敌不吃压力公式=唯一无档差面·此字段补上）。
+    else if (enc.mirrorLineup === true) this.placeMirrorEnemies(typeof enc.mirrorScalePct === 'number' ? enc.mirrorScalePct : 0);
     else this.loadSpawnPlans(enc);
     this.loadPhases(enc);
 
@@ -715,7 +717,7 @@ class BattleRun {
   }
 
   /** 段二 C3 镜像通道：敌方=玩家出战阵容读档生成（同 unitStatRef+同四层装配积木·p{r}c{c}→r{r}c{c} 前三列对位）。 */
-  private placeMirrorEnemies(): void {
+  private placeMirrorEnemies(scalePct = 0): void {
     const created: RtUnit[] = [];
     for (const input of this.request.playerUnits) {
       const stat = this.runtime.getById<S7BattleUnitStatParam>('battle_unit_stat_param', input.unitStatRef);
@@ -724,8 +726,19 @@ class BattleRun {
       const col = Number(input.slotRef[3]);
       const slot = `r${row}c${col}`;
       if (!this.canPlace('enemy', row, col, stat.sizeRows, stat.sizeCols)) continue;
+      // 段3 镜像缩放：装配完成后对终值血攻直乘 (1+scalePct)——不走 pct 块（deriveUnit 的 pct=
+      // 加法合并，+55pp 会被玩家装配积木 Σ≈240pp 稀释成终值 +16%=量纲错·n266 探针实证 5901/5076）；
+      // scalePct=0 缺省=旧行为逐字节不变。
       const blocks = input.effectBlocks ?? [];
-      const derived = blocks.length > 0 ? deriveUnit(baseStatOf(stat), blocks) : null;
+      let derived = blocks.length > 0 ? deriveUnit(baseStatOf(stat), blocks) : null;
+      if (scalePct !== 0) {
+        const d = derived ?? deriveUnit(baseStatOf(stat), []);
+        derived = {
+          ...d,
+          maxHp: Math.max(1, Math.round(d.maxHp * (1 + scalePct))),
+          attack: Math.max(1, Math.round(d.attack * (1 + scalePct))),
+        };
+      }
       created.push(this.spawnUnit(stat, 'enemy', row, col, slot, derived));
     }
     if (created.length > 0) {

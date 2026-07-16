@@ -158,6 +158,27 @@ describe('段2 通道② · 坟场自复活（selfReviveHpPct）', () => {
   });
 });
 
+describe('段3 通道 · 镜像缩放（mirrorScalePct=装配后终值直乘）', () => {
+  // 量纲教训（n266 探针实证）：pct 块走 deriveUnit 加法合并会被玩家装配积木 Σ≈240pp 稀释
+  // （+55pp→终值仅 +16%）——通道实现=派生后直乘。变异探针：把引擎直乘改回 pct 块→本测红。
+  it('scale=0.5 的镜像敌终值血=scale 缺席的 ×1.5（同阵容同 seed）', async () => {
+    const run = async (scale?: number) => {
+      const b = cloneBundle(loadBundle());
+      const enc = row(b, 'battle_encounter_param', 'enc_n186');
+      if (scale !== undefined) enc.mirrorScalePct = scale;
+      else delete enc.mirrorScalePct;
+      const e = await engineOf(b);
+      const r = e.run({ encounterRef: 'enc_n186', battleSeed: 'mirror-scale', playerUnits: TRIO });
+      const firstEnemy = r.finalState.enemies.find((u) => u.unitStatRef === 'bu_ship_vanguard');
+      if (!firstEnemy) throw new Error('镜像敌缺 vanguard');
+      return firstEnemy.maxHp;
+    };
+    const base = await run(undefined);
+    const scaled = await run(0.5);
+    expect(scaled).toBe(Math.round(base * 1.5)); // 终值直乘=精确 ×1.5（加法稀释制下不成立·探针红点）
+  });
+});
+
 describe('段2 通道① · 复活波次×Boss 墙组合（阶段旗随复活波重置）', () => {
   it('reviveWaves=1 的 Boss 关：第二遍 mid 阶段再次触发（完整再打一遍·非白板 Boss）', async () => {
     const b = cloneBundle(loadBundle());

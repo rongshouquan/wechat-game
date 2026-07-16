@@ -333,6 +333,8 @@ export const ROLE_SHAPE: Record<string, { hpW: number; atkW: number; armor: numb
   // ⑩三段（B7 悬赏威胁位/带宽探针用·主线 spawn 未布=不影响既有落数）：真源载体两形状。
   bu_enemy_pollution: { hpW: 1.1, atkW: 1.0, armor: 10, interval: 1.4 },   // 污染体：精英·爆发窗口（喷毒+受击狂暴=机制承伤·血权略厚）
   bu_enemy_stormtower: { hpW: 0.9, atkW: 0.5, armor: 12, interval: 1.6 },  // 磁暴塔：削弱塔（威胁在磁暴场非火力·攻权低）
+  bu_enemy_rally_source: { hpW: 1.0, atkW: 0.3, armor: 12, interval: 1.6, effHpMult: 2.2 }, // 段3 词缀源（星盗船长）：buff 场=变相厚度·先点它=counterplay；effHpMult 1.3→2.2（第5轮结构修·n356 实证源被集火秒→词缀失效→白板关——源要活到发挥）
+  bu_enemy_rally_haste_source: { hpW: 1.0, atkW: 0.3, armor: 12, interval: 1.6, effHpMult: 2.2 }, // 段3 词缀源·速鼓变体（同形状·同第5轮结构修）
 };
 /** 墙关陡度（⑥三段·经济尺墙矩阵>0 的真墙）：到达态（power<P 数个点）打不过、破墙态（≥P）能过——
  *  没有陡度时战斗侧在贴线处必胜（手感靶设计），墙会比经济模型软=毕业节奏漂移（milestone 验收实证）。
@@ -351,28 +353,48 @@ const WALL_BOOST: Record<string, { pool: number; dps: number }> = {
   n140: { pool: 1.4, dps: 0.8 },   // 墙②机制：复活=二遍池+修理机奶=变相池·双预折
   n176: { pool: 1.05, dps: 0.72 },  // 墙③解题：重锤尖峰在 BOSS_SHAPE·磁暴塔+奶预折
   n214: { pool: 0.95, dps: 0.78 },  // 高潮②：盾墙=变相池预折（演出仗不卡天）
-  n250: { pool: 0.55, dps: 0.35 },   // 墙④连战：reviveWaves ×2 总池+大盾+召唤·三重预折
+  n250: { pool: 0.9, dps: 0.5 },   // 墙④连战：reviveWaves ×2 总池+大盾+召唤·三重预折
   n282: { pool: 1.0, dps: 0.68 },   // 墙⑤战+机：量产协议召唤海预折
   n312: { pool: 1.0, dps: 0.85 },  // 墙⑥解+连：revive+快召+奶·预折
   n340: { pool: 0.8, dps: 0.5 }, // 高潮③：时间狂暴（120s 封顶 +240% 攻）重预折
   n368: { pool: 0.9, dps: 0.6 },   // 墙⑦机+解：受击狂暴+喷毒·预折
   n384: { pool: 2.0, dps: 0.85 },   // 前哨：快锤形状在 BOSS_SHAPE·中性
   n400: { pool: 0.8, dps: 0.65 },  // 墙⑧战+连：revive ×3 总池·重预折（击杀密度=超新星舞台）
-  n450: { pool: 1.0, dps: 0.42 },   // 墙⑨毕业战：马拉松+3 阶段狂暴全屏预折
+  n450: { pool: 0.9, dps: 0.36 },   // 墙⑨毕业战：马拉松+3 阶段狂暴全屏预折
 };
 /** 扫参工具单点读本表（s7-wall-boost-scan.mjs 换算基准=磁盘现值·防双账本漂移）。 */
 export { WALL_BOOST };
-/** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·§20.2 n102 特例）：
- *  塔×3 设计密度下守恒摊薄杀死了单塔尖峰（A0 记档）——标量 dps/pool 五轮实证分不开五态（①双护卫组合
- *  杀敌速度=错舰队一半·任何①能清的池③都能竞速）。对症=把尖峰还给每座塔：间隔 1.3→3.0s、单发×2.31
- *  （单位 DPS 守恒·总量不变）——塔回到最高攻（砺咬塔=任务单弹药1 叙事复原）、尖峰打穿脆皮/坦体扛得住，
- *  护后排工具的价值=挡尖峰（二值机理回归 v0.6 形态·密度保持设计 3 座）。 */
-const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number; atkW?: number }>> = {
-  // 批③段三加 atkW 轴：二值机理=塔吃走火力预算（杂兵按权重守恒自动饿死）——
-  // 无工具=塔尖峰点死后排（0%）·带嘲讽=尖峰全进铁壁、杂兵磨不死人（过）。
-  // 全局 dps 刀分不开这两态（工具组 48s 死于杂兵磨血实证）。
-  n102: { bu_enemy_backline: { interval: 3.0, atkW: 3.0 } }, // 对锚批钞门重校·int 2.2 试点=切奶节奏工具组8%坏案记档
+
+/** 段3 · 精英五档带强度（R10 初见带：福利 ≥95/无压力 70-85/微阻滞 40-60/阻滞 20-35/变态 5-15）。
+ *  两层结构：档位默认（一把调）+关级覆写（实测收敛个别关偏离时填·初期空）。
+ *  初值=数值域自定（WALL_BOOST 同源手感·敌自 buff 预折教训已含——词缀关实测再收敛·报备）。 */
+export const ELITE_TIER_BOOST: Record<string, { pool: number; dps: number }> = {
+  // 第2轮实测抬档（第1轮四档全软：到达态 65-80% 战力比+kit 溢价打穿——同墙循环'预算外溢价'教训）；
+  // 蜜月段精英（n007/n020/n033/n068/n088=D1-D5 到达·战力比 400-1300%）=结构性碾过·迟到者奖励
+  // 记档（同 n054/n384 先例·五档带自 sf02 起生效）。
+  福利: { pool: 0.3, dps: 0.3 },   // 白送（≥95%·垫关爽点）·第1轮 ✓ 定
+  无压力: { pool: 1.0, dps: 0.72 }, // 70-85%（第3轮微抬·n192 100% 超上带）
+  微阻滞: { pool: 1.15, dps: 0.8 }, // 40-60%（主力档·磨 2-3 把）
+  阻滞: { pool: 1.5, dps: 0.9 },  // 20-35%（磨 3-5 把）
+  变态: { pool: 2.6, dps: 1.1 },  // 5-15%（小 Boss 级·磨 4-6 把不卡天·量级参照墙⑧连战等效池）
 };
+/** 档位来源=磁盘 encounter.eliteTier 字段（生成器按 ELITE_CONTENT.tier 声明写入——单点在声明表，
+ *  本文件零 38 关副本=零双账本；关级覆写=实测收敛个别偏离档默认时填·查找链先于档位默认）。 */
+export const ELITE_BOOST_OVERRIDE: Record<string, { pool: number; dps: number }> = {
+  // 第4轮·形态分治终值（第3轮结构结论落表）：
+  // 连战关预折微调（revive=总量×N 双重计价·墙④同款教训——n258 95% 差半档/n348 卡日软/n306 破日超）；
+  n258: { pool: 0.78, dps: 0.58 } /* 震荡早停：0.7↔0.78 跷跷板·取历史最优形态（第4轮）·破日超带记偏差 */, n348: { pool: 0.95, dps: 0.66 }, n306: { pool: 1.15, dps: 0.72 },
+  // 斩首关（n033/n142/n198/n290/n320/n362）＝速胜结构记档例外（集火单点 vs 全场分摊=目标必速杀·
+  // pool 4.0 时间墙实测不收敛）——初见带豁免·boost 走档位默认（旧时间墙 override 删除）；
+  // 普通面窄带逐关细调（同 boost 不同波次构成形状天差=档位默认+关级细调的设计用途）；
+  n168: { pool: 1.2, dps: 0.8 }, n356: { pool: 1.3, dps: 0.85 }, n192: { pool: 1.15, dps: 0.78 },
+};
+/** ⑩三段 · 节点级职业形状覆写（B5 五态矩阵结构刀·"把尖峰还给每座塔"手法=间隔拉长+单发放大·
+ *  单位 DPS 守恒）。段3 首件：旧世界 n102 塔尖峰键处死（总控验收令·07-15）——450 世界 n102=普通关
+ *  （唯一行 bu_n102_swarm·键不命中=幽灵死键），解题墙语义已由 n176/n312/n368＋BOSS_SHAPE_OVERRIDE
+ *  承接；旧手法与五轮实证记档=§20.12 B5（段 6 五态对照引先例走记档溯源，不留活键）。现表空=
+ *  段 3+ 按需填（新世界节点如需塔尖峰同款手术，照 B5 手法配）。 */
+const NODE_SHAPE_OVERRIDE: Record<string, Record<string, { interval?: number; atkW?: number }>> = {};
 /** Boss 行分成（血池/火力占比·余量归 adds）。 */
 const BOSS_SHARE = { hp: 0.65, dps: 0.3 }; // 首扫诊断：0.5 全压单点=前排瞬融·Boss=重锤节奏不是速射炮
 /** 段2 · Boss 形状覆写（手调通道·公式参数层——只对对位表点名形状词的 Boss 配，其余全默认；
@@ -416,7 +438,12 @@ export function mapPressureToEnemies(bundle: Bundle, nodeId: string, pressure: n
   // 敌火晚段 ^1.08 结构补偿保留（φ>1 才作用）：套件结构价值（复活/免控/保底）不随战力砍半，
   // 纯属性压强晚段追不上=砍半晚段 64% 实证——这是"结构件不缩放"的独立机理，不随刻度诚实化消失。
   const phiDps = phiPool > 1 ? Math.pow(phiPool, 1.08) : phiPool;
-  const wall = WALL_BOOST[nodeId] ?? { pool: 1, dps: 1 };
+  // 段3：精英五档带查找链（关级覆写 > 磁盘 eliteTier 档位默认）；Boss 墙表优先；普通关=1/1。
+  const eliteTier = (enc as { eliteTier?: string }).eliteTier;
+  const wall = WALL_BOOST[nodeId]
+    ?? ELITE_BOOST_OVERRIDE[nodeId]
+    ?? (eliteTier ? ELITE_TIER_BOOST[eliteTier] : undefined)
+    ?? { pool: 1, dps: 1 };
   const pool = K_HP * PHI_BASE * phiPool * mult.pool * wall.pool;
   let dps = K_DPS * PHI_BASE * phiDps * mult.dps * wall.dps;
 

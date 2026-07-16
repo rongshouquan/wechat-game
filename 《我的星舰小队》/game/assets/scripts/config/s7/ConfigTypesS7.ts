@@ -906,6 +906,13 @@ export interface S7BattleEncounterParam {
   reviveWaves?: number;
   /** 镜像关（精英花样②）：true=敌方阵容由玩家当前出战阵容读档生成（含四层装配积木·忽略本行出怪计划）。缺席=正常出怪。 */
   mirrorLineup?: boolean;
+  /** 段3 可选（镜像缩放通道）：镜像敌血攻同乘 (1+此值)——镜像敌不吃压力公式，此字段=五档带在
+   *  镜像关的强度旋钮（正=更强/负=更弱）。仅与 mirrorLineup=true 同现；缺席=0=敌我同强旧行为。 */
+  mirrorScalePct?: number;
+  /** 段3 可选（精英五档带·R10）：本关难度档（福利/无压力/微阻滞/阻滞/变态）——生成器按
+   *  ELITE_CONTENT.tier 声明写入（单点在声明表）；entry 压力映射按档查 ELITE_TIER_BOOST。
+   *  仅 stageType=elite 行携带；缺席=非精英或未定档（映射按 1/1 中性）。 */
+  eliteTier?: string;
   note: string;
 }
 

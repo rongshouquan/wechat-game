@@ -215,7 +215,9 @@ const BOSS_CONTENT = {
       { rowId: 'eff_boss_n250_frenzy', effectKind: 'state', effectType: 'berserk', effectPower: 0, targetingTag: 'self_team', durationSec: 999, maxTargets: 1, stateTag: 'berserk', summonUnitRef: 'none', note: '阶段2 破盾后狂暴连射（真源原文·shield_broken 触发）' },
     ],
     phases: [],
-    adds: [['backline', 2]], // 红线点名塔（真源"红线点名后排"的场面呼应）
+    // 段3 首件修正（n250 续调根因=debug 实证双塔 918 DPS 秒后排→35s 团灭·真源阶段1 点名=Boss 自身
+    // extraTrigger 独家承载〔原文无塔〕）：adds 换无人机护卫="周期召唤无人机"的场面呼应·威胁弥散。
+    adds: [['boss_add', 4]],
     encounter: { reviveWaves: 1 }, // 墙④连战墙：满血复活连战 ×1（耐力配队·通道①上岗·数值域定报备）
   },
   // ===== n282 · 墙⑤ 母舰指挥官（真源§5 原班·召唤主题·两阶段）=====
@@ -338,7 +340,7 @@ const FORMATION_OVERRIDE = {
   n140: { boss: 'r1c2', waves: [['r1c4', 'r3c4'], ['r1c0', 'r2c0', 'r3c0']] }, // 再生者：修理机藏 Boss 身后（点治疗源教学的视觉表达）+滚石挡前
   n176: { boss: 'r1c2', waves: [['r0c1', 'r4c1'], ['r1c4', 'r3c4']] }, // 泰坦：磁暴塔两翼+修理机后勤——重锤居中塔翼奶后
   n214: { boss: 'r1c2', waves: [['r0c0', 'r2c0', 'r4c0']] }, // 巡卫母垒：疏排盾墙横陈中线——"盾墙演出"开幕构图
-  n250: { boss: 'r1c2', waves: [['r1c5', 'r3c5']] }, // 失控母舰：点名塔深藏最后层（红线从纵深射出=护后排考题的画面语言）
+  n250: { boss: 'r1c2', waves: [['r1c0', 'r3c0', 'r0c1', 'r4c1']] }, // 失控母舰：无人机环形护航（段3 首件随 adds 换载体同改·前双卫+翼后双卫·点名语义=Boss 自身周期点名）
   n282: { boss: 'r1c2', waves: [['r0c1', 'r4c1']] }, // 指挥官：母舰单元两翼量产线
   n312: { boss: 'r1c2', waves: [['r0c0', 'r4c0'], ['r1c4', 'r3c4']] }, // 量产中枢：前置车间+后勤奶——纵深流水线
   n340: { boss: 'r1c2', waves: [['r0c0', 'r2c0', 'r4c0']] }, // 污染巨兽：污染体疏排毒雾前线
@@ -346,13 +348,95 @@ const FORMATION_OVERRIDE = {
   n384: { boss: 'r1c2', waves: [['r1c0', 'r2c0', 'r3c0']] }, // 风暴哨兵：突击楔（快节奏前压）
   n400: { boss: 'r1c2', waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0'], ['r1c1', 'r2c1', 'r3c1']] }, // 风暴壁垒：洞心肉墙+二线盾——两层壁垒名实相符
   n450: { boss: 'r1c3', waves: [['r0c1', 'r2c1', 'r4c1']] }, // 终Boss：锚深一层（c3-c4·压轴纵深）+污染体环卫·c0 留白=决战开阔感
+  // ===== 38 精英个性摆位（段3 C 项②·奇阵=阵型即花样本体·源单位位置=玩法语义：词缀源/斩首目标
+  // 藏深处=点它有代价；镜像 4 关无 spawn、福利 6 关走量对称版式=不进表）=====
+  n007: { waves: [['r2c3'], ['r1c2', 'r3c2'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 词缀源居中深处+点名塔双卫+洞心前排
+  n020: { waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0'], ['r0c1', 'r1c1', 'r3c1', 'r4c1']] }, // 贴脸：双层洞心墙全压中线
+  n033: { waves: [['r2c4'], ['r1c0', 'r2c0', 'r3c0', 'r1c1', 'r3c1']] }, // 斩首：母舰深藏 c4·杂兵楔形挡路
+  n068: { waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0'], ['r0c4', 'r1c4', 'r3c4', 'r4c4']] }, // 包围：前贴+后纵两团夹层
+  n088: { waves: [['r2c4'], ['r1c3', 'r3c3'], ['r1c0', 'r2c0', 'r3c0', 'r1c1', 'r3c1']] }, // 词缀源深+塔中卫+楔形前阵
+  n122: { waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0'], ['r1c1', 'r2c1', 'r3c1']] }, // 贴脸：洞心+楔形双层
+  n128: { waves: [['r2c3'], ['r1c4', 'r3c4'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 词缀源中·塔更深·滚石洞心
+  n142: { waves: [['r1c5', 'r3c5'], ['r1c0', 'r2c0', 'r3c0', 'r1c1', 'r3c1']] }, // 斩首升档：双修理机极深·肉墙楔形
+  n150: { waves: [['r2c2'], ['r0c1', 'r4c1', 'r1c3', 'r3c3', 'r2c0']] }, // 奇阵+词缀：环形拱卫词缀源（环心 c2）
+  n165: { waves: [['r2c4'], ['r1c3', 'r3c3'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 速鼓源深位变体
+  n168: { waves: [['r0c0', 'r1c0', 'r3c0', 'r4c0', 'r1c4', 'r3c4'], ['r1c5', 'r3c5']] }, // 包围Ⅰ：前四后二夹+磁暴塔深翼
+  n192: { waves: [['r2c3'], ['r1c0', 'r2c0', 'r3c0', 'r1c1', 'r3c1']] }, // 词缀源+楔形
+  n198: { waves: [['r2c5'], ['r1c1', 'r3c1'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 斩首目标=词缀源极深·盾双卫·洞心前排
+  n224: { waves: [['r1c4', 'r2c4', 'r3c4'], ['r1c6', 'r3c6']] }, // 龟缩：全阵 c4+·点名塔贴最深墙
+  n238: { waves: [['r2c4'], ['r1c5', 'r3c5'], ['r1c0', 'r3c0']] }, // 词缀源+塔纵深梯队·盾前
+  n244: { waves: [['r1c3', 'r3c3'], ['r0c0', 'r1c0', 'r3c0', 'r4c0', 'r1c5', 'r3c5']] }, // 包围Ⅱ：盾中枢+前四后二重夹
+  n258: { waves: [['r1c4', 'r3c4'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 复活连战：双母舰后置流水线+无人机洞心
+  n284: { waves: [['r2c3'], ['r2c5'], ['r1c0', 'r2c0', 'r3c0']] }, // 词缀源中+母舰极深+楔形
+  n290: { waves: [['r2c4'], ['r0c1', 'r4c1', 'r1c3', 'r3c3']] }, // 斩首+奇阵：环形拱卫深处目标
+  n298: { waves: [['r1c4'], ['r3c4'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 双词缀源对称深位（各一波）+洞心
+  n306: { waves: [['r2c4'], ['r2c2'], ['r0c0', 'r1c0', 'r3c0', 'r4c0']] }, // 复活+词缀：源深·母舰中·洞心前
+  n320: { waves: [['r2c5'], ['r0c1', 'r2c1', 'r4c1'], ['r1c0', 'r2c0', 'r3c0']] }, // 变态①三层环阵：词缀源极深·污染体疏中·楔形前
+  n344: { waves: [['r2c3'], ['r1c1', 'r3c1'], ['r0c0', 'r2c0', 'r4c0']] }, // 词缀源+污染双卫+疏排前
+  n348: { waves: [['r0c2', 'r2c2', 'r4c2'], ['r1c0', 'r2c0', 'r3c0']] }, // 复活+奇阵：污染疏中层+楔形前（环形纵深）
+  n356: { waves: [['r2c4'], ['r1c0', 'r2c0', 'r3c0'], ['r1c1', 'r3c1']] }, // 速鼓源深+污染楔+杂兵二线
+  n362: { waves: [['r1c5', 'r3c5'], ['r1c0', 'r2c0', 'r3c0']] }, // 斩首+复活：双修理机极深·污染楔前
+  n390: { waves: [['r2c5'], ['r0c1', 'r2c1', 'r4c1'], ['r1c0', 'r3c0']] }, // 变态③：词缀源极深·爆发疏中·前锋双卫
+  n396: { waves: [['r1c0', 'r2c0', 'r3c0'], ['r0c1', 'r2c1', 'r4c1']] }, // 贴脸：爆发楔+前锋疏两层压线
 };
 
 /**
- * ELITE_CONTENT：精英花样声明（结构对齐 BOSS_CONTENT 的 effects/波次思路·词缀/奇阵/斩首/
- *   镜像/复活连战/福利六族载体）——段3 填表，本批只立架构空表（越段内容一格不填=总控边界备忘）。
+ * ELITE_CONTENT：38 精英花样声明（段3 填表·剧本 v1.3 精英表一字对齐）。
+ *   kind: 花样名（=剧本表原文·M10 同型禁连排校验源——firstType=split(/[+·（]/)[0] 剧本生成器同口径）；
+ *   tier: 五档（福利/无压力/微阻滞/阻滞/变态·写入 encounter.eliteTier=entry 五档带查表源）；
+ *   waves: 波次覆写（缺省 ELITE_WAVES[tag]·镜像关由 encounter.mirrorLineup 触发零 spawn）；
+ *   encounter: 花样件（victoryRule+victoryTargetUnitRef〔全局行名·apply ②c 节点化〕/reviveWaves/
+ *              mirrorLineup+mirrorScalePct）。
+ * 六族载体（段3 盘点定案）：词缀=rally_source/rally_haste_source 强化源单位（真源§1 星盗船长·
+ *   击杀即停 counterplay）；奇阵=FORMATION_OVERRIDE 摆位本体；斩首=victoryRule（杀点名单位即胜·
+ *   目标藏深处）；镜像=mirrorLineup+缩放通道；复活连战=reviveWaves；福利=档位白送（0.3/0.3）零账变。
  */
-const ELITE_CONTENT = {};
+const ELITE_CONTENT = {
+  // —— sf01 星港边域（swarm 域）——
+  n007: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_source', 1], ['backline', 2], ['swarm', 4]] },
+  n020: { kind: '奇阵·贴脸（纯）', tier: '微阻滞', waves: [['swarm_tough', 4], ['swarm', 4]] }, // 贴脸=FORMATION 双层全压中线
+  n033: { kind: '限时斩首（纯·引擎通道首秀）', tier: '无压力', waves: [['summon_source', 1], ['swarm', 5]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_summon_source' } },
+  n068: { kind: '奇阵·包围（纯）', tier: '无压力', waves: [['swarm', 4], ['swarm', 4]] }, // 包围=前贴+后纵两团夹层
+  n088: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_source', 1], ['backline', 2], ['swarm', 5]] },
+  // —— sf02 废铁坟场（backline 域）——
+  n116: { kind: '福利·合金（纯福利）', tier: '福利', waves: [['swarm', 5]] },
+  n122: { kind: '奇阵·贴脸（纯）', tier: '无压力', waves: [['swarm', 4], ['swarm', 3]] },
+  n128: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_source', 1], ['backline', 2], ['swarm_tough', 4]] },
+  n142: { kind: '限时斩首（纯·参数升档）', tier: '微阻滞', waves: [['support', 2], ['swarm_tough', 5]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_support' } }, // 升档=目标 2 只全灭（杀修理机·废铁味）
+  n150: { kind: '奇阵+词缀（1+1 首秀）', tier: '微阻滞', waves: [['rally_source', 1], ['swarm_tough', 5]] }, // 环形拱卫词缀源
+  n165: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_haste_source', 1], ['backline', 2], ['swarm_tough', 4]] }, // 词缀分档=速鼓
+  n168: { kind: '奇阵·包围（纯·参数升档Ⅰ）', tier: '阻滞', waves: [['swarm_tough', 6], ['stormtower', 2]] },
+  // —— sf03 迷雾星尘带（shield 域）——
+  n186: { kind: '镜像关（纯·新花样②首秀）', tier: '微阻滞', encounter: { mirrorLineup: true, mirrorScalePct: 1.0 } }, // 第5轮终·第4轮（先手优势实测量化：×1.75 才压到 55-70——微阻滞 40-60 需 ×1.9 级）·第2轮：同强对称战我方必胜（同 tick 先手滚雪球=引擎结构面实测）——scale 补偿先手优势
+  n192: { kind: '词缀点名（纯）', tier: '无压力', waves: [['rally_source', 1], ['swarm', 5]] },
+  n198: { kind: '斩首+词缀（1+1）', tier: '微阻滞', waves: [['rally_source', 1], ['shield', 2], ['swarm', 4]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_rally_source' } }, // 两花样咬合：杀词缀源即胜
+  n208: { kind: '福利·驾驶记录（纯福利）', tier: '福利', waves: [['swarm', 5]] },
+  n224: { kind: '奇阵·龟缩+迷雾藏兵（1+1·域规则联动）', tier: '阻滞', waves: [['shield', 3], ['backline', 2]] }, // 龟缩=全阵深处（迷雾藏兵=段4 域规则·摆位先落）
+  n232: { kind: '福利·星贝（纯福利）', tier: '福利', waves: [['swarm', 5]] },
+  n238: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_source', 1], ['backline', 2], ['shield', 2]] },
+  n244: { kind: '奇阵·包围（纯·参数升档Ⅱ）', tier: '阻滞', waves: [['shield', 2], ['swarm_tough', 6]] },
+  // —— sf04 母舰工业区（summon 域）——
+  n258: { kind: '满血复活连战（纯·精英版）', tier: '微阻滞', waves: [['summon_source', 2], ['boss_add', 4]], encounter: { reviveWaves: 1 } },
+  n266: { kind: '镜像+词缀（1+1·参数升档）', tier: '阻滞', encounter: { mirrorLineup: true, mirrorScalePct: 1.15 } }, // 第5轮终·词缀语义=镜像敌带强化·第2轮抬（先手补偿+阻滞档）
+  n274: { kind: '福利·星贝（纯福利）', tier: '福利', waves: [['swarm', 5]] },
+  n284: { kind: '词缀点名（纯）', tier: '无压力', waves: [['rally_source', 1], ['summon_source', 1], ['boss_add', 3]] },
+  n290: { kind: '斩首+奇阵（1+1）', tier: '微阻滞', waves: [['summon_source', 1], ['boss_add', 4]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_summon_source' } }, // 环形拱卫目标
+  n298: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_source', 1], ['rally_haste_source', 1], ['boss_add', 4]] }, // 双词缀源
+  n306: { kind: '复活连战+词缀（1+1）', tier: '阻滞', waves: [['rally_source', 1], ['summon_source', 1], ['boss_add', 4]], encounter: { reviveWaves: 1 } },
+  // —— sf05 污染之海（berserk 域）——
+  n320: { kind: '斩首+词缀+奇阵（1+1+1 首秀）', tier: '变态', waves: [['rally_source', 1], ['pollution', 3], ['swarm_tough', 3]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_rally_source' } }, // 变态①：三层环阵拱卫词缀源·杀源即胜
+  n330: { kind: '福利·合金（纯福利·垫关）', tier: '福利', waves: [['swarm', 5]] },
+  n336: { kind: '镜像关（纯·参数升档）', tier: '微阻滞', encounter: { mirrorLineup: true, mirrorScalePct: 1.0 } },
+  n344: { kind: '词缀点名（纯）', tier: '无压力', waves: [['rally_source', 1], ['pollution', 2], ['swarm', 3]] },
+  n348: { kind: '复活+奇阵（1+1）', tier: '微阻滞', waves: [['pollution', 3], ['swarm', 3]], encounter: { reviveWaves: 1 } },
+  n356: { kind: '词缀点名（纯）', tier: '微阻滞', waves: [['rally_haste_source', 1], ['pollution', 3], ['swarm', 2]] },
+  n362: { kind: '斩首+复活（1+1）', tier: '阻滞', waves: [['support', 2], ['pollution', 3]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_support', reviveWaves: 1 } }, // 连战里点奶=斩首×耐力
+  // —— sf06 风暴核心（burst 域）——
+  n372: { kind: '镜像+词缀+奇阵（1+1+1）', tier: '变态', encounter: { mirrorLineup: true, mirrorScalePct: 1.25 } }, // 变态②·第4轮：敌比我强 75%（先手补偿+变态档）
+  n378: { kind: '福利·驾驶记录（纯福利·垫关）', tier: '福利', waves: [['swarm', 5]] },
+  n390: { kind: '斩首+复活+词缀（1+1+1·变态组合预告）', tier: '变态', waves: [['rally_source', 1], ['burst_raider', 3], ['charge', 2]], encounter: { victoryRule: 'kill_target', victoryTargetUnitRef: 'bu_enemy_rally_source', reviveWaves: 2 } }, // 变态③压轴：两遍连战×杀深处词缀源
+  n396: { kind: '奇阵·贴脸（纯）', tier: '微阻滞', waves: [['burst_raider', 3], ['charge', 3]] },
+};
 
 /** eff_boss_nXXX_* 命名域正则（本工具独管·与 apply 的 eff_nXXX_summon 域零交集）。 */
 const BOSS_EFFECT_RE = /^eff_boss_n\d+_/;
@@ -411,7 +495,31 @@ function symmetricSlots(count, fromCol, variantSeed) {
 // 生成
 // ============================================================================
 
+/** 段3 M10 校验（剧本生成器同口径照抄·对 ELITE_CONTENT 声明跑）：38 关全声明+同型禁连排
+ *  （相邻 kind 首词不同·firstType=split(/[+·（]/)[0]）+五档分布 6/6/17/6/3+福利互锁。 */
+function checkEliteDeclarations() {
+  const eliteIds = mainline.filter((r) => r.nodeTypeTag === 'elite').map((r) => r.nodeId);
+  const missing = eliteIds.filter((id) => !ELITE_CONTENT[id]);
+  if (missing.length) throw new Error(`ELITE_CONTENT 缺声明：${missing.join(',')}（段3 起 38 关全声明）`);
+  const firstType = (k) => k.split(/[+·（]/)[0];
+  const TIER_TARGET = { 福利: 6, 无压力: 6, 微阻滞: 17, 阻滞: 6, 变态: 3 };
+  const tierCount = {};
+  for (let i = 0; i < eliteIds.length; i += 1) {
+    const d = ELITE_CONTENT[eliteIds[i]];
+    if (!d.kind || !d.tier) throw new Error(`${eliteIds[i]} 声明缺 kind/tier`);
+    tierCount[d.tier] = (tierCount[d.tier] ?? 0) + 1;
+    if (d.kind.startsWith('福利') !== (d.tier === '福利')) throw new Error(`${eliteIds[i]} 福利花样与福利档不互锁`);
+    if (i > 0 && firstType(d.kind) === firstType(ELITE_CONTENT[eliteIds[i - 1]].kind)) {
+      throw new Error(`M10 同型连排：${eliteIds[i - 1]}(${ELITE_CONTENT[eliteIds[i - 1]].kind}) → ${eliteIds[i]}(${d.kind})`);
+    }
+  }
+  for (const [tier, n] of Object.entries(TIER_TARGET)) {
+    if ((tierCount[tier] ?? 0) !== n) throw new Error(`M10 档位分布：${tier}=${tierCount[tier] ?? 0} ≠ ${n}`);
+  }
+}
+
 function buildBundle(tables) {
+  checkEliteDeclarations();
   const stat = { encounters: 0, spawns: 0, bossRows: 0, phases: 0 };
   const oldEnc = tables.battle_encounter_param;
   const oldSpawn = tables.battle_spawn_param;
@@ -567,7 +675,12 @@ function buildBundle(tables) {
       }
     } else {
       const variants = NORMAL_WAVES[tag] ?? NORMAL_WAVES.swarm;
-      const plan = isElite ? (ELITE_WAVES[tag] ?? ELITE_WAVES.swarm) : variants[num % variants.length];
+      // 段3：精英关吃 ELITE_CONTENT 声明（waves 覆写·镜像关零 spawn=validator isMirror 例外面）。
+      const eDecl = isElite ? ELITE_CONTENT[nodeId] : undefined;
+      const isMirror = eDecl?.encounter?.mirrorLineup === true;
+      const plan = isMirror ? []
+        : isElite ? (eDecl?.waves ?? ELITE_WAVES[tag] ?? ELITE_WAVES.swarm)
+          : variants[num % variants.length];
       let wave = 0;
       let nextCol = 0; // 波间从上一波占用层（纵深）的下一层起铺=零格冲突
       for (const [suffix, count] of plan) {
@@ -606,6 +719,9 @@ function buildBundle(tables) {
       battleSeedPolicy: 'node_id_plus_run_seed',
       note: `${nodeId} ${stage === 'boss' ? 'Boss关' : stage === 'elite' ? '精英关' : '普通关'}·${tag} 主题（450 关走量）`,
       ...(isBoss ? (BOSS_CONTENT[nodeId]?.encounter ?? {}) : {}), // 声明覆写（reviveWaves 连战等·重放）
+      // 段3：精英声明覆写（eliteTier 档位写入=entry 五档带查表源；victoryRule/mirror/revive 花样件）。
+      ...(isElite && ELITE_CONTENT[nodeId]?.tier ? { eliteTier: ELITE_CONTENT[nodeId].tier } : {}),
+      ...(isElite ? (ELITE_CONTENT[nodeId]?.encounter ?? {}) : {}),
     });
     stat.encounters += 1;
     stat.spawns = newSpawn.length;

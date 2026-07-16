@@ -177,6 +177,17 @@ function landBundle(tables, mod) {
       if (typeof ref !== 'string' || ref === 'none' || !/^bu_enemy_/.test(ref)) continue;
       eff.summonUnitRef = scale.units[ref] ? ensureNodeRow(ref) : ensureSpecialtyRow(suffixOfGlobal(ref), ADD_SHARE, ref);
     }
+    // ②c 段3 · 斩首点名目标节点化（限时斩首花样·victoryRule='kill_target'）：encounter 的
+    //    victoryTargetUnitRef 全局职业行 → 本关节点行（validator 要求目标 ∈ enemyUnitStatRefs
+    //    且行存在——三方对称=cleanBundle 回退全局，任意落盘态自洽）。
+    if (typeof enc.victoryTargetUnitRef === 'string' && /^bu_enemy_/.test(enc.victoryTargetUnitRef)) {
+      enc.victoryTargetUnitRef = scale.units[enc.victoryTargetUnitRef]
+        ? ensureNodeRow(enc.victoryTargetUnitRef)
+        : ensureSpecialtyRow(suffixOfGlobal(enc.victoryTargetUnitRef), ADD_SHARE, enc.victoryTargetUnitRef);
+      if (Array.isArray(enc.enemyUnitStatRefs) && !enc.enemyUnitStatRefs.includes(enc.victoryTargetUnitRef)) {
+        enc.enemyUnitStatRefs = [...enc.enemyUnitStatRefs, enc.victoryTargetUnitRef];
+      }
+    }
     // ③ 母舰节点化：召唤效果 + 产出行 + 母舰行改指节点效果。
     const summonRowId = `bu_${nodeId}_summon_source`;
     if (blockById.has(summonRowId)) {

@@ -119,6 +119,12 @@ export function cleanBundle(tables) {
     const g = globalRowOf(r.summonUnitRef);
     if (g !== r.summonUnitRef) r.summonUnitRef = g;
   }
+  // 段3：斩首点名目标回退全局行（victoryRule='kill_target'·apply ②c 的对称面）。
+  for (const enc of tables.battle_encounter_param) {
+    if (typeof enc.victoryTargetUnitRef !== 'string') continue;
+    const g = globalRowOf(enc.victoryTargetUnitRef);
+    if (g !== enc.victoryTargetUnitRef) enc.victoryTargetUnitRef = g;
+  }
   for (const sp of tables.battle_spawn_param) {
     const g = globalRowOf(sp.unitStatRef);
     if (g !== sp.unitStatRef) {

@@ -1349,8 +1349,10 @@ for (const [name, idField] of Object.entries(TIER_BATTLE)) {
     if (!PROBLEM_TAGS.includes(row.problemTagRef)) fail('battle_encounter_param', id, 'problemTagRef 非法');
     if (!S7_SECONDARY_PRESSURE_TAGS.includes(row.secondaryPressureTag)) fail('battle_encounter_param', id, 'secondaryPressureTag 非法');
     if (!pressureIdSet.has(row.pressureRef)) fail('battle_encounter_param', id, `pressureRef "${row.pressureRef}" 不存在于 pressure_param`);
-    arrRefs('battle_encounter_param', id, 'enemyUnitStatRefs', row.enemyUnitStatRefs, unitIdSet, true);
-    arrRefs('battle_encounter_param', id, 'spawnPlanRefs', row.spawnPlanRefs, spawnIdSet, true);
+    // 段3 镜像关例外（TS 校验器同口径补齐）：敌阵=玩家阵容读档生成，两数组允许为空。
+    const isMirror = row.mirrorLineup === true;
+    arrRefs('battle_encounter_param', id, 'enemyUnitStatRefs', row.enemyUnitStatRefs, unitIdSet, !isMirror);
+    arrRefs('battle_encounter_param', id, 'spawnPlanRefs', row.spawnPlanRefs, spawnIdSet, !isMirror);
     arrRefs('battle_encounter_param', id, 'bossPhaseRefs', row.bossPhaseRefs, phaseIdSet, false);
     if (row.playerSlotPolicy !== 'five_ship_3x3_default') fail('battle_encounter_param', id, 'playerSlotPolicy 首版必须为 five_ship_3x3_default');
     const tl = num(row.timeLimitSec); if (tl === null || tl <= 0) fail('battle_encounter_param', id, 'timeLimitSec 必须为正数');

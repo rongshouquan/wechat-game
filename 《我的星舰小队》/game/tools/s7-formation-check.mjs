@@ -54,26 +54,37 @@ if (DRAW) {
   process.exit(0);
 }
 
+// 段3 口径升级：对称按「整关合成画面」查（同关全波合并后逐层镜像）——美感规格的对象=玩家看到的
+// 全阵，跨波镜像互补（如双词缀源各一波·r1/r3 对开）合成后对称即合规；旧"逐波查"对合并对称阵误报。
 let waves = 0;
 const asym = [];
 let fullRows = 0;
+const byEnc = new Map();
 for (const s of spawns) {
   if (/^spawn_n00[1-8]_/.test(s.rowId)) continue; // 教学段保留面豁免
   waves += 1;
-  const isBoss = /^bu_boss_/.test(s.unitStatRef);
-  const byCol = new Map();
-  for (const c of (isBoss ? occupiedCells(s) : cellsOf(s))) {
-    if (!byCol.has(c.col)) byCol.set(c.col, new Set());
-    byCol.get(c.col).add(c.row);
+  if (!byEnc.has(s.encounterRef)) byEnc.set(s.encounterRef, []);
+  byEnc.get(s.encounterRef).push(s);
+}
+for (const [encId, ss] of byEnc) {
+  const byCol = new Map(); // col → {rows:Set, bossRows:Set}
+  for (const s of ss) {
+    const isBoss = /^bu_boss_/.test(s.unitStatRef);
+    for (const c of (isBoss ? occupiedCells(s) : cellsOf(s))) {
+      if (!byCol.has(c.col)) byCol.set(c.col, { rows: new Set(), bossRows: new Set() });
+      byCol.get(c.col).rows.add(c.row);
+      if (isBoss) byCol.get(c.col).bossRows.add(c.row);
+    }
   }
-  for (const [col, rows] of byCol) {
+  for (const [col, { rows, bossRows }] of byCol) {
     if (rows.size === 5) fullRows += 1;
-    if (isBoss) continue; // Boss 偶宽件=0.5 格偏轴容差（"基本对称"·规格原文），不计红
-    const sym = [...rows].every((r) => rows.has(4 - r));
-    if (!sym) asym.push(`${s.rowId} c${col}=[${[...rows].sort().join(',')}]`);
+    // Boss 2×2 偶宽件=0.5 格偏轴容差（"基本对称"规格原文）：该层剔除 Boss 实占后查小兵对称。
+    const minions = [...rows].filter((r) => !bossRows.has(r));
+    const sym = minions.every((r) => minions.includes(4 - r));
+    if (!sym) asym.push(`${encId} c${col}=[${minions.sort().join(',')}]`);
   }
 }
-console.log(`[formation-check] 非教学波 ${waves}：不对称 ${asym.length} · 5连横层 ${fullRows}`);
+console.log(`[formation-check] 非教学波 ${waves}（按关合成查对称）：不对称 ${asym.length} · 5连横层 ${fullRows}`);
 if (asym.length) {
   for (const a of asym.slice(0, 10)) console.log('  ✗ ' + a);
 }

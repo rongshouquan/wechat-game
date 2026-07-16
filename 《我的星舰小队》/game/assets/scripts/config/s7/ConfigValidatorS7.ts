@@ -1767,6 +1767,16 @@ function validateBattle(
     if (row.mirrorLineup !== undefined && row.mirrorLineup !== true) {
       errors.push({ table: 'battle_encounter_param', id, message: 'mirrorLineup 只允许 true 或缺席' });
     }
+    if (row.mirrorScalePct !== undefined) {
+      const ms = num(row.mirrorScalePct);
+      if (row.mirrorLineup !== true) errors.push({ table: 'battle_encounter_param', id, message: 'mirrorScalePct 只能与 mirrorLineup=true 同现（段3 镜像缩放通道）' });
+      if (ms === null || ms <= -0.9 || ms > 3) errors.push({ table: 'battle_encounter_param', id, message: 'mirrorScalePct 必须 ∈(-0.9, 3]' });
+    }
+    if (row.eliteTier !== undefined) {
+      const ELITE_TIER_VALUES = ['福利', '无压力', '微阻滞', '阻滞', '变态'];
+      if (row.stageType !== 'elite') errors.push({ table: 'battle_encounter_param', id, message: 'eliteTier 仅 stageType=elite 行可携带（段3 五档带）' });
+      if (typeof row.eliteTier !== 'string' || !ELITE_TIER_VALUES.includes(row.eliteTier)) errors.push({ table: 'battle_encounter_param', id, message: `eliteTier 必须 ∈ ${ELITE_TIER_VALUES.join('/')}` });
+    }
     if (row.mirrorLineup === true && Array.isArray(row.spawnPlanRefs) && row.spawnPlanRefs.length > 0) {
       errors.push({ table: 'battle_encounter_param', id, message: '镜像关的 spawnPlanRefs 必须为空数组（敌阵=玩家阵容读档生成）' });
     }
