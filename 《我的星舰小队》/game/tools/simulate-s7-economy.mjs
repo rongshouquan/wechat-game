@@ -2210,6 +2210,11 @@ function summarize(tierName, st, opts, P, T) {
   // graduateNatural=纯经济闸口径（观察口·L50 平台段闸已失效=结构发现）
   let break8Day = null;
   { let c = 0; for (let i = 0; i < st.dailyCleared.length; i++) { c += st.dailyCleared[i]; if (c >= 400) { break8Day = i + 1; break; } } }
+  // 毕业核提早批 #8 咬合口径重定义：旧 Δ=破⑧−拍下 作废（门 312 后拍下远早于破⑧=Δ 无读秒语义）；
+  // 新观察口=门开日（过可拍门首日）+到手日分布（gradCoreDays/VaultDays/BmDays 既有）——
+  // "会玩提早量"=改前后到手日差（批账 §16h：肝 −7/重 −7/普 −9/轻 0〔瓶颈=宝石非门〕）。
+  let gradGateOpenDay = null;
+  { let c = 0; const gate = P.core.vaultGradUnlockNode ?? 0; for (let i = 0; i < st.dailyCleared.length; i++) { c += st.dailyCleared[i]; if (c >= gate) { gradGateOpenDay = i + 1; break; } } }
   // N2 终案观测口：到前哨日（累计通关 ≥ 上架闩 n384 的当天）——纯进度闩下=毕业核上架日；
   // 咬合证据表四件套=到前哨(上架)日/拍下日(gradCoreDays[0])/破⑧日/Δ(破⑧−拍下)
   let reachOutpostDay = null;
@@ -2233,6 +2238,7 @@ function summarize(tierName, st, opts, P, T) {
     graduateDay: graduateSynthetic,
     graduateNatural: st.graduateDay,
     break8Day,
+    gradGateOpenDay,
     reachOutpostDay,
     gemReach200Day,
     dailyBmCount: st.dailyBmCount, dailyDistinct: st.dailyDistinct, // R18 A3/C2
