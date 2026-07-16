@@ -136,9 +136,9 @@ function layoutEnemies(roster: S7PlaybackUnit[], bossId: string): Map<string, S7
   const rows = [others.slice(0, frontN), others.slice(frontN, frontN + midN), others.slice(frontN + midN)];
   // 同类竖屏上下对阵（疯狂骑士团/咸鱼之王型）通用规律：排距舒展、间距均匀、
   // 与我方梯形镜像呼应——比"兵海团块"松、比均摊满区紧。
-  // 磨精批1（Ron 07-15"整体劣质"反馈·构图收拢）：全阵下压 0.09 收窄对峙带——
-  // 竞品构图=敌我贴近、画面重心聚拢（真机 layoutOverride 侧同步 ENEMY_Y_SHIFT）。
-  const rowY = [0.46, 0.37, 0.28];
+  // 磨精批1 全阵下压 0.09 → 间距三调回收至 +0.02（Ron 07-15 真机"敌我靠太近"——
+  // 真实敌配贴中线格位比内置阵型更靠前，下压过头；真机 layoutOverride 侧同步 ENEMY_Y_SHIFT）。
+  const rowY = [0.39, 0.30, 0.21];
   const SPACING = 0.165;
   rows.forEach((rowUnits, ri) => {
     const m = rowUnits.length;
@@ -197,7 +197,7 @@ export function buildS7FxScript(
     if (ov) return ov; // 备战即战场（外部站位优先）
     const u = byId.get(unitId);
     if (!u) return { x: 0.5, y: 0.5 };
-    if (u.side === 'enemy') return enemyPos.get(unitId) ?? { x: 0.5, y: 0.37 };
+    if (u.side === 'enemy') return enemyPos.get(unitId) ?? { x: 0.5, y: 0.30 };
     return placePlayer(u, playerExt);
   };
 

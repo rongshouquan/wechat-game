@@ -4731,9 +4731,10 @@ export class S7DemoController extends Component {
       // 归一化成 0-1（y 下）喂给演出层——玩家摆哪打哪，弹道爆点全随之。
       // 我方整体下移（Ron 07-15 二轮反馈③"战斗中位置太靠前"）：只在战斗映射时加，
       // 备战九宫格不动；相对阵型不变=备战即战场承诺仍成立（摆哪打哪指相对站位）。
-      // 敌方整体下压（磨精批1·收窄对峙带）：竞品构图=敌我更贴近、画面重心聚拢。
-      const PLAYER_Y_SHIFT = 0.07;
-      const ENEMY_Y_SHIFT = 0.09;
+      // 间距三调（Ron 07-15 真机："敌我靠太近了，敌方整体往上、我方往下"——批1 敌方下压
+      // 0.09 在贴中线格位的真实敌配上过头〔预览样本未覆盖=自验盲区〕，敌回收至 0.02、我方再降 0.03）。
+      const PLAYER_Y_SHIFT = 0.10;
+      const ENEMY_Y_SHIFT = 0.02;
       this.computePositions(pb);
       const layoutOv: Record<string, { x: number; y: number }> = {};
       for (const u of pb.roster) {
