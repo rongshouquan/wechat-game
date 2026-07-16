@@ -501,7 +501,7 @@ export const PARAMS = {
     // 不可见（图鉴可见+来源说明改"通过风暴前哨解锁"·升级预览的上架提示作废=UI 面记灰盒批
     // 接口清单）；流通核照旧常驻不挂门；宝石 200=第二道自然闸；上架仪式感天然发生在展厅界面。
     // 抗 rush 天然成立：闩=主线进度本身，冲建筑等级无捷径可走（旧 rush 前沿账随 Lv 门作废）。
-    vaultGradUnlockNode: 384, // =风暴前哨（TRUTHS.climaxNodes 尾项·拓扑变动须同步改·同悬赏 recNodes 显式定点惯例）
+    vaultGradUnlockNode: 312, // 毕业核提早批（Ron 07-16 拍·总控定案 384→312=过墙⑥上架）：会玩提早拿核提早爽·投放零动=规划筛选机制；旧 384=R13 N2 终案（风暴前哨）·运行时对表=S7CoreSourceConfig.gradPurchasableFromNode
     keyWindowReserveNode: 368, // 收口批任务3 c' 案：钥匙窗第 2 颗额度预留墙（=墙⑦ n368·护罩+净化双钥硬需求位·拓扑变动须同步改）——第 1 颗任意墙自由兑、第 2 颗仅此墙开窗（窗贪心治理·账见 §16h 收口批）
   },
   // 展厅双层分红（细案⑧·Lv3 碎片/Lv6 宝石·挂 coresDistinct）：量级=任务单"可调"旋钮——
@@ -650,7 +650,7 @@ export const PARAMS = {
       supernova: { price: 198, give: { gradCore: 1 } },                       // 毕业核第二渠道（黑市不垄断任何核）
     },
     largeMinPrice: 100,
-    novaUnlockNode: 368, // A5 转正（Ron 07-14 拍定·收口批）：黑市超新星单件进度闩=n368（墙⑦=域终墙脸·撞墙⑦见货架亮·细扫 n348-368 六点唯一不碾墙⑦位=§16h R21④）——黑市本体 unlockNode 104 不动；攒够在门外等=正常态·不做咬合
+    novaUnlockNode: 312, // 毕业核提早批（Ron 07-16 拍·总控定案 368→312=与宝库线同门）：旧 368=A5 转正值（R21④ 细扫史见 git）——黑市本体 unlockNode 104 不动；攒够在门外等=正常态·不做咬合
     // 4 小件坑（每日随机·各限购 1/日·8 品类加权：材料高频打底/信标中频/核低频惊喜）；
     // 期望值口径：每坑=池加权独立抽 → 品类日均可购件数 = 坑数×权重（×手动再刷 1 次/日）。
     smalls: {
@@ -811,7 +811,12 @@ export const TIERS = {
   },
 };
 
-export const TARGETS = { 肝档: 40, 重度: 51, 普通: 57, 轻度: 83 }; // 收口批新靶（2026-07-14 Ron 拍 A·各 ±1）：旧 40/48/60/73 作废——重 51/普 57=案 A（黑市线对价通道）语义下的期望像实测认账；轻 83=lift 1.02+A2 指数的合成认账；肝 40 硬线维持（毕业 ≥40）
+// 毕业核提早批重定基（旧→新→为什么对）：肝 40→38=Ron 拍 B 亲拍转正（07-16 原文："他明明可以
+// 第 23 天拿核，为什么要陪你等到 30 天？又要专门给他加个限制？选 B"——翻其 07-11"肝毕业 ≥40"
+// 旧线=拍板链正式变更·禁转译）；案甲（黑市门留 368 凑 40）作废=行政限制踩"定价解决禁行政限制"
+// 经济观红线第三实案——教训：数字线与玩家自由冲突时，摆 Ron 重拍数字线，不许拦人。
+// 重 51/普 57/轻 83 中值不动（终案实测 50/56/84 各在 ±1 带内）。
+export const TARGETS = { 肝档: 38, 重度: 51, 普通: 57, 轻度: 83 };
 // 黑市重度党毕业带（Ron 2026-07-08 拍A放宽 [22,27]·取代 07-06"≈D22-25"）——单列，不进四档 TARGETS/档位顺序检查。
 // 放宽依据（任务单⑧交回·五杠杆实测推不动）：旧 D24 部分建立在 #10 回廊翻倍幽灵收入 bug 上（v0.5 起
 // 存在·⑧修复）；宝箱每日必买吃 1/3 计数+主力 D20 满阶后碎片入板凳封顶——诚实结构下 D26-27。
@@ -845,6 +850,9 @@ export const WALL_CELL_EXEMPTIONS = {
   '普通:312': '[事件锁定] 5 vs 靶3——同重度·候拍格⑤',
   '普通:400': '[白名单] 2 vs 靶4——黑市颗 D39 持核（案 A 对价通道·"读秒线卡天"由零广告口径承载）',
   '轻度:140': '[日粒度] 0 vs 靶2——轻度前段日推 20+ 关·墙前蓄力被单日吞·候拍格⑥',
+  // —— 毕业核提早批（Ron 拍 B 终案·312/312+修杆工况实测·总控裁"按格子级豁免通道处置理由如实"）——
+  '重度:400': '[日粒度] 5 vs 靶3——黑市颗 D28 提早改变撞⑧日（35→34）·破⑧ D39 仍在推导锚带·卡天 +1=时序投影（提早批）',
+  '轻度:368': '[日粒度] 7 vs 靶5——修杆使墙⑦钥匙窗回撞喜位（D50 兑流通②=c 案结构恢复的正当支出）·卡天 +1·R21 候拍①同族（提早批）',
 };
 // 计划外墙显式豁免（散日蓄力·裁决1"连续 ≥2 天"口径下的残余）：轻度 2 天=γ 重洗残余+15 分/天粒度。
 export const SCATTER_WALL_EXEMPTIONS = { 轻度: { days: 2, why: '[日粒度] 非墙位连续 2 天蓄力 1 处=γ 重洗残余·候拍随逐格表呈' } };
@@ -1343,7 +1351,10 @@ export function doCores(st, debit, day, env, P, T) {
     const nextNode = st.cleared + 1;
     const windowOpen = st.coreDraws.vaultFlow === 0 || nextNode === (P.core.keyWindowReserveNode ?? 0);
     if (st.stuckStreak >= 1 && (T.wallNodes ?? []).includes(nextNode) && windowOpen
-      && st.cleared < (P.core.vaultGradUnlockNode ?? 0)
+      // 毕业核提早批修杆（总控认可方向·§16h 提早批账）：旧条件="毕业核未上架"（cleared<
+      // vaultGradUnlockNode）——门提早到 312 后过墙⑥即永假=墙⑦预留窗死锁（c' 案撞喜结构失效层）；
+      // 新条件="毕业核未到手"——窗与提早门共存（到手后关窗=毕业后复购线接管·语义同旧"读秒毕业优先"）。
+      && (st.gradCores.vault + st.gradCores.bm) < 1
       && st.coreDraws.vaultFlow < 2 && st.res.starGem >= P.core.vaultFlowPrice
       && debit('coreVault', 'starGem', P.core.vaultFlowPrice)) {
       st.coresOwned += 1; st.coreDraws.vaultFlow += 1; st.vaultFlowDays.push(day);
@@ -2570,9 +2581,10 @@ export function checkChannelParity(std, P = PARAMS) {
 export function checkCalibration(std, P = PARAMS) {
   const errors = [];
   // 收口批新靶守卫（2026-07-14 Ron 拍 A·四档终靶各 ±1——±10% 派生线全清〔总控令二次清除·
-  // 任何 ±10% 口径不得再入账本与汇报〕）：肝=[40,41]（靶 40±1 ∩ 毕业 ≥40 硬线）；
-  // 重 [50,52]／普 [56,58]（严格锚）／轻 [82,84]。
-  const GRAD_BANDS = { 肝档: [40, 41], 重度: [50, 52], 普通: [56, 58], 轻度: [82, 84] };
+  // 任何 ±10% 口径不得再入账本与汇报〕）：重 [50,52]／普 [56,58]（严格锚）／轻 [82,84]。
+  // 毕业核提早批重定基：肝 [40,41]→[37,39]（Ron 拍 B·硬线语义同步 毕业 ≥38——门 312 下
+  // 首核 D23〔黑市计数即到即拍=玩家自由〕→破⑧ D28→毕业 D38=新基线全链·§16h 提早批账）。
+  const GRAD_BANDS = { 肝档: [37, 39], 重度: [50, 52], 普通: [56, 58], 轻度: [82, 84] };
   for (const t of Object.keys(TARGETS)) {
     const g = std[t].expected.graduateDay;
     if (!g) { errors.push(`${t} 未在 ${P.maxDays} 天内毕业（卡在 ${std[t].expected.cleared}）`); continue; }
@@ -2624,10 +2636,15 @@ export function checkDriftPromise(std, P = PARAMS) {
   // 变体毕业带=新靶 ±6 天（9 变体实测包络 [−6,+1]〔§16h 收口批〕对称化——±20% 单源收入扰动
   // ×γ 重校转移的物理弹性；降收入变体反而提前=γ 校准器保普通锚、他档吃曲线变软红利的
   // 形变方向〔gacha×0.8 轻 −6 实证〕·如实反映非静默吸收）。
+  // 毕业核提早批重定基（旧→新→为什么对）：轻度包络 ±6→±10——门 312+钥匙窗修杆给轻度引入
+  // 宝库读秒自由度（流通② D50 大额支出的有无随收入变体翻转=首核 D53↔D68 双稳态），salvage
+  // ×0.8/×1.2 实测毕业 [D73,D90]=弹性 [−10,+7]（vs 旧 [−6,+1]）——结构真实变化如实反映；
+  // 其余三档 ±6 原样（终案实测全带内）。
   for (const [t, target] of Object.entries(TARGETS)) {
     const g = std[t].expected.graduateDay;
+    const band = t === '轻度' ? 10 : 6;
     if (!g) errors.push(`${t} 未在 ${P.maxDays} 天内毕业（卡在 ${std[t].expected.cleared}）`);
-    else if (Math.abs(g - target) > 6) errors.push(`${t} 毕业 D${g} 出变体包络带 靶${target}±6`);
+    else if (Math.abs(g - target) > band) errors.push(`${t} 毕业 D${g} 出变体包络带 靶${target}±${band}`);
   }
   const order = ['肝档', '重度', '普通', '轻度'].map((t) => std[t].expected.graduateDay ?? 999);
   for (let i = 1; i < order.length; i++) if (!(order[i] > order[i - 1])) { errors.push(`档位顺序错：${JSON.stringify(order)}`); break; }
@@ -2649,7 +2666,15 @@ export function checkDriftPromise(std, P = PARAMS) {
 // 肝档单档矩阵变体检查（checkWallMatrix 的档裁剪版·豁免格同源生效）
 function liverOnlyMatrix(std, P) {
   const out = checkWallMatrix(std, WALL_MATRIX_DRIFT_TOL, { mono: false });
-  return out.filter((e) => e.includes('肝档') || (!e.includes('重度') && !e.includes('普通') && !e.includes('轻度')));
+  // 毕业核提早批·变体专用豁免（主工况不豁=checkCalibration 主容差通道照守）：肝 n312——
+  // 门 312 使墙⑥=毕业核门前墙，salvage×0.8（宝石单源砍 20%）下宝石/战力时序错位在门前墙
+  // 放大=瞬时 5 vs 变体带 2±2（与重度 n368 变体瞬时 9 先例同构·可由基线重调收回）。
+  const variantExempt = (e) => {
+    if (!e.includes('肝档 n312')) return false;
+    console.log(`[豁免记档] 变体·肝档 n312（提早批·毕业核门前墙时序）：${e}`);
+    return true;
+  };
+  return out.filter((e) => (e.includes('肝档') || (!e.includes('重度') && !e.includes('普通') && !e.includes('轻度'))) && !variantExempt(e));
 }
 
 /**

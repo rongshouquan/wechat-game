@@ -49,6 +49,14 @@ export interface S7CoreSourceConfig {
   vaultRepeatPriceGrowth: number;
   /** 宝库可兑换专属星舰（定价=尺外沿用值·未入尺注记）。 */
   vaultShips: S7VaultShipEntry[];
+  /** 毕业核提早批（Ron 07-16 拍"提早解锁让会玩的提早爽"）·可拍门：过此主线节点后毕业核可购买
+   *  （宝库/黑市两线同门）——经济尺 vaultGradUnlockNode/novaUnlockNode=312 的运行时数据层对表位；
+   *  消费=工程灰盒批（货架购买判定+置灰态）。 */
+  gradPurchasableFromNode: number;
+  /** 可见门（预告态·数据层语义=Ron 案"提早可见提早规划"）：黑市线=n104（黑市开门即见）／
+   *  宝库线=0（宝库系统开门即见·随展厅建筑线）——UI 呈现（货架预告卡+进度条）=工程灰盒批消费，
+   *  本批只定字段与语义（接口记档=灰盒批待办）。 */
+  gradVisibleFrom: { bm: number; vault: number };
 }
 
 // ===== 默认配置（v0.7 校准终值）=====
@@ -82,4 +90,6 @@ export const DEFAULT_S7_CORE_SOURCE_CONFIG: S7CoreSourceConfig = {
     { shipId: 'shp10', gemCost: 200 }, // 专属舰名单=占位沿用（真源未点名 2 艘·挂牌）；定价尺外
     { shipId: 'shp11', gemCost: 200 },
   ],
+  gradPurchasableFromNode: 312, // 毕业核提早批：过墙⑥上架（旧=宝库 384/黑市 368 两线·同改此门=经济尺对表）
+  gradVisibleFrom: { bm: 104, vault: 0 }, // 可见即预告（0=系统开门即见）·消费=灰盒批
 };
