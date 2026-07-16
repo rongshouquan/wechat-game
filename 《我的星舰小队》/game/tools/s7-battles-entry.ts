@@ -674,5 +674,6 @@ export async function main(argv: string[]): Promise<number> {
 
 // 运行件 re-export（quick 实测脚本复用面·⑥三段悬赏敌配实测起）——纯导出零逻辑。
 export { S7ConfigRuntime, createInMemoryS7TableReader } from '../assets/scripts/config/s7/S7ConfigRuntime';
+export { coreBlocks } from '../assets/scripts/core/s7/S7CoreEffects'; // 段5：A案 r 扫描探针/批扫器复用面
 export { S7BattleRunService } from '../assets/scripts/core/s7/S7BattleRunService';
 export { S7_HARD_CONTROL_DIMINISH } from '../assets/scripts/core/s7/S7AutoBattleTypes';

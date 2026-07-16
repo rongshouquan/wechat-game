@@ -342,6 +342,9 @@ interface RtTrigger {
   fired: boolean;
   /** 机制批③ on='on_kill_charge' 的当前攒层数（击杀点直接累积·释放后清零）；其余触发型不设。 */
   charge?: number;
+  /** 段5 A案：本轮充能起点（上次 cd 触发时刻·开局 0）——killCdFloorSec 的下限锚；
+   *  所有 cd 块统一维护（纯运行态·无消费字段的块零行为差），killCdReduceSec 块消费。 */
+  cycleStartAt?: number;
 }
 
 interface RtUnit {
@@ -844,7 +847,7 @@ class BattleRun {
       unit.hp = Math.max(1, Math.round(unit.maxHp * pct));
       this.occupy(unit);
       for (const t2 of unit.triggers) {
-        if (t2.block.on === 'cd' && t2.block.cdSec !== undefined && t2.block.cdSec > 0) t2.nextFireAt = this.time + t2.block.cdSec;
+        if (t2.block.on === 'cd' && t2.block.cdSec !== undefined && t2.block.cdSec > 0) { t2.nextFireAt = this.time + t2.block.cdSec; t2.cycleStartAt = this.time; } // 段5 A案：复活=重开一轮（下限锚同步）
       }
       unit.nextAttackAt = this.time + unit.attackIntervalSec;
       this.pushLog('revive', { actorId: unit.unitId, side: unit.side, targetIds: [unit.unitId], note: 'graveyard_self' });
@@ -1328,6 +1331,7 @@ class BattleRun {
       // ⑦机制批①：技能急速 buff 状态（时光糖「缩短技能CD」）并入急速分母；无状态时和 0=表达式值逐字节不变。
       const haste = unit.affixes.skillHaste + this.stateModSum(unit, 'skill_haste_up') + this.auraSum(unit, 'skillHastePct');
       t.nextFireAt = this.time + (baseCd === Infinity ? Infinity : baseCd / (1 + haste));
+      t.cycleStartAt = this.time; // 段5 A案：新一轮充能起点（下限锚·无消费字段的块零行为差）
     } else {
       // 事件型（on_kill/on_hit/shield_broken/attack_landed/skill_cast）默认可重复：靠 stepTriggers 清事件标志重新武装；
       // once=true 时闩死（⑥8a·超级护罩"每场1次"）。其余（battle_start/hp_below/ally_down）保持一次性。
@@ -1369,7 +1373,13 @@ class BattleRun {
     if (effect.effectType === 'cd_refund') {
       for (const t of caster.triggers) {
         if (t.block.on === 'cd' && Number.isFinite(t.nextFireAt)) {
-          t.nextFireAt = Math.max(this.time, t.nextFireAt - effect.effectPower);
+          // 段5 A案下限完整性：声明了 killCdFloorSec 的块（超新星），任何前拉源都不得穿轮长下限
+          // （真源"下次充能时间下限 6s"=轮长本体口径·灭群 cd_refund 叠加实测可绕底）；
+          // 未声明 floor 的块=原式逐字节不变。
+          const floorAt = t.block.killCdFloorSec !== undefined
+            ? Math.min((t.cycleStartAt ?? 0) + t.block.killCdFloorSec, t.nextFireAt)
+            : this.time;
+          t.nextFireAt = Math.max(this.time, floorAt, t.nextFireAt - effect.effectPower);
         }
       }
       this.pushLog(logType, { actorId: caster.unitId, side: caster.side, effectRef: effect.rowId, effectType: effect.effectType, targetIds: [caster.unitId] });
@@ -1434,7 +1444,7 @@ class BattleRun {
           } else {
             // 复活后大招 CD 重置为满 CD（防"复活即放大招"·§16d 数值域定稿）；普攻下一拍起。
             for (const t2 of dead.triggers) {
-              if (t2.block.on === 'cd' && t2.block.cdSec !== undefined && t2.block.cdSec > 0) t2.nextFireAt = this.time + t2.block.cdSec;
+              if (t2.block.on === 'cd' && t2.block.cdSec !== undefined && t2.block.cdSec > 0) { t2.nextFireAt = this.time + t2.block.cdSec; t2.cycleStartAt = this.time; } // 段5 A案：复活=重开一轮（下限锚同步）
             }
             dead.nextAttackAt = this.time + dead.attackIntervalSec;
             this.pushLog('revive', {
@@ -3101,18 +3111,18 @@ class BattleRun {
       // 敌方=首放转满一轮 CD（批③段三躯干规则：敌开幕 alpha=双塔 t=0 齐点奶位秒杀、无解反设计——
       // "见招拆招"取代"开幕即死"·全局节奏件非点调）。
       const firstUltAt = side === 'enemy' ? this.time + stat.ultimateCdSec : 0;
-      triggers.push({ block: { kind: 'trigger', on: 'cd', cdSec: stat.ultimateCdSec, effectRef: cv.ultimateEffectRef }, nextFireAt: firstUltAt, fired: false });
+      triggers.push({ block: { kind: 'trigger', on: 'cd', cdSec: stat.ultimateCdSec, effectRef: cv.ultimateEffectRef }, nextFireAt: firstUltAt, fired: false, cycleStartAt: 0 });
     }
     // 装配层提供的额外触发（驾驶员/插件/星核内容，块3/4/5）。⑥8a：cd 型吃 initialCdSec（缺省 0=开局即放不变）。
     if (derived) {
       for (const tb of derived.triggers) {
-        triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false });
+        triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false, cycleStartAt: 0 });
       }
     }
     // ⑦机制批①：单位行额外触发（敌方事件触发通道·污染体"受击喷毒"；缺省缺席=零行为）。
     if (stat.extraTriggerBlocks && stat.extraTriggerBlocks.length > 0) {
       for (const tb of stat.extraTriggerBlocks) {
-        triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false });
+        triggers.push({ block: tb, nextFireAt: tb.on === 'cd' ? (tb.initialCdSec ?? 0) : 0, fired: false, cycleStartAt: 0 });
       }
     }
     // ⑦机制批① M3：叠层规则（装配 stack 积木 + 单位行 stackRules；全部旧配置两处皆空=空数组零行为）。
@@ -3309,6 +3319,13 @@ class BattleRun {
   private accrueChargeKills(unit: RtUnit): void {
     for (const t of unit.triggers) {
       if (t.block.on === 'on_kill_charge') t.charge = (t.charge ?? 0) + 1;
+      // 段5 超新星A案（killCdReduceSec·缺省缺席=零行为）：宿主每击杀 1 敌，本轮剩余充能前拉，
+      // 下限=本轮起点+killCdFloorSec（真源"下次充能时间下限 6s"=轮总长口径）。已低于下限时不动
+      // （急速件可把重臂 CD 压到下限之下——击杀只能"拉快"，绝不反向抬慢）。
+      else if (t.block.on === 'cd' && (t.block.killCdReduceSec ?? 0) > 0 && Number.isFinite(t.nextFireAt)) {
+        const floorAt = (t.cycleStartAt ?? 0) + (t.block.killCdFloorSec ?? 0);
+        t.nextFireAt = Math.max(Math.min(floorAt, t.nextFireAt), t.nextFireAt - (t.block.killCdReduceSec ?? 0));
+      }
     }
   }
 

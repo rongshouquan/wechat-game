@@ -36,8 +36,10 @@ const CORE_BLOCKS: Record<string, S7EffectBlock[]> = {
   core13: [{ kind: 'trigger', on: 'on_kill', effectRef: 'eff_core_gluttony', source: 'core13' }],
   // 守护铃：开场全队免控 8s·不可被驱散（M5 undispellable）。
   core14: [{ kind: 'trigger', on: 'battle_start', effectRef: 'eff_s7_guardianbell', source: 'core14' }],
-  // 超新星（毕业核）：恒速攒 14s → 全体 ×5.0·周而复始（§18.3 实证终值：20s/×4.0 常规战只赶尾声=不达档·上调钉高一档）。
-  core15: [{ kind: 'trigger', on: 'cd', cdSec: 14, initialCdSec: 14, effectRef: 'eff_s7_supernova', source: 'core15' }],
+  // 超新星（毕业核）：攒 14s → 全体 ×5.0·周而复始（§18.3 实证终值：20s/×4.0 常规战只赶尾声=不达档·上调钉高一档）。
+  // 段5 A案「连环引爆」（Ron 07-13 拍·星核真源 §4）：宿主每击杀 1 敌下次充能 −1.5s·单轮下限 6s
+  // ——爆炸清场→下一发更快（仅此核带减充字段=单核例外·其余时间型核恒速不变）。
+  core15: [{ kind: 'trigger', on: 'cd', cdSec: 14, initialCdSec: 14, killCdReduceSec: 1.5, killCdFloorSec: 6, effectRef: 'eff_s7_supernova', source: 'core15' }],
   // 银河烟花：击杀连锁补普攻级伤害·多米诺 ≤5 发·每多一发 +10%（机制批③ chainOnKillMax 接真·真源全语义达成）。
   core16: [{ kind: 'trigger', on: 'on_kill', effectRef: 'eff_core_firework', source: 'core16' }],
   // ===== 机制批③ · 6 深坑核接线（⑨如实交回件·数值=细表 §15）=====

@@ -175,6 +175,12 @@ export interface S7TriggerBlock {
   cdSec?: number;
   /** on='cd' 时的首发延迟秒数；缺省 0=开局即放（既有语义）。 */
   initialCdSec?: number;
+  /** 段5 超新星A案（Ron 07-13 拍·星核真源 §4·仅 on='cd' 消费·缺省缺席=行为逐字节不变）：
+   *  宿主每击杀 1 敌，本轮剩余充能前拉 killCdReduceSec 秒（击杀者口径=accrueChargeKills 链·
+   *  环境杀零归因天然隔离）；本轮充能总时长不短于 killCdFloorSec 秒（自本轮起点计）。
+   *  现役=core15 超新星单核（1.5/6），其余时间型核恒速口径不变。 */
+  killCdReduceSec?: number;
+  killCdFloorSec?: number;
   /** on='hp_below' 血量阈值（0~1）；on='ally_down' 为"己方已阵亡数"阈值（达到即触发一次）。 */
   threshold?: number;
   /** true=可重复的事件型触发（on_kill/on_hit/shield_broken/attack_landed）改为每场一次。 */
